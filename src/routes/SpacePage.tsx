@@ -6,15 +6,58 @@ import { PRIORITIES, priorityStyles, timeAgo } from "../lib/format";
 type Priority = (typeof PRIORITIES)[number];
 type Visibility = "space" | "org" | "public";
 
-function OrgSquare({ org }: { org: Org }) {
+function OrgSquare({ org, size = "size-6" }: { org: Org; size?: string }) {
   return (
     <div
       style={{ backgroundColor: org.color }}
-      className="flex size-6 items-center justify-center rounded-md text-[10px] font-semibold text-fg"
+      className={`flex ${size} shrink-0 items-center justify-center rounded-md text-[10px] font-semibold text-fg`}
       title={`${org.name} @${org.handle}`}
     >
       {org.initials}
     </div>
+  );
+}
+
+// Visual glyph for the space: a tinted tile carrying the member orgs' colors.
+function SpaceGlyph({ orgs }: { orgs: Org[] }) {
+  const a = orgs[0]?.color ?? "var(--color-accent)";
+  const b = orgs[1]?.color ?? "var(--color-accent-soft)";
+  return (
+    <div
+      className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)]"
+      style={{
+        background:
+          "radial-gradient(120% 120% at 20% 15%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 60%), var(--color-surface-2)",
+      }}
+    >
+      <div className="flex items-center gap-1.5">
+        <span className="size-5 rounded-full" style={{ backgroundColor: a }} />
+        <span className="text-[10px] text-[var(--color-muted)]">×</span>
+        <span className="size-5 rounded-full" style={{ backgroundColor: b }} />
+      </div>
+    </div>
+  );
+}
+
+function CommentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden="true">
+      <path
+        d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.5 9.5 0 0 1-4-.9L3 20l1.4-5A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -56,29 +99,49 @@ export function SpacePage() {
 
   return (
     <div>
-      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-muted)] transition hover:text-fg">
+      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--color-muted)] transition hover:text-fg">
         ← spaces
       </Link>
 
       <header className="mb-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <h1 className="text-xl font-semibold text-fg">{space.name}</h1>
-        {space.description && <p className="mt-1 max-w-2xl text-sm text-[var(--color-muted)]">{space.description}</p>}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {members.map(({ org, status, role }) => (
-              <div key={org.id} className="flex items-center gap-2 rounded-md border border-[var(--color-border)] px-2 py-1 text-xs text-[var(--color-muted)]">
-                <OrgSquare org={org} />
-                <span className="text-fg">{org.name}</span>
-                <span>{role}</span>
-                <span>{status}</span>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <SpaceGlyph orgs={members.map((m) => m.org)} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-fg">{space.name}</h1>
+            {space.description && (
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)]">
+                {space.description}
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {members.map(({ org, role }) => (
+                <div
+                  key={org.id}
+                  className="flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] py-1 pl-1.5 pr-2.5 text-xs"
+                >
+                  <OrgSquare org={org} size="size-5" />
+                  <span className="text-fg">{org.name}</span>
+                  <span className="rounded-full bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--color-muted)]">
+                    {role}
+                  </span>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <input
+                  value={inviteHandle}
+                  onChange={(e) => setInviteHandle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitInvite()}
+                  placeholder="@handle"
+                  className="w-32 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-xs outline-none focus:border-accent/50"
+                />
+                <button
+                  onClick={submitInvite}
+                  className="rounded-full bg-accent px-3.5 py-1.5 text-xs font-medium text-fg transition hover:bg-accent-soft"
+                >
+                  invite org
+                </button>
               </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input value={inviteHandle} onChange={(e) => setInviteHandle(e.target.value)} placeholder="@handle" className="w-36 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50" />
-            <button onClick={submitInvite} className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-fg transition hover:bg-accent-soft">
-              invite org
-            </button>
+            </div>
           </div>
         </div>
       </header>
@@ -88,30 +151,54 @@ export function SpacePage() {
           const org = orgs.find((candidate) => candidate.id === post.orgId);
           const p = priorityStyles[post.priority];
           const snippet = post.body.length > 220 ? `${post.body.slice(0, 220).trimEnd()}…` : post.body;
+          const isPrivate = post.visibility === "org";
           return (
-            <article key={post.id} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
-                <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${p.className}`}>
-                  <span className={`size-1.5 rounded-full ${p.dot}`} />
-                  {p.label}
-                </span>
-                {org && (
-                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">
-                    <OrgSquare org={org} />
-                    {org.name}
-                  </span>
-                )}
-                <span className="rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">{post.visibility}</span>
-              </div>
-              <h2 className="text-[15px] font-semibold text-fg">{post.title}</h2>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">{snippet}</p>
-              <div className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
-                <div style={{ backgroundColor: post.authorColor }} className="flex size-5 items-center justify-center rounded-sm text-[9px] font-semibold text-fg">
-                  {post.authorInitials}
+            <article
+              key={post.id}
+              className="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${p.className}`}>
+                      <span className={`size-1.5 rounded-full ${p.dot}`} />
+                      {p.label}
+                    </span>
+                    {org && (
+                      <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">
+                        <OrgSquare org={org} size="size-4" />
+                        {org.name}
+                      </span>
+                    )}
+                    <span className="rounded-md border border-accent/30 bg-accent/5 px-1.5 py-0.5 text-accent-soft">
+                      {post.visibility}
+                    </span>
+                  </div>
+                  <h2 className="text-[15px] font-semibold text-fg">{post.title}</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">{snippet}</p>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                    <div
+                      style={{ backgroundColor: post.authorColor }}
+                      className="flex size-5 items-center justify-center rounded-sm text-[9px] font-semibold text-fg"
+                    >
+                      {post.authorInitials}
+                    </div>
+                    <span>{post.authorName}</span>
+                    <span>·</span>
+                    <span>{timeAgo(post.createdAt)}</span>
+                  </div>
                 </div>
-                <span>{post.authorName}</span>
-                <span>·</span>
-                <span>{timeAgo(post.createdAt)}</span>
+                <div className="flex shrink-0 flex-col items-end gap-3 pt-0.5 text-xs text-[var(--color-muted)]">
+                  <span className="inline-flex items-center gap-1.5 tabular-nums" title={`${post.replyCount} replies`}>
+                    <CommentIcon />
+                    {post.replyCount}
+                  </span>
+                  {isPrivate && (
+                    <span className="text-accent-soft" title="org-only">
+                      <LockIcon />
+                    </span>
+                  )}
+                </div>
               </div>
             </article>
           );

@@ -42,6 +42,7 @@ export type SpacePost = {
   body: string;
   priority: "urgent" | "high" | "normal";
   visibility: "space" | "org" | "public";
+  replyCount: number;
   createdAt: number;
 };
 
@@ -135,6 +136,7 @@ const bakedPosts: SpacePost[] = [
     body: "We found three customers where the external account id maps to multiple billing entities. Can Northwind confirm whether the canonical id should be workspace-level or contract-level before we freeze the import job?",
     priority: "high",
     visibility: "space",
+    replyCount: 3,
     createdAt: hoursAgo(2),
   },
   {
@@ -148,6 +150,7 @@ const bakedPosts: SpacePost[] = [
     body: "Staging dry run is green except for webhook replay ordering. Proposed plan: patch idempotency today, run a second dry run tomorrow morning, and keep the production cutover window on Thursday.",
     priority: "normal",
     visibility: "space",
+    replyCount: 6,
     createdAt: hoursAgo(6),
   },
   {
@@ -161,6 +164,7 @@ const bakedPosts: SpacePost[] = [
     body: "The 02:00 UTC export batch missed its delivery window. We have isolated it to a queue worker restart and are backfilling now. Please hold downstream reconciliation until we post the final checksum.",
     priority: "urgent",
     visibility: "space",
+    replyCount: 4,
     createdAt: hoursAgo(1),
   },
   {
@@ -174,6 +178,7 @@ const bakedPosts: SpacePost[] = [
     body: "We need updated seat forecasts by region before the renewal model locks. Globex can use the shared spreadsheet, but please post final assumptions here so the decision trail stays searchable.",
     priority: "normal",
     visibility: "space",
+    replyCount: 1,
     createdAt: hoursAgo(28),
   },
   {
@@ -187,6 +192,7 @@ const bakedPosts: SpacePost[] = [
     body: "Internal only: support rotation needs a second owner during Acme's launch week. Do not promise 24-hour migration coverage until we confirm staffing.",
     priority: "high",
     visibility: "org",
+    replyCount: 2,
     createdAt: hoursAgo(20),
   },
 ];
@@ -398,6 +404,7 @@ export function SpacesProvider({ children }: { children: ReactNode }) {
           body: args.body.trim(),
           priority: args.priority,
           visibility: args.visibility ?? "space",
+          replyCount: 0,
           createdAt: Date.now(),
         },
       ]);
