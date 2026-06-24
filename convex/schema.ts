@@ -57,11 +57,17 @@ export default defineSchema({
     summaryUpdatedAt: v.optional(v.number()),
     // Group B — intercompany shared spaces. When set, the post belongs to a
     // structured space (which may span multiple orgs) instead of the legacy
-    // free-text `space` label. `visibility` scopes cross-org readers.
+    // free-text `space` label. `visibility` is meaningful only alongside
+    // `spaceId` (it scopes cross-org readers); the two travel together.
     spaceId: v.optional(v.id("spaces")),
     visibility: v.optional(postVisibility),
     // Group C — per-user walls. null/undefined = normal space post; set = a
     // post written on this user's wall.
+    //
+    // INVARIANT: `spaceId` and `wallOwnerId` are mutually exclusive — a post is
+    // either a space post or a wall post, never both. Convex validators can't
+    // express cross-field constraints, so this is enforced at the write path
+    // (the session-overlay `createPost`, which only ever sets `wallOwnerId`).
     wallOwnerId: v.optional(v.id("users")),
   })
     .index("by_activity", ["lastActivityAt"])
@@ -113,6 +119,8 @@ export default defineSchema({
     .index("by_status", ["status"]),
 
   // ---- Group B: intercompany shared spaces --------------------------------
+  // `handle` must be unique (it's the @handle used for invites); `by_handle`
+  // backs both lookups and the overlay's resolve-or-create dedup.
   orgs: defineTable({
     name: v.string(),
     handle: v.string(), // @handle used to invite an external org
@@ -120,6 +128,8 @@ export default defineSchema({
     color: v.string(),
   }).index("by_handle", ["handle"]),
 
+  // `slug` must be unique (it's the /spaces/$slug route key); the overlay's
+  // createSpace de-duplicates slugs on write.
   spaces: defineTable({
     name: v.string(),
     slug: v.string(),
@@ -128,6 +138,8 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),
 
+  // At most one membership per (spaceId, orgId); `by_space_org` backs that
+  // uniqueness check (the overlay's inviteOrg rejects duplicates).
   spaceMemberships: defineTable({
     spaceId: v.id("spaces"),
     orgId: v.id("orgs"),
@@ -140,5 +152,6 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_space", ["spaceId"])
-    .index("by_org", ["orgId"]),
+    .index("by_org", ["orgId"])
+    .index("by_space_org", ["spaceId", "orgId"]),
 });

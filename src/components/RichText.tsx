@@ -25,7 +25,9 @@ export function RichText({
   className?: string;
 }) {
   const blocks: ReactNode[] = [];
-  const fence = /```([^\n`]*)\n([\s\S]*?)\n```/g;
+  // Opening fence may carry a language; closing fence's preceding newline is
+  // optional so blocks like ```js\ncode``` still match.
+  const fence = /```([^\n`]*)\n([\s\S]*?)\n?```/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 

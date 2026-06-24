@@ -12,6 +12,8 @@ const routeApi = getRouteApi("/u/$userId");
 
 export function WallPage() {
   const { userId: userIdParam } = routeApi.useParams();
+  // Router params are plain strings; cast to the Convex Id (same pattern as
+  // PostPage). An unknown id resolves to no owner and renders "user not found".
   const userId = userIdParam as Id<"users">;
   const { users } = useSession();
   const store = useStore();

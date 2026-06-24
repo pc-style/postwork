@@ -4,7 +4,7 @@ import { useSpaces, type Org } from "../lib/spaces";
 import { PRIORITIES, priorityStyles, timeAgo } from "../lib/format";
 
 type Priority = (typeof PRIORITIES)[number];
-type Visibility = "space" | "org";
+type Visibility = "space" | "org" | "public";
 
 function OrgSquare({ org }: { org: Org }) {
   return (
@@ -138,6 +138,7 @@ export function SpacePage() {
             <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none">
               <option value="space">space</option>
               <option value="org">org</option>
+              <option value="public">public</option>
             </select>
           </label>
         </div>

@@ -30,7 +30,9 @@ export function LinkedOrgsPage() {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {orgs.map((org) => {
+        {orgs
+          .filter((org) => org.id !== myOrg.id)
+          .map((org) => {
           const shared = allSpaces
             .map((space) => {
               const members = membershipsForSpace(space.id);
