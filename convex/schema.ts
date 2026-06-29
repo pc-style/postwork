@@ -38,7 +38,11 @@ export default defineSchema({
     initials: v.string(),
     // AI coding agents (Cursor, Codex, Claude Code, …) post as teammates too.
     isAgent: v.optional(v.boolean()),
-  }),
+    // Set for real, shoo-authenticated members (maps the auth identity's
+    // `subject` to a `users` doc so they can author posts/replies). Seed
+    // personas leave this undefined.
+    subject: v.optional(v.string()),
+  }).index("by_subject", ["subject"]),
 
   posts: defineTable({
     authorId: v.id("users"),
@@ -69,11 +73,16 @@ export default defineSchema({
     // express cross-field constraints, so this is enforced at the write path
     // (the session-overlay `createPost`, which only ever sets `wallOwnerId`).
     wallOwnerId: v.optional(v.id("users")),
+    // Flash-experiments discussion: when set, this post is the canonical
+    // "open discussion" thread for the experiment with this slug. One post
+    // per slug (enforced at the write path in `discussions.ts`).
+    experimentSlug: v.optional(v.string()),
   })
     .index("by_activity", ["lastActivityAt"])
     .index("by_space", ["space", "lastActivityAt"])
     .index("by_space_id", ["spaceId", "lastActivityAt"])
     .index("by_wall", ["wallOwnerId", "lastActivityAt"])
+    .index("by_experiment_slug", ["experimentSlug"])
     .searchIndex("search_body", {
       searchField: "body",
       filterFields: ["space", "priority"],

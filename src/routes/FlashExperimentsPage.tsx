@@ -13,6 +13,7 @@ import {
 } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
 import { signIn, useAuth } from "../shoo";
+import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
 
 const statusStyles: Record<ExperimentStatus, string> = {
   new: "border-accent/40 text-accent-soft",
@@ -50,6 +51,10 @@ export function FlashExperimentsPage() {
     slugs: flashExperiments.map((experiment) => experiment.slug),
   });
   const votesBySlug = new Map(votes?.map((vote) => [vote.slug, vote]));
+  const counts = useQuery(api.discussions.listCounts, {
+    slugs: flashExperiments.map((experiment) => experiment.slug),
+  });
+  const countsBySlug = new Map(counts?.map((c) => [c.slug, c]));
   const setVote = useMutation(api.flashExperiments.setVote);
   const { isLoading, isAuthenticated } = useAuth();
   const { setSlug } = useActiveExperiment();
@@ -132,6 +137,7 @@ export function FlashExperimentsPage() {
                       key={experiment.slug}
                       experiment={experiment}
                       vote={votesBySlug.get(experiment.slug)}
+                      replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
                       isLoading={isLoading}
                       isAuthenticated={isAuthenticated}
                       onVote={handleVote}
@@ -150,12 +156,14 @@ export function FlashExperimentsPage() {
 function ExperimentCard({
   experiment,
   vote,
+  replyCount,
   isLoading,
   isAuthenticated,
   onVote,
 }: {
   experiment: FlashExperiment;
   vote: VoteState | undefined;
+  replyCount: number;
   isLoading: boolean;
   isAuthenticated: boolean;
   onVote: (slug: string, next: "up" | "down") => void;
@@ -248,6 +256,14 @@ function ExperimentCard({
           </VoteButton>
         </div>
       </div>
+
+      <ExperimentDiscussion
+        slug={experiment.slug}
+        title={experiment.title}
+        replyCount={replyCount}
+        isAuthenticated={isAuthenticated}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
