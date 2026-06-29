@@ -35,6 +35,7 @@ export const focusedComposer: FlashExperiment = {
     "Reskin the post-detail composer as a framed callout that signals the thread is waiting on you, while keeping the real composer inside.",
   requestedBy: "response-time review",
   status: "new",
+  category: "testing",
   slots: ["composer"],
   notes: [
     "wraps the real <Composer> so reply + @agent summon still work",

@@ -84,6 +84,7 @@ export const wideReviewShell: FlashExperiment = {
     "Give experiment review more horizontal room so the app feels like a flow board instead of a narrow feed.",
   requestedBy: "layout discussion",
   status: "new",
+  category: "testing",
   slots: ["app-shell"],
   notes: [
     "replaces the whole app shell",

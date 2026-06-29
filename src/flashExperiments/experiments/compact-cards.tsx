@@ -46,6 +46,7 @@ export const compactCards: FlashExperiment = {
     "Collapse each post into a single scannable line — priority dot, title, space, reply count and last activity — so the feed reads like a triage list.",
   requestedBy: "triage workflow",
   status: "liked",
+  category: "testing",
   slots: ["postCard"],
   notes: [
     "overrides only the feed item; the real feed, filters and navigation stay",

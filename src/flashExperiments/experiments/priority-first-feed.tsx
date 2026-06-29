@@ -48,6 +48,7 @@ export const priorityFirstFeed: FlashExperiment = {
     "Make priority and unread state feel like the primary navigation model, not secondary filters.",
   requestedBy: "flow review",
   status: "new",
+  category: "testing",
   slots: ["feedHeader"],
   notes: [
     "keeps the real app shell and feed",
