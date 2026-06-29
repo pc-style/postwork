@@ -1,4 +1,3 @@
-import { ExperimentApp } from "../ExperimentApp";
 import type { FlashExperiment } from "../registry";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Composer } from "../../components/Composer";
@@ -42,9 +41,5 @@ export const focusedComposer: FlashExperiment = {
     "accent frame nudges a response without changing post detail layout",
     "autoFocus lands the cursor in the reply field on open",
   ],
-  render: () => (
-    <ExperimentApp
-      slots={{ composer: ({ postId }) => <FocusedComposer postId={postId} /> }}
-    />
-  ),
+  appSlots: { composer: ({ postId }) => <FocusedComposer postId={postId} /> },
 };

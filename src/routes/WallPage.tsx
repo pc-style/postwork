@@ -8,7 +8,7 @@ import { WallPostDialog } from "../components/WallPostDialog";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 
-const routeApi = getRouteApi("/u/$userId");
+const routeApi = getRouteApi("/app/u/$userId");
 
 export function WallPage() {
   const { userId: userIdParam } = routeApi.useParams();

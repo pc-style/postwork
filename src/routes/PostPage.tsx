@@ -10,13 +10,15 @@ import { timeAgo, priorityStyles } from "../lib/format";
 import { AgentTag } from "../components/AgentTag";
 import { RichText } from "../components/RichText";
 import { AgentTasksPanel } from "../components/AgentTasksPanel";
+import { useActiveExperiment } from "../flashExperiments/active";
 
-const routeApi = getRouteApi("/posts/$postId");
+const routeApi = getRouteApi("/app/posts/$postId");
 
 export function PostPage() {
   const { postId: postIdParam } = routeApi.useParams();
   const postId = postIdParam as Id<"posts">;
   const store = useStore();
+  const { slots } = useActiveExperiment();
 
   const post = store.usePost(postId);
   const replies = store.useReplies(postId);
@@ -59,6 +61,9 @@ export function PostPage() {
         ← feed
       </Link>
 
+      {slots.post ? (
+        slots.post({ postId: post._id })
+      ) : (
       <article className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
         <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px]">
           {post.pinned && (
@@ -104,16 +109,25 @@ export function PostPage() {
           <AgentTasksPanel postId={post._id} />
         </div>
       </article>
+      )}
 
       <div className="mt-6">
         <h2 className="mb-1 text-sm font-semibold text-[var(--color-muted)]">
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
-        <ReplyTree replies={replies ?? []} postId={post._id} />
+        {slots.replies ? (
+          slots.replies({ postId: post._id })
+        ) : (
+          <ReplyTree replies={replies ?? []} postId={post._id} />
+        )}
       </div>
 
       <div className="mt-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <Composer postId={post._id} placeholder="add to the discussion…" />
+        {slots.composer ? (
+          slots.composer({ postId: post._id })
+        ) : (
+          <Composer postId={post._id} placeholder="add to the discussion…" />
+        )}
       </div>
     </div>
   );

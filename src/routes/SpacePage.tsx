@@ -62,7 +62,7 @@ function LockIcon() {
 }
 
 export function SpacePage() {
-  const { slug } = getRouteApi("/spaces/$slug").useParams();
+  const { slug } = getRouteApi("/app/spaces/$slug").useParams();
   const { orgs, spaceBySlug, membershipsForSpace, inviteOrg, feedForSpace, postToSpace } = useSpaces();
   const [inviteHandle, setInviteHandle] = useState("");
   const [title, setTitle] = useState("");

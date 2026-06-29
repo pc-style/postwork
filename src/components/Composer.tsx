@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
@@ -32,6 +32,13 @@ export function Composer({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus via effect rather than the `autoFocus` prop so cold-load restores
+  // (e.g. a flash experiment rehydrated from sessionStorage that mounts the
+  // composer after the initial render) still land the cursor in the field.
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
 
   // Live preview of which agents this message will summon.
   const mentioned = parseAgentMentions(body);
@@ -91,7 +98,6 @@ export function Composer({
         <textarea
           ref={textareaRef}
           value={body}
-          autoFocus={autoFocus}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();

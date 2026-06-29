@@ -1,4 +1,3 @@
-import { ExperimentApp } from "../ExperimentApp";
 import type { FlashExperiment } from "../registry";
 import type { EnrichedPost } from "../../lib/types";
 import { timeAgo, priorityStyles } from "../../lib/format";
@@ -49,13 +48,9 @@ export const compactCards: FlashExperiment = {
   status: "liked",
   slots: ["postCard"],
   notes: [
-    "overrides only the feed item, reusing the default feed and navigation",
+    "overrides only the feed item; the real feed, filters and navigation stay",
     "uses priorityStyles dots and timeAgo from src/lib/format",
     "density tradeoff: drops body snippet and avatars for line height",
   ],
-  render: () => (
-    <ExperimentApp
-      slots={{ postCard: ({ post }) => <CompactCard post={post} /> }}
-    />
-  ),
+  appSlots: { postCard: ({ post }) => <CompactCard post={post} /> },
 };

@@ -1,35 +1,43 @@
-import { FeedPage } from "../../routes/FeedPage";
-import { ExperimentApp } from "../ExperimentApp";
+import { Link } from "@tanstack/react-router";
 import type { FlashExperiment } from "../registry";
 
-export function PriorityFirstFeedExperiment() {
+const ENTRY_POINTS: { label: string; detail: string }[] = [
+  ["urgent", "2 need a decision"],
+  ["high", "4 active threads"],
+  ["unread", "9 updates"],
+].map(([label, detail]) => ({ label, detail }));
+
+function PriorityFirstHeader() {
   return (
-    <div className="space-y-4">
-      <section className="rounded-lg border border-accent/30 bg-accent/10 p-4">
-        <div className="text-xs text-accent-soft">proposed flow</div>
-        <h1 className="mt-1 text-xl font-semibold text-fg">start from what needs attention</h1>
-        <p className="mt-2 text-sm text-[var(--color-muted)]">
-          This experiment would make urgent, high-priority, and unread work the
-          first-class entry points before the chronological feed.
-        </p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {[
-            ["urgent", "2 need a decision"],
-            ["high", "4 active threads"],
-            ["unread", "9 updates"],
-          ].map(([label, detail]) => (
-            <button
-              key={label}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left transition hover:border-accent/40"
-            >
-              <div className="text-sm text-fg">{label}</div>
-              <div className="mt-1 text-xs text-[var(--color-muted)]">{detail}</div>
-            </button>
-          ))}
-        </div>
-      </section>
-      <FeedPage />
-    </div>
+    <section className="mb-4 rounded-lg border border-accent/30 bg-accent/10 p-4">
+      <div className="flex items-center justify-between gap-2 text-xs text-accent-soft">
+        <span>proposed flow</span>
+        <span className="rounded-md border border-accent/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+          preview
+        </span>
+      </div>
+      <h1 className="mt-1 text-xl font-semibold text-fg">
+        start from what needs attention
+      </h1>
+      <p className="mt-2 text-sm text-[var(--color-muted)]">
+        This experiment would make urgent, high-priority, and unread work the
+        first-class entry points before the chronological feed. The cards below
+        drop you into the real feed — the filtering proposal itself is what's
+        under review.
+      </p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {ENTRY_POINTS.map(({ label, detail }) => (
+          <Link
+            key={label}
+            to="/"
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]"
+          >
+            <div className="text-sm text-fg">{label}</div>
+            <div className="mt-1 text-xs text-[var(--color-muted)]">{detail}</div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -40,11 +48,11 @@ export const priorityFirstFeed: FlashExperiment = {
     "Make priority and unread state feel like the primary navigation model, not secondary filters.",
   requestedBy: "flow review",
   status: "new",
-  slots: ["feed"],
+  slots: ["feedHeader"],
   notes: [
-    "keeps the normal app shell",
-    "changes only the feed surface",
-    "use this as the pattern for slot-level overrides",
+    "keeps the real app shell and feed",
+    "adds a priority-first header above the chronological feed",
+    "entry-point cards link back into the real feed; per-filter routing is a follow-up",
   ],
-  render: () => <ExperimentApp slots={{ feed: <PriorityFirstFeedExperiment /> }} />,
+  appSlots: { feedHeader: <PriorityFirstHeader /> },
 };

@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  Outlet,
 } from "@tanstack/react-router";
 import { RootLayout } from "./routes/RootLayout";
 import { FeedPage } from "./routes/FeedPage";
@@ -14,83 +15,88 @@ import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
 
-const rootRoute = createRootRoute({ component: RootLayout });
+// Pass-through root: global providers live in main.tsx, so the root just
+// renders whatever route matched. This lets the experiment preview opt out of
+// the app chrome (see appLayoutRoute below).
+const rootRoute = createRootRoute({ component: Outlet });
+
+// Pathless layout route that paints the normal postwork chrome (header, nav,
+// new-post, user switcher). Every "real app" route lives under here.
+const appLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "app",
+  component: RootLayout,
+});
 
 const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/",
   component: FeedPage,
 });
 
 const postRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/posts/$postId",
   component: PostPage,
 });
 
 const agentsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/agents",
   component: AgentsPage,
 });
 
 const spacesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/spaces",
   component: SpacesPage,
 });
 
 const spaceRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/spaces/$slug",
   component: SpacePage,
 });
 
 const orgsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/orgs",
   component: LinkedOrgsPage,
 });
 
 const wallRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/u/$userId",
   component: WallPage,
 });
 
 const flashExperimentsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/flash-experiments",
   component: FlashExperimentsPage,
 });
 
-export type FlashExperimentView = "experiment" | "baseline";
-
-type FlashExperimentSearch = {
-  // optional so links to this route don't have to pass `view`; the page
-  // defaults a missing value to "experiment" and only writes "baseline"
-  // into the URL, keeping the default view's URL clean and shareable.
-  view?: FlashExperimentView;
-};
-
+// The experiment preview lives under the app layout so it renders the *real*
+// shell. Entering it activates the experiment (see FlashExperimentPage); the
+// override then stays applied as you navigate the real feed → post → reply.
 const flashExperimentRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/flash-experiments/$slug",
   component: FlashExperimentPage,
-  validateSearch: (search: Record<string, unknown>): FlashExperimentSearch =>
-    search.view === "baseline" ? { view: "baseline" } : {},
 });
 
 const routeTree = rootRoute.addChildren([
-  indexRoute,
-  postRoute,
-  agentsRoute,
-  spacesRoute,
-  spaceRoute,
-  orgsRoute,
-  wallRoute,
-  flashExperimentsRoute,
-  flashExperimentRoute,
+  appLayoutRoute.addChildren([
+    indexRoute,
+    postRoute,
+    agentsRoute,
+    spacesRoute,
+    spaceRoute,
+    orgsRoute,
+    wallRoute,
+    flashExperimentsRoute,
+    flashExperimentRoute,
+  ]),
 ]);
 
 export const router = createRouter({ routeTree });

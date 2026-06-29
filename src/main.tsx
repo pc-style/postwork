@@ -8,6 +8,7 @@ import { StoreProvider } from "./lib/store";
 import { AgentTasksProvider } from "./lib/agentTasks";
 import { SpacesProvider } from "./lib/spaces";
 import { router } from "./router";
+import { ExperimentProvider } from "./flashExperiments/active";
 import { useAuth } from "./shoo";
 import "@fontsource-variable/inter/index.css";
 import "./index.css";
@@ -19,7 +20,9 @@ createRoot(document.getElementById("root")!).render(
         <StoreProvider>
           <AgentTasksProvider>
             <SpacesProvider>
-              <RouterProvider router={router} />
+              <ExperimentProvider>
+                <RouterProvider router={router} />
+              </ExperimentProvider>
             </SpacesProvider>
           </AgentTasksProvider>
         </StoreProvider>

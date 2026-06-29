@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
 import { PostCard } from "../components/PostCard";
 import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
+import { useActiveExperiment } from "../flashExperiments/active";
 
 export function FeedPage() {
   const store = useStore();
+  const { slots } = useActiveExperiment();
   const [term, setTerm] = useState("");
   const [space, setSpace] = useState<string | null>(null);
   const [priority, setPriority] = useState<string | null>(null);
@@ -23,6 +26,8 @@ export function FeedPage() {
 
   return (
     <div>
+      {slots.feedHeader}
+
       <div className="mb-4">
         <div className="relative">
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-semibold text-accent-soft">
@@ -104,9 +109,20 @@ export function FeedPage() {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {posts.map((post) => (
-            <PostCard key={post._id} post={post} />
-          ))}
+          {posts.map((post) =>
+            slots.postCard ? (
+              <Link
+                key={post._id}
+                to="/posts/$postId"
+                params={{ postId: post._id }}
+                className="block"
+              >
+                {slots.postCard({ post })}
+              </Link>
+            ) : (
+              <PostCard key={post._id} post={post} />
+            ),
+          )}
         </div>
       )}
     </div>
