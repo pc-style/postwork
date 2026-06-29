@@ -19,3 +19,10 @@ dist
 .amp
 .pi
 .impeccable
+.aden
+.adenignore
+.agent
+.context
+
+# Local test artifacts / generated outputs
+artifacts
