@@ -5,11 +5,12 @@
 # scratch only if the orb was reset to the base image.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+. ./.agents/lib.sh
 
 # Node normally persists from `setup`; fall back to a full setup if it doesn't.
-if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>20||(a===20&&b>=19)?0:1)' 2>/dev/null; then
+if ! node_ok; then
   echo "==> node missing/too old; running full setup"
-  exec "$(dirname "$0")/setup"
+  exec bash ./.agents/setup
 fi
 echo "==> node $(node --version)"
 
