@@ -1,6 +1,6 @@
 import { action, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { generateText, type LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -25,16 +25,28 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
 
   if (provider === "gateway") {
     const apiKey = process.env.AI_GATEWAY_API_KEY;
-    if (!apiKey) throw new Error("AI_GATEWAY_API_KEY is not set");
+    if (!apiKey)
+      throw new ConvexError({
+        code: "NO_AI_KEY",
+        message: "AI_GATEWAY_API_KEY is not set",
+      });
     const modelId = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-5.4-mini";
     return { model: createGateway({ apiKey })(modelId), modelId };
   }
 
   if (provider === "pioneer") {
     const apiKey = process.env.PIONEER_API_KEY;
-    if (!apiKey) throw new Error("PIONEER_API_KEY is not set");
+    if (!apiKey)
+      throw new ConvexError({
+        code: "NO_AI_KEY",
+        message: "PIONEER_API_KEY is not set",
+      });
     const modelId = process.env.PIONEER_MODEL;
-    if (!modelId) throw new Error("PIONEER_MODEL is not set");
+    if (!modelId)
+      throw new ConvexError({
+        code: "NO_AI_KEY",
+        message: "PIONEER_MODEL is not set",
+      });
     const pioneer = createOpenAICompatible({
       name: "pioneer",
       baseURL: process.env.PIONEER_BASE_URL ?? "https://api.pioneer.ai/v1",
@@ -47,7 +59,11 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
 
   // Default: OpenAI directly.
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+  if (!apiKey)
+    throw new ConvexError({
+      code: "NO_AI_KEY",
+      message: "OPENAI_API_KEY is not set",
+    });
   const modelId = process.env.OPENAI_MODEL ?? "gpt-5.4-mini";
   return { model: createOpenAI({ apiKey })(modelId), modelId };
 }
