@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Bring an existing Postwork orb back to a working state after reconnecting.
+# Fast and idempotent: the orb filesystem persists between sessions, so this
+# only re-syncs what may have drifted (dependencies), and re-provisions from
+# scratch only if the orb was reset to the base image.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# Node normally persists from `setup`; fall back to a full setup if it doesn't.
+if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>20||(a===20&&b>=19)?0:1)' 2>/dev/null; then
+  echo "==> node missing/too old; running full setup"
+  exec "$(dirname "$0")/setup"
+fi
+echo "==> node $(node --version)"
+
+# Cheap when the lockfile is unchanged; re-syncs after a rebase/pull that
+# touched package.json or bun.lock.
+echo "==> syncing dependencies (bun)"
+bun install
+
+echo
+echo "resume ready. start the app with:  bun run dev"
