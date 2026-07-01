@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Provision a fresh Postwork orb. Runs once, when the orb is created.
+#
+# What it does:
+#   1. Installs a Node the toolchain actually supports (the base orb ships an
+#      older Node than Vite 8 / the Convex CLI require).
+#   2. Installs JS dependencies with Bun.
+#   3. Runs the canonical check (tsc -b && vite build) so the orb is verified
+#      working before you touch it.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+. ./.agents/lib.sh
+
+# Vite 8 and the Convex CLI need Node ^20.19.0 or >=22.12.0; the base orb image is older,
+# which makes `bun run build`/`dev` crash on a missing node:util export.
+NODE_VERSION=22.14.0
+if ! node_ok; then
+  echo "==> installing node ${NODE_VERSION} (base orb Node is too old for the toolchain)"
+  case "$(uname -m)" in
+    x86_64) node_arch=x64 ;;
+    aarch64|arm64) node_arch=arm64 ;;
+    *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+  esac
+  node_dir="node-v${NODE_VERSION}-linux-${node_arch}"
+  tmp="$(mktemp -d)"
+  curl -fsSLO --output-dir "$tmp" "https://nodejs.org/dist/v${NODE_VERSION}/SHASUMS256.txt"
+  curl -fsSLO --output-dir "$tmp" "https://nodejs.org/dist/v${NODE_VERSION}/${node_dir}.tar.xz"
+  (cd "$tmp" && grep " ${node_dir}.tar.xz$" SHASUMS256.txt | sha256sum -c -)
+  tar -xJf "$tmp/${node_dir}.tar.xz" -C "$tmp"
+  sudo cp -f "$tmp/${node_dir}/bin/node" /usr/local/bin/node
+  rm -rf "$tmp"
+  hash -r
+  if [[ "$(command -v node)" != "/usr/local/bin/node" ]]; then
+    echo "installed node to /usr/local/bin/node, but PATH resolves node to $(command -v node)" >&2
+    exit 1
+  fi
+fi
+echo "==> node $(node --version)"
+
+echo "==> installing dependencies (bun)"
+bun install
+
+# Type-checks the frontend AND convex/*.ts (via the committed _generated types)
+# and produces dist/. This is the project's canonical green-build check.
+echo "==> verifying build"
+bun run build
+
+echo
+echo "setup complete. start the app with:  bun run dev"
+echo "  (frontend only, if the Convex dev backend can't auth:  bun run dev:web)"
