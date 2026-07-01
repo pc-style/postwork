@@ -1,20 +1,26 @@
 import { type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
+import { type FeedSearch } from "../router";
 import { UserSwitcher } from "./UserSwitcher";
 
-const NAV_ITEMS = [
-  { label: "home", to: "/" },
-  { label: "priority", to: "/" },
+// "priority" is the urgent triage view of the same feed — a genuine shortcut,
+// not a duplicate of "home". Both point at "/" but carry different search.
+const ROUTE_NAV = [
   { label: "spaces", to: "/spaces" },
   { label: "agents", to: "/agents" },
   { label: "orgs", to: "/orgs" },
   { label: "experiments", to: "/flash-experiments" },
 ] as const;
 
+const ACTIVE = "bg-[var(--color-surface)] text-accent-soft";
+
 export function AppShell({ children }: { children: ReactNode }) {
   const store = useStore();
   const counts = store.useCounts();
+  const feedPriority = useRouterState({
+    select: (s) => (s.location.search as Partial<FeedSearch>).priority,
+  });
 
   return (
     <div className="min-h-full">
@@ -25,11 +31,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="space-y-1 text-sm text-[var(--color-muted)]">
-            {NAV_ITEMS.map((item) => (
+            <Link
+              to="/"
+              search={{}}
+              className={`block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg ${
+                !feedPriority ? ACTIVE : ""
+              }`}
+            >
+              home
+            </Link>
+            <Link
+              to="/"
+              search={{ priority: "urgent" }}
+              className={`block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg ${
+                feedPriority === "urgent" ? ACTIVE : ""
+              }`}
+            >
+              priority
+            </Link>
+            {ROUTE_NAV.map((item) => (
               <Link
                 key={item.label}
                 to={item.to}
-                className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg [&.active]:text-accent-soft"
+                className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg [&.active]:bg-[var(--color-surface)] [&.active]:text-accent-soft"
               >
                 {item.label}
               </Link>

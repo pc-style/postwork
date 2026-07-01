@@ -5,7 +5,6 @@ import { ConvexError } from "convex/values";
 import { api } from "../../convex/_generated/api";
 import {
   flashExperiments,
-  experimentsByCategory,
   EXPERIMENT_CATEGORY_ORDER,
   type ExperimentStatus,
   type ExperimentCategory,
@@ -47,13 +46,23 @@ type VoteState = {
   viewerVote?: "up" | "down" | null;
 };
 
+// Shipped experiments graduate out of the lab list into a compact "implemented"
+// archive row: no votes, no open discussion, no slot chips — just a title, an
+// implemented badge, and a link to still preview them.
+const activeExperiments = flashExperiments.filter(
+  (experiment) => experiment.status !== "shipped",
+);
+const implementedExperiments = flashExperiments.filter(
+  (experiment) => experiment.status === "shipped",
+);
+
 export function FlashExperimentsPage() {
   const votes = useQuery(api.flashExperiments.listVotes, {
-    slugs: flashExperiments.map((experiment) => experiment.slug),
+    slugs: activeExperiments.map((experiment) => experiment.slug),
   });
   const votesBySlug = new Map(votes?.map((vote) => [vote.slug, vote]));
   const counts = useQuery(api.discussions.listCounts, {
-    slugs: flashExperiments.map((experiment) => experiment.slug),
+    slugs: activeExperiments.map((experiment) => experiment.slug),
   });
   const countsBySlug = new Map(counts?.map((c) => [c.slug, c]));
   const setVote = useMutation(api.flashExperiments.setVote);
@@ -111,8 +120,11 @@ export function FlashExperimentsPage() {
         </header>
 
         {EXPERIMENT_CATEGORY_ORDER.map((category) => {
-          const items = experimentsByCategory(category);
+          const items = activeExperiments.filter(
+            (experiment) => experiment.category === category,
+          );
           const meta = categoryMeta[category];
+          if (items.length === 0) return null;
           return (
             <section key={category} className="space-y-3">
               <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--color-border)] pb-2">
@@ -149,6 +161,28 @@ export function FlashExperimentsPage() {
             </section>
           );
         })}
+
+        {implementedExperiments.length > 0 && (
+          <section className="space-y-2">
+            <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--color-border)] pb-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold lowercase tracking-wide text-fg">
+                implemented
+                <span className="text-[var(--color-muted)]">
+                  ({implementedExperiments.length})
+                </span>
+              </h2>
+              <p className="text-right text-[11px] text-[var(--color-muted)]">
+                community suggestions that shipped — now part of the default
+                app. discussion closed.
+              </p>
+            </div>
+            <div className="grid gap-1.5">
+              {implementedExperiments.map((experiment) => (
+                <ImplementedRow key={experiment.slug} experiment={experiment} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
@@ -295,5 +329,50 @@ function VoteButton({
     >
       {children}
     </button>
+  );
+}
+
+function ImplementedBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium lowercase text-accent-soft">
+      <svg viewBox="0 0 24 24" fill="none" className="size-2.5" aria-hidden="true">
+        <path
+          d="M5 13l4 4L19 7"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      implemented
+    </span>
+  );
+}
+
+function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
+  const { suggestion } = experiment;
+  return (
+    <Link
+      to="/flash-experiments/$slug"
+      params={{ slug: experiment.slug }}
+      title={experiment.summary}
+      className="group flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3 py-2 transition hover:border-accent/40 hover:bg-[var(--color-surface)]"
+    >
+      <ImplementedBadge />
+      <span className="shrink-0 truncate text-sm font-medium lowercase text-fg">
+        {experiment.title}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-xs text-[var(--color-muted)]">
+        {experiment.summary}
+      </span>
+      {suggestion && (
+        <span className="hidden shrink-0 text-[11px] text-[var(--color-muted)] sm:inline">
+          {suggestion.name}
+        </span>
+      )}
+      <span className="shrink-0 text-xs text-accent-soft transition group-hover:translate-x-0.5">
+        →
+      </span>
+    </Link>
   );
 }
