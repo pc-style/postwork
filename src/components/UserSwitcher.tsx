@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
+import { usePopoverDismiss } from "../lib/usePopoverDismiss";
 import { Avatar } from "./Avatar";
 import { AgentTag } from "./AgentTag";
 import { UserRoleTag } from "./UserRoleTag";
@@ -10,14 +11,7 @@ export function UserSwitcher() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+  usePopoverDismiss(ref, () => setOpen(false));
 
   if (!currentUser) return null;
 
@@ -25,6 +19,8 @@ export function UserSwitcher() {
     <div className="relative shrink-0" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pr-2.5 pl-1.5 transition hover:bg-[var(--color-surface-2)]"
       >
         <Avatar user={currentUser} size={28} />
@@ -37,7 +33,7 @@ export function UserSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+        <div className="absolute right-0 bottom-full z-20 mb-2 w-64 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
           <div className="border-b border-[var(--color-border)] px-3 py-2 text-[11px] font-medium text-[var(--color-muted)]">
             view as teammate
           </div>

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AGENT_HANDLES, resolveAgentUser } from "../lib/agentMentions";
 import { useAgentTasks } from "../lib/agentTasks";
 import { useSession } from "../lib/session";
+import { usePopoverDismiss } from "../lib/usePopoverDismiss";
 
 export function SendAgentButton({
   postId,
@@ -16,6 +17,9 @@ export function SendAgentButton({
   const { users } = useSession();
   const { dispatch } = useAgentTasks();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  usePopoverDismiss(ref, () => setOpen(false));
 
   const send = async (handle: string) => {
     const agent = resolveAgentUser(handle, users);
@@ -32,9 +36,11 @@ export function SendAgentButton({
   };
 
   return (
-    <span className="relative inline-block">
+    <span className="relative inline-block" ref={ref}>
       <button
         onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="text-xs text-[var(--color-muted)] transition hover:text-accent-soft"
       >
         send agent →
