@@ -18,7 +18,6 @@ export const centeredRail: FlashExperiment = {
     handle: "@Galicius315715",
     link: "https://x.com/Galicius315715/status/2071353160166232304",
   },
-  slots: ["app-shell"],
   notes: [
     "graduated — now the default experience",
     "replaces the whole app shell with a three-column layout",

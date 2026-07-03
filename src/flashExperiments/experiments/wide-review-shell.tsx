@@ -84,7 +84,6 @@ export const wideReviewShell: FlashExperiment = {
   requestedBy: "layout discussion",
   status: "rejected",
   category: "testing",
-  slots: ["app-shell"],
   notes: [
     "deprecated — superseded by the shipped centered reading column (community); a second full-shell rail layout is redundant",
     "replaces the whole app shell",

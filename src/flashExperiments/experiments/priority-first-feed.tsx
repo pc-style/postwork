@@ -49,7 +49,6 @@ export const priorityFirstFeed: FlashExperiment = {
   requestedBy: "flow review",
   status: "rejected",
   category: "testing",
-  slots: ["feedHeader"],
   notes: [
     "deprecated — the entry cards do not actually filter (they link to / and no-op) and the real feed already has priority filter chips; not worth shipping as-is",
     "keeps the real app shell and feed",

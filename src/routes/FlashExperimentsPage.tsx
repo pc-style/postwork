@@ -8,12 +8,17 @@ import {
   EXPERIMENT_CATEGORY_ORDER,
   type ExperimentStatus,
   type ExperimentCategory,
+  type ExperimentSlot,
   type FlashExperiment,
 } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
 import { signIn, useAuth } from "../shoo";
 import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
+
+const SLOT_LABELS: Partial<Record<ExperimentSlot, string>> = {
+  shell: "app-shell",
+};
 
 const statusStyles: Record<ExperimentStatus, string> = {
   new: "border-accent/40 text-accent-soft",
@@ -214,12 +219,12 @@ function ExperimentCard({
             {experiment.status}
           </span>
           <span className="text-faint">·</span>
-          {experiment.slots.map((slot) => (
+          {Object.keys(experiment.appSlots).map((slot) => (
             <span
               key={slot}
               className="rounded-md border border-border bg-bg px-1.5 py-0.5 tracking-tight"
             >
-              {slot}
+              {SLOT_LABELS[slot as ExperimentSlot] ?? slot}
             </span>
           ))}
         </div>

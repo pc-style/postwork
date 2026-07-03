@@ -18,7 +18,6 @@ export const inlineBottomComposer: FlashExperiment = {
     handle: "@HiteshRohira15",
     link: "https://x.com/HiteshRohira15/status/2071356370302218327",
   },
-  slots: ["feedHeader"],
   notes: [
     "graduated — now the default experience",
     "renders a fixed quick-post bar docked at the bottom of the viewport",

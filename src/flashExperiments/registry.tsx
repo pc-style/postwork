@@ -9,15 +9,7 @@ import type { ExperimentSlots } from "./slots";
 
 export type { ExperimentSlots } from "./slots";
 
-export type ExperimentSlot =
-  | "app-shell"
-  | "nav"
-  | "sidebar"
-  | "feedHeader"
-  | "postCard"
-  | "post"
-  | "replies"
-  | "composer";
+export type ExperimentSlot = keyof ExperimentSlots;
 export type ExperimentStatus =
   | "new"
   | "reviewing"
@@ -53,8 +45,6 @@ export type FlashExperiment = {
   category: ExperimentCategory;
   /** Present for community experiments: who suggested it and where. */
   suggestion?: ExperimentSuggestion;
-  /** Display tags for the lab list. */
-  slots: ExperimentSlot[];
   notes: string[];
   /** The actual overrides patched into the real app while this is active. */
   appSlots: ExperimentSlots;

@@ -107,7 +107,6 @@ export const railNav: FlashExperiment = {
   requestedBy: "navigation review",
   status: "rejected",
   category: "testing",
-  slots: ["sidebar"],
   notes: [
     "deprecated — the shipped centered reading column already promotes inbox/priority/spaces/agents to a persistent left rail",
     "switches the real shell into its two-column path",

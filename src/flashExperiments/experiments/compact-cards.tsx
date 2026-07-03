@@ -47,7 +47,6 @@ export const compactCards: FlashExperiment = {
   requestedBy: "triage workflow",
   status: "liked",
   category: "testing",
-  slots: ["postCard"],
   notes: [
     "overrides only the feed item; the real feed, filters and navigation stay",
     "uses priorityStyles dots and timeAgo from src/lib/format",

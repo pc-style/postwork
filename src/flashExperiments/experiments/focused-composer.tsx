@@ -36,7 +36,6 @@ export const focusedComposer: FlashExperiment = {
   requestedBy: "response-time review",
   status: "new",
   category: "testing",
-  slots: ["composer"],
   notes: [
     "wraps the real <Composer> so reply + @agent summon still work",
     "accent frame nudges a response without changing post detail layout",
