@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { useSpaces, type Org } from "../lib/spaces";
-import { PRIORITIES, priorityStyles, timeAgo, titleCase } from "../lib/format";
+import { priorityStyles, timeAgo, titleCase } from "../lib/format";
 import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
 import { priorityTones } from "../components/PostMetaChips";
+import { PostForm } from "../components/PostForm";
 
-type Priority = (typeof PRIORITIES)[number];
 type Visibility = "space" | "org" | "public";
 
 function OrgSquare({ org, size = "size-6" }: { org: Org; size?: string }) {
@@ -68,9 +68,6 @@ export function SpacePage() {
   const { slug } = getRouteApi("/app/spaces/$slug").useParams();
   const { orgs, spaceBySlug, membershipsForSpace, inviteOrg, feedForSpace, postToSpace } = useSpaces();
   const [inviteHandle, setInviteHandle] = useState("");
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [priority, setPriority] = useState<Priority>("normal");
   const [visibility, setVisibility] = useState<Visibility>("space");
 
   const space = spaceBySlug(slug);
@@ -89,15 +86,6 @@ export function SpacePage() {
     if (!inviteHandle.trim()) return;
     inviteOrg(space.id, inviteHandle);
     setInviteHandle("");
-  };
-
-  const submitPost = () => {
-    if (!title.trim() || !body.trim()) return;
-    postToSpace({ spaceId: space.id, title, body, priority, visibility });
-    setTitle("");
-    setBody("");
-    setPriority("normal");
-    setVisibility("space");
   };
 
   return (
@@ -204,33 +192,29 @@ export function SpacePage() {
 
       <section className="mt-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="mb-3 text-sm font-semibold text-fg">post to space</h2>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="title" className="mb-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-sm font-medium outline-none focus:border-accent/50" />
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5} placeholder="share context for both orgs…" className="mb-3 w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
-        <div className="mb-4 flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--color-muted)]">priority</span>
-            <div className="flex gap-1">
-              {PRIORITIES.map((pr) => (
-                <button key={pr} onClick={() => setPriority(pr)} className={`rounded-md border px-2.5 py-1 text-xs lowercase transition ${priority === pr ? priorityStyles[pr].className : "border-[var(--color-border)] text-[var(--color-muted)] hover:text-fg"}`}>
-                  {pr}
-                </button>
-              ))}
-            </div>
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--color-muted)]">visibility</span>
-            <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50">
-              <option value="space">space</option>
-              <option value="org">org</option>
-              <option value="public">public</option>
-            </select>
-          </label>
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={submitPost} disabled={!title.trim() || !body.trim()}>
-            post
-          </Button>
-        </div>
+        <PostForm
+          titlePlaceholder="title"
+          bodyPlaceholder="share context for both orgs…"
+          onCancel={() => setVisibility("space")}
+          extraFields={
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-[var(--color-muted)]">visibility</span>
+              <select
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as Visibility)}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
+              >
+                <option value="space">space</option>
+                <option value="org">org</option>
+                <option value="public">public</option>
+              </select>
+            </label>
+          }
+          onSubmit={({ title, body, priority }) => {
+            postToSpace({ spaceId: space.id, title, body, priority, visibility });
+            setVisibility("space");
+          }}
+        />
       </section>
     </div>
   );

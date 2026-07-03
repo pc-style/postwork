@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
-import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
+import { SPACES, PRIORITIES } from "../lib/format";
 import { Button } from "./Button";
+import { PriorityPicker } from "./PostForm";
 
 function ChevronUpIcon({ className = "" }: { className?: string }) {
   return (
@@ -237,21 +238,7 @@ export function QuickPostBar() {
 
               <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
                 priority
-                <div className="flex gap-1">
-                  {PRIORITIES.map((pr) => (
-                    <button
-                      key={pr}
-                      onClick={() => setPriority(pr)}
-                      className={`rounded-md border px-2 py-0.5 text-xs lowercase transition ${
-                        priority === pr
-                          ? priorityStyles[pr].className
-                          : "border-[var(--color-border)] text-[var(--color-muted)] hover:text-fg"
-                      }`}
-                    >
-                      {pr}
-                    </button>
-                  ))}
-                </div>
+                <PriorityPicker priority={priority} onChange={setPriority} />
               </div>
 
               <button
