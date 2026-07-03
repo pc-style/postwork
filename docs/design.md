@@ -79,7 +79,8 @@ components:
   card-post-hover:
     backgroundColor: "{colors.surface-2}"
   agent-summary:
-    backgroundColor: "{colors.deep-wine}"
+    borderColor: "{colors.deep-wine} / 25%"
+    backgroundColor: "{colors.deep-wine} / 6%"
     textColor: "{colors.wine-glow}"
     rounded: "{rounded.lg}"
     padding: "16px"
@@ -88,7 +89,8 @@ components:
     padding: "2px 6px"
     typography: "{typography.label}"
   tag-scope:
-    backgroundColor: "{colors.deep-wine}"
+    borderColor: "{colors.deep-wine} / 30%"
+    backgroundColor: "{colors.deep-wine} / 10%"
     textColor: "{colors.wine-glow}"
     rounded: "{rounded.md}"
     padding: "2px 6px"
@@ -161,8 +163,8 @@ of signal; everything else is a tonal neutral.
 
 ### Neutral
 
-- **Near-Black** (`#0a0a0b`): The body canvas. Also the sticky header at 85%
-  opacity over a backdrop blur, and the inset fill of member chips and inputs.
+- **Near-Black** (`#0a0a0b`): The body canvas and the inset fill of member chips
+  and inputs.
 - **Surface** (`#121014`): The resting surface for cards and panels — one step up
   from the canvas.
 - **Surface-2** (`#18151a`): The next tonal step up, used on hover and for inset
@@ -246,10 +248,10 @@ mono text affordance (`/`, `ai`). Typographic arrows (`←` `→`) are allowed.
 ## 4. Elevation
 
 Flat at rest. Postwork uses no decorative drop shadows; depth is built from tonal
-layering (`near-black → surface → surface-2`) and 1px hairline borders. The single
-piece of elevation is the sticky header, which floats via an 85%-opacity
-near-black fill over a `backdrop-blur` — a glass treatment used once, purposefully,
-not as a default. The space glyph carries a barely-there radial wine wash to read
+layering (`near-black → surface → surface-2`) and 1px hairline borders. The shell
+uses sticky side rails rather than a lifted glass header: navigation sits in the
+left rail, queue context sits in the right rail, and the reading column remains
+flat and centered. The space glyph carries a barely-there radial wine wash to read
 as an avatar, never as a lifted card. Everything else gains depth or emphasis only
 as a *response to state*: a card lifts to `surface-2` on hover, an unread post
 grows a wine-glow dot and a semibold ink title, focus and selection brighten
@@ -304,7 +306,7 @@ screen to screen. Every interactive element should read as obviously itself.
 - **Priority chip:** `rounded-md`, `2px 6px`, a colored dot + sentence-case label,
   tinted in the priority's own hue (`Urgent`/`High`/`Normal`). The label, not just
   the color, names the state — never color alone.
-- **Scope tag:** `rounded-md`, wine-tinted (`accent/30` border, `accent/5` fill,
+- **Scope tag:** `rounded-md`, wine-tinted (`accent/30` border, `accent/10` fill,
   Wine Glow text), sentence case (`Space`/`Org`/`Public`). The accent's only
   recurring text use in the feed.
 - **Org chip / member pill:** full-pill, near-black fill, hairline border; pairs an
@@ -322,9 +324,19 @@ screen to screen. Every interactive element should read as obviously itself.
 
 ### Header / Nav
 
-- Sticky, `z-30`, 85%-opacity near-black over `backdrop-blur`, hairline bottom
-  border, `max-w-3xl` centered. Brand mark is a wine `P` tile. Nav labels are
-  lowercase; carries an inline `N unread · M urgent` status and the user switcher.
+- Shipped shell is a responsive three-column layout: a centered reading column
+  (`minmax(0, 640px)`) flanked by sticky side rails inside a `max-w-6xl` grid.
+  There is no top glass header.
+- **Left rail:** plain `postwork` wordmark, then lowercase nav items (`home`,
+  `priority`, `spaces`, `agents`, `orgs`, `experiments`). Items are `rounded-md`
+  text rows; hover uses `surface`, active state uses `surface` plus Wine Glow text.
+- The `+ new post` primary CTA sits directly beneath the nav, before account
+  controls, so creation is global but not a floating action.
+- The user switcher is pinned to the bottom of the left rail (`mt-auto`) and uses
+  sentence-case label treatment, not tracked uppercase.
+- **Right rail:** a sticky `your queue` panel shows unread and urgent counts in a
+  flat `surface` card. Queue context lives here instead of in the brand/header
+  row, keeping the central feed reserved for reading.
 
 ### Space Glyph (signature)
 
