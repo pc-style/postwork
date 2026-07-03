@@ -1,5 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 
 export const list = query({
   args: {},
@@ -13,6 +15,30 @@ export const list = query({
     );
   },
 });
+
+async function findUserForIdentity(
+  ctx: MutationCtx,
+  identity: NonNullable<Awaited<ReturnType<MutationCtx["auth"]["getUserIdentity"]>>>,
+): Promise<Doc<"users"> | null> {
+  const byToken = await ctx.db
+    .query("users")
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    )
+    .first();
+  if (byToken) return byToken;
+
+  const bySubject = await ctx.db
+    .query("users")
+    .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+    .first();
+  if (!bySubject) return null;
+
+  await ctx.db.patch(bySubject._id, {
+    tokenIdentifier: identity.tokenIdentifier,
+  });
+  return { ...bySubject, tokenIdentifier: identity.tokenIdentifier };
+}
 
 /** Update the signed-in member's own profile (identity comes from auth, never
  * from the client — and `role` is deliberately not editable here). */
@@ -30,12 +56,7 @@ export const updateProfile = mutation({
         message: "Sign in to edit your profile.",
       });
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .first();
+    const user = await findUserForIdentity(ctx, identity);
     if (!user)
       throw new ConvexError({ code: "NOT_FOUND", message: "User not found" });
 

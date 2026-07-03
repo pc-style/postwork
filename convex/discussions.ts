@@ -65,6 +65,17 @@ async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
     .first();
   if (existing) return existing._id;
 
+  const legacyUser = await ctx.db
+    .query("users")
+    .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+    .first();
+  if (legacyUser) {
+    await ctx.db.patch(legacyUser._id, {
+      tokenIdentifier: identity.tokenIdentifier,
+    });
+    return legacyUser._id;
+  }
+
   const name =
     identity.name ??
     identity.nickname ??
