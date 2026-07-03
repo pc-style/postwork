@@ -222,7 +222,7 @@ export function SpacePage() {
           </div>
           <label className="flex items-center gap-2 text-sm">
             <span className="text-[var(--color-muted)]">visibility</span>
-            <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none">
+            <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50">
               <option value="space">space</option>
               <option value="org">org</option>
               <option value="public">public</option>

@@ -224,7 +224,7 @@ export function QuickPostBar() {
                 <select
                   value={space}
                   onChange={(event) => setSpace(event.target.value)}
-                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1 text-xs outline-none"
+                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1 text-xs outline-none focus:border-accent/50"
                 >
                   {SPACES.map((s) => (
                     <option key={s} value={s}>

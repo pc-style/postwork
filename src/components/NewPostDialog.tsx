@@ -73,7 +73,7 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
             <select
               value={space}
               onChange={(e) => setSpace(e.target.value)}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none"
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
             >
               {SPACES.map((s) => (
                 <option key={s} value={s}>

@@ -56,6 +56,11 @@ body {
   color: var(--color-fg);
 }
 
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
 code,
 pre,
 kbd,
