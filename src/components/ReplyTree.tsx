@@ -8,8 +8,9 @@ import { UserRoleTag } from "./UserRoleTag";
 import { RichText } from "./RichText";
 import { SendAgentButton } from "./SendAgentButton";
 import { timeAgo } from "../lib/format";
+import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 
-type Node = EnrichedReply & { children: Node[] };
+type Node = ReplyTreeNode<EnrichedReply>;
 
 /** Flatten a reply and its descendants into a transcript an agent can read. */
 function subthreadText(node: Node): string {
@@ -21,19 +22,6 @@ function subthreadText(node: Node): string {
   };
   walk(node, 0);
   return lines.join("\n");
-}
-
-function buildTree(replies: EnrichedReply[]): Node[] {
-  const byId = new Map<string, Node>();
-  const roots: Node[] = [];
-  for (const r of replies) byId.set(r._id, { ...r, children: [] });
-  for (const r of replies) {
-    const node = byId.get(r._id)!;
-    const parent = r.parentId ? byId.get(r.parentId) : undefined;
-    if (parent) parent.children.push(node);
-    else roots.push(node);
-  }
-  return roots;
 }
 
 function ReplyNode({
@@ -109,7 +97,7 @@ export function ReplyTree({
   replies: EnrichedReply[];
   postId: Id<"posts">;
 }) {
-  const tree = buildTree(replies);
+  const tree = buildReplyTree(replies);
   if (tree.length === 0) {
     return (
       <p className="py-4 text-sm text-muted">

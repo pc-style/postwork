@@ -5,28 +5,17 @@ import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
+import { ComposerShell } from "../components/ComposerShell";
 import { Markdown } from "../components/Markdown";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { timeAgo } from "../lib/format";
+import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 import { signIn } from "../shoo";
 
 type Thread = FunctionReturnType<typeof api.discussions.getThread>;
 type Reply = Thread["replies"][number];
 
-type ReplyNode = Reply & { children: ReplyNode[] };
-
-function buildTree(replies: Reply[]): ReplyNode[] {
-  const byId = new Map<string, ReplyNode>();
-  for (const r of replies) byId.set(r._id, { ...r, children: [] });
-
-  const roots: ReplyNode[] = [];
-  for (const node of byId.values()) {
-    const parent = node.parentId ? byId.get(node.parentId) : undefined;
-    if (parent) parent.children.push(node);
-    else roots.push(node);
-  }
-  return roots;
-}
+type ReplyNode = ReplyTreeNode<Reply>;
 
 function isUnauthenticated(err: unknown): boolean {
   return (
@@ -107,7 +96,7 @@ function Thread({
 }) {
   const addMessage = useMutation(api.discussions.addMessage);
   const [replyingTo, setReplyingTo] = useState<Id<"replies"> | null>(null);
-  const tree = useMemo(() => buildTree(thread.replies), [thread.replies]);
+  const tree = useMemo(() => buildReplyTree(thread.replies), [thread.replies]);
 
   const post = async (body: string, parentId?: Id<"replies">) => {
     if (isLoading) return false;
@@ -283,33 +272,22 @@ function Composer({
 
   return (
     <div className="space-y-1.5">
-      <textarea
-        // eslint-disable-next-line jsx-a11y/no-autofocus
+      <ComposerShell
+        body={body}
+        setBody={setBody}
         autoFocus={autoFocus}
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-            e.preventDefault();
-            void submit();
-          }
-        }}
         placeholder={placeholder}
         rows={2}
-        className="w-full resize-none rounded-md border border-border bg-bg px-3 py-2 font-sans text-sm text-fg placeholder:text-muted focus:border-accent/50 focus:outline-none"
+        textareaClassName="w-full resize-none rounded-md border border-border bg-bg px-3 py-2 font-sans text-sm text-fg placeholder:text-muted focus:border-accent/50 focus:outline-none"
+        footerClassName="flex items-center justify-between"
+        hint={<span className="text-label text-muted">⌘/ctrl + enter to post</span>}
+        submitLabel="post"
+        submittingLabel="posting…"
+        submitting={submitting}
+        disabled={!body.trim() || submitting}
+        submitButtonClassName="rounded-md border border-accent/50 bg-accent/15 px-3 py-1 text-xs text-accent-soft transition hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
+        onSubmit={() => void submit()}
       />
-      <div className="flex items-center justify-between">
-        <span className="text-label text-muted">
-          ⌘/ctrl + enter to post
-        </span>
-        <button
-          onClick={() => void submit()}
-          disabled={!body.trim() || submitting}
-          className="rounded-md border border-accent/50 bg-accent/15 px-3 py-1 text-xs text-accent-soft transition hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? "posting…" : "post"}
-        </button>
-      </div>
     </div>
   );
 }

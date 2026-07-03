@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
@@ -11,6 +11,7 @@ import {
 import { insertCodeFence } from "../lib/codeFence";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
+import { ComposerShell } from "./ComposerShell";
 
 export function Composer({
   postId,
@@ -33,13 +34,6 @@ export function Composer({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Focus via effect rather than the `autoFocus` prop so cold-load restores
-  // (e.g. a flash experiment rehydrated from sessionStorage that mounts the
-  // composer after the initial render) still land the cursor in the field.
-  useEffect(() => {
-    if (autoFocus) textareaRef.current?.focus();
-  }, [autoFocus]);
 
   // Live preview of which agents this message will summon.
   const mentioned = parseAgentMentions(body);
@@ -96,48 +90,49 @@ export function Composer({
     <div className="flex gap-2.5">
       {!compact && <Avatar user={currentUser ?? null} size={32} />}
       <div className="flex-1">
-        <textarea
-          ref={textareaRef}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
-          }}
+        <ComposerShell
+          body={body}
+          setBody={setBody}
+          textareaRef={textareaRef}
+          autoFocus={autoFocus}
           placeholder={placeholder}
           rows={compact ? 2 : 3}
-          className="w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
-        />
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onCodeFence}
-              title="insert code block"
-              className="rounded-md border border-border px-2 py-1 text-label text-muted transition hover:text-fg"
-            >
-              {"</> code"}
-            </button>
-            {mentioned.length > 0 ? (
-              <span className="text-label text-accent-soft">
-                summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
-              </span>
-            ) : (
-              <span className="hidden text-label text-muted sm:inline">
-                ⌘/Ctrl + Enter · @cursor to summon an agent
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {onDone && (
+          textareaClassName="w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
+          hint={
+            <>
+              <button
+                type="button"
+                onClick={onCodeFence}
+                title="insert code block"
+                className="rounded-md border border-border px-2 py-1 text-label text-muted transition hover:text-fg"
+              >
+                {"</> code"}
+              </button>
+              {mentioned.length > 0 ? (
+                <span className="text-label text-accent-soft">
+                  summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
+                </span>
+              ) : (
+                <span className="hidden text-label text-muted sm:inline">
+                  ⌘/Ctrl + Enter · @cursor to summon an agent
+                </span>
+              )}
+            </>
+          }
+          actions={
+            onDone && (
               <Button variant="quiet" onClick={onDone}>
                 cancel
               </Button>
-            )}
-            <Button onClick={submit} disabled={busy || !body.trim()}>
-              {busy ? "sending…" : "reply"}
-            </Button>
-          </div>
-        </div>
+            )
+          }
+          submitLabel="reply"
+          submittingLabel="sending…"
+          submitting={busy}
+          disabled={busy || !body.trim()}
+          submitButtonClassName="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+          onSubmit={() => void submit()}
+        />
       </div>
     </div>
   );
