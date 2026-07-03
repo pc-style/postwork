@@ -15,21 +15,6 @@ export const priority = v.union(
   v.literal("normal"),
 );
 
-/** Lifecycle of an agent investigation task (Group A). */
-export const agentTaskStatus = v.union(
-  v.literal("pending"),
-  v.literal("running"),
-  v.literal("done"),
-  v.literal("failed"),
-);
-
-/** Who can see a post inside a (possibly cross-org) space (Group B). */
-export const postVisibility = v.union(
-  v.literal("space"), // everyone in the space (all linked orgs)
-  v.literal("org"), // only the author's own org
-  v.literal("public"),
-);
-
 export default defineSchema({
   users: defineTable({
     name: v.string(),
@@ -63,22 +48,12 @@ export default defineSchema({
     summary: v.optional(v.string()),
     summaryModel: v.optional(v.string()),
     summaryUpdatedAt: v.optional(v.number()),
-    // Group B — intercompany shared spaces. When set, the post belongs to a
-    // structured space (which may span multiple orgs) instead of the legacy
-    // free-text `space` label. `visibility` is meaningful only alongside
-    // `spaceId` (it scopes cross-org readers); the two travel together.
-    spaceId: v.optional(v.id("spaces")),
-    visibility: v.optional(postVisibility),
-    // Author's org, required for "org"-scoped visibility to mean anything
-    // (the reader-side filter in `spaces.feedForSpace` compares against it).
-    orgId: v.optional(v.id("orgs")),
     // Group C — per-user walls. null/undefined = normal space post; set = a
     // post written on this user's wall.
     //
-    // INVARIANT: `spaceId` and `wallOwnerId` are mutually exclusive — a post is
-    // either a space post or a wall post, never both. Convex validators can't
-    // express cross-field constraints, so this is enforced at the write path
-    // (the session-overlay `createPost`, which only ever sets `wallOwnerId`).
+    // INVARIANT: a post is either a normal space post or a wall post, never both.
+    // This is enforced at the write path (the session-overlay `createPost`,
+    // which only ever sets `wallOwnerId`).
     wallOwnerId: v.optional(v.id("users")),
     // Flash-experiments discussion: when set, this post is the canonical
     // "open discussion" thread for the experiment with this slug. One post
@@ -87,7 +62,6 @@ export default defineSchema({
   })
     .index("by_activity", ["lastActivityAt"])
     .index("by_space", ["space", "lastActivityAt"])
-    .index("by_space_id", ["spaceId", "lastActivityAt"])
     .index("by_wall", ["wallOwnerId", "lastActivityAt"])
     .index("by_experiment_slug", ["experimentSlug"])
     .searchIndex("search_body", {
@@ -123,60 +97,4 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"])
     .index("by_slug_voter", ["slug", "voterSubject"]),
-
-  // ---- Group A: agent control plane ---------------------------------------
-  // A teammate dispatches an AI coding agent to investigate a post/subthread;
-  // the agent reports back (status + result, and a nested reply on completion).
-  agentTasks: defineTable({
-    postId: v.id("posts"),
-    sourceReplyId: v.optional(v.id("replies")), // subthread the agent explores
-    agentId: v.id("users"), // the agent teammate (isAgent user)
-    requestedById: v.optional(v.id("users")),
-    status: agentTaskStatus,
-    prompt: v.string(),
-    result: v.optional(v.string()),
-    model: v.optional(v.string()),
-    createdAt: v.number(),
-    completedAt: v.optional(v.number()),
-  })
-    .index("by_post", ["postId"])
-    .index("by_agent", ["agentId"])
-    .index("by_status", ["status"]),
-
-  // ---- Group B: intercompany shared spaces --------------------------------
-  // `handle` must be unique (it's the @handle used for invites); `by_handle`
-  // backs both lookups and the overlay's resolve-or-create dedup.
-  orgs: defineTable({
-    name: v.string(),
-    handle: v.string(), // @handle used to invite an external org
-    initials: v.string(),
-    color: v.string(),
-  }).index("by_handle", ["handle"]),
-
-  // `slug` must be unique (it's the /spaces/$slug route key); the overlay's
-  // createSpace de-duplicates slugs on write.
-  spaces: defineTable({
-    name: v.string(),
-    slug: v.string(),
-    description: v.optional(v.string()),
-    ownerOrgId: v.id("orgs"),
-    createdAt: v.number(),
-  }).index("by_slug", ["slug"]),
-
-  // At most one membership per (spaceId, orgId); `by_space_org` backs that
-  // uniqueness check (the overlay's inviteOrg rejects duplicates).
-  spaceMemberships: defineTable({
-    spaceId: v.id("spaces"),
-    orgId: v.id("orgs"),
-    role: v.union(v.literal("owner"), v.literal("member")),
-    status: v.union(
-      v.literal("active"),
-      v.literal("invited"),
-      v.literal("declined"),
-    ),
-    createdAt: v.number(),
-  })
-    .index("by_space", ["spaceId"])
-    .index("by_org", ["orgId"])
-    .index("by_space_org", ["spaceId", "orgId"]),
 });
