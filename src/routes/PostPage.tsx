@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
-import { useStore } from "../lib/store";
+import { useStore, usePost, useReplies } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
@@ -25,8 +25,8 @@ export function PostPage() {
   const store = useStore();
   const { slots } = useActiveExperiment();
 
-  const post = store.usePost(postId);
-  const replies = store.useReplies(postId);
+  const post = usePost(postId);
+  const replies = useReplies(postId);
 
   useDocumentTitle(post ? `${post.title} · postwork` : "postwork");
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { useAgentTasks } from "../lib/agentTasks";
 import { useSession } from "../lib/session";
-import { useStore } from "../lib/store";
+import { usePost, useReplies } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
@@ -16,8 +16,8 @@ function buildContextText({
   replies,
   users,
 }: {
-  post: NonNullable<ReturnType<ReturnType<typeof useStore>["usePost"]>>;
-  replies: ReturnType<ReturnType<typeof useStore>["useReplies"]>;
+  post: NonNullable<ReturnType<typeof usePost>>;
+  replies: ReturnType<typeof useReplies>;
   users: Doc<"users">[];
 }) {
   const userById = new Map(users.map((user) => [user._id, user.name]));
@@ -30,10 +30,9 @@ function buildContextText({
 
 export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
   const { users } = useSession();
-  const store = useStore();
   const { tasksForPost, dispatch } = useAgentTasks();
-  const post = store.usePost(postId);
-  const replies = store.useReplies(postId);
+  const post = usePost(postId);
+  const replies = useReplies(postId);
   const tasks = tasksForPost(postId);
   const agents = users.filter((user) => user.isAgent);
   const [agentId, setAgentId] = useState<Id<"users"> | "">(agents[0]?._id ?? "");

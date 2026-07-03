@@ -11,7 +11,7 @@ import { PageHeader } from "../components/PageHeader";
 import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { useSession } from "../lib/session";
-import { useStore } from "../lib/store";
+import { useWall } from "../lib/store";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const routeApi = getRouteApi("/app/u/$userId");
@@ -22,8 +22,7 @@ export function WallPage() {
   // PostPage). An unknown id resolves to no owner and renders "user not found".
   const userId = userIdParam as Id<"users">;
   const { users } = useSession();
-  const store = useStore();
-  const posts = store.useWall(userId);
+  const posts = useWall(userId);
   const [open, setOpen] = useState(false);
   const owner = users.find((user) => user._id === userId);
   useDocumentTitle(owner ? `${owner.name}'s wall · postwork` : "wall · postwork");

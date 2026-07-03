@@ -59,18 +59,13 @@ type PostBump = {
 type SummaryEntry = { summary: string; model: string; updatedAt: number };
 
 type StoreValue = {
-  // merged query hooks
-  useFeed: (args: {
-    space?: string;
-    priority?: Priority;
-    onlyUnread?: boolean;
-  }) => EnrichedPost[] | undefined;
-  useSearch: (term: string) => EnrichedPost[] | undefined;
-  usePost: (postId: Id<"posts">) => EnrichedPost | null | undefined;
-  useReplies: (postId: Id<"posts">) => EnrichedReply[];
-  useCounts: () =>
-    | { total: number; unread: number; urgent: number }
-    | undefined;
+  // overlay state, exposed for the module-level query hooks below
+  posts: SessionPost[];
+  replies: Record<string, SessionReply[]>;
+  currentUserId: Id<"users"> | undefined;
+  applyOverlay: (p: EnrichedPost) => EnrichedPost;
+  enrichSessionPost: (sp: SessionPost) => EnrichedPost;
+  enrichSessionReply: (r: SessionReply) => EnrichedReply;
 
   // session-only mutations (replace the Convex mutations)
   markRead: (postId: Id<"posts">) => void;
@@ -90,9 +85,6 @@ type StoreValue = {
     wallOwnerId?: Id<"users">;
   }) => Promise<Id<"posts">>;
   summarize: (postId: Id<"posts">) => Promise<void>;
-  // Group C — a user's wall: posts they authored + posts left on their wall,
-  // in activity order. Wall posts are excluded from the global feed.
-  useWall: (userId: Id<"users">) => EnrichedPost[] | undefined;
   isLocalId: (id: string) => boolean;
 };
 
@@ -200,120 +192,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }),
     [userById],
   );
-
-  const sortPosts = (a: EnrichedPost, b: EnrichedPost) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return b.lastActivityAt - a.lastActivityAt;
-  };
-
-  // ---- merged query hooks -------------------------------------------------
-
-  const useFeed = (args: {
-    space?: string;
-    priority?: Priority;
-    onlyUnread?: boolean;
-  }) => {
-    const backend = useQuery(api.posts.feed, {
-      viewerId: currentUserId,
-      space: args.space,
-      priority: args.priority as never,
-      // onlyUnread is applied client-side so session activity can flip it.
-    });
-
-    if (backend === undefined) return undefined;
-
-    const sessionMatched = posts
-      .filter(
-        (p) =>
-          !p.wallOwnerId &&
-          (!args.space || p.space === args.space) &&
-          (!args.priority || p.priority === args.priority),
-      )
-      .map(enrichSessionPost);
-
-    // Wall posts live on user walls, not in the global feed.
-    const merged = [
-      ...sessionMatched,
-      ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
-    ];
-    merged.sort(sortPosts);
-    return args.onlyUnread ? merged.filter((p) => p.unread) : merged;
-  };
-
-  // Group C — wall feed: a user's own posts plus posts left on their wall.
-  const useWall = (userId: Id<"users">) => {
-    const backend = useQuery(api.posts.feed, { viewerId: currentUserId });
-    if (backend === undefined) return undefined;
-    const onWall = (p: { wallOwnerId?: Id<"users">; authorId: Id<"users"> }) =>
-      p.wallOwnerId === userId ||
-      (!p.wallOwnerId && p.authorId === userId);
-    const sessionMatched = posts.filter(onWall).map(enrichSessionPost);
-    const merged = [
-      ...sessionMatched,
-      ...backend.filter(onWall).map(applyOverlay),
-    ];
-    merged.sort(sortPosts);
-    return merged;
-  };
-
-  const useSearch = (term: string) => {
-    const backend = useQuery(
-      api.posts.search,
-      term.trim() ? { term, viewerId: currentUserId } : "skip",
-    );
-    const t = term.trim().toLowerCase();
-    if (!t) return undefined;
-    const sessionMatched = posts
-      .filter(
-        (p) =>
-          p.title.toLowerCase().includes(t) ||
-          p.body.toLowerCase().includes(t),
-      )
-      .map(enrichSessionPost);
-    if (backend === undefined) return undefined;
-    return [...sessionMatched, ...backend.map(applyOverlay)].sort(sortPosts);
-  };
-
-  const usePost = (postId: Id<"posts">) => {
-    const local = isLocalId(postId);
-    const backend = useQuery(
-      api.posts.get,
-      local ? "skip" : { postId, viewerId: currentUserId },
-    );
-    if (local) {
-      const sp = posts.find((p) => p._id === postId);
-      return sp ? enrichSessionPost(sp) : null;
-    }
-    if (backend === undefined) return undefined;
-    if (backend === null) return null;
-    return applyOverlay(backend);
-  };
-
-  const useReplies = (postId: Id<"posts">) => {
-    const local = isLocalId(postId);
-    const backend = useQuery(
-      api.replies.listForPost,
-      local ? "skip" : { postId },
-    );
-    const session = (replies[postId] ?? []).map(enrichSessionReply);
-    return [...(backend ?? []), ...session].sort(
-      (a, b) => a.createdAt - b.createdAt,
-    );
-  };
-
-  const useCounts = () => {
-    const all = useFeed({});
-    if (all === undefined) return undefined;
-    let unread = 0;
-    let urgent = 0;
-    for (const p of all) {
-      if (p.unread) {
-        unread++;
-        if (p.priority === "urgent") urgent++;
-      }
-    }
-    return { total: all.length, unread, urgent };
-  };
 
   // ---- session-only mutations --------------------------------------------
 
@@ -436,20 +314,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [summarizeAction],
   );
 
-  const value: StoreValue = {
-    useFeed,
-    useSearch,
-    usePost,
-    useReplies,
-    useCounts,
-    markRead,
-    markAllRead,
-    createReply,
-    createPost,
-    summarize,
-    useWall,
-    isLocalId,
-  };
+  const value: StoreValue = useMemo(
+    () => ({
+      posts,
+      replies,
+      currentUserId,
+      applyOverlay,
+      enrichSessionPost,
+      enrichSessionReply,
+      markRead,
+      markAllRead,
+      createReply,
+      createPost,
+      summarize,
+      isLocalId,
+    }),
+    [
+      posts,
+      replies,
+      currentUserId,
+      applyOverlay,
+      enrichSessionPost,
+      enrichSessionReply,
+      markRead,
+      markAllRead,
+      createReply,
+      createPost,
+      summarize,
+    ],
+  );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -458,4 +351,121 @@ export function useStore() {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error("useStore must be used within StoreProvider");
   return ctx;
+}
+
+function sortPosts(a: EnrichedPost, b: EnrichedPost) {
+  if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+  return b.lastActivityAt - a.lastActivityAt;
+}
+
+// ---- merged query hooks ---------------------------------------------------
+
+export function useFeed(args: {
+  space?: string;
+  priority?: Priority;
+  onlyUnread?: boolean;
+}) {
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
+  const backend = useQuery(api.posts.feed, {
+    viewerId: currentUserId,
+    space: args.space,
+    priority: args.priority as never,
+    // onlyUnread is applied client-side so session activity can flip it.
+  });
+
+  if (backend === undefined) return undefined;
+
+  const sessionMatched = posts
+    .filter(
+      (p) =>
+        !p.wallOwnerId &&
+        (!args.space || p.space === args.space) &&
+        (!args.priority || p.priority === args.priority),
+    )
+    .map(enrichSessionPost);
+
+  // Wall posts live on user walls, not in the global feed.
+  const merged = [
+    ...sessionMatched,
+    ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
+  ];
+  merged.sort(sortPosts);
+  return args.onlyUnread ? merged.filter((p) => p.unread) : merged;
+}
+
+// Group C — wall feed: a user's own posts plus posts left on their wall.
+export function useWall(userId: Id<"users">) {
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
+  const backend = useQuery(api.posts.feed, { viewerId: currentUserId });
+  if (backend === undefined) return undefined;
+  const onWall = (p: { wallOwnerId?: Id<"users">; authorId: Id<"users"> }) =>
+    p.wallOwnerId === userId || (!p.wallOwnerId && p.authorId === userId);
+  const sessionMatched = posts.filter(onWall).map(enrichSessionPost);
+  const merged = [
+    ...sessionMatched,
+    ...backend.filter(onWall).map(applyOverlay),
+  ];
+  merged.sort(sortPosts);
+  return merged;
+}
+
+export function useSearch(term: string) {
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
+  const backend = useQuery(
+    api.posts.search,
+    term.trim() ? { term, viewerId: currentUserId } : "skip",
+  );
+  const t = term.trim().toLowerCase();
+  if (!t) return undefined;
+  const sessionMatched = posts
+    .filter(
+      (p) =>
+        p.title.toLowerCase().includes(t) || p.body.toLowerCase().includes(t),
+    )
+    .map(enrichSessionPost);
+  if (backend === undefined) return undefined;
+  return [...sessionMatched, ...backend.map(applyOverlay)].sort(sortPosts);
+}
+
+export function usePost(postId: Id<"posts">) {
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
+  const local = isLocalId(postId);
+  const backend = useQuery(
+    api.posts.get,
+    local ? "skip" : { postId, viewerId: currentUserId },
+  );
+  if (local) {
+    const sp = posts.find((p) => p._id === postId);
+    return sp ? enrichSessionPost(sp) : null;
+  }
+  if (backend === undefined) return undefined;
+  if (backend === null) return null;
+  return applyOverlay(backend);
+}
+
+export function useReplies(postId: Id<"posts">) {
+  const { replies, enrichSessionReply } = useStore();
+  const local = isLocalId(postId);
+  const backend = useQuery(
+    api.replies.listForPost,
+    local ? "skip" : { postId },
+  );
+  const session = (replies[postId] ?? []).map(enrichSessionReply);
+  return [...(backend ?? []), ...session].sort(
+    (a, b) => a.createdAt - b.createdAt,
+  );
+}
+
+export function useCounts() {
+  const all = useFeed({});
+  if (all === undefined) return undefined;
+  let unread = 0;
+  let urgent = 0;
+  for (const p of all) {
+    if (p.unread) {
+      unread++;
+      if (p.priority === "urgent") urgent++;
+    }
+  }
+  return { total: all.length, unread, urgent };
 }

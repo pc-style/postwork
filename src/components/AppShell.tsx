@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { useStore } from "../lib/store";
+import { useCounts } from "../lib/store";
 import { UserSwitcher } from "./UserSwitcher";
 import { NewPostDialog } from "./NewPostDialog";
 import { Button } from "./Button";
@@ -15,8 +15,7 @@ const ROUTE_NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const store = useStore();
-  const counts = store.useCounts();
+  const counts = useCounts();
   const [composing, setComposing] = useState(false);
 
   return (

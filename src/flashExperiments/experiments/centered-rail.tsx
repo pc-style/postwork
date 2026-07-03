@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { useStore } from "../../lib/store";
+import { useCounts } from "../../lib/store";
 import { NewPostDialog } from "../../components/NewPostDialog";
 import { UserSwitcher } from "../../components/UserSwitcher";
 import type { FlashExperiment } from "../registry";
@@ -16,8 +16,7 @@ const NAV_ITEMS: { label: string; to?: string; accent?: boolean }[] = [
 // Galicius's suggestion: navigation on the sides, main content centered in the
 // middle like twitter, so the reading column stays narrow and scannable.
 export function CenteredRailShell({ children }: { children: ReactNode }) {
-  const store = useStore();
-  const counts = store.useCounts();
+  const counts = useCounts();
   const [composing, setComposing] = useState(false);
 
   return (

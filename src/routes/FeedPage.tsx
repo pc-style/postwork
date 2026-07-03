@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useStore } from "../lib/store";
+import { useStore, useFeed, useSearch as useStoreSearch } from "../lib/store";
 import { PostCard } from "../components/PostCard";
 import { QuickPostBar } from "../components/QuickPostBar";
 import { LoadingState } from "../components/LoadingState";
@@ -35,12 +35,12 @@ export function FeedPage() {
 
   const searching = term.trim().length > 0;
 
-  const feed = store.useFeed({
+  const feed = useFeed({
     space,
     priority: (priority as never) ?? undefined,
     onlyUnread,
   });
-  const searchResults = store.useSearch(term);
+  const searchResults = useStoreSearch(term);
 
   const posts = searching ? searchResults : feed;
 

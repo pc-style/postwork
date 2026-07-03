@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { useStore } from "../../lib/store";
+import { useCounts } from "../../lib/store";
 import { NewPostDialog } from "../../components/NewPostDialog";
 import { UserSwitcher } from "../../components/UserSwitcher";
 import type { FlashExperiment } from "../registry";
@@ -14,8 +14,7 @@ const RAIL_ITEMS: { label: string; to?: string; accent?: boolean }[] = [
 ];
 
 export function WideReviewShell({ children }: { children: ReactNode }) {
-  const store = useStore();
-  const counts = store.useCounts();
+  const counts = useCounts();
   const [composing, setComposing] = useState(false);
 
   return (
