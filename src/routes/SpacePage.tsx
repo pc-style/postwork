@@ -8,6 +8,7 @@ import { priorityTones } from "../components/PostMetaChips";
 import { PostForm } from "../components/PostForm";
 import { OrgSquare } from "../components/OrgSquare";
 import { PageHeader } from "../components/PageHeader";
+import { EmptyState } from "../components/EmptyState";
 
 type Visibility = "space" | "org" | "public";
 
@@ -122,6 +123,9 @@ export function SpacePage() {
         </div>
       </header>
 
+      {posts.length === 0 ? (
+        <EmptyState>no posts in this space yet.</EmptyState>
+      ) : (
       <div className="space-y-2.5">
         {posts.map((post) => {
           const org = orgs.find((candidate) => candidate.id === post.orgId);
@@ -177,6 +181,7 @@ export function SpacePage() {
           );
         })}
       </div>
+      )}
 
       <section className="mt-5 rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-3 text-sm font-semibold text-fg">post to space</h2>

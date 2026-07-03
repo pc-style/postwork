@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useSpaces } from "../lib/spaces";
 import { OrgSquare } from "../components/OrgSquare";
 import { PageHeader } from "../components/PageHeader";
+import { EmptyState } from "../components/EmptyState";
 
 export function LinkedOrgsPage() {
   const { orgs, myOrg, allSpaces, membershipsForSpace } = useSpaces();
@@ -41,7 +42,7 @@ export function LinkedOrgsPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {shared.length === 0 ? (
-                  <span className="text-sm text-muted">no shared spaces</span>
+                  <EmptyState>no shared spaces</EmptyState>
                 ) : (
                   shared.map(({ space, status }) => (
                     <Link key={space.id} to="/spaces/$slug" params={{ slug: space.slug }} className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted transition hover:border-accent/40 hover:text-fg">

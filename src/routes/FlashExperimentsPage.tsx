@@ -139,25 +139,19 @@ export function FlashExperimentsPage() {
                 </p>
               </div>
 
-              {items.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border bg-surface/60 px-4 py-6 text-center text-xs text-muted">
-                  nothing here yet.
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {items.map((experiment) => (
-                    <ExperimentCard
-                      key={experiment.slug}
-                      experiment={experiment}
-                      vote={votesBySlug.get(experiment.slug)}
-                      replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
-                      isLoading={isLoading}
-                      isAuthenticated={isAuthenticated}
-                      onVote={handleVote}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="grid gap-3">
+                {items.map((experiment) => (
+                  <ExperimentCard
+                    key={experiment.slug}
+                    experiment={experiment}
+                    vote={votesBySlug.get(experiment.slug)}
+                    replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
+                    isLoading={isLoading}
+                    isAuthenticated={isAuthenticated}
+                    onVote={handleVote}
+                  />
+                ))}
+              </div>
             </section>
           );
         })}

@@ -8,6 +8,8 @@ import { PostCard } from "../components/PostCard";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { WallPostDialog } from "../components/WallPostDialog";
 import { PageHeader } from "../components/PageHeader";
+import { LoadingState } from "../components/LoadingState";
+import { EmptyState } from "../components/EmptyState";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 
@@ -59,13 +61,9 @@ export function WallPage() {
       </section>
 
       {posts === undefined ? (
-        <div className="py-12 text-center text-sm text-muted">
-          loading…
-        </div>
+        <LoadingState />
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-muted">
-          no wall posts yet.
-        </div>
+        <EmptyState>no wall posts yet.</EmptyState>
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (

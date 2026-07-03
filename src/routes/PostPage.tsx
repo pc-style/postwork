@@ -13,6 +13,7 @@ import { RichText } from "../components/RichText";
 import { AgentTasksPanel } from "../components/AgentTasksPanel";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { PostMetaChips } from "../components/PostMetaChips";
+import { LoadingState } from "../components/LoadingState";
 import { useActiveExperiment } from "../flashExperiments/active";
 
 const routeApi = getRouteApi("/app/posts/$postId");
@@ -36,11 +37,7 @@ export function PostPage() {
   }, [postId, post?.lastActivityAt]);
 
   if (post === undefined) {
-    return (
-      <div className="py-12 text-center text-sm text-muted">
-        Loading…
-      </div>
-    );
+    return <LoadingState />;
   }
   if (post === null) {
     return (

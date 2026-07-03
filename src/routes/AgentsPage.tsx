@@ -7,8 +7,8 @@ import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
-import { AccentPanel } from "../components/AccentPanel";
 import { PageHeader } from "../components/PageHeader";
+import { EmptyState } from "../components/EmptyState";
 
 function truncate(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -99,11 +99,9 @@ export function AgentsPage() {
 
       {tasks.length === 0 && (
         <div className="mb-5">
-          <AccentPanel chipLabel="agents" title="control plane">
-            <p className="text-sm text-muted">
-              no agent tasks yet. dispatch agents from any post investigation panel or send one from a subthread.
-            </p>
-          </AccentPanel>
+          <EmptyState>
+            no agent tasks yet. dispatch agents from any post investigation panel or send one from a subthread.
+          </EmptyState>
         </div>
       )}
 

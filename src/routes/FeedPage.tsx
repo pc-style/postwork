@@ -2,6 +2,8 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
 import { PostCard } from "../components/PostCard";
 import { QuickPostBar } from "../components/QuickPostBar";
+import { LoadingState } from "../components/LoadingState";
+import { EmptyState } from "../components/EmptyState";
 import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
 import { useActiveExperiment } from "../flashExperiments/active";
 import type { FeedSearch } from "../router";
@@ -113,17 +115,15 @@ export function FeedPage() {
       )}
 
       {posts === undefined ? (
-        <div className="py-12 text-center text-sm text-muted">
-          Loading…
-        </div>
+        <LoadingState />
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border py-12 text-center text-sm text-muted">
+        <EmptyState>
           {searching
-            ? "No posts match your search."
+            ? "no posts match your search."
             : onlyUnread
-              ? "You're all caught up. Nothing unread."
-              : "No posts yet."}
-        </div>
+              ? "you're all caught up. nothing unread."
+              : "no posts yet."}
+        </EmptyState>
       ) : (
         <div className="space-y-2.5">
           {posts.map((post) =>
