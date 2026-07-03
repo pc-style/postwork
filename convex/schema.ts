@@ -39,11 +39,14 @@ export default defineSchema({
     role: v.optional(v.union(v.literal("admin"), v.literal("member"))),
     // AI coding agents (Cursor, Codex, Claude Code, …) post as teammates too.
     isAgent: v.optional(v.boolean()),
-    // Set for real, shoo-authenticated members (maps the auth identity's
-    // `subject` to a `users` doc so they can author posts/replies). Seed
-    // personas leave this undefined.
+    // Set for real, shoo-authenticated members (maps the canonical auth token
+    // identifier to a `users` doc so they can author posts/replies). Seed
+    // personas leave this undefined. `subject` is retained only as legacy data.
+    tokenIdentifier: v.optional(v.string()),
     subject: v.optional(v.string()),
-  }).index("by_subject", ["subject"]),
+  })
+    .index("by_token_identifier", ["tokenIdentifier"])
+    .index("by_subject", ["subject"]),
 
   posts: defineTable({
     authorId: v.id("users"),

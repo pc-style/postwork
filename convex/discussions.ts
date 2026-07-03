@@ -59,7 +59,9 @@ async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
 
   const existing = await ctx.db
     .query("users")
-    .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    )
     .first();
   if (existing) return existing._id;
 
@@ -73,9 +75,10 @@ async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
   return await ctx.db.insert("users", {
     name,
     title: "member",
-    avatarColor: colorFor(identity.subject),
+    avatarColor: colorFor(identity.tokenIdentifier),
     initials: initialsFrom(name),
     role: "member",
+    tokenIdentifier: identity.tokenIdentifier,
     subject: identity.subject,
   });
 }

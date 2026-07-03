@@ -5,9 +5,12 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
-    // The directory is public; the auth-identity mapping is not. Strip
-    // `subject` so visitors can't enumerate real members' auth identifiers.
-    return users.map(({ subject: _subject, ...user }) => user);
+    // The directory is public; the auth-identity mapping is not. Strip auth
+    // identifiers so visitors can't enumerate real members' identities.
+    return users.map(
+      ({ tokenIdentifier: _tokenIdentifier, subject: _subject, ...user }) =>
+        user,
+    );
   },
 });
 
@@ -29,7 +32,9 @@ export const updateProfile = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
       .first();
     if (!user)
       throw new ConvexError({ code: "NOT_FOUND", message: "User not found" });
