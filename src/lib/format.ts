@@ -1,3 +1,5 @@
+import type { Priority } from "./types";
+
 export function timeAgo(ts: number): string {
   const diff = Date.now() - ts;
   const min = Math.round(diff / 60000);
@@ -21,7 +23,7 @@ export const SPACES = [
 export const PRIORITIES = ["urgent", "high", "normal"] as const;
 
 export const priorityStyles: Record<
-  string,
+  Priority,
   { label: string; className: string; dot: string }
 > = {
   urgent: {

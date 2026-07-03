@@ -14,11 +14,13 @@ import { LinkedOrgsPage } from "./routes/LinkedOrgsPage";
 import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
+import { PRIORITIES } from "./lib/format";
+import type { Priority } from "./lib/types";
 
 export type FeedSearch = {
   q?: string;
   space?: string;
-  priority?: string;
+  priority?: Priority;
   unread?: boolean;
 };
 
@@ -41,7 +43,9 @@ const indexRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): FeedSearch => ({
     q: typeof search.q === "string" ? search.q : undefined,
     space: typeof search.space === "string" ? search.space : undefined,
-    priority: typeof search.priority === "string" ? search.priority : undefined,
+    priority: PRIORITIES.includes(search.priority as Priority)
+      ? (search.priority as Priority)
+      : undefined,
     unread: search.unread === true || search.unread === "true" || search.unread === "1",
   }),
   component: FeedPage,

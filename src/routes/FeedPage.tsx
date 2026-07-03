@@ -16,10 +16,10 @@ export function FeedPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as FeedSearch;
   const term = search.q ?? "";
-  const space = SPACES.includes(search.space as never) ? search.space : undefined;
-  const priority = PRIORITIES.includes(search.priority as never)
-    ? search.priority
+  const space = SPACES.includes(search.space as (typeof SPACES)[number])
+    ? search.space
     : undefined;
+  const priority = search.priority;
   const onlyUnread = search.unread ?? false;
 
   const setSearch = (next: FeedSearch) => {
@@ -37,7 +37,7 @@ export function FeedPage() {
 
   const feed = useFeed({
     space,
-    priority: (priority as never) ?? undefined,
+    priority,
     onlyUnread,
   });
   const searchResults = useStoreSearch(term);

@@ -10,7 +10,7 @@ import {
 import { useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
-import type { EnrichedPost, EnrichedReply } from "./types";
+import type { EnrichedPost, EnrichedReply, Priority } from "./types";
 import { useSession } from "./session";
 
 /**
@@ -29,8 +29,6 @@ import { useSession } from "./session";
 const LOCAL_PREFIX = "local_";
 const isLocalId = (id: string) => id.startsWith(LOCAL_PREFIX);
 
-type Priority = "urgent" | "high" | "normal";
-
 type SessionPost = Omit<
   Doc<"posts">,
   "summary" | "summaryModel" | "summaryUpdatedAt"
@@ -40,15 +38,7 @@ type SessionPost = Omit<
   summaryUpdatedAt?: number;
 };
 
-type SessionReply = {
-  _id: Id<"replies">;
-  _creationTime: number;
-  postId: Id<"posts">;
-  parentId?: Id<"replies">;
-  authorId: Id<"users">;
-  body: string;
-  createdAt: number;
-};
+type SessionReply = Doc<"replies">;
 
 type PostBump = {
   lastActivityAt: number;
@@ -369,7 +359,7 @@ export function useFeed(args: {
   const backend = useQuery(api.posts.feed, {
     viewerId: currentUserId,
     space: args.space,
-    priority: args.priority as never,
+    priority: args.priority,
     // onlyUnread is applied client-side so session activity can flip it.
   });
 

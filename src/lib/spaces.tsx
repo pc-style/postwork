@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useSession } from "./session";
 import { AVATAR_PALETTE } from "../../convex/avatarPalette";
+import type { Priority } from "./types";
 
 export type Org = {
   id: string;
@@ -41,7 +42,7 @@ export type SpacePost = {
   authorColor: string;
   title: string;
   body: string;
-  priority: "urgent" | "high" | "normal";
+  priority: Priority;
   visibility: "space" | "org" | "public";
   replyCount: number;
   createdAt: number;
@@ -74,7 +75,7 @@ type SpacesValue = {
     spaceId: string;
     title: string;
     body: string;
-    priority: "urgent" | "high" | "normal";
+    priority: Priority;
     visibility?: "space" | "org" | "public";
   }) => void;
 };
@@ -382,7 +383,7 @@ export function SpacesProvider({ children }: { children: ReactNode }) {
       spaceId: string;
       title: string;
       body: string;
-      priority: "urgent" | "high" | "normal";
+      priority: Priority;
       visibility?: "space" | "org" | "public";
     }) => {
       const name = currentUser?.name ?? "Northwind teammate";
