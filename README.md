@@ -34,8 +34,8 @@ bun install
 bun run dev            # runs Convex + Vite together
 ```
 
-Open http://localhost:5173. Use the avatar menu (top-right) to **switch
-teammates** and watch unread/priority states change per user.
+Open http://localhost:5173. Use the UserSwitcher at the bottom of the left
+sidebar to **switch teammates** and watch unread/priority states change per user.
 
 If the database is empty, seed it:
 
@@ -173,14 +173,21 @@ project.
 
 ```
 convex/
-  schema.ts     users · posts · replies (nested) · postReads
-  posts.ts      feed (activity-bumped) · search · get · counts · create
-  replies.ts    nested replies + activity bump
-  reads.ts      per-user unread tracking
-  ai.ts         summarizePost action (provider switch: pioneer | gateway)
-  seed.ts       narrative demo data + baked summaries
+  auth.config.ts       Convex auth provider config
+  schema.ts            users · posts · replies · postReads · flashExperimentVotes · agentTasks · orgs · spaces · spaceMemberships
+  posts.ts             feed (activity-bumped) · search · get
+  replies.ts           listForPost · create, with nested replies + activity bump
+  discussions.ts       getThread · listCounts · ensureThread · addMessage
+  spaces.ts            list · membershipsForSpace · feedForSpace
+  users.ts             list · updateProfile
+  ai.ts                summarizePost action (provider switch: openai | gateway | pioneer)
+  agentTasks.ts        runAgent action for post/space agent replies
+  flashExperiments.ts  listVotes · setVote
+  authUsers.ts         identity-to-user helpers
+  avatarPalette.ts     seeded avatar color helpers
+  seed.ts              narrative demo data + baked summaries
 src/
-  routes/       RootLayout · FeedPage · PostPage
-  components/    PostCard · ReplyTree · Composer · AgentSummary · UserSwitcher · NewPostDialog
-  lib/          convexClient · session (in-app user switcher) · format · types
+  routes/              AgentsPage · FeedPage · FlashExperimentPage · FlashExperimentsPage · LinkedOrgsPage · PostPage · RootLayout · SpacePage · SpacesPage · WallPage
+  components/          AccentPanel · AgentSummary · AgentTag · AgentTasksPanel · AppShell · Avatar · Button · Chip · CodeBlock · Composer · Dialog · EmptyState · LoadingState · Markdown · NewPostDialog · OrgSquare · PageHeader · PostCard · PostForm · PostMetaChips · QuickPostBar · ReplyTree · RichText · SendAgentButton · StatusChip · UserRoleTag · UserSwitcher · WallPostDialog
+  lib/                 agentMentions · agentTasks · codeFence · convexClient · format · providers · replyTree · session · shiki · spaces · store · types · useDocumentTitle · usePopoverDismiss
 ```
