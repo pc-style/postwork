@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
+import { Button } from "./Button";
 
 function ChevronUpIcon({ className = "" }: { className?: string }) {
   return (
@@ -208,13 +209,13 @@ export function QuickPostBar() {
               placeholder="share context, a decision, or a question…"
               className="min-h-[2.5rem] w-full resize-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-accent/50"
             />
-            <button
+            <Button
               onClick={() => void submit()}
               disabled={busy || !canPost}
-              className="shrink-0 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40"
+              className="shrink-0"
             >
               {busy ? "posting…" : "post"}
-            </button>
+            </Button>
           </div>
 
           {open && (

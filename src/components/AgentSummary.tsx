@@ -3,6 +3,7 @@ import { useStore } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Markdown } from "./Markdown";
 import { timeAgo } from "../lib/format";
+import { Button } from "./Button";
 
 export function AgentSummary({
   postId,
@@ -49,14 +50,15 @@ export function AgentSummary({
             agent summary
           </span>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onRegenerate}
           disabled={busy || local}
           title={local ? "Save the post to generate a summary" : undefined}
-          className="rounded-md border border-accent/30 px-2.5 py-1 text-xs text-accent-soft transition hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "summarizing…" : local ? "unsaved" : summary ? "regenerate" : "generate"}
-        </button>
+        </Button>
       </div>
 
       {summary ? (

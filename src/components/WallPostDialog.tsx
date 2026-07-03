@@ -4,6 +4,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { PRIORITIES, priorityStyles } from "../lib/format";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
+import { Button } from "./Button";
 
 export function WallPostDialog({
   wallOwnerId,
@@ -95,19 +96,12 @@ export function WallPostDialog({
         </div>
 
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-[var(--color-muted)] transition hover:text-fg"
-          >
+          <Button variant="quiet" onClick={onClose}>
             cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={busy || !body.trim() || !currentUserId}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40"
-          >
+          </Button>
+          <Button onClick={submit} disabled={busy || !body.trim() || !currentUserId}>
             {busy ? "posting…" : "post"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

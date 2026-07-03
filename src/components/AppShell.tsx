@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
 import { UserSwitcher } from "./UserSwitcher";
 import { NewPostDialog } from "./NewPostDialog";
+import { Button } from "./Button";
 
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
 // not a duplicate of "home". Both point at "/" but carry different search.
@@ -64,12 +65,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <button
-            onClick={() => setComposing(true)}
-            className="mt-1 rounded-lg bg-accent px-3 py-2 text-center text-sm font-medium text-fg transition hover:bg-accent-soft"
-          >
+          <Button onClick={() => setComposing(true)} className="mt-1 text-center">
             + new post
-          </button>
+          </Button>
 
           <div className="mt-auto">
             <UserSwitcher />

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { useSpaces, type Org } from "../lib/spaces";
 import { PRIORITIES, priorityStyles, timeAgo, titleCase } from "../lib/format";
+import { Button } from "../components/Button";
 
 type Priority = (typeof PRIORITIES)[number];
 type Visibility = "space" | "org" | "public";
@@ -134,12 +135,9 @@ export function SpacePage() {
                   placeholder="@handle"
                   className="w-32 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-xs outline-none focus:border-accent/50"
                 />
-                <button
-                  onClick={submitInvite}
-                  className="rounded-full bg-accent px-3.5 py-1.5 text-xs font-medium text-fg transition hover:bg-accent-soft"
-                >
+                <Button variant="pill" onClick={submitInvite}>
                   invite org
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -230,9 +228,9 @@ export function SpacePage() {
           </label>
         </div>
         <div className="flex justify-end">
-          <button onClick={submitPost} disabled={!title.trim() || !body.trim()} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40">
+          <Button onClick={submitPost} disabled={!title.trim() || !body.trim()}>
             post
-          </button>
+          </Button>
         </div>
       </section>
     </div>

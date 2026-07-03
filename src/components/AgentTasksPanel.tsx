@@ -6,6 +6,7 @@ import { useStore } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
+import { Button } from "./Button";
 import { Markdown } from "./Markdown";
 import { StatusChip } from "./StatusChip";
 
@@ -91,13 +92,12 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           placeholder="ask an agent to investigate…"
           className="resize-y rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-fg outline-none focus:border-accent/50"
         />
-        <button
+        <Button
           onClick={send}
           disabled={busy || !selectedAgent || !post || !prompt.trim()}
-          className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? "sending…" : "send agent"}
-        </button>
+        </Button>
       </div>
 
       {tasks.length === 0 ? (

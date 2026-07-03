@@ -10,6 +10,7 @@ import {
 } from "../lib/agentMentions";
 import { insertCodeFence } from "../lib/codeFence";
 import { Avatar } from "./Avatar";
+import { Button } from "./Button";
 
 export function Composer({
   postId,
@@ -128,20 +129,13 @@ export function Composer({
           </div>
           <div className="flex gap-2">
             {onDone && (
-              <button
-                onClick={onDone}
-                className="rounded-md px-3 py-1.5 text-sm text-[var(--color-muted)] transition hover:text-fg"
-              >
+              <Button variant="quiet" onClick={onDone}>
                 cancel
-              </button>
+              </Button>
             )}
-            <button
-              onClick={submit}
-              disabled={busy || !body.trim()}
-              className="rounded-md bg-accent px-3.5 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40"
-            >
+            <Button onClick={submit} disabled={busy || !body.trim()}>
               {busy ? "sending…" : "reply"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

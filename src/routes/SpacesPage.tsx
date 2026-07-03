@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useSpaces, type Org } from "../lib/spaces";
+import { Button } from "../components/Button";
 
 function OrgSquare({ org, size = "size-6" }: { org: Org; size?: string }) {
   return (
@@ -78,9 +79,9 @@ export function SpacesPage() {
                   <div className="text-xs text-[var(--color-muted)]">from {fromOrg.name}</div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => acceptInvite(space.id)} className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-fg transition hover:bg-accent-soft">
+                  <Button size="sm" onClick={() => acceptInvite(space.id)}>
                     accept
-                  </button>
+                  </Button>
                   <button onClick={() => declineInvite(space.id)} className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-muted)] transition hover:text-fg">
                     decline
                   </button>
@@ -98,9 +99,9 @@ export function SpacesPage() {
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="optional description" className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
           <div className="flex flex-wrap gap-2">
             <input value={handles} onChange={(e) => setHandles(e.target.value)} placeholder="invite org by @handle" className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
-            <button onClick={submit} disabled={!name.trim()} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40">
+            <Button onClick={submit} disabled={!name.trim()}>
               create space
-            </button>
+            </Button>
           </div>
         </div>
       </section>

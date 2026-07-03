@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
+import { Button } from "./Button";
 
 export function NewPostDialog({ onClose }: { onClose: () => void }) {
   const { currentUserId } = useSession();
@@ -104,19 +105,12 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-[var(--color-muted)] transition hover:text-fg"
-          >
+          <Button variant="quiet" onClick={onClose}>
             cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={busy || !title.trim() || !body.trim()}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:opacity-40"
-          >
+          </Button>
+          <Button onClick={submit} disabled={busy || !title.trim() || !body.trim()}>
             {busy ? "posting…" : "post"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

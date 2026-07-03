@@ -3,6 +3,7 @@ import { Link, getRouteApi } from "@tanstack/react-router";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AgentTag } from "../components/AgentTag";
 import { Avatar } from "../components/Avatar";
+import { Button } from "../components/Button";
 import { PostCard } from "../components/PostCard";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { WallPostDialog } from "../components/WallPostDialog";
@@ -55,12 +56,9 @@ export function WallPage() {
               <p className="mt-1 text-sm text-[var(--color-muted)]">{owner.title}</p>
             </div>
           </div>
-          <button
-            onClick={() => setOpen(true)}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition hover:bg-accent-soft"
-          >
+          <Button onClick={() => setOpen(true)}>
             post on {owner.name}'s wall
-          </button>
+          </Button>
         </div>
       </section>
 
