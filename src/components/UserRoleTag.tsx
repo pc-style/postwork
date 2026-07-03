@@ -1,4 +1,5 @@
 import type { Doc } from "../../convex/_generated/dataModel";
+import { Chip } from "./Chip";
 
 type UserRole = Doc<"users">["role"];
 
@@ -12,10 +13,8 @@ export function UserRoleTag({
   if (role !== "admin") return null;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-sm border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-soft ${className}`}
-    >
+    <Chip tone="accent" size="sm" className={className}>
       Admin
-    </span>
+    </Chip>
   );
 }

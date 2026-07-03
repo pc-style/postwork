@@ -3,10 +3,10 @@ import type { EnrichedPost } from "../lib/types";
 import { Avatar } from "./Avatar";
 import { AgentTag } from "./AgentTag";
 import { UserRoleTag } from "./UserRoleTag";
-import { timeAgo, priorityStyles } from "../lib/format";
+import { PostMetaChips } from "./PostMetaChips";
+import { timeAgo } from "../lib/format";
 
 export function PostCard({ post }: { post: EnrichedPost }) {
-  const p = priorityStyles[post.priority];
   const snippet =
     post.body.length > 180 ? post.body.slice(0, 180).trimEnd() + "…" : post.body;
 
@@ -24,23 +24,10 @@ export function PostCard({ post }: { post: EnrichedPost }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
-            {post.pinned && (
-              <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-accent-soft">
-                Pinned
-              </span>
-            )}
-            <span
-              className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${p.className}`}
-            >
-              <span className={`size-1.5 rounded-full ${p.dot}`} />
-              {p.label}
-            </span>
-            <span className="rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">
-              {post.space}
-            </span>
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <PostMetaChips post={post} />
             {post.summary && (
-              <span className="text-accent-soft" title="Has agent summary">
+              <span className="text-[11px] text-accent-soft" title="Has agent summary">
                 ai summary
               </span>
             )}

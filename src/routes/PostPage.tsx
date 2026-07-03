@@ -6,11 +6,12 @@ import { Avatar } from "../components/Avatar";
 import { AgentSummary } from "../components/AgentSummary";
 import { ReplyTree } from "../components/ReplyTree";
 import { Composer } from "../components/Composer";
-import { timeAgo, priorityStyles } from "../lib/format";
+import { timeAgo } from "../lib/format";
 import { AgentTag } from "../components/AgentTag";
 import { RichText } from "../components/RichText";
 import { AgentTasksPanel } from "../components/AgentTasksPanel";
 import { UserRoleTag } from "../components/UserRoleTag";
+import { PostMetaChips } from "../components/PostMetaChips";
 import { useActiveExperiment } from "../flashExperiments/active";
 
 const routeApi = getRouteApi("/app/posts/$postId");
@@ -51,8 +52,6 @@ export function PostPage() {
     );
   }
 
-  const p = priorityStyles[post.priority];
-
   return (
     <div>
       <Link
@@ -66,22 +65,7 @@ export function PostPage() {
         slots.post({ postId: post._id })
       ) : (
       <article className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px]">
-          {post.pinned && (
-            <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-accent-soft">
-              Pinned
-            </span>
-          )}
-          <span
-            className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${p.className}`}
-          >
-            <span className={`size-1.5 rounded-full ${p.dot}`} />
-            {p.label}
-          </span>
-          <span className="rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">
-            {post.space}
-          </span>
-        </div>
+        <PostMetaChips post={post} className="mb-3" />
 
         <h1 className="text-xl font-semibold text-fg">{post.title}</h1>
 

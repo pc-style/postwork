@@ -3,6 +3,8 @@ import { Link, getRouteApi } from "@tanstack/react-router";
 import { useSpaces, type Org } from "../lib/spaces";
 import { PRIORITIES, priorityStyles, timeAgo, titleCase } from "../lib/format";
 import { Button } from "../components/Button";
+import { Chip } from "../components/Chip";
+import { priorityTones } from "../components/PostMetaChips";
 
 type Priority = (typeof PRIORITIES)[number];
 type Visibility = "space" | "org" | "public";
@@ -122,9 +124,9 @@ export function SpacePage() {
                 >
                   <OrgSquare org={org} size="size-5" />
                   <span className="text-fg">{org.name}</span>
-                  <span className="rounded-full bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--color-muted)]">
+                  <Chip tone="muted" size="sm" className="rounded-full bg-[var(--color-surface-2)]">
                     {role}
-                  </span>
+                  </Chip>
                 </div>
               ))}
               <div className="flex items-center gap-2">
@@ -158,19 +160,16 @@ export function SpacePage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${p.className}`}>
-                      <span className={`size-1.5 rounded-full ${p.dot}`} />
+                    <Chip tone={priorityTones[post.priority] ?? "muted"} dot>
                       {p.label}
-                    </span>
+                    </Chip>
                     {org && (
-                      <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[var(--color-muted)]">
+                      <Chip tone="neutral">
                         <OrgSquare org={org} size="size-4" />
                         {org.name}
-                      </span>
+                      </Chip>
                     )}
-                    <span className="rounded-md border border-accent/30 bg-accent/5 px-1.5 py-0.5 text-accent-soft">
-                      {titleCase(post.visibility)}
-                    </span>
+                    <Chip tone="accent">{titleCase(post.visibility)}</Chip>
                   </div>
                   <h2 className="text-[15px] font-semibold text-fg">{post.title}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">{snippet}</p>
