@@ -1,17 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useSpaces, type Org } from "../lib/spaces";
-
-function OrgSquare({ org }: { org: Org }) {
-  return (
-    <div
-      style={{ backgroundColor: org.color }}
-      className="flex size-6 items-center justify-center rounded-md text-[10px] font-semibold text-fg"
-      title={`${org.name} @${org.handle}`}
-    >
-      {org.initials}
-    </div>
-  );
-}
+import { useSpaces } from "../lib/spaces";
+import { OrgSquare } from "../components/OrgSquare";
 
 export function LinkedOrgsPage() {
   const { orgs, myOrg, allSpaces, membershipsForSpace } = useSpaces();

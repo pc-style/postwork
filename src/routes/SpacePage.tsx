@@ -6,20 +6,9 @@ import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
 import { priorityTones } from "../components/PostMetaChips";
 import { PostForm } from "../components/PostForm";
+import { OrgSquare } from "../components/OrgSquare";
 
 type Visibility = "space" | "org" | "public";
-
-function OrgSquare({ org, size = "size-6" }: { org: Org; size?: string }) {
-  return (
-    <div
-      style={{ backgroundColor: org.color }}
-      className={`flex ${size} shrink-0 items-center justify-center rounded-md text-[10px] font-semibold text-fg`}
-      title={`${org.name} @${org.handle}`}
-    >
-      {org.initials}
-    </div>
-  );
-}
 
 // Visual glyph for the space: a tinted tile carrying the member orgs' colors.
 function SpaceGlyph({ orgs }: { orgs: Org[] }) {

@@ -1,19 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useSpaces, type Org } from "../lib/spaces";
+import { useSpaces } from "../lib/spaces";
 import { Button } from "../components/Button";
-
-function OrgSquare({ org, size = "size-6" }: { org: Org; size?: string }) {
-  return (
-    <div
-      style={{ backgroundColor: org.color }}
-      className={`flex ${size} items-center justify-center rounded-md text-[10px] font-semibold text-fg`}
-      title={`${org.name} @${org.handle}`}
-    >
-      {org.initials}
-    </div>
-  );
-}
+import { OrgSquare } from "../components/OrgSquare";
 
 function parseHandles(value: string) {
   return value
