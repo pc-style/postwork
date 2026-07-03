@@ -54,12 +54,12 @@ export function FeedPage() {
             value={term}
             onChange={(e) => setSearch({ q: e.target.value || undefined })}
             placeholder="search posts: decisions, incidents, anything…"
-            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pr-3 pl-8 text-sm outline-none focus:border-accent/50"
+            className="w-full rounded-lg border border-border bg-surface py-2.5 pr-3 pl-8 text-sm outline-none focus:border-accent/50"
           />
           {searching && (
             <button
               onClick={() => setSearch({ q: undefined })}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-[var(--color-muted)] hover:text-fg"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted hover:text-fg"
             >
               clear
             </button>
@@ -77,7 +77,7 @@ export function FeedPage() {
               {s}
             </FilterChip>
           ))}
-          <span className="mx-1 h-4 w-px bg-[var(--color-border)]" />
+          <span className="mx-1 h-4 w-px bg-border" />
           {PRIORITIES.map((pr) => (
             <FilterChip
               key={pr}
@@ -88,14 +88,14 @@ export function FeedPage() {
               {pr}
             </FilterChip>
           ))}
-          <span className="mx-1 h-4 w-px bg-[var(--color-border)]" />
+          <span className="mx-1 h-4 w-px bg-border" />
           <FilterChip active={onlyUnread} onClick={() => setSearch({ unread: onlyUnread ? undefined : true })}>
             unread only
           </FilterChip>
 
           <button
             onClick={() => store.markAllRead()}
-            className="ml-auto text-xs text-[var(--color-muted)] transition hover:text-fg"
+            className="ml-auto text-xs text-muted transition hover:text-fg"
           >
             mark all read
           </button>
@@ -103,7 +103,7 @@ export function FeedPage() {
       )}
 
       {searching && (
-        <p className="mb-3 text-sm text-[var(--color-muted)]">
+        <p className="mb-3 text-sm text-muted">
           {searchResults === undefined
             ? "searching…"
             : `${searchResults.length} result${
@@ -113,11 +113,11 @@ export function FeedPage() {
       )}
 
       {posts === undefined ? (
-        <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+        <div className="py-12 text-center text-sm text-muted">
           Loading…
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-border)] py-12 text-center text-sm text-[var(--color-muted)]">
+        <div className="rounded-lg border border-dashed border-border py-12 text-center text-sm text-muted">
           {searching
             ? "No posts match your search."
             : onlyUnread
@@ -163,7 +163,7 @@ function FilterChip({
       className={`rounded-lg border px-2.5 py-1 text-xs lowercase transition ${
         active
           ? className || "border-accent/40 bg-accent/15 text-accent-soft"
-          : "border-[var(--color-border)] text-[var(--color-muted)] hover:text-fg"
+          : "border-border text-muted hover:text-fg"
       }`}
     >
       {children}

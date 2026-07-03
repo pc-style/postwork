@@ -12,7 +12,7 @@ export function Avatar({
   if (!user) {
     return (
       <div
-        className="rounded-full bg-[var(--color-surface-2)]"
+        className="rounded-full bg-surface-2"
         style={{ width: size, height: size }}
       />
     );
@@ -20,7 +20,7 @@ export function Avatar({
   return (
     <div
       className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-fg ${
-        ring ? "ring-2 ring-[var(--color-bg)]" : ""
+        ring ? "ring-2 ring-bg" : ""
       }`}
       style={{
         width: size,

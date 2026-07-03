@@ -47,7 +47,7 @@ function ReplyNode({
 }) {
   const [replying, setReplying] = useState(false);
   return (
-    <div className={depth > 0 ? "ml-4 border-l border-[var(--color-border)] pl-4" : ""}>
+    <div className={depth > 0 ? "ml-4 border-l border-border pl-4" : ""}>
       <div className="py-2.5">
         <div className="flex items-start gap-2.5">
           <Avatar user={node.author} size={30} />
@@ -58,7 +58,7 @@ function ReplyNode({
               </span>
               {node.author?.isAgent && <AgentTag />}
               <UserRoleTag role={node.author?.role} />
-              <span className="text-[11px] text-[var(--color-muted)]">
+              <span className="text-[11px] text-muted">
                 {timeAgo(node.createdAt)}
               </span>
             </div>
@@ -68,7 +68,7 @@ function ReplyNode({
             <div className="mt-1 flex items-center gap-3">
               <button
                 onClick={() => setReplying((r) => !r)}
-                className="text-xs text-[var(--color-muted)] transition hover:text-accent-soft"
+                className="text-xs text-muted transition hover:text-accent-soft"
               >
                 {replying ? "cancel" : "reply"}
               </button>
@@ -112,13 +112,13 @@ export function ReplyTree({
   const tree = buildTree(replies);
   if (tree.length === 0) {
     return (
-      <p className="py-4 text-sm text-[var(--color-muted)]">
+      <p className="py-4 text-sm text-muted">
         No replies yet. Start the thread.
       </p>
     );
   }
   return (
-    <div className="divide-y divide-[var(--color-border)]/60">
+    <div className="divide-y divide-border/60">
       {tree.map((node) => (
         <ReplyNode key={node._id} node={node} postId={postId} depth={0} />
       ))}

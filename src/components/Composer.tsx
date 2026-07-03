@@ -105,7 +105,7 @@ export function Composer({
           }}
           placeholder={placeholder}
           rows={compact ? 2 : 3}
-          className="w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-accent/50"
+          className="w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export function Composer({
               type="button"
               onClick={onCodeFence}
               title="insert code block"
-              className="rounded-md border border-[var(--color-border)] px-2 py-1 text-[11px] text-[var(--color-muted)] transition hover:text-fg"
+              className="rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:text-fg"
             >
               {"</> code"}
             </button>
@@ -122,7 +122,7 @@ export function Composer({
                 summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
               </span>
             ) : (
-              <span className="hidden text-[11px] text-[var(--color-muted)] sm:inline">
+              <span className="hidden text-[11px] text-muted sm:inline">
                 ⌘/Ctrl + Enter · @cursor to summon an agent
               </span>
             )}

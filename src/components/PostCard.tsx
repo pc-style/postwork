@@ -14,7 +14,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
     <Link
       to="/posts/$postId"
       params={{ postId: post._id }}
-      className="group block rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]"
+      className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2"
     >
       <div className="flex items-start gap-3">
         {post.unread ? (
@@ -41,12 +41,12 @@ export function PostCard({ post }: { post: EnrichedPost }) {
             {post.title}
           </h3>
 
-          <p className="mt-1 line-clamp-2 text-sm text-[var(--color-muted)]">
+          <p className="mt-1 line-clamp-2 text-sm text-muted">
             {snippet}
           </p>
 
           <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
+            <div className="flex items-center gap-2 text-xs text-muted">
               <Avatar user={post.author} size={20} />
               <span>{post.author?.name ?? "Unknown"}</span>
               {post.author?.isAgent && <AgentTag />}
@@ -55,7 +55,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
               <span>{timeAgo(post.createdAt)}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-[var(--color-muted)]">
+            <div className="flex items-center gap-3 text-xs text-muted">
               <div className="flex -space-x-1.5">
                 {post.participants.slice(0, 4).map((u) => (
                   <Avatar key={u._id} user={u} size={20} ring />

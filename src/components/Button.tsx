@@ -9,7 +9,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   ghost:
     "rounded-md border border-accent/30 text-accent-soft transition hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-40",
   quiet:
-    "rounded-md text-[var(--color-muted)] transition hover:text-fg",
+    "rounded-md text-muted transition hover:text-fg",
   pill: "rounded-full bg-accent px-3.5 py-1.5 text-xs font-medium text-fg transition hover:bg-accent-soft",
 };
 

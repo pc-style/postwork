@@ -10,7 +10,7 @@ export function AgentTag({ className = "" }: { className?: string }) {
       tone="neutral"
       size="sm"
       uppercase
-      className={`bg-[var(--color-surface-2)] ${className}`}
+      className={`bg-surface-2 ${className}`}
     >
       agent
     </Chip>

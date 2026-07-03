@@ -21,7 +21,7 @@ export function UserSwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pr-2.5 pl-1.5 transition hover:bg-[var(--color-surface-2)]"
+        className="flex items-center gap-2 rounded-lg border border-border bg-surface py-1.5 pr-2.5 pl-1.5 transition hover:bg-surface-2"
       >
         <Avatar user={currentUser} size={28} />
         <span className="hidden max-w-[8rem] truncate text-sm font-medium whitespace-nowrap sm:inline">
@@ -29,19 +29,19 @@ export function UserSwitcher() {
         </span>
         {currentUser.isAgent && <AgentTag className="hidden sm:inline-flex" />}
         <UserRoleTag role={currentUser.role} className="hidden sm:inline-flex" />
-        <span className="text-[var(--color-muted)]">▾</span>
+        <span className="text-muted">▾</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 bottom-full z-20 mb-2 w-64 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
-          <div className="border-b border-[var(--color-border)] px-3 py-2 text-[11px] font-medium text-[var(--color-muted)]">
+        <div className="absolute right-0 bottom-full z-20 mb-2 w-64 overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
+          <div className="border-b border-border px-3 py-2 text-[11px] font-medium text-muted">
             view as teammate
           </div>
           {users.map((u) => (
             <div
               key={u._id}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 transition hover:bg-[var(--color-surface-2)] ${
-                u._id === currentUser._id ? "bg-[var(--color-surface-2)]" : ""
+              className={`flex w-full items-center gap-2.5 px-3 py-2 transition hover:bg-surface-2 ${
+                u._id === currentUser._id ? "bg-surface-2" : ""
               }`}
             >
               <button
@@ -58,7 +58,7 @@ export function UserSwitcher() {
                     {u.isAgent && <AgentTag />}
                     <UserRoleTag role={u.role} />
                   </div>
-                  <div className="truncate text-[11px] text-[var(--color-muted)]">
+                  <div className="truncate text-[11px] text-muted">
                     {u.title}
                   </div>
                 </div>
@@ -67,7 +67,7 @@ export function UserSwitcher() {
                 to="/u/$userId"
                 params={{ userId: u._id }}
                 onClick={() => setOpen(false)}
-                className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-[var(--color-muted)] transition hover:text-accent-soft"
+                className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-muted transition hover:text-accent-soft"
                 title={`${u.name}'s wall`}
               >
                 wall →

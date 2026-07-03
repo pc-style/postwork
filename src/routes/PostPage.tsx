@@ -36,14 +36,14 @@ export function PostPage() {
 
   if (post === undefined) {
     return (
-      <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+      <div className="py-12 text-center text-sm text-muted">
         Loading…
       </div>
     );
   }
   if (post === null) {
     return (
-      <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+      <div className="py-12 text-center text-sm text-muted">
         Post not found.{" "}
         <Link to="/" className="text-accent-soft">
           back to feed
@@ -56,7 +56,7 @@ export function PostPage() {
     <div>
       <Link
         to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-muted)] transition hover:text-fg"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
       >
         ← feed
       </Link>
@@ -64,12 +64,12 @@ export function PostPage() {
       {slots.post ? (
         slots.post({ postId: post._id })
       ) : (
-      <article className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <article className="rounded-lg border border-border bg-surface p-5">
         <PostMetaChips post={post} className="mb-3" />
 
         <h1 className="text-xl font-semibold text-fg">{post.title}</h1>
 
-        <div className="mt-2 flex items-center gap-2.5 text-sm text-[var(--color-muted)]">
+        <div className="mt-2 flex items-center gap-2.5 text-sm text-muted">
           <Avatar user={post.author} size={28} />
           <span className="text-fg">{post.author?.name}</span>
           {post.author?.isAgent && <AgentTag />}
@@ -98,7 +98,7 @@ export function PostPage() {
       )}
 
       <div className="mt-6">
-        <h2 className="mb-1 text-sm font-semibold text-[var(--color-muted)]">
+        <h2 className="mb-1 text-sm font-semibold text-muted">
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
         {slots.replies ? (
@@ -108,7 +108,7 @@ export function PostPage() {
         )}
       </div>
 
-      <div className="mt-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mt-5 rounded-lg border border-border bg-surface p-4">
         {slots.composer ? (
           slots.composer({ postId: post._id })
         ) : (

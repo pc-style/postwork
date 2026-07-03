@@ -26,18 +26,18 @@ export const priorityStyles: Record<
 > = {
   urgent: {
     label: "Urgent",
-    className: "bg-[var(--color-urgent)]/10 text-[var(--color-urgent)] border-[var(--color-urgent)]/30",
-    dot: "bg-[var(--color-urgent)]",
+    className: "bg-urgent/10 text-urgent border-urgent/30",
+    dot: "bg-urgent",
   },
   high: {
     label: "High",
-    className: "bg-[var(--color-high)]/10 text-[var(--color-high)] border-[var(--color-high)]/30",
-    dot: "bg-[var(--color-high)]",
+    className: "bg-high/10 text-high border-high/30",
+    dot: "bg-high",
   },
   normal: {
     label: "Normal",
-    className: "bg-[var(--color-faint)]/20 text-[var(--color-muted)] border-[var(--color-border)]",
-    dot: "bg-[var(--color-muted)]",
+    className: "bg-faint/20 text-muted border-border",
+    dot: "bg-muted",
   },
 };
 

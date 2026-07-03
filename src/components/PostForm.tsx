@@ -28,7 +28,7 @@ export function PriorityPicker({
           className={`rounded-md border px-2.5 py-1 text-xs lowercase transition ${
             priority === pr
               ? priorityStyles[pr].className
-              : "border-[var(--color-border)] text-[var(--color-muted)] hover:text-fg"
+              : "border-border text-muted hover:text-fg"
           }`}
         >
           {pr}
@@ -87,24 +87,24 @@ export function PostForm({
         onChange={(e) => setTitle(e.target.value)}
         autoFocus
         placeholder={titlePlaceholder}
-        className="mb-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-base font-medium outline-none focus:border-accent/50"
+        className="mb-3 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-base font-medium outline-none focus:border-accent/50"
       />
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={7}
         placeholder={bodyPlaceholder}
-        className="mb-3 w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5 text-sm outline-none focus:border-accent/50"
+        className="mb-3 w-full resize-y rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50"
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
         {showSpace && (
           <label className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--color-muted)]">space</span>
+            <span className="text-muted">space</span>
             <select
               value={space}
               onChange={(e) => setSpace(e.target.value)}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
+              className="rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
             >
               {SPACES.map((s) => (
                 <option key={s} value={s}>
@@ -116,7 +116,7 @@ export function PostForm({
         )}
 
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-[var(--color-muted)]">priority</span>
+          <span className="text-muted">priority</span>
           <PriorityPicker priority={priority} onChange={setPriority} />
         </div>
 

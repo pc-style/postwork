@@ -19,7 +19,7 @@ function PriorityFirstHeader() {
       <h1 className="mt-1 text-xl font-semibold text-fg">
         start from what needs attention
       </h1>
-      <p className="mt-2 text-sm text-[var(--color-muted)]">
+      <p className="mt-2 text-sm text-muted">
         This experiment would make urgent, high-priority, and unread work the
         first-class entry points before the chronological feed. The cards below
         drop you into the real feed — the filtering proposal itself is what's
@@ -30,10 +30,10 @@ function PriorityFirstHeader() {
           <Link
             key={label}
             to="/"
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]"
+            className="rounded-lg border border-border bg-surface p-3 text-left transition hover:border-accent/40 hover:bg-surface-2"
           >
             <div className="text-sm text-fg">{label}</div>
-            <div className="mt-1 text-xs text-[var(--color-muted)]">{detail}</div>
+            <div className="mt-1 text-xs text-muted">{detail}</div>
           </Link>
         ))}
       </div>

@@ -23,7 +23,7 @@ export function FlashExperimentPage() {
 
   if (!experiment) {
     return (
-      <div className="rounded-lg border border-dashed border-accent/40 bg-[var(--color-surface)] p-5 font-mono">
+      <div className="rounded-lg border border-dashed border-accent/40 bg-surface p-5 font-mono">
         <h1 className="text-lg font-semibold text-fg">experiment not found</h1>
         <Link
           to="/flash-experiments"

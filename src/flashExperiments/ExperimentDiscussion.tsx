@@ -57,10 +57,10 @@ export function ExperimentDiscussion({
   );
 
   return (
-    <div className="border-t border-dashed border-[var(--color-border)]">
+    <div className="border-t border-dashed border-border">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-xs text-[var(--color-muted)] transition hover:text-fg"
+        className="flex w-full items-center justify-between px-4 py-2.5 text-xs text-muted transition hover:text-fg"
       >
         <span>
           discussion
@@ -76,7 +76,7 @@ export function ExperimentDiscussion({
       {open && (
         <div className="space-y-3 px-4 pb-4">
           {thread === undefined ? (
-            <p className="text-xs text-[var(--color-muted)]">loading…</p>
+            <p className="text-xs text-muted">loading…</p>
           ) : (
             <Thread
               slug={slug}
@@ -131,7 +131,7 @@ function Thread({
   return (
     <>
       {tree.length === 0 ? (
-        <p className="rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-3 text-xs text-[var(--color-muted)]">
+        <p className="rounded-md border border-dashed border-border bg-bg px-3 py-3 text-xs text-muted">
           no replies yet — start the conversation about this experiment.
         </p>
       ) : (
@@ -183,27 +183,27 @@ function ReplyItem({
     <li
       className={
         depth > 0
-          ? "border-l border-dashed border-[var(--color-border)] pl-3"
+          ? "border-l border-dashed border-border pl-3"
           : ""
       }
     >
-      <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5">
+      <div className="rounded-md border border-border bg-bg p-2.5">
         <div className="flex items-center gap-2">
           <Avatar user={node.author} size={20} />
           <span className="text-xs text-fg">
             {node.author?.name ?? "member"}
           </span>
           <UserRoleTag role={node.author?.role} />
-          <span className="text-[10px] text-[var(--color-muted)]">
+          <span className="text-[10px] text-muted">
             {timeAgo(node.createdAt)}
           </span>
         </div>
-        <div className="mt-1.5 font-sans text-sm text-[var(--color-fg)]">
+        <div className="mt-1.5 font-sans text-sm text-fg">
           <Markdown text={node.body} />
         </div>
         <button
           onClick={() => setReplyingTo(isReplying ? null : node._id)}
-          className="mt-1.5 text-[11px] text-[var(--color-muted)] transition hover:text-accent-soft"
+          className="mt-1.5 text-[11px] text-muted transition hover:text-accent-soft"
         >
           {isReplying ? "cancel" : "reply"}
         </button>
@@ -274,7 +274,7 @@ function Composer({
     return (
       <button
         onClick={() => void signIn()}
-        className="w-full rounded-md border border-dashed border-accent/40 bg-[var(--color-bg)] px-3 py-2 text-xs text-accent-soft transition hover:border-accent/60"
+        className="w-full rounded-md border border-dashed border-accent/40 bg-bg px-3 py-2 text-xs text-accent-soft transition hover:border-accent/60"
       >
         sign in to discuss
       </button>
@@ -296,10 +296,10 @@ function Composer({
         }}
         placeholder={placeholder}
         rows={2}
-        className="w-full resize-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 font-sans text-sm text-fg placeholder:text-[var(--color-muted)] focus:border-accent/50 focus:outline-none"
+        className="w-full resize-none rounded-md border border-border bg-bg px-3 py-2 font-sans text-sm text-fg placeholder:text-muted focus:border-accent/50 focus:outline-none"
       />
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-[var(--color-muted)]">
+        <span className="text-[10px] text-muted">
           ⌘/ctrl + enter to post
         </span>
         <button

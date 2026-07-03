@@ -16,7 +16,7 @@ function SpaceGlyph({ orgs }: { orgs: Org[] }) {
   const b = orgs[1]?.color ?? "var(--color-accent-soft)";
   return (
     <div
-      className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)]"
+      className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border"
       style={{
         background:
           "radial-gradient(120% 120% at 20% 15%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 60%), var(--color-surface-2)",
@@ -24,7 +24,7 @@ function SpaceGlyph({ orgs }: { orgs: Org[] }) {
     >
       <div className="flex items-center gap-1.5">
         <span className="size-5 rounded-full" style={{ backgroundColor: a }} />
-        <span className="text-[10px] text-[var(--color-muted)]">×</span>
+        <span className="text-[10px] text-muted">×</span>
         <span className="size-5 rounded-full" style={{ backgroundColor: b }} />
       </div>
     </div>
@@ -62,7 +62,7 @@ export function SpacePage() {
   const space = spaceBySlug(slug);
   if (!space) {
     return (
-      <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+      <div className="py-12 text-center text-sm text-muted">
         space not found. <Link to="/spaces" className="text-accent-soft">back to spaces</Link>
       </div>
     );
@@ -79,17 +79,17 @@ export function SpacePage() {
 
   return (
     <div>
-      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--color-muted)] transition hover:text-fg">
+      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-fg">
         ← Spaces
       </Link>
 
-      <header className="mb-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <header className="mb-5 rounded-lg border border-border bg-surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <SpaceGlyph orgs={members.map((m) => m.org)} />
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold text-fg">{space.name}</h1>
             {space.description && (
-              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)]">
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">
                 {space.description}
               </p>
             )}
@@ -97,11 +97,11 @@ export function SpacePage() {
               {members.map(({ org, role }) => (
                 <div
                   key={org.id}
-                  className="flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] py-1 pl-1.5 pr-2.5 text-xs"
+                  className="flex items-center gap-2 rounded-full border border-border bg-bg py-1 pl-1.5 pr-2.5 text-xs"
                 >
                   <OrgSquare org={org} size="size-5" />
                   <span className="text-fg">{org.name}</span>
-                  <Chip tone="muted" size="sm" className="rounded-full bg-[var(--color-surface-2)]">
+                  <Chip tone="muted" size="sm" className="rounded-full bg-surface-2">
                     {role}
                   </Chip>
                 </div>
@@ -112,7 +112,7 @@ export function SpacePage() {
                   onChange={(e) => setInviteHandle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && submitInvite()}
                   placeholder="@handle"
-                  className="w-32 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-xs outline-none focus:border-accent/50"
+                  className="w-32 rounded-full border border-border bg-bg px-3 py-1.5 text-xs outline-none focus:border-accent/50"
                 />
                 <Button variant="pill" onClick={submitInvite}>
                   invite org
@@ -132,7 +132,7 @@ export function SpacePage() {
           return (
             <article
               key={post.id}
-              className="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]"
+              className="group rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -149,8 +149,8 @@ export function SpacePage() {
                     <Chip tone="accent">{titleCase(post.visibility)}</Chip>
                   </div>
                   <h2 className="text-[15px] font-semibold text-fg">{post.title}</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">{snippet}</p>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{snippet}</p>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-muted">
                     <div
                       style={{ backgroundColor: post.authorColor }}
                       className="flex size-5 items-center justify-center rounded-sm text-[9px] font-semibold text-fg"
@@ -162,7 +162,7 @@ export function SpacePage() {
                     <span>{timeAgo(post.createdAt)}</span>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-3 pt-0.5 text-xs text-[var(--color-muted)]">
+                <div className="flex shrink-0 flex-col items-end gap-3 pt-0.5 text-xs text-muted">
                   <span className="inline-flex items-center gap-1.5 tabular-nums" title={`${post.replyCount} replies`}>
                     <CommentIcon />
                     {post.replyCount}
@@ -179,7 +179,7 @@ export function SpacePage() {
         })}
       </div>
 
-      <section className="mt-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <section className="mt-5 rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-3 text-sm font-semibold text-fg">post to space</h2>
         <PostForm
           titlePlaceholder="title"
@@ -187,11 +187,11 @@ export function SpacePage() {
           onCancel={() => setVisibility("space")}
           extraFields={
             <label className="flex items-center gap-2 text-sm">
-              <span className="text-[var(--color-muted)]">visibility</span>
+              <span className="text-muted">visibility</span>
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as Visibility)}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
+                className="rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
               >
                 <option value="space">space</option>
                 <option value="org">org</option>

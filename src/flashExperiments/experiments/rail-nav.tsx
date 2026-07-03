@@ -35,10 +35,10 @@ const SECTIONS: { heading: string; items: RailItem[] }[] = [
 
 function RailNav() {
   return (
-    <nav className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 text-sm">
+    <nav className="rounded-lg border border-border bg-surface p-2.5 text-sm">
       {SECTIONS.map((section) => (
         <div key={section.heading} className="mb-3 last:mb-0">
-          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted">
             {section.heading}
           </div>
           <div className="space-y-0.5">
@@ -51,13 +51,13 @@ function RailNav() {
                       className={`shrink-0 rounded-full px-1.5 text-[11px] tabular-nums ${
                         item.accent
                           ? "bg-accent/20 text-accent-soft"
-                          : "border border-[var(--color-border)] text-[var(--color-muted)]"
+                          : "border border-border text-muted"
                       }`}
                     >
                       {item.count}
                     </span>
                   ) : item.hint ? (
-                    <span className="shrink-0 text-[11px] text-[var(--color-muted)]">
+                    <span className="shrink-0 text-[11px] text-muted">
                       {item.hint}
                     </span>
                   ) : null}
@@ -67,7 +67,7 @@ function RailNav() {
               const sharedClass = `flex items-center justify-between gap-2 rounded-md px-2 py-1.5 transition ${
                 item.accent
                   ? "bg-accent/10 text-accent-soft"
-                  : "text-[var(--color-muted)]"
+                  : "text-muted"
               }`;
 
               if (item.to) {
@@ -75,7 +75,7 @@ function RailNav() {
                   <Link
                     key={item.label}
                     to={item.to}
-                    className={`${sharedClass} hover:bg-[var(--color-surface-2)] hover:text-fg [&.active]:text-accent-soft`}
+                    className={`${sharedClass} hover:bg-surface-2 hover:text-fg [&.active]:text-accent-soft`}
                   >
                     {body}
                   </Link>

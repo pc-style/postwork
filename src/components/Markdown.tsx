@@ -27,7 +27,7 @@ export function Markdown({ text }: { text: string }) {
       <ul key={key} className="my-1 ml-1 space-y-1">
         {bullets.map((b, i) => (
           <li key={i} className="flex gap-2">
-            <span className="mt-2 size-1 shrink-0 rounded-full bg-[var(--color-muted)]" />
+            <span className="mt-2 size-1 shrink-0 rounded-full bg-muted" />
             <span>{renderInline(b)}</span>
           </li>
         ))}

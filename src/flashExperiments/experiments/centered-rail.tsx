@@ -28,13 +28,13 @@ export function CenteredRailShell({ children }: { children: ReactNode }) {
           <Link to="/" className="px-2 text-base font-semibold text-fg">
             postwork
           </Link>
-          <nav className="space-y-1 text-sm text-[var(--color-muted)]">
+          <nav className="space-y-1 text-sm text-muted">
             {NAV_ITEMS.map((item) =>
               item.to ? (
                 <Link
                   key={item.label}
                   to={item.to}
-                  className={`block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg [&.active]:text-accent-soft ${
+                  className={`block rounded-md px-3 py-2 transition hover:bg-surface hover:text-fg [&.active]:text-accent-soft ${
                     item.accent ? "text-accent-soft" : ""
                   }`}
                 >
@@ -68,12 +68,12 @@ export function CenteredRailShell({ children }: { children: ReactNode }) {
         {/* right context rail (large screens only) */}
         <aside className="hidden lg:block">
           <div className="sticky top-6 space-y-3">
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
-              <div className="mb-2 text-[11px] uppercase tracking-wide text-[var(--color-muted)]">
+            <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+              <div className="mb-2 text-[11px] uppercase tracking-wide text-muted">
                 your queue
               </div>
               {counts ? (
-                <div className="space-y-1 text-[var(--color-muted)]">
+                <div className="space-y-1 text-muted">
                   <div>
                     <span className="text-accent-soft">{counts.unread}</span>{" "}
                     unread
@@ -86,10 +86,10 @@ export function CenteredRailShell({ children }: { children: ReactNode }) {
                   )}
                 </div>
               ) : (
-                <div className="text-[var(--color-muted)]">loading…</div>
+                <div className="text-muted">loading…</div>
               )}
             </div>
-            <div className="rounded-lg border border-dashed border-[var(--color-border)] p-4 text-xs text-[var(--color-muted)]">
+            <div className="rounded-lg border border-dashed border-border p-4 text-xs text-muted">
               twitter-style three-column reading layout. nav on the left, a
               narrow centered feed, context on the right.
             </div>

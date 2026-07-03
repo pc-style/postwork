@@ -16,9 +16,9 @@ import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
 
 const statusStyles: Record<ExperimentStatus, string> = {
   new: "border-accent/40 text-accent-soft",
-  reviewing: "border-[var(--color-high)]/40 text-[var(--color-high)]",
+  reviewing: "border-high/40 text-high",
   liked: "border-accent/50 text-accent-soft",
-  rejected: "border-[var(--color-border)] text-[var(--color-muted)]",
+  rejected: "border-border text-muted",
   shipped: "border-accent/50 text-accent-soft",
 };
 
@@ -102,9 +102,9 @@ export function FlashExperimentsPage() {
     // Deliberately set apart from the rest of the app: a "lab" zone with a
     // blueprint grid, dashed accent edges, and all-mono chrome so you always
     // know you've stepped out of the normal product surface.
-    <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-[var(--color-bg)] px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
+    <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
       <div className="mx-auto max-w-3xl space-y-6">
-        <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-[var(--color-surface)]/90 p-5 backdrop-blur">
+        <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
           <div className="flex items-center gap-2 text-[11px] font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab · work in progress
@@ -112,7 +112,7 @@ export function FlashExperimentsPage() {
           <h1 className="mt-2 text-2xl font-semibold lowercase text-fg">
             flash experiments
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--color-muted)]">
+          <p className="mt-2 max-w-2xl text-sm text-muted">
             sandboxed single-change previews, grouped by where they came from.
             open one to use it as if it shipped; vote here to make review
             pressure visible. nothing here is production behavior.
@@ -127,20 +127,20 @@ export function FlashExperimentsPage() {
           if (items.length === 0) return null;
           return (
             <section key={category} className="space-y-3">
-              <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--color-border)] pb-2">
+              <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-border pb-2">
                 <h2 className="text-sm font-semibold lowercase tracking-wide text-fg">
                   {meta.label}
-                  <span className="ml-2 text-[var(--color-muted)]">
+                  <span className="ml-2 text-muted">
                     ({items.length})
                   </span>
                 </h2>
-                <p className="text-right text-[11px] text-[var(--color-muted)]">
+                <p className="text-right text-[11px] text-muted">
                   {meta.blurb}
                 </p>
               </div>
 
               {items.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-6 text-center text-xs text-[var(--color-muted)]">
+                <div className="rounded-lg border border-dashed border-border bg-surface/60 px-4 py-6 text-center text-xs text-muted">
                   nothing here yet.
                 </div>
               ) : (
@@ -164,14 +164,14 @@ export function FlashExperimentsPage() {
 
         {implementedExperiments.length > 0 && (
           <section className="space-y-2">
-            <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-[var(--color-border)] pb-2">
+            <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-border pb-2">
               <h2 className="flex items-center gap-2 text-sm font-semibold lowercase tracking-wide text-fg">
                 implemented
-                <span className="text-[var(--color-muted)]">
+                <span className="text-muted">
                   ({implementedExperiments.length})
                 </span>
               </h2>
-              <p className="text-right text-[11px] text-[var(--color-muted)]">
+              <p className="text-right text-[11px] text-muted">
                 community suggestions that shipped — now part of the default
                 app.
               </p>
@@ -205,23 +205,23 @@ function ExperimentCard({
 }) {
   const { suggestion } = experiment;
   return (
-    <div className="group rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/90 backdrop-blur transition hover:border-accent/50">
+    <div className="group rounded-lg border border-dashed border-border bg-surface/90 backdrop-blur transition hover:border-accent/50">
       <Link
         to="/flash-experiments/$slug"
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-[var(--color-muted)]">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-muted">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >
             {experiment.status}
           </span>
-          <span className="text-[var(--color-faint)]">·</span>
+          <span className="text-faint">·</span>
           {experiment.slots.map((slot) => (
             <span
               key={slot}
-              className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 py-0.5 tracking-tight"
+              className="rounded-md border border-border bg-bg px-1.5 py-0.5 tracking-tight"
             >
               {slot}
             </span>
@@ -230,15 +230,15 @@ function ExperimentCard({
         <h3 className="text-base font-semibold lowercase text-fg">
           {experiment.title}
         </h3>
-        <p className="mt-1 font-sans text-sm text-[var(--color-muted)]">
+        <p className="mt-1 font-sans text-sm text-muted">
           {experiment.summary}
         </p>
 
         {suggestion ? (
           <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-            <span className="text-[var(--color-muted)]">suggested by</span>
+            <span className="text-muted">suggested by</span>
             <span className="text-fg">{suggestion.name}</span>
-            <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 py-0.5 text-accent-soft">
+            <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
               {suggestion.handle}
             </span>
             {suggestion.link && (
@@ -254,13 +254,13 @@ function ExperimentCard({
             )}
           </div>
         ) : (
-          <p className="mt-3 text-[11px] text-[var(--color-muted)]">
+          <p className="mt-3 text-[11px] text-muted">
             requested by {experiment.requestedBy}
           </p>
         )}
       </Link>
 
-      <div className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--color-border)] px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3 border-t border-dashed border-border px-4 py-2.5">
         <Link
           to="/flash-experiments/$slug"
           params={{ slug: experiment.slug }}
@@ -324,7 +324,7 @@ function VoteButton({
       className={`rounded-md border px-2 py-1 tabular-nums transition disabled:cursor-not-allowed disabled:opacity-60 ${
         active
           ? "border-accent/50 bg-accent/15 text-accent-soft"
-          : "border-[var(--color-border)] text-[var(--color-muted)] hover:border-accent/40 hover:text-fg"
+          : "border-border text-muted hover:border-accent/40 hover:text-fg"
       }`}
     >
       {children}
@@ -356,14 +356,14 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
       to="/flash-experiments/$slug"
       params={{ slug: experiment.slug }}
       title={experiment.summary}
-      className="group flex items-center gap-2.5 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3 py-2 transition hover:border-accent/40 hover:bg-[var(--color-surface)]"
+      className="group flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-surface/70 px-3 py-2 transition hover:border-accent/40 hover:bg-surface"
     >
       <ImplementedBadge />
       <span className="min-w-0 flex-1 truncate text-sm font-medium lowercase text-fg">
         {experiment.title}
       </span>
       {suggestion && (
-        <span className="hidden shrink-0 text-[11px] text-[var(--color-muted)] sm:inline">
+        <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
           {suggestion.name}
         </span>
       )}

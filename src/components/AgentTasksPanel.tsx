@@ -69,7 +69,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
         <select
           value={selectedAgent?._id ?? ""}
           onChange={(e) => setAgentId(e.target.value as Id<"users">)}
-          className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-2 text-sm text-fg outline-none focus:border-accent/50"
+          className="rounded-md border border-border bg-bg px-2 py-2 text-sm text-fg outline-none focus:border-accent/50"
         >
           {agents.map((agent) => (
             <option key={agent._id} value={agent._id}>
@@ -82,7 +82,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           onChange={(e) => setPrompt(e.target.value)}
           rows={2}
           placeholder="ask an agent to investigate…"
-          className="resize-y rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-fg outline-none focus:border-accent/50"
+          className="resize-y rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg outline-none focus:border-accent/50"
         />
         <Button
           onClick={send}
@@ -93,7 +93,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
       </div>
 
       {tasks.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
+        <p className="mt-4 text-sm text-muted">
           no agent investigations yet. dispatch one to explore this thread.
         </p>
       ) : (
@@ -101,7 +101,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           {tasks.map((task) => {
             const agent = users.find((user) => user._id === task.agentId) ?? null;
             return (
-              <article key={task._id} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+              <article key={task._id} className="rounded-lg border border-border bg-surface p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <Avatar user={agent} size={28} />
@@ -110,21 +110,21 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                         <span>{agent?.name ?? "agent"}</span>
                         {agent?.isAgent && <AgentTag />}
                       </div>
-                      <p className="text-[11px] text-[var(--color-muted)]">
+                      <p className="text-[11px] text-muted">
                         {timeAgo(task.createdAt)}
                       </p>
                     </div>
                   </div>
                   <StatusChip status={task.status} />
                 </div>
-                <p className="mt-2 text-xs text-[var(--color-muted)]">{task.prompt}</p>
+                <p className="mt-2 text-xs text-muted">{task.prompt}</p>
                 {task.status === "done" && task.result && (
                   <div className="mt-3 text-fg">
                     <Markdown text={task.result} />
                   </div>
                 )}
                 {task.status === "failed" && task.error && (
-                  <p className="mt-2 rounded-md bg-[var(--color-urgent)]/10 px-2 py-1.5 text-xs text-[var(--color-urgent)]">
+                  <p className="mt-2 rounded-md bg-urgent/10 px-2 py-1.5 text-xs text-urgent">
                     {task.error}
                   </p>
                 )}

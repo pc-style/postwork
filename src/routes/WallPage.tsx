@@ -25,7 +25,7 @@ export function WallPage() {
 
   if (!owner) {
     return (
-      <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+      <div className="py-12 text-center text-sm text-muted">
         user not found. {" "}
         <Link to="/" className="text-accent-soft">
           back to feed
@@ -38,12 +38,12 @@ export function WallPage() {
     <div>
       <Link
         to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-muted)] transition hover:text-fg"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
       >
         ← feed
       </Link>
 
-      <section className="mb-5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <section className="mb-5 rounded-lg border border-border bg-surface p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Avatar user={owner} size={48} />
@@ -53,7 +53,7 @@ export function WallPage() {
                 {owner.isAgent && <AgentTag />}
                 <UserRoleTag role={owner.role} />
               </div>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">{owner.title}</p>
+              <p className="mt-1 text-sm text-muted">{owner.title}</p>
             </div>
           </div>
           <Button onClick={() => setOpen(true)}>
@@ -63,18 +63,18 @@ export function WallPage() {
       </section>
 
       {posts === undefined ? (
-        <div className="py-12 text-center text-sm text-[var(--color-muted)]">
+        <div className="py-12 text-center text-sm text-muted">
           loading…
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center text-sm text-[var(--color-muted)]">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-muted">
           no wall posts yet.
         </div>
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (
             <div key={post._id} className="space-y-1.5">
-              <span className="inline-flex rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] text-[var(--color-muted)]">
+              <span className="inline-flex rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
                 {post.wallOwnerId === userId
                   ? "on the wall"
                   : `posted by ${owner.name}`}

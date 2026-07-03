@@ -164,7 +164,7 @@ export function QuickPostBar() {
         onPointerLeave={onPointerLeave}
         onFocus={onCardFocus}
         onBlur={onCardBlur}
-        className={`pointer-events-auto mx-auto max-w-3xl overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/95 shadow-2xl backdrop-blur will-change-transform transform-gpu transition-transform motion-reduce:transition-none ${
+        className={`pointer-events-auto mx-auto max-w-3xl overflow-hidden rounded-lg border border-border bg-surface/95 shadow-2xl backdrop-blur will-change-transform transform-gpu transition-transform motion-reduce:transition-none ${
           popped
             ? "translate-y-0 duration-300 ease-spring"
             : "translate-y-[calc(100%_-_2.25rem)] duration-200 ease-out"
@@ -177,13 +177,13 @@ export function QuickPostBar() {
           onClick={handleToggle}
           aria-label={popped ? "tuck the composer away" : "start a post"}
           aria-expanded={popped}
-          className="flex h-9 w-full items-center justify-center gap-2 text-xs text-[var(--color-muted)] transition hover:text-fg"
+          className="flex h-9 w-full items-center justify-center gap-2 text-xs text-muted transition hover:text-fg"
         >
           <span className="text-accent-soft">+</span>
           <span>start a post…</span>
           <ChevronUpIcon
-            className={`size-3.5 text-[var(--color-faint)] transition-transform duration-200 ${
-              popped ? "rotate-180 text-[var(--color-muted)]" : ""
+            className={`size-3.5 text-faint transition-transform duration-200 ${
+              popped ? "rotate-180 text-muted" : ""
             }`}
           />
         </button>
@@ -195,7 +195,7 @@ export function QuickPostBar() {
               onChange={(event) => setTitle(event.target.value)}
               onKeyDown={onFieldKeyDown}
               placeholder="title — what's this about?"
-              className="mb-2 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
+              className="mb-2 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
             />
           )}
 
@@ -208,7 +208,7 @@ export function QuickPostBar() {
               onKeyDown={onFieldKeyDown}
               rows={open ? 3 : 1}
               placeholder="share context, a decision, or a question…"
-              className="min-h-[2.5rem] w-full resize-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-accent/50"
+              className="min-h-[2.5rem] w-full resize-none rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
             />
             <Button
               onClick={() => void submit()}
@@ -221,12 +221,12 @@ export function QuickPostBar() {
 
           {open && (
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
+              <label className="flex items-center gap-1.5 text-xs text-muted">
                 space
                 <select
                   value={space}
                   onChange={(event) => setSpace(event.target.value)}
-                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1 text-xs outline-none focus:border-accent/50"
+                  className="rounded-md border border-border bg-bg px-2 py-1 text-xs outline-none focus:border-accent/50"
                 >
                   {SPACES.map((s) => (
                     <option key={s} value={s}>
@@ -236,14 +236,14 @@ export function QuickPostBar() {
                 </select>
               </label>
 
-              <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
+              <div className="flex items-center gap-1.5 text-xs text-muted">
                 priority
                 <PriorityPicker priority={priority} onChange={setPriority} />
               </div>
 
               <button
                 onClick={reset}
-                className="ml-auto text-xs text-[var(--color-muted)] transition hover:text-fg"
+                className="ml-auto text-xs text-muted transition hover:text-fg"
               >
                 cancel
               </button>

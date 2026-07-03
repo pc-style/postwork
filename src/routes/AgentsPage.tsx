@@ -25,7 +25,7 @@ function AgentCard({
   const recent = agentTasks.slice(0, 5);
 
   return (
-    <article className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+    <article className="rounded-lg border border-border bg-surface p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar user={agent} size={38} />
@@ -34,7 +34,7 @@ function AgentCard({
               <h2 className="font-semibold text-fg">{agent.name}</h2>
               <AgentTag />
             </div>
-            <p className="text-sm text-[var(--color-muted)]">{agent.title}</p>
+            <p className="text-sm text-muted">{agent.title}</p>
           </div>
         </div>
         <div className="rounded-md border border-accent/25 bg-accent/10 px-2 py-1 text-xs text-accent-soft">
@@ -43,20 +43,20 @@ function AgentCard({
       </div>
 
       {recent.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
+        <p className="mt-4 text-sm text-muted">
           no investigations assigned yet.
         </p>
       ) : (
         <div className="mt-4 space-y-2">
           {recent.map((task) => (
-            <div key={task._id} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+            <div key={task._id} className="rounded-md border border-border bg-bg p-3">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 <StatusChip status={task.status} />
-                <span className="text-[11px] text-[var(--color-muted)]">
+                <span className="text-[11px] text-muted">
                   {timeAgo(task.createdAt)}
                 </span>
                 {isLocalId(task.postId) ? (
-                  <span className="text-[11px] text-[var(--color-muted)]">session post</span>
+                  <span className="text-[11px] text-muted">session post</span>
                 ) : (
                   <Link
                     to="/posts/$postId"
@@ -69,7 +69,7 @@ function AgentCard({
               </div>
               <p className="text-sm text-fg">{truncate(task.prompt, 120)}</p>
               {task.status === "done" && task.result && (
-                <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+                <p className="mt-1.5 text-xs text-muted">
                   {truncate(task.result.replace(/\s+/g, " ").trim(), 160)}
                 </p>
               )}
@@ -91,14 +91,14 @@ export function AgentsPage() {
     <div>
       <Link
         to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-muted)] transition hover:text-fg"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
       >
         ← feed
       </Link>
 
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-fg">agents</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
+        <p className="mt-1 text-sm text-muted">
           dispatch coding teammates to investigate posts and report back into the thread.
         </p>
       </header>
@@ -106,7 +106,7 @@ export function AgentsPage() {
       {tasks.length === 0 && (
         <div className="mb-5">
           <AccentPanel chipLabel="agents" title="control plane">
-            <p className="text-sm text-[var(--color-muted)]">
+            <p className="text-sm text-muted">
               no agent tasks yet. dispatch agents from any post investigation panel or send one from a subthread.
             </p>
           </AccentPanel>

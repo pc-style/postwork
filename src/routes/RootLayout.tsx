@@ -44,11 +44,11 @@ function ExperimentControl({
 }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-accent/40 bg-[var(--color-surface)]/95 py-1.5 pr-3 pl-1.5 font-mono text-xs shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-accent/40 bg-surface/95 py-1.5 pr-3 pl-1.5 font-mono text-xs shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur">
         <Link
           to="/flash-experiments"
           onClick={onExit}
-          className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1 text-[var(--color-muted)] transition hover:border-accent/40 hover:text-fg"
+          className="rounded-full border border-border bg-bg px-2.5 py-1 text-muted transition hover:border-accent/40 hover:text-fg"
         >
           ← back
         </Link>
@@ -59,7 +59,7 @@ function ExperimentControl({
           </span>
           experiment
         </span>
-        <span className="text-[var(--color-faint)]">·</span>
+        <span className="text-faint">·</span>
         <span className="max-w-[40vw] truncate text-fg">{title}</span>
       </div>
     </div>

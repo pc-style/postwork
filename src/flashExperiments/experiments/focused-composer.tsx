@@ -17,7 +17,7 @@ function FocusedComposer({ postId }: { postId: Id<"posts"> }) {
         </span>
       </div>
 
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+      <div className="rounded-lg border border-border bg-surface p-3">
         <Composer
           postId={postId}
           autoFocus

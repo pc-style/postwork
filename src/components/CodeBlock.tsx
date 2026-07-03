@@ -39,8 +39,8 @@ export function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg)]">
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-1.5 text-[11px] text-[var(--color-muted)]">
+    <div className="overflow-hidden rounded-md border border-border bg-bg">
+      <div className="flex items-center justify-between border-b border-border bg-surface-2 px-3 py-1.5 text-[11px] text-muted">
         <span>{label}</span>
         <button onClick={copy} className="transition hover:text-fg">
           {copied ? "copied" : "copy"}

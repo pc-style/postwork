@@ -21,18 +21,18 @@ export function WideReviewShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(140,24,98,0.18),transparent_32rem)]">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="flex flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm md:sticky md:top-6 md:h-[calc(100vh-3rem)]">
+        <aside className="flex flex-col rounded-lg border border-border bg-surface p-4 text-sm md:sticky md:top-6 md:h-[calc(100vh-3rem)]">
           <Link to="/" className="mb-6 font-semibold text-fg">
             postwork
           </Link>
 
-          <nav className="space-y-1 text-[var(--color-muted)]">
+          <nav className="space-y-1 text-muted">
             {RAIL_ITEMS.map((item) =>
               item.to ? (
                 <Link
                   key={item.label}
                   to={item.to}
-                  className={`block rounded-md px-2 py-1.5 transition hover:bg-[var(--color-surface-2)] hover:text-fg [&.active]:text-accent-soft ${
+                  className={`block rounded-md px-2 py-1.5 transition hover:bg-surface-2 hover:text-fg [&.active]:text-accent-soft ${
                     item.accent ? "text-accent-soft" : ""
                   }`}
                 >
@@ -50,7 +50,7 @@ export function WideReviewShell({ children }: { children: ReactNode }) {
           </nav>
 
           {counts && counts.unread > 0 && (
-            <div className="mt-4 rounded-md border border-[var(--color-border)] px-2 py-1.5 text-xs">
+            <div className="mt-4 rounded-md border border-border px-2 py-1.5 text-xs">
               <span className="text-accent-soft">{counts.unread} unread</span>
               {counts.urgent > 0 && (
                 <span className="text-red-300"> · {counts.urgent} urgent</span>

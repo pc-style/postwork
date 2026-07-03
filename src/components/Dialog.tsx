@@ -32,13 +32,13 @@ export function Dialog({
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className="w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-2xl backdrop:bg-black/60"
+      className="w-full max-w-2xl rounded-lg border border-border bg-surface p-5 shadow-2xl backdrop:bg-black/60"
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
         <button
           onClick={onClose}
-          className="text-[var(--color-muted)] transition hover:text-fg"
+          className="text-muted transition hover:text-fg"
         >
           close
         </button>

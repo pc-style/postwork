@@ -6,18 +6,18 @@ export type ChipSize = "md" | "sm";
 const toneClasses: Record<ChipTone, string> = {
   accent: "border-accent/30 bg-accent/10 text-accent-soft",
   urgent:
-    "border-[var(--color-urgent)]/30 bg-[var(--color-urgent)]/10 text-[var(--color-urgent)]",
-  high: "border-[var(--color-high)]/30 bg-[var(--color-high)]/10 text-[var(--color-high)]",
-  neutral: "border-[var(--color-border)] text-[var(--color-muted)]",
-  muted: "border-[var(--color-border)] bg-[var(--color-faint)]/20 text-[var(--color-muted)]",
+    "border-urgent/30 bg-urgent/10 text-urgent",
+  high: "border-high/30 bg-high/10 text-high",
+  neutral: "border-border text-muted",
+  muted: "border-border bg-faint/20 text-muted",
 };
 
 const dotClasses: Record<ChipTone, string> = {
   accent: "bg-accent-soft",
-  urgent: "bg-[var(--color-urgent)]",
-  high: "bg-[var(--color-high)]",
-  neutral: "bg-[var(--color-muted)]",
-  muted: "bg-[var(--color-muted)]",
+  urgent: "bg-urgent",
+  high: "bg-high",
+  neutral: "bg-muted",
+  muted: "bg-muted",
 };
 
 const sizeClasses: Record<ChipSize, string> = {

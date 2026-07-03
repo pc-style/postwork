@@ -27,15 +27,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             postwork
           </Link>
 
-          <nav className="space-y-1 text-sm text-[var(--color-muted)]">
+          <nav className="space-y-1 text-sm text-muted">
             <Link
               to="/"
               search={{}}
               activeOptions={{ exact: true, includeSearch: true }}
               activeProps={{
-                className: "bg-[var(--color-surface)] text-accent-soft",
+                className: "bg-surface text-accent-soft",
               }}
-              className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
+              className="block rounded-md px-3 py-2 transition hover:bg-surface hover:text-fg"
             >
               home
             </Link>
@@ -44,9 +44,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               search={{ priority: "urgent" }}
               activeOptions={{ exact: true, includeSearch: true }}
               activeProps={{
-                className: "bg-[var(--color-surface)] text-accent-soft",
+                className: "bg-surface text-accent-soft",
               }}
-              className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
+              className="block rounded-md px-3 py-2 transition hover:bg-surface hover:text-fg"
             >
               priority
             </Link>
@@ -56,9 +56,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 activeOptions={{ exact: true, includeSearch: true }}
                 activeProps={{
-                  className: "bg-[var(--color-surface)] text-accent-soft",
+                  className: "bg-surface text-accent-soft",
                 }}
-                className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
+                className="block rounded-md px-3 py-2 transition hover:bg-surface hover:text-fg"
               >
                 {item.label}
               </Link>
@@ -78,12 +78,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <aside className="hidden lg:block">
           <div className="sticky top-6 space-y-3">
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
-              <div className="mb-2 text-[11px] font-medium text-[var(--color-muted)]">
+            <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+              <div className="mb-2 text-[11px] font-medium text-muted">
                 your queue
               </div>
               {counts ? (
-                <div className="space-y-1 text-[var(--color-muted)]">
+                <div className="space-y-1 text-muted">
                   <div>
                     <span className="text-accent-soft">{counts.unread}</span>{" "}
                     unread
@@ -96,11 +96,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 </div>
               ) : (
-                <div className="text-[var(--color-muted)]">loading…</div>
+                <div className="text-muted">loading…</div>
               )}
             </div>
 
-            <div className="rounded-lg border border-dashed border-[var(--color-border)] p-4 text-xs text-[var(--color-muted)]">
+            <div className="rounded-lg border border-dashed border-border p-4 text-xs text-muted">
               posts stay centered for reading; navigation and queue context stay
               close at hand.
             </div>

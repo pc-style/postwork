@@ -59,7 +59,7 @@ export function AgentSummary({
       {summary ? (
         <Markdown text={summary} />
       ) : (
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-muted">
           No summary yet. Generate one to catch up on this thread instantly.
         </p>
       )}
@@ -71,7 +71,7 @@ export function AgentSummary({
       )}
 
       {(model || updatedAt) && !error && (
-        <p className="mt-2.5 text-[11px] text-[var(--color-muted)]">
+        <p className="mt-2.5 text-[11px] text-muted">
           {model === "seed/baked" ? "demo summary" : `model: ${model}`}
           {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
         </p>

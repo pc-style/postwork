@@ -6,7 +6,7 @@ function CompactCard({ post }: { post: EnrichedPost }) {
   const p = priorityStyles[post.priority];
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 transition hover:border-accent/40 hover:bg-[var(--color-surface-2)]">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 transition hover:border-accent/40 hover:bg-surface-2">
       <span
         className={`size-2 shrink-0 rounded-full ${post.unread ? "bg-accent-soft" : p.dot}`}
         title={post.unread ? "Unread" : p.label}
@@ -21,18 +21,18 @@ function CompactCard({ post }: { post: EnrichedPost }) {
         {post.title}
       </span>
 
-      <span className="hidden shrink-0 rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[11px] text-[var(--color-muted)] sm:inline">
+      <span className="hidden shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted sm:inline">
         {post.space}
       </span>
 
-      <span className="shrink-0 text-xs tabular-nums text-[var(--color-muted)]">
+      <span className="shrink-0 text-xs tabular-nums text-muted">
         {post.replyCount}
         <span className="ml-0.5 hidden sm:inline">
           {post.replyCount === 1 ? "reply" : "replies"}
         </span>
       </span>
 
-      <span className="w-16 shrink-0 text-right text-xs tabular-nums text-[var(--color-muted)]">
+      <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted">
         {timeAgo(post.lastActivityAt)}
       </span>
     </div>
