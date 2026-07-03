@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
-import { type FeedSearch } from "../router";
 import { UserSwitcher } from "./UserSwitcher";
 
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
@@ -13,14 +12,9 @@ const ROUTE_NAV = [
   { label: "experiments", to: "/flash-experiments" },
 ] as const;
 
-const ACTIVE = "bg-[var(--color-surface)] text-accent-soft";
-
 export function AppShell({ children }: { children: ReactNode }) {
   const store = useStore();
   const counts = store.useCounts();
-  const feedPriority = useRouterState({
-    select: (s) => (s.location.search as Partial<FeedSearch>).priority,
-  });
 
   return (
     <div className="min-h-full">
@@ -34,18 +28,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               to="/"
               search={{}}
-              className={`block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg ${
-                !feedPriority ? ACTIVE : ""
-              }`}
+              activeOptions={{ exact: true, includeSearch: true }}
+              activeProps={{
+                className: "bg-[var(--color-surface)] text-accent-soft",
+              }}
+              className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
             >
               home
             </Link>
             <Link
               to="/"
               search={{ priority: "urgent" }}
-              className={`block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg ${
-                feedPriority === "urgent" ? ACTIVE : ""
-              }`}
+              activeOptions={{ exact: true, includeSearch: true }}
+              activeProps={{
+                className: "bg-[var(--color-surface)] text-accent-soft",
+              }}
+              className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
             >
               priority
             </Link>
@@ -53,7 +51,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.label}
                 to={item.to}
-                className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg [&.active]:bg-[var(--color-surface)] [&.active]:text-accent-soft"
+                activeOptions={{ exact: true, includeSearch: true }}
+                activeProps={{
+                  className: "bg-[var(--color-surface)] text-accent-soft",
+                }}
+                className="block rounded-md px-3 py-2 transition hover:bg-[var(--color-surface)] hover:text-fg"
               >
                 {item.label}
               </Link>
