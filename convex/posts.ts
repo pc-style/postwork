@@ -3,10 +3,11 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { priority } from "./schema";
+import { publicUser, type PublicUser } from "./users";
 
 export type EnrichedPost = Doc<"posts"> & {
-  author: Doc<"users"> | null;
-  participants: Doc<"users">[];
+  author: PublicUser | null;
+  participants: PublicUser[];
   unread: boolean;
   // Raw per-viewer read timestamp, so the client can layer session-only
   // read state on top without re-querying the backend.
@@ -18,10 +19,12 @@ async function enrich(
   post: Doc<"posts">,
   viewerId: Id<"users"> | undefined,
 ): Promise<EnrichedPost> {
-  const author = await ctx.db.get(post.authorId);
+  const author = publicUser(await ctx.db.get(post.authorId));
   const participants = (
     await Promise.all(post.participantIds.map((id) => ctx.db.get(id)))
-  ).filter((u): u is Doc<"users"> => u !== null);
+  )
+    .filter((u): u is Doc<"users"> => u !== null)
+    .map((u) => publicUser(u));
 
   let lastReadAt = 0;
   if (viewerId) {

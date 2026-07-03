@@ -4,6 +4,7 @@ import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { findUserForIdentity } from "./authUsers";
 import { AVATAR_PALETTE } from "./avatarPalette";
+import { publicUser, type PublicUser } from "./users";
 
 /**
  * Per-experiment "open discussion" threads.
@@ -101,11 +102,11 @@ async function ensureThreadDoc(
 }
 
 export type DiscussionReply = Doc<"replies"> & {
-  author: Doc<"users"> | null;
+  author: PublicUser | null;
 };
 
 export type DiscussionThread = {
-  post: (Doc<"posts"> & { author: Doc<"users"> | null }) | null;
+  post: (Doc<"posts"> & { author: PublicUser | null }) | null;
   replies: DiscussionReply[];
 };
 
@@ -119,7 +120,7 @@ export const getThread = query({
       .first();
     if (!post) return { post: null, replies: [] };
 
-    const author = await ctx.db.get(post.authorId);
+    const author = publicUser(await ctx.db.get(post.authorId));
     const replies = await ctx.db
       .query("replies")
       .withIndex("by_post", (q) => q.eq("postId", post._id))
@@ -127,7 +128,10 @@ export const getThread = query({
       .collect();
 
     const enriched = await Promise.all(
-      replies.map(async (r) => ({ ...r, author: await ctx.db.get(r.authorId) })),
+      replies.map(async (r) => ({
+        ...r,
+        author: publicUser(await ctx.db.get(r.authorId)),
+      })),
     );
     return { post: { ...post, author }, replies: enriched };
   },

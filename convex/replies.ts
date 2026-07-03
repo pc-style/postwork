@@ -1,9 +1,10 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
+import { publicUser, type PublicUser } from "./users";
 
 export type EnrichedReply = Doc<"replies"> & {
-  author: Doc<"users"> | null;
+  author: PublicUser | null;
 };
 
 /** Flat, time-ordered list of replies. The client assembles the nesting tree. */
@@ -17,7 +18,10 @@ export const listForPost = query({
       .collect();
 
     return await Promise.all(
-      replies.map(async (r) => ({ ...r, author: await ctx.db.get(r.authorId) })),
+      replies.map(async (r) => ({
+        ...r,
+        author: publicUser(await ctx.db.get(r.authorId)),
+      })),
     );
   },
 });

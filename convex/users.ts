@@ -1,17 +1,24 @@
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 import { findUserForIdentity } from "./authUsers";
+
+export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
+
+export function publicUser(user: Doc<"users">): PublicUser;
+export function publicUser(user: Doc<"users"> | null): PublicUser | null;
+export function publicUser(user: Doc<"users"> | null): PublicUser | null {
+  if (!user) return null;
+  const { tokenIdentifier: _tokenIdentifier, subject: _subject, ...rest } =
+    user;
+  return rest;
+}
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
-    // The directory is public; the auth-identity mapping is not. Strip auth
-    // identifiers so visitors can't enumerate real members' identities.
-    return users.map(
-      ({ tokenIdentifier: _tokenIdentifier, subject: _subject, ...user }) =>
-        user,
-    );
+    return users.map((u) => publicUser(u));
   },
 });
 
