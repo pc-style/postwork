@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { findUserForIdentity } from "./authUsers";
 
 /**
  * Per-experiment "open discussion" threads.
@@ -57,10 +58,7 @@ async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) unauthenticated();
 
-  const existing = await ctx.db
-    .query("users")
-    .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
-    .first();
+  const existing = await findUserForIdentity(ctx, identity);
   if (existing) return existing._id;
 
   const name =
@@ -73,9 +71,10 @@ async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
   return await ctx.db.insert("users", {
     name,
     title: "member",
-    avatarColor: colorFor(identity.subject),
+    avatarColor: colorFor(identity.tokenIdentifier),
     initials: initialsFrom(name),
     role: "member",
+    tokenIdentifier: identity.tokenIdentifier,
     subject: identity.subject,
   });
 }

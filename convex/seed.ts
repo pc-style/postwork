@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 
 const HOUR = 60 * 60 * 1000;
@@ -12,7 +12,9 @@ const DAY = 24 * HOUR;
  *
  * Run with:  bunx convex run seed:run
  */
-export const run = mutation({
+// internalMutation: the seed wipes tables, so it must never be callable from
+// the public internet. `convex run seed:run` still reaches it from the CLI.
+export const run = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Wipe existing data so the seed is idempotent.

@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
@@ -48,19 +48,22 @@ export const feed = query({
     onlyUnread: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    // Bounded read: the feed only ever renders recent activity, and `enrich`
+    // costs a postReads lookup per post per viewer — don't scan the table.
+    const FEED_LIMIT = 200;
     let posts: Doc<"posts">[];
     if (args.space) {
       posts = await ctx.db
         .query("posts")
         .withIndex("by_space", (q) => q.eq("space", args.space!))
         .order("desc")
-        .collect();
+        .take(FEED_LIMIT);
     } else {
       posts = await ctx.db
         .query("posts")
         .withIndex("by_activity")
         .order("desc")
-        .collect();
+        .take(FEED_LIMIT);
     }
 
     if (args.priority) {
@@ -120,58 +123,7 @@ export const get = query({
   },
 });
 
-export const counts = query({
-  args: { viewerId: v.optional(v.id("users")) },
-  handler: async (ctx, args) => {
-    const posts = await ctx.db.query("posts").collect();
-    if (!args.viewerId) return { total: posts.length, unread: 0, urgent: 0 };
-    let unread = 0;
-    let urgent = 0;
-    for (const post of posts) {
-      const read = await ctx.db
-        .query("postReads")
-        .withIndex("by_user_post", (q) =>
-          q.eq("userId", args.viewerId!).eq("postId", post._id),
-        )
-        .unique();
-      const isUnread = post.lastActivityAt > (read?.lastReadAt ?? 0);
-      if (isUnread) {
-        unread++;
-        if (post.priority === "urgent") urgent++;
-      }
-    }
-    return { total: posts.length, unread, urgent };
-  },
-});
-
-export const create = mutation({
-  args: {
-    authorId: v.id("users"),
-    title: v.string(),
-    body: v.string(),
-    space: v.string(),
-    priority: priority,
-  },
-  handler: async (ctx, args) => {
-    const now = Date.now();
-    const postId = await ctx.db.insert("posts", {
-      authorId: args.authorId,
-      title: args.title,
-      body: args.body,
-      space: args.space,
-      priority: args.priority,
-      pinned: false,
-      createdAt: now,
-      lastActivityAt: now,
-      replyCount: 0,
-      participantIds: [args.authorId],
-    });
-    // Author has "read" their own new post.
-    await ctx.db.insert("postReads", {
-      userId: args.authorId,
-      postId,
-      lastReadAt: now,
-    });
-    return postId;
-  },
-});
+// NOTE: write paths (create post / reply / mark read) intentionally have no
+// public Convex mutations here. Visitor writes live in the client's
+// session-only overlay (`src/lib/store.tsx`); the shared demo DB stays
+// read-only. The auth-gated exception is `discussions.ts`.
