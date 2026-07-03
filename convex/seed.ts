@@ -1,5 +1,6 @@
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { AVATAR_PALETTE } from "./avatarPalette";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -33,20 +34,19 @@ export const run = internalMutation({
       isAgent = false,
     ) => ({ name, title, initials, avatarColor, isAgent });
 
-    // Warm, muted avatar palette tuned to the pcstyle.dev aesthetic.
-    // Humans use the warm palette; AI agents get cooler desaturated tones so
-    // they read as "bot" teammates without breaking the page's color story.
+    // Humans use the warm palette; AI agents get the cooler entries so they
+    // read as "bot" teammates without breaking the page's color story.
     const userDefs = [
-      user("Maya Chen", "VP Engineering", "MC", "#8c1862"),
-      user("Diego Ramos", "Staff Engineer", "DR", "#9d5cff"),
-      user("Priya Nair", "Product Manager", "PN", "#b53a82"),
-      user("Tom Becker", "Design Lead", "TB", "#d9a441"),
-      user("Aisha Khan", "Engineering Manager", "AK", "#2e7d52"),
-      user("Lukas Wolf", "SRE", "LW", "#c75146"),
+      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0]),
+      user("Diego Ramos", "Staff Engineer", "DR", AVATAR_PALETTE[8]),
+      user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1]),
+      user("Tom Becker", "Design Lead", "TB", AVATAR_PALETTE[2]),
+      user("Aisha Khan", "Engineering Manager", "AK", AVATAR_PALETTE[3]),
+      user("Lukas Wolf", "SRE", "LW", AVATAR_PALETTE[4]),
       // AI coding agents — they post as teammates, same as in Slack.
-      user("Cursor", "Coding Agent", "Cu", "#4f6d8c", true),
-      user("Codex", "Coding Agent", "Cx", "#6b5b8c", true),
-      user("Claude Code", "Coding Agent", "Cl", "#3d7d76", true),
+      user("Cursor", "Coding Agent", "Cu", AVATAR_PALETTE[5], true),
+      user("Codex", "Coding Agent", "Cx", AVATAR_PALETTE[6], true),
+      user("Claude Code", "Coding Agent", "Cl", AVATAR_PALETTE[7], true),
     ];
     const u: Record<string, Id<"users">> = {};
     for (const d of userDefs) {

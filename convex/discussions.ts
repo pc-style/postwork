@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { findUserForIdentity } from "./authUsers";
+import { AVATAR_PALETTE } from "./avatarPalette";
 
 /**
  * Per-experiment "open discussion" threads.
@@ -16,17 +17,6 @@ import { findUserForIdentity } from "./authUsers";
  */
 
 const DISCUSSION_SPACE = "flow lab";
-
-// Deterministic warm-ish palette for auto-provisioned member avatars. Kept
-// muted so it never competes with the page's single wine accent.
-const AVATAR_PALETTE = [
-  "#8c1862",
-  "#b53a82",
-  "#2e7d52",
-  "#9a7d2e",
-  "#3a6ea5",
-  "#7d5ba6",
-];
 
 function unauthenticated(): never {
   throw new ConvexError({

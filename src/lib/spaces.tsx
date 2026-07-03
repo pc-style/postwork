@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSession } from "./session";
+import { AVATAR_PALETTE } from "../../convex/avatarPalette";
 
 export type Org = {
   id: string;
@@ -82,10 +83,10 @@ const now = Date.now();
 const hoursAgo = (hours: number) => now - hours * 60 * 60 * 1000;
 
 const bakedOrgs: Org[] = [
-  { id: "org_northwind", name: "Northwind", handle: "northwind", initials: "NW", color: "#8c1862" },
-  { id: "org_acme", name: "Acme", handle: "acme", initials: "AC", color: "#4f6d8c" },
-  { id: "org_globex", name: "Globex", handle: "globex", initials: "GX", color: "#3d7d76" },
-  { id: "org_initech", name: "Initech", handle: "initech", initials: "IN", color: "#d9a441" },
+  { id: "org_northwind", name: "Northwind", handle: "northwind", initials: "NW", color: AVATAR_PALETTE[0] },
+  { id: "org_acme", name: "Acme", handle: "acme", initials: "AC", color: AVATAR_PALETTE[5] },
+  { id: "org_globex", name: "Globex", handle: "globex", initials: "GX", color: AVATAR_PALETTE[7] },
+  { id: "org_initech", name: "Initech", handle: "initech", initials: "IN", color: AVATAR_PALETTE[2] },
 ];
 
 const bakedSpaces: Space[] = [
@@ -131,7 +132,7 @@ const bakedPosts: SpacePost[] = [
     orgId: "org_acme",
     authorName: "Mira Patel",
     authorInitials: "MP",
-    authorColor: "#4f6d8c",
+    authorColor: AVATAR_PALETTE[5],
     title: "API contract question: account mapping edge cases",
     body: "We found three customers where the external account id maps to multiple billing entities. Can Northwind confirm whether the canonical id should be workspace-level or contract-level before we freeze the import job?",
     priority: "high",
@@ -145,7 +146,7 @@ const bakedPosts: SpacePost[] = [
     orgId: "org_northwind",
     authorName: "Theo Browne",
     authorInitials: "TB",
-    authorColor: "#8c1862",
+    authorColor: AVATAR_PALETTE[0],
     title: "Integration timeline after staging dry run",
     body: "Staging dry run is green except for webhook replay ordering. Proposed plan: patch idempotency today, run a second dry run tomorrow morning, and keep the production cutover window on Thursday.",
     priority: "normal",
@@ -159,7 +160,7 @@ const bakedPosts: SpacePost[] = [
     orgId: "org_globex",
     authorName: "Dana Cho",
     authorInitials: "DC",
-    authorColor: "#3d7d76",
+    authorColor: AVATAR_PALETTE[7],
     title: "Incident coordination: delayed export batch",
     body: "The 02:00 UTC export batch missed its delivery window. We have isolated it to a queue worker restart and are backfilling now. Please hold downstream reconciliation until we post the final checksum.",
     priority: "urgent",
@@ -173,7 +174,7 @@ const bakedPosts: SpacePost[] = [
     orgId: "org_northwind",
     authorName: "Sarah Chen",
     authorInitials: "SC",
-    authorColor: "#8c1862",
+    authorColor: AVATAR_PALETTE[0],
     title: "Renewal data request for Q3 capacity planning",
     body: "We need updated seat forecasts by region before the renewal model locks. Globex can use the shared spreadsheet, but please post final assumptions here so the decision trail stays searchable.",
     priority: "normal",
@@ -187,7 +188,7 @@ const bakedPosts: SpacePost[] = [
     orgId: "org_northwind",
     authorName: "Maya Kapoor",
     authorInitials: "MK",
-    authorColor: "#8c1862",
+    authorColor: AVATAR_PALETTE[0],
     title: "Northwind internal note: rollout owner coverage",
     body: "Internal only: support rotation needs a second owner during Acme's launch week. Do not promise 24-hour migration coverage until we confirm staffing.",
     priority: "high",

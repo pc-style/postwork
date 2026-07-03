@@ -183,6 +183,13 @@ decoration.
 - **High Gold** (`#d9a441`): The `High` priority chip and dot.
 - **Normal Grey** (`#8a8782`): The `Normal` priority chip and dot (shares Muted).
 
+### Identity colors (avatars & orgs)
+
+Generated avatar/org colors (seeded users, auto-provisioned discussion
+members, baked org data) all draw from one shared warm-muted palette:
+`convex/avatarPalette.ts`. It stays in the wine/teal/gold/moss family and
+never includes blue or violet — see the One Accent Rule below.
+
 ### Named Rules
 
 **The One Accent Rule.** There is exactly one accent — deep wine — per page. Never
