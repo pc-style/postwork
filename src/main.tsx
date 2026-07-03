@@ -10,6 +10,7 @@ import { SpacesProvider } from "./lib/spaces";
 import { router } from "./router";
 import { ExperimentProvider } from "./flashExperiments/active";
 import { useAuth } from "./shoo";
+import "./analytics";
 import "@fontsource-variable/inter/index.css";
 import "./index.css";
 
