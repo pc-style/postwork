@@ -66,6 +66,9 @@ export default defineSchema({
     // `spaceId` (it scopes cross-org readers); the two travel together.
     spaceId: v.optional(v.id("spaces")),
     visibility: v.optional(postVisibility),
+    // Author's org, required for "org"-scoped visibility to mean anything
+    // (the reader-side filter in `spaces.feedForSpace` compares against it).
+    orgId: v.optional(v.id("orgs")),
     // Group C — per-user walls. null/undefined = normal space post; set = a
     // post written on this user's wall.
     //

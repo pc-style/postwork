@@ -33,9 +33,9 @@ export const feedForSpace = query({
     return posts.filter((post) => {
       // "org"-scoped posts are only visible to a viewer in the same org.
       if (post.visibility !== "org") return true;
-      if (!args.viewerOrgId) return false;
-      if (!("orgId" in post)) return false;
-      return post.orgId === args.viewerOrgId;
+      return (
+        args.viewerOrgId !== undefined && post.orgId === args.viewerOrgId
+      );
     });
   },
 });

@@ -146,8 +146,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const summary = summaries[p._id];
       const lastActivityAt = bump?.lastActivityAt ?? p.lastActivityAt;
       const readAt = effReadAt(p._id, p.lastReadAt);
+      // Dedupe across backend + session: the replier may already be a backend
+      // participant (duplicates would double their avatar and collide keys).
       const participantIds = bump
-        ? [...p.participantIds, ...bump.addedParticipantIds]
+        ? [...new Set([...p.participantIds, ...bump.addedParticipantIds])]
         : p.participantIds;
       return {
         ...p,
@@ -171,7 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const summary = summaries[sp._id];
       const lastActivityAt = bump?.lastActivityAt ?? sp.lastActivityAt;
       const participantIds = bump
-        ? [...sp.participantIds, ...bump.addedParticipantIds]
+        ? [...new Set([...sp.participantIds, ...bump.addedParticipantIds])]
         : sp.participantIds;
       const readAt = effReadAt(sp._id, 0);
       return {
