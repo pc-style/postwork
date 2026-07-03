@@ -16,40 +16,40 @@
 ## Progress checklist
 
 - [x] 0.1 Commit the hardening changes (done — `16d70ab`)
-- [ ] 1.1 Add radius tokens to the theme
-- [ ] 1.2 Replace `text-red-300` with the urgent token
-- [ ] 1.3 Global `:focus-visible` + select focus styles
-- [ ] 1.4 Resolve tracked-uppercase labels
-- [ ] 1.5 Fix "home" nav active state
-- [ ] 1.6 Make the "+ new post" CTA actually start a post
-- [ ] 2.1 Extract `Button` component
-- [ ] 2.2 Extract `Chip` primitive (+ `PostMetaChips`)
-- [ ] 2.3 Extract `Dialog` shell + `PostForm`
-- [ ] 2.4 Unify popover dismiss behavior (+ UserSwitcher keyboard/direction)
-- [ ] 2.5 Dedupe `OrgSquare`
-- [ ] 2.6 Dedupe the wine-framed agent-panel scaffold
-- [ ] 3.1 Color-token sweep: kill the 272 `[var(--color-*)]` arbitrary classes
-- [ ] 3.2 Tokenize the type ramp
-- [ ] 3.3 One shared avatar/identity palette
-- [ ] 4.1 Shared page-header/back-link scaffold
-- [ ] 4.2 Consistent loading/empty states
-- [ ] 4.3 Per-route document titles
-- [ ] 5.1 Restructure the overlay store (memoized context, module-level hooks)
-- [ ] 5.2 Single `Priority` type, typed search params
-- [ ] 5.3 Honest local-id handling
-- [ ] 5.4 Flatten/document the provider pyramid
-- [ ] 5.5 Fix graduated flash experiments (incl. double-composer bug)
-- [ ] 5.6 Reuse thread components in `ExperimentDiscussion`
-- [ ] 5.7 Derive `ExperimentSlot` from `ExperimentSlots`
-- [ ] 6.1 Decide: dead Group-B backend (convex/spaces.ts + 3 tables)
-- [ ] 6.2 Decide: dead `agentTasks` table
-- [ ] 6.3 Backend hardening follow-ups (subject leak, vote counting, codegen)
-- [ ] 7.1 Reconcile DESIGN.md with the shipped shell
-- [ ] 7.2 Purge the retired monospace aesthetic from AGENTS.md / PRODUCT.md
-- [ ] 7.3 Refresh README
-- [ ] 7.4 Regenerate OG images
-- [ ] 7.5 Archive stale planning docs
-- [ ] 7.6 Pin dependencies
+- [x] 1.1 Add radius tokens to the theme
+- [x] 1.2 Replace `text-red-300` with the urgent token
+- [x] 1.3 Global `:focus-visible` + select focus styles
+- [x] 1.4 Resolve tracked-uppercase labels
+- [x] 1.5 Fix "home" nav active state
+- [x] 1.6 Make the "+ new post" CTA actually start a post
+- [x] 2.1 Extract `Button` component
+- [x] 2.2 Extract `Chip` primitive (+ `PostMetaChips`)
+- [x] 2.3 Extract `Dialog` shell + `PostForm`
+- [x] 2.4 Unify popover dismiss behavior (+ UserSwitcher keyboard/direction)
+- [x] 2.5 Dedupe `OrgSquare`
+- [x] 2.6 Dedupe the wine-framed agent-panel scaffold
+- [x] 3.1 Color-token sweep: kill the 272 `[var(--color-*)]` arbitrary classes
+- [x] 3.2 Tokenize the type ramp
+- [x] 3.3 One shared avatar/identity palette
+- [x] 4.1 Shared page-header/back-link scaffold
+- [x] 4.2 Consistent loading/empty states
+- [x] 4.3 Per-route document titles
+- [x] 5.1 Restructure the overlay store (memoized context, module-level hooks)
+- [x] 5.2 Single `Priority` type, typed search params
+- [x] 5.3 Honest local-id handling
+- [x] 5.4 Flatten/document the provider pyramid
+- [x] 5.5 Fix graduated flash experiments (incl. double-composer bug)
+- [x] 5.6 Reuse thread components in `ExperimentDiscussion`
+- [x] 5.7 Derive `ExperimentSlot` from `ExperimentSlots`
+- [ ] 6.1 Decide: dead Group-B backend (convex/spaces.ts + 3 tables) *(owner decision required)*
+- [ ] 6.2 Decide: dead `agentTasks` table *(owner decision required)*
+- [x] 6.3 Backend hardening follow-ups (subject leak, vote counting, codegen)
+- [x] 7.1 Reconcile DESIGN.md with the shipped shell
+- [x] 7.2 Purge the retired monospace aesthetic from AGENTS.md / PRODUCT.md
+- [x] 7.3 Refresh README
+- [x] 7.4 Regenerate OG images
+- [ ] 7.5 Archive stale planning docs *(out of scope for the workflow run)*
+- [x] 7.6 Pin dependencies
 
 ---
 
