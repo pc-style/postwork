@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </div>
                   {counts.urgent > 0 && (
                     <div>
-                      <span className="text-red-300">{counts.urgent}</span>{" "}
+                      <span className="text-urgent">{counts.urgent}</span>{" "}
                       urgent
                     </div>
                   )}
