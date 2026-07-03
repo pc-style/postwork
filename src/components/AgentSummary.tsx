@@ -4,6 +4,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { Markdown } from "./Markdown";
 import { timeAgo } from "../lib/format";
 import { Button } from "./Button";
+import { AccentPanel } from "./AccentPanel";
 
 export function AgentSummary({
   postId,
@@ -40,16 +41,10 @@ export function AgentSummary({
   };
 
   return (
-    <div className="rounded-lg border border-accent/25 bg-accent/[0.06] p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-soft">
-            ai
-          </span>
-          <span className="text-xs font-semibold tracking-wide text-accent-soft lowercase">
-            agent summary
-          </span>
-        </div>
+    <AccentPanel
+      chipLabel="ai"
+      title="agent summary"
+      action={
         <Button
           variant="ghost"
           size="sm"
@@ -59,8 +54,8 @@ export function AgentSummary({
         >
           {busy ? "summarizing…" : local ? "unsaved" : summary ? "regenerate" : "generate"}
         </Button>
-      </div>
-
+      }
+    >
       {summary ? (
         <Markdown text={summary} />
       ) : (
@@ -81,6 +76,6 @@ export function AgentSummary({
           {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
         </p>
       )}
-    </div>
+    </AccentPanel>
   );
 }

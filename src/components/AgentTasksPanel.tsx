@@ -9,6 +9,7 @@ import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Markdown } from "./Markdown";
 import { StatusChip } from "./StatusChip";
+import { AccentPanel } from "./AccentPanel";
 
 function buildContextText({
   post,
@@ -63,16 +64,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
   };
 
   return (
-    <section className="rounded-lg border border-accent/25 bg-accent/[0.06] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-soft">
-          agents
-        </span>
-        <span className="text-xs font-semibold tracking-wide text-accent-soft lowercase">
-          investigations
-        </span>
-      </div>
-
+    <AccentPanel chipLabel="agents" title="investigations">
       <div className="grid gap-2 md:grid-cols-[160px_1fr_auto]">
         <select
           value={selectedAgent?._id ?? ""}
@@ -141,6 +133,6 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           })}
         </div>
       )}
-    </section>
+    </AccentPanel>
   );
 }

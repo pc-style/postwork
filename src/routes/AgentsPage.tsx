@@ -7,6 +7,7 @@ import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
+import { AccentPanel } from "../components/AccentPanel";
 
 function truncate(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -103,18 +104,12 @@ export function AgentsPage() {
       </header>
 
       {tasks.length === 0 && (
-        <div className="mb-5 rounded-lg border border-accent/25 bg-accent/[0.06] p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-soft">
-              agents
-            </span>
-            <span className="text-xs font-semibold tracking-wide text-accent-soft lowercase">
-              control plane
-            </span>
-          </div>
-          <p className="text-sm text-[var(--color-muted)]">
-            no agent tasks yet. dispatch agents from any post investigation panel or send one from a subthread.
-          </p>
+        <div className="mb-5">
+          <AccentPanel chipLabel="agents" title="control plane">
+            <p className="text-sm text-[var(--color-muted)]">
+              no agent tasks yet. dispatch agents from any post investigation panel or send one from a subthread.
+            </p>
+          </AccentPanel>
         </div>
       )}
 
