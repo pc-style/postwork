@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Doc, Id } from "../../convex/_generated/dataModel";
+import type { Doc, Id, TableNames } from "../../convex/_generated/dataModel";
 import type { EnrichedPost, EnrichedReply, Priority } from "./types";
 import { useSession } from "./session";
 
@@ -27,7 +27,16 @@ import { useSession } from "./session";
  */
 
 const LOCAL_PREFIX = "local_";
-const isLocalId = (id: string) => id.startsWith(LOCAL_PREFIX);
+export const isLocalId = (id: string) => id.startsWith(LOCAL_PREFIX);
+
+/**
+ * Mint a synthetic session-local id for `table`, tagged with the `local_`
+ * prefix so `isLocalId` can route it to the overlay instead of the backend.
+ * The cast is necessary because these ids never exist in Convex.
+ */
+function makeLocalId<T extends TableNames>(table: T, n: number): Id<T> {
+  return `${LOCAL_PREFIX}${table[0]}${n}` as unknown as Id<T>;
+}
 
 type SessionPost = Omit<
   Doc<"posts">,
@@ -75,7 +84,6 @@ type StoreValue = {
     wallOwnerId?: Id<"users">;
   }) => Promise<Id<"posts">>;
   summarize: (postId: Id<"posts">) => Promise<void>;
-  isLocalId: (id: string) => boolean;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -208,7 +216,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       parentId?: Id<"replies">;
     }) => {
       replyCounter.current += 1;
-      const id = `${LOCAL_PREFIX}r${replyCounter.current}` as unknown as Id<"replies">;
+      const id = makeLocalId("replies", replyCounter.current);
       const now = Date.now();
       const reply: SessionReply = {
         _id: id,
@@ -261,7 +269,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       wallOwnerId?: Id<"users">;
     }) => {
       postCounter.current += 1;
-      const id = `${LOCAL_PREFIX}p${postCounter.current}` as unknown as Id<"posts">;
+      const id = makeLocalId("posts", postCounter.current);
       const now = Date.now();
       const sp: SessionPost = {
         _id: id,
@@ -317,7 +325,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createReply,
       createPost,
       summarize,
-      isLocalId,
     }),
     [
       posts,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStore } from "../lib/store";
+import { useStore, isLocalId } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Markdown } from "./Markdown";
 import { timeAgo } from "../lib/format";
@@ -21,7 +21,7 @@ export function AgentSummary({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const local = store.isLocalId(postId);
+  const local = isLocalId(postId);
 
   const onRegenerate = async () => {
     setBusy(true);

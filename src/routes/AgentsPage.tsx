@@ -4,7 +4,7 @@ import { AgentTag } from "../components/AgentTag";
 import { Avatar } from "../components/Avatar";
 import { useAgentTasks, type AgentTask } from "../lib/agentTasks";
 import { useSession } from "../lib/session";
-import { useStore } from "../lib/store";
+import { isLocalId } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
 import { PageHeader } from "../components/PageHeader";
@@ -18,11 +18,9 @@ function truncate(text: string, max: number) {
 function AgentCard({
   agent,
   agentTasks,
-  isLocalId,
 }: {
   agent: Doc<"users">;
   agentTasks: AgentTask[];
-  isLocalId: (id: string) => boolean;
 }) {
   const recent = agentTasks.slice(0, 5);
 
@@ -87,7 +85,6 @@ export function AgentsPage() {
   useDocumentTitle("agents · postwork");
   const { users } = useSession();
   const { tasks } = useAgentTasks();
-  const store = useStore();
   const agents = users.filter((user) => user.isAgent);
 
   return (
@@ -113,7 +110,6 @@ export function AgentsPage() {
             key={agent._id}
             agent={agent}
             agentTasks={tasks.filter((task) => task.agentId === agent._id)}
-            isLocalId={store.isLocalId}
           />
         ))}
       </div>
