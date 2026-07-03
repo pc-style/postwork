@@ -1,7 +1,8 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
 import { UserSwitcher } from "./UserSwitcher";
+import { NewPostDialog } from "./NewPostDialog";
 
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
 // not a duplicate of "home". Both point at "/" but carry different search.
@@ -15,6 +16,7 @@ const ROUTE_NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const store = useStore();
   const counts = store.useCounts();
+  const [composing, setComposing] = useState(false);
 
   return (
     <div className="min-h-full">
@@ -62,12 +64,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <Link
-            to="/"
+          <button
+            onClick={() => setComposing(true)}
             className="mt-1 rounded-lg bg-accent px-3 py-2 text-center text-sm font-medium text-fg transition hover:bg-accent-soft"
           >
             + new post
-          </Link>
+          </button>
 
           <div className="mt-auto">
             <UserSwitcher />
@@ -107,6 +109,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
       </div>
+
+      {composing && <NewPostDialog onClose={() => setComposing(false)} />}
     </div>
   );
 }
