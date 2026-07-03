@@ -25,6 +25,10 @@
 
   /* Lively pop: fast start, gentle landing — no wobble. */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 }
 
 html,
