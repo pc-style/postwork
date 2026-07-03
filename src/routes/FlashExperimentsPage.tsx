@@ -105,7 +105,7 @@ export function FlashExperimentsPage() {
     <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-[var(--color-bg)] px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-[var(--color-surface)]/90 p-5 backdrop-blur">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-accent-soft">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab · work in progress
           </div>
@@ -211,7 +211,7 @@ function ExperimentCard({
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-[var(--color-muted)]">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >

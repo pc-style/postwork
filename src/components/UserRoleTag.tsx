@@ -13,9 +13,9 @@ export function UserRoleTag({
 
   return (
     <span
-      className={`inline-flex items-center rounded-sm border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent-soft uppercase ${className}`}
+      className={`inline-flex items-center rounded-sm border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-soft ${className}`}
     >
-      admin
+      Admin
     </span>
   );
 }

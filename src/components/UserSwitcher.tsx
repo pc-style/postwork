@@ -38,7 +38,7 @@ export function UserSwitcher() {
 
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
-          <div className="border-b border-[var(--color-border)] px-3 py-2 text-[11px] tracking-wide text-[var(--color-muted)] uppercase">
+          <div className="border-b border-[var(--color-border)] px-3 py-2 text-[11px] font-medium text-[var(--color-muted)]">
             view as teammate
           </div>
           {users.map((u) => (

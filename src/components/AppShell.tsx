@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="hidden lg:block">
           <div className="sticky top-6 space-y-3">
             <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
-              <div className="mb-2 text-[11px] tracking-wide text-[var(--color-muted)] uppercase">
+              <div className="mb-2 text-[11px] font-medium text-[var(--color-muted)]">
                 your queue
               </div>
               {counts ? (
