@@ -38,7 +38,7 @@ function RailNav() {
     <nav className="rounded-lg border border-border bg-surface p-2.5 text-sm">
       {SECTIONS.map((section) => (
         <div key={section.heading} className="mb-3 last:mb-0">
-          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wide text-muted">
+          <div className="px-2 pb-1.5 text-label uppercase tracking-wide text-muted">
             {section.heading}
           </div>
           <div className="space-y-0.5">
@@ -48,7 +48,7 @@ function RailNav() {
                   <span className="truncate">{item.label}</span>
                   {item.count !== undefined ? (
                     <span
-                      className={`shrink-0 rounded-full px-1.5 text-[11px] tabular-nums ${
+                      className={`shrink-0 rounded-full px-1.5 text-label tabular-nums ${
                         item.accent
                           ? "bg-accent/20 text-accent-soft"
                           : "border border-border text-muted"
@@ -57,7 +57,7 @@ function RailNav() {
                       {item.count}
                     </span>
                   ) : item.hint ? (
-                    <span className="shrink-0 text-[11px] text-muted">
+                    <span className="shrink-0 text-label text-muted">
                       {item.hint}
                     </span>
                   ) : null}

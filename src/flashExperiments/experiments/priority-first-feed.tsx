@@ -12,7 +12,7 @@ function PriorityFirstHeader() {
     <section className="mb-4 rounded-lg border border-accent/30 bg-accent/10 p-4">
       <div className="flex items-center justify-between gap-2 text-xs text-accent-soft">
         <span>proposed flow</span>
-        <span className="rounded-md border border-accent/30 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+        <span className="rounded-md border border-accent/30 px-1.5 py-0.5 text-label uppercase tracking-wide">
           preview
         </span>
       </div>

@@ -52,16 +52,16 @@ function AgentCard({
             <div key={task._id} className="rounded-md border border-border bg-bg p-3">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 <StatusChip status={task.status} />
-                <span className="text-[11px] text-muted">
+                <span className="text-label text-muted">
                   {timeAgo(task.createdAt)}
                 </span>
                 {isLocalId(task.postId) ? (
-                  <span className="text-[11px] text-muted">session post</span>
+                  <span className="text-label text-muted">session post</span>
                 ) : (
                   <Link
                     to="/posts/$postId"
                     params={{ postId: task.postId }}
-                    className="text-[11px] text-accent-soft transition hover:text-fg"
+                    className="text-label text-accent-soft transition hover:text-fg"
                   >
                     open post
                   </Link>

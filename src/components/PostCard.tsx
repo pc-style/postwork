@@ -27,14 +27,14 @@ export function PostCard({ post }: { post: EnrichedPost }) {
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <PostMetaChips post={post} />
             {post.summary && (
-              <span className="text-[11px] text-accent-soft" title="Has agent summary">
+              <span className="text-label text-accent-soft" title="Has agent summary">
                 ai summary
               </span>
             )}
           </div>
 
           <h3
-            className={`truncate text-[15px] ${
+            className={`truncate text-title ${
               post.unread ? "font-semibold text-fg" : "font-medium"
             }`}
           >

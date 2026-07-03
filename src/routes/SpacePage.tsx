@@ -24,7 +24,7 @@ function SpaceGlyph({ orgs }: { orgs: Org[] }) {
     >
       <div className="flex items-center gap-1.5">
         <span className="size-5 rounded-full" style={{ backgroundColor: a }} />
-        <span className="text-[10px] text-muted">×</span>
+        <span className="text-label text-muted">×</span>
         <span className="size-5 rounded-full" style={{ backgroundColor: b }} />
       </div>
     </div>
@@ -136,7 +136,7 @@ export function SpacePage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-label">
                     <Chip tone={priorityTones[post.priority] ?? "muted"} dot>
                       {p.label}
                     </Chip>
@@ -148,12 +148,12 @@ export function SpacePage() {
                     )}
                     <Chip tone="accent">{titleCase(post.visibility)}</Chip>
                   </div>
-                  <h2 className="text-[15px] font-semibold text-fg">{post.title}</h2>
+                  <h2 className="text-title font-semibold text-fg">{post.title}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-muted">{snippet}</p>
                   <div className="mt-3 flex items-center gap-2 text-xs text-muted">
                     <div
                       style={{ backgroundColor: post.authorColor }}
-                      className="flex size-5 items-center justify-center rounded-sm text-[9px] font-semibold text-fg"
+                      className="flex size-5 items-center justify-center rounded-sm text-label font-semibold text-fg"
                     >
                       {post.authorInitials}
                     </div>

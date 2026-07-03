@@ -110,7 +110,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                         <span>{agent?.name ?? "agent"}</span>
                         {agent?.isAgent && <AgentTag />}
                       </div>
-                      <p className="text-[11px] text-muted">
+                      <p className="text-label text-muted">
                         {timeAgo(task.createdAt)}
                       </p>
                     </div>

@@ -102,14 +102,14 @@ export function SpacesPage() {
             <Link key={space.id} to="/spaces/$slug" params={{ slug: space.slug }} className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h3 className="text-[15px] font-semibold text-fg">{space.name}</h3>
+                  <h3 className="text-title font-semibold text-fg">{space.name}</h3>
                   {space.description && <p className="mt-1 line-clamp-2 text-sm text-muted">{space.description}</p>}
                 </div>
                 <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
                   {members.map(({ org, status }) => (
                     <div key={org.id} className="flex items-center gap-1" title={`${org.name}: ${status}`}>
                       <OrgSquare org={org} />
-                      {status !== "active" && <span className="text-[10px] text-muted">{status}</span>}
+                      {status !== "active" && <span className="text-label text-muted">{status}</span>}
                     </div>
                   ))}
                 </div>

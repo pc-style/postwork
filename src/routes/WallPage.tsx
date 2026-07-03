@@ -74,7 +74,7 @@ export function WallPage() {
         <div className="space-y-3">
           {posts.map((post) => (
             <div key={post._id} className="space-y-1.5">
-              <span className="inline-flex rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
+              <span className="inline-flex rounded-md border border-border bg-surface-2 px-2 py-0.5 text-label text-muted">
                 {post.wallOwnerId === userId
                   ? "on the wall"
                   : `posted by ${owner.name}`}

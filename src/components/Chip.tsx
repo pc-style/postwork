@@ -21,8 +21,8 @@ const dotClasses: Record<ChipTone, string> = {
 };
 
 const sizeClasses: Record<ChipSize, string> = {
-  md: "rounded-md text-[11px]",
-  sm: "rounded-sm text-[10px]",
+  md: "rounded-md text-label",
+  sm: "rounded-sm text-label",
 };
 
 export function Chip({

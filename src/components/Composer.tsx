@@ -113,16 +113,16 @@ export function Composer({
               type="button"
               onClick={onCodeFence}
               title="insert code block"
-              className="rounded-md border border-border px-2 py-1 text-[11px] text-muted transition hover:text-fg"
+              className="rounded-md border border-border px-2 py-1 text-label text-muted transition hover:text-fg"
             >
               {"</> code"}
             </button>
             {mentioned.length > 0 ? (
-              <span className="text-[11px] text-accent-soft">
+              <span className="text-label text-accent-soft">
                 summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
               </span>
             ) : (
-              <span className="hidden text-[11px] text-muted sm:inline">
+              <span className="hidden text-label text-muted sm:inline">
                 ⌘/Ctrl + Enter · @cursor to summon an agent
               </span>
             )}

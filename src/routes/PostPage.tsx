@@ -79,7 +79,7 @@ export function PostPage() {
         </div>
 
         <div className="mt-4">
-          <RichText text={post.body} className="prose-post text-[15px] text-fg" />
+          <RichText text={post.body} className="prose-post text-title text-fg" />
         </div>
 
         <div className="mt-5">

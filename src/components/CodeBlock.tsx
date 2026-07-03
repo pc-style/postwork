@@ -40,13 +40,13 @@ export function CodeBlock({ code, lang }: { code: string; lang?: string }) {
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-bg">
-      <div className="flex items-center justify-between border-b border-border bg-surface-2 px-3 py-1.5 text-[11px] text-muted">
+      <div className="flex items-center justify-between border-b border-border bg-surface-2 px-3 py-1.5 text-label text-muted">
         <span>{label}</span>
         <button onClick={copy} className="transition hover:text-fg">
           {copied ? "copied" : "copy"}
         </button>
       </div>
-      <div className="overflow-x-auto text-[13px] leading-relaxed [&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-3">
+      <div className="overflow-x-auto text-code leading-relaxed [&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-3">
         {!loading && html ? (
           <div dangerouslySetInnerHTML={{ __html: html }} />
         ) : (

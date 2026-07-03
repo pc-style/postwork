@@ -34,7 +34,7 @@ export function UserSwitcher() {
 
       {open && (
         <div className="absolute right-0 bottom-full z-20 mb-2 w-64 overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
-          <div className="border-b border-border px-3 py-2 text-[11px] font-medium text-muted">
+          <div className="border-b border-border px-3 py-2 text-label font-medium text-muted">
             view as teammate
           </div>
           {users.map((u) => (
@@ -58,7 +58,7 @@ export function UserSwitcher() {
                     {u.isAgent && <AgentTag />}
                     <UserRoleTag role={u.role} />
                   </div>
-                  <div className="truncate text-[11px] text-muted">
+                  <div className="truncate text-label text-muted">
                     {u.title}
                   </div>
                 </div>
@@ -67,7 +67,7 @@ export function UserSwitcher() {
                 to="/u/$userId"
                 params={{ userId: u._id }}
                 onClick={() => setOpen(false)}
-                className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-muted transition hover:text-accent-soft"
+                className="shrink-0 rounded-md px-1.5 py-1 text-label text-muted transition hover:text-accent-soft"
                 title={`${u.name}'s wall`}
               >
                 wall →

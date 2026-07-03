@@ -71,7 +71,7 @@ export function AgentSummary({
       )}
 
       {(model || updatedAt) && !error && (
-        <p className="mt-2.5 text-[11px] text-muted">
+        <p className="mt-2.5 text-label text-muted">
           {model === "seed/baked" ? "demo summary" : `model: ${model}`}
           {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
         </p>

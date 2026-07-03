@@ -105,7 +105,7 @@ export function FlashExperimentsPage() {
     <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
-          <div className="flex items-center gap-2 text-[11px] font-medium text-accent-soft">
+          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab · work in progress
           </div>
@@ -134,7 +134,7 @@ export function FlashExperimentsPage() {
                     ({items.length})
                   </span>
                 </h2>
-                <p className="text-right text-[11px] text-muted">
+                <p className="text-right text-label text-muted">
                   {meta.blurb}
                 </p>
               </div>
@@ -171,7 +171,7 @@ export function FlashExperimentsPage() {
                   ({implementedExperiments.length})
                 </span>
               </h2>
-              <p className="text-right text-[11px] text-muted">
+              <p className="text-right text-label text-muted">
                 community suggestions that shipped — now part of the default
                 app.
               </p>
@@ -211,7 +211,7 @@ function ExperimentCard({
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-muted">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-label font-medium text-muted">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >
@@ -235,7 +235,7 @@ function ExperimentCard({
         </p>
 
         {suggestion ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-label">
             <span className="text-muted">suggested by</span>
             <span className="text-fg">{suggestion.name}</span>
             <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
@@ -254,7 +254,7 @@ function ExperimentCard({
             )}
           </div>
         ) : (
-          <p className="mt-3 text-[11px] text-muted">
+          <p className="mt-3 text-label text-muted">
             requested by {experiment.requestedBy}
           </p>
         )}
@@ -334,7 +334,7 @@ function VoteButton({
 
 function ImplementedBadge() {
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium lowercase text-accent-soft">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-label font-medium lowercase text-accent-soft">
       <svg viewBox="0 0 24 24" fill="none" className="size-2.5" aria-hidden="true">
         <path
           d="M5 13l4 4L19 7"
@@ -363,7 +363,7 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
         {experiment.title}
       </span>
       {suggestion && (
-        <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
+        <span className="hidden shrink-0 text-label text-muted sm:inline">
           {suggestion.name}
         </span>
       )}

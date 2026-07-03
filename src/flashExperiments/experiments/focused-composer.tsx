@@ -12,7 +12,7 @@ function FocusedComposer({ postId }: { postId: Id<"posts"> }) {
             this thread is waiting on a decision
           </div>
         </div>
-        <span className="rounded-md border border-accent/30 bg-accent/15 px-1.5 py-0.5 text-[11px] text-accent-soft">
+        <span className="rounded-md border border-accent/30 bg-accent/15 px-1.5 py-0.5 text-label text-accent-soft">
           focused
         </span>
       </div>

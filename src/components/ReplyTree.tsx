@@ -58,7 +58,7 @@ function ReplyNode({
               </span>
               {node.author?.isAgent && <AgentTag />}
               <UserRoleTag role={node.author?.role} />
-              <span className="text-[11px] text-muted">
+              <span className="text-label text-muted">
                 {timeAgo(node.createdAt)}
               </span>
             </div>

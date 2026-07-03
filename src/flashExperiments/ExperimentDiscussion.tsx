@@ -194,7 +194,7 @@ function ReplyItem({
             {node.author?.name ?? "member"}
           </span>
           <UserRoleTag role={node.author?.role} />
-          <span className="text-[10px] text-muted">
+          <span className="text-label text-muted">
             {timeAgo(node.createdAt)}
           </span>
         </div>
@@ -203,7 +203,7 @@ function ReplyItem({
         </div>
         <button
           onClick={() => setReplyingTo(isReplying ? null : node._id)}
-          className="mt-1.5 text-[11px] text-muted transition hover:text-accent-soft"
+          className="mt-1.5 text-label text-muted transition hover:text-accent-soft"
         >
           {isReplying ? "cancel" : "reply"}
         </button>
@@ -299,7 +299,7 @@ function Composer({
         className="w-full resize-none rounded-md border border-border bg-bg px-3 py-2 font-sans text-sm text-fg placeholder:text-muted focus:border-accent/50 focus:outline-none"
       />
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-muted">
+        <span className="text-label text-muted">
           ⌘/ctrl + enter to post
         </span>
         <button
