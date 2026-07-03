@@ -8,6 +8,7 @@ import { useStore } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
 import { AccentPanel } from "../components/AccentPanel";
+import { PageHeader } from "../components/PageHeader";
 
 function truncate(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -89,19 +90,12 @@ export function AgentsPage() {
 
   return (
     <div>
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
-      >
-        ← feed
-      </Link>
-
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-fg">agents</h1>
-        <p className="mt-1 text-sm text-muted">
-          dispatch coding teammates to investigate posts and report back into the thread.
-        </p>
-      </header>
+      <PageHeader
+        backTo="/"
+        backLabel="feed"
+        title="agents"
+        description="dispatch coding teammates to investigate posts and report back into the thread."
+      />
 
       {tasks.length === 0 && (
         <div className="mb-5">

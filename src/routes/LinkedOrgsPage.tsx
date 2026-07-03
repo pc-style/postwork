@@ -1,22 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { useSpaces } from "../lib/spaces";
 import { OrgSquare } from "../components/OrgSquare";
+import { PageHeader } from "../components/PageHeader";
 
 export function LinkedOrgsPage() {
   const { orgs, myOrg, allSpaces, membershipsForSpace } = useSpaces();
 
   return (
     <div>
-      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg">
-        ← spaces
-      </Link>
-
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold text-fg">linked orgs</h1>
-        <p className="mt-1 text-sm text-muted">
-          admin view of external organizations connected through shared spaces.
-        </p>
-      </div>
+      <PageHeader
+        backTo="/spaces"
+        backLabel="spaces"
+        title="linked orgs"
+        description="admin view of external organizations connected through shared spaces."
+      />
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         {orgs

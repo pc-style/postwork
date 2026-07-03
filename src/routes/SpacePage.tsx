@@ -7,6 +7,7 @@ import { Chip } from "../components/Chip";
 import { priorityTones } from "../components/PostMetaChips";
 import { PostForm } from "../components/PostForm";
 import { OrgSquare } from "../components/OrgSquare";
+import { PageHeader } from "../components/PageHeader";
 
 type Visibility = "space" | "org" | "public";
 
@@ -79,9 +80,7 @@ export function SpacePage() {
 
   return (
     <div>
-      <Link to="/spaces" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-fg">
-        ← Spaces
-      </Link>
+      <PageHeader backTo="/spaces" backLabel="spaces" />
 
       <header className="mb-5 rounded-lg border border-border bg-surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">

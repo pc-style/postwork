@@ -7,6 +7,7 @@ import { Button } from "../components/Button";
 import { PostCard } from "../components/PostCard";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { WallPostDialog } from "../components/WallPostDialog";
+import { PageHeader } from "../components/PageHeader";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 
@@ -36,12 +37,7 @@ export function WallPage() {
 
   return (
     <div>
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
-      >
-        ← feed
-      </Link>
+      <PageHeader backTo="/" backLabel="feed" />
 
       <section className="mb-5 rounded-lg border border-border bg-surface p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">

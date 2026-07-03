@@ -109,7 +109,7 @@ export function FlashExperimentsPage() {
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab · work in progress
           </div>
-          <h1 className="mt-2 text-2xl font-semibold lowercase text-fg">
+          <h1 className="mt-2 text-xl font-semibold lowercase text-fg">
             flash experiments
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">

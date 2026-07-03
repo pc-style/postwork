@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useSpaces } from "../lib/spaces";
 import { Button } from "../components/Button";
 import { OrgSquare } from "../components/OrgSquare";
+import { PageHeader } from "../components/PageHeader";
 
 function parseHandles(value: string) {
   return value
@@ -38,24 +39,17 @@ export function SpacesPage() {
 
   return (
     <div>
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
-      >
-        ← feed
-      </Link>
-
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-fg">spaces</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted">
-            shared cross-company rooms where your org and external teams can keep launch plans, incidents, and decisions in one feed.
-          </p>
-        </div>
-        <Link to="/orgs" className="text-sm text-accent-soft transition hover:text-fg">
-          linked orgs →
-        </Link>
-      </div>
+      <PageHeader
+        backTo="/"
+        backLabel="feed"
+        title="spaces"
+        description="shared cross-company rooms where your org and external teams can keep launch plans, incidents, and decisions in one feed."
+        action={
+          <Link to="/orgs" className="text-sm text-accent-soft transition hover:text-fg">
+            linked orgs →
+          </Link>
+        }
+      />
 
       {invitesForMyOrg.length > 0 && (
         <section className="mb-5 rounded-lg border border-accent/30 bg-accent/10 p-4">

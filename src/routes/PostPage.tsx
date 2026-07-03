@@ -3,6 +3,7 @@ import { Link, getRouteApi } from "@tanstack/react-router";
 import { useStore } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
+import { PageHeader } from "../components/PageHeader";
 import { AgentSummary } from "../components/AgentSummary";
 import { ReplyTree } from "../components/ReplyTree";
 import { Composer } from "../components/Composer";
@@ -54,12 +55,7 @@ export function PostPage() {
 
   return (
     <div>
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition hover:text-fg"
-      >
-        ← feed
-      </Link>
+      <PageHeader backTo="/" backLabel="feed" />
 
       {slots.post ? (
         slots.post({ postId: post._id })
