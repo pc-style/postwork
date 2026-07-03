@@ -76,30 +76,19 @@ friendly "configure a provider" message instead of crashing.
 
 ## Design Context
 
-Strategic design context lives in `PRODUCT.md` (register, users, brand
+Strategic design context lives in `docs/product.md` (register, users, brand
 personality, anti-references, design principles). Visual system is documented in
-`DESIGN.md`. These are maintained by the `impeccable` design skill
+`docs/design.md`. These are maintained by the `impeccable` design skill
 (`.agents/skills/impeccable/`); run `$impeccable` for the command menu, or e.g.
 `$impeccable critique <surface>` / `$impeccable polish <component>`. The concrete
 visual rules below remain the quick reference.
 
 ## Design conventions (style is derived from pcstyle.dev)
 
-Dark terminal/developer aesthetic. Tokens live in `src/index.css` `@theme`:
-
-- Warm near-black: `--color-bg #0a0a0b`, `--color-surface #121014`,
-  hairline `--color-border #252327`, text `--color-fg #e8e6e3`,
-  muted `--color-muted #8a8782`.
-- Single accent: deep wine `--color-accent #8c1862` (soft `#b53a82`). One accent
-  per page — use `accent`, never reintroduce indigo/blue.
-- **Monospace everywhere** (`--font-mono`). This is the defining trait.
-- Small radii (cards `rounded-lg` 8px, controls `rounded-md` 6px).
-- **Lowercase chrome** (nav, buttons, filters, labels). User content keeps its
-  own casing.
-- **No emoji / pictographs** in UI or code. Use mono text affordances
-  (`/` search prompt, `ai` tag, `active 5d ago`). Typographic arrows (`←` `→`) ok.
-- Priority colors are warm/muted state colors in `src/lib/format.ts`
-  (urgent coral, high gold, normal grey), not the page accent.
+Use `docs/design.md` as the canonical visual system. Quick reference: warm
+near-black surfaces, deep wine accent, Inter for product UI, mono for code/data
+affordances, small radii, lowercase chrome, no emoji/pictographs, and muted
+priority state colors from `src/lib/format.ts`.
 
 ## Code conventions
 
@@ -114,8 +103,9 @@ Dark terminal/developer aesthetic. Tokens live in `src/index.css` `@theme`:
 ## Deployment
 
 Frontend is a static Vite build (`dist/`) → deploy to Vercel. Convex Cloud hosts
-the backend; set the AI env vars on the Convex deployment, and `VITE_CONVEX_URL`
-on the frontend host.
+the backend; set the AI env vars on the Convex deployment. The committed Vercel
+build command injects `VITE_CONVEX_URL`; set `CONVEX_DEPLOY_KEY` and
+`VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev` in Vercel.
 
 <!-- convex-ai-start -->
 

@@ -135,12 +135,19 @@ Push the repo to GitHub and import it at vercel.com (or run `bunx vercel`). Set:
 | --- | --- |
 | Framework preset | **Vite** |
 | Install command | `bun install` |
-| Build command | `bunx convex deploy --cmd 'bun run build'` |
+| Build command | `bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'` |
 | Output directory | `dist` |
 | Environment variable | `CONVEX_DEPLOY_KEY` = the `prod:` key from step 2 |
+| Environment variable | `VITE_PLAUSIBLE_DOMAIN` = `postwork.pcstyle.dev` |
 
 Deploy. Do **not** set `VITE_CONVEX_URL` yourself — `convex deploy --cmd` sets it
 during the build to point at your production deployment.
+
+Plausible's NPM verifier expects the Vite build to include the same domain you
+registered in Plausible. For this Vercel demo, that domain is
+`postwork.pcstyle.dev`. Add that custom domain under Vercel Project → Domains,
+redeploy after setting `VITE_PLAUSIBLE_DOMAIN`, then verify the Plausible NPM
+installation against `postwork.pcstyle.dev`.
 
 ### 5. Seed the production data (one time)
 
