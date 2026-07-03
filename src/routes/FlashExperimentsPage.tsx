@@ -13,6 +13,7 @@ import {
 import { useActiveExperiment } from "../flashExperiments/active";
 import { signIn, useAuth } from "../shoo";
 import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const statusStyles: Record<ExperimentStatus, string> = {
   new: "border-accent/40 text-accent-soft",
@@ -57,6 +58,7 @@ const implementedExperiments = flashExperiments.filter(
 );
 
 export function FlashExperimentsPage() {
+  useDocumentTitle("flash experiments · postwork");
   const votes = useQuery(api.flashExperiments.listVotes, {
     slugs: activeExperiments.map((experiment) => experiment.slug),
   });

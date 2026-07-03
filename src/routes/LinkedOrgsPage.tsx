@@ -3,8 +3,10 @@ import { useSpaces } from "../lib/spaces";
 import { OrgSquare } from "../components/OrgSquare";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function LinkedOrgsPage() {
+  useDocumentTitle("linked orgs · postwork");
   const { orgs, myOrg, allSpaces, membershipsForSpace } = useSpaces();
 
   return (

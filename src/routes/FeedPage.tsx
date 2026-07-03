@@ -6,9 +6,11 @@ import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
 import { useActiveExperiment } from "../flashExperiments/active";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import type { FeedSearch } from "../router";
 
 export function FeedPage() {
+  useDocumentTitle("postwork");
   const store = useStore();
   const { slots } = useActiveExperiment();
   const navigate = useNavigate();

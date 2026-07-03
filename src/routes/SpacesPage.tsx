@@ -4,6 +4,7 @@ import { useSpaces } from "../lib/spaces";
 import { Button } from "../components/Button";
 import { OrgSquare } from "../components/OrgSquare";
 import { PageHeader } from "../components/PageHeader";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 function parseHandles(value: string) {
   return value
@@ -13,6 +14,7 @@ function parseHandles(value: string) {
 }
 
 export function SpacesPage() {
+  useDocumentTitle("spaces · postwork");
   const {
     spaces,
     invitesForMyOrg,

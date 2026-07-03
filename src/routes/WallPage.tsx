@@ -12,6 +12,7 @@ import { LoadingState } from "../components/LoadingState";
 import { EmptyState } from "../components/EmptyState";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const routeApi = getRouteApi("/app/u/$userId");
 
@@ -25,6 +26,7 @@ export function WallPage() {
   const posts = store.useWall(userId);
   const [open, setOpen] = useState(false);
   const owner = users.find((user) => user._id === userId);
+  useDocumentTitle(owner ? `${owner.name}'s wall · postwork` : "wall · postwork");
 
   if (!owner) {
     return (

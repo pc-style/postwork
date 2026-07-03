@@ -15,6 +15,7 @@ import { UserRoleTag } from "../components/UserRoleTag";
 import { PostMetaChips } from "../components/PostMetaChips";
 import { LoadingState } from "../components/LoadingState";
 import { useActiveExperiment } from "../flashExperiments/active";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const routeApi = getRouteApi("/app/posts/$postId");
 
@@ -26,6 +27,8 @@ export function PostPage() {
 
   const post = store.usePost(postId);
   const replies = store.useReplies(postId);
+
+  useDocumentTitle(post ? `${post.title} · postwork` : "postwork");
 
   // Mark read whenever this post (or its activity) is viewed — session only.
   useEffect(() => {

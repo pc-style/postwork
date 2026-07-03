@@ -9,6 +9,7 @@ import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 function truncate(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -83,6 +84,7 @@ function AgentCard({
 }
 
 export function AgentsPage() {
+  useDocumentTitle("agents · postwork");
   const { users } = useSession();
   const { tasks } = useAgentTasks();
   const store = useStore();

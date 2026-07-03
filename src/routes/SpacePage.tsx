@@ -9,6 +9,7 @@ import { PostForm } from "../components/PostForm";
 import { OrgSquare } from "../components/OrgSquare";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 type Visibility = "space" | "org" | "public";
 
@@ -62,6 +63,7 @@ export function SpacePage() {
   const [visibility, setVisibility] = useState<Visibility>("space");
 
   const space = spaceBySlug(slug);
+  useDocumentTitle(space ? `${space.name} · postwork` : "space · postwork");
   if (!space) {
     return (
       <div className="py-12 text-center text-sm text-muted">

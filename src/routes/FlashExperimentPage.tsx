@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { getFlashExperiment } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { FeedPage } from "./FeedPage";
 
 const routeApi = getRouteApi("/app/flash-experiments/$slug");
@@ -16,6 +17,10 @@ export function FlashExperimentPage() {
   const { slug } = routeApi.useParams();
   const { setSlug } = useActiveExperiment();
   const experiment = getFlashExperiment(slug);
+
+  useDocumentTitle(
+    experiment ? `${experiment.title} · postwork` : "flash experiments · postwork",
+  );
 
   useEffect(() => {
     setSlug(slug);
