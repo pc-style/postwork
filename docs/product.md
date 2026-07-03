@@ -37,8 +37,8 @@ findable, calm — rather than to argue for it.
 
 Calm, precise, confident — a quiet expert's tool. The voice is lowercase,
 matter-of-fact, and unhurried; it states things plainly and trusts the reader.
-It should feel like a well-kept engineering surface (terminal-adjacent,
-monospace, warm near-black) where structure and signal are the point, not
+It should feel like a well-kept engineering surface (warm near-black, Inter,
+one wine accent) where structure and signal are the point, not
 decoration or persuasion. No hype, no exclamation, no engagement bait — the
 confidence comes from clarity, not volume.
 
@@ -49,7 +49,7 @@ confidence comes from clarity, not volume.
   endless scroll of disposable messages.
 - **Generic SaaS** — cream/indigo palettes, uniformly rounded card grids, gradient
   hero-metric dashboards, eyebrow kickers above every section. None of this. The
-  surface is dark, monospace, and committed to one wine accent.
+  surface is warm near-black, Inter, and committed to one wine accent.
 - (Adjacent to avoid for the same reasons: old corporate-blue Facebook Workplace
   social bloat, and consumer-social engagement mechanics — likes, reactions,
   algorithmic feeds.)
@@ -64,7 +64,8 @@ confidence comes from clarity, not volume.
 3. **The tool disappears into the task** — earned familiarity over novelty.
    Standard affordances, consistent component vocabulary screen to screen, no
    invented controls for ordinary jobs.
-4. **Signal over decoration** — one accent, monospace, lowercase chrome, no emoji.
+4. **Signal over decoration** — warm near-black, Inter, one wine accent,
+   lowercase chrome, no emoji.
    Color and weight carry meaning (state, priority), never ornament.
 5. **Quiet confidence** — state things plainly. The interface persuades by being
    obviously clearer than chat, not by saying so.

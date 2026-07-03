@@ -455,12 +455,12 @@ Not from the audit — carried over from the hardening pass:
 
 > **Audit finding (confirmed · impact: high · effort: small) — AGENTS.md and PRODUCT.md still mandate the retired 'monospace everywhere' terminal aesthetic, contradicting DESIGN.md and the shipped CSS**
 >
-> AGENTS.md:88 titles the design section 'Design conventions (style is derived from pcstyle.dev)' and AGENTS.md:95 states '**Monospace everywhere** (`--font-mono`). This is the defining trait.' PRODUCT.md:41-42 describes the brand as 'terminal-adjacent, monospace, warm near-black', PRODUCT.md:54 says the surface is 'dark, monospace', and PRODUCT.md:67 lists 'one accent, monospace, lowercase chrome' as a principle. Reality: src/index.css:36-43 sets the body to --font-sans (Inter Variable) and src/index.css:55-61 scopes --font-mono to code/pre/kbd/samp only; DESIGN.md:359-360 explicitly retires the terminal look ('Don't reintroduce monospace for UI text — it is now scoped to code/pre only'). Since agents are told to read AGENTS.md first, this actively steers new UI work back to the retired aesthetic. Fix: reconcile toward DESIGN.md/index.css (they agree) — rewrite AGENTS.md:88-103 to say Inter humanist sans with mono scoped to code, and update the three PRODUCT.md phrases to match ('warm near-black, Inter, one wine accent').
+> AGENTS.md:88 titles the design section 'Design conventions (style is derived from pcstyle.dev)' and AGENTS.md:95 states '**All-mono UI text** (`--font-mono`). This is the defining trait.' PRODUCT.md:41-42 describes the brand as 'terminal-adjacent, monospace, warm near-black', PRODUCT.md:54 says the surface is 'dark, monospace', and PRODUCT.md:67 lists 'one accent, monospace, lowercase chrome' as a principle. Reality: src/index.css:36-43 sets the body to --font-sans (Inter Variable) and src/index.css:55-61 scopes --font-mono to code/pre/kbd/samp only; DESIGN.md:359-360 explicitly retires the terminal look ('Don't reintroduce monospace for UI text — it is now scoped to code/pre only'). Since agents are told to read AGENTS.md first, this actively steers new UI work back to the retired aesthetic. Fix: reconcile toward DESIGN.md/index.css (they agree) — rewrite AGENTS.md:88-103 to say Inter humanist sans with mono scoped to code, and update the three PRODUCT.md phrases to match ('warm near-black, Inter, one wine accent').
 >
 > _Files:_ `/Users/m3/Developer/postwork/AGENTS.md`, `/Users/m3/Developer/postwork/PRODUCT.md`, `/Users/m3/Developer/postwork/DESIGN.md`, `/Users/m3/Developer/postwork/src/index.css`
 
 **Do:** Update both docs to the Inter-based system DESIGN.md and `src/index.css` actually implement (mono is scoped to code).
-**Verify:** `grep -rn "Monospace everywhere" *.md` returns zero.
+**Verify:** the retired all-mono phrase no longer appears in root markdown docs.
 
 ### Step 7.3 — Refresh README
 
