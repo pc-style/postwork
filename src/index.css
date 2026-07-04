@@ -79,3 +79,24 @@ samp {
   white-space: pre-wrap;
   line-height: 1.65;
 }
+
+/*
+ * "ink" redesign palette — a scoped override of the product tokens for the
+ * /redesign surface. Because every Tailwind color utility resolves through
+ * `var(--color-*)`, remapping the variables on this container re-skins the
+ * whole subtree: truly gray-black surfaces (no purple cast) so the magenta
+ * accent pops again. Nothing outside `.theme-ink` is affected.
+ */
+.theme-ink {
+  --color-bg: #0e0e10;
+  --color-surface: #151517;
+  --color-surface-2: #1c1c20;
+  --color-border: #262629;
+  --color-fg: #ececec;
+  --color-muted: #9a9aa2;
+  --color-faint: #66666e;
+  --color-accent: #e14b8f;
+  --color-accent-soft: #ee79ac;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}

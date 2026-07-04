@@ -1,8 +1,4 @@
-import { priorityFirstFeed } from "./experiments/priority-first-feed";
-import { wideReviewShell } from "./experiments/wide-review-shell";
-import { railNav } from "./experiments/rail-nav";
 import { compactCards } from "./experiments/compact-cards";
-import { focusedComposer } from "./experiments/focused-composer";
 import { centeredRail } from "./experiments/centered-rail";
 import { inlineBottomComposer } from "./experiments/inline-bottom-composer";
 import type { ExperimentSlots } from "./slots";
@@ -56,10 +52,6 @@ export const flashExperiments: FlashExperiment[] = [
   inlineBottomComposer,
   // testing — our own in-house probes
   compactCards,
-  focusedComposer,
-  priorityFirstFeed,
-  wideReviewShell,
-  railNav,
 ];
 
 /** Order categories render in on the lab page. */

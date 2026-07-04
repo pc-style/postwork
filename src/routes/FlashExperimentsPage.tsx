@@ -126,6 +126,29 @@ export function FlashExperimentsPage() {
           </p>
         </header>
 
+        {/* The full "ink" redesign is too broad for the single-slot preview
+            system, so it lives as its own usable surface. Feature it here. */}
+        <Link
+          to="/redesign"
+          className="group relative block overflow-hidden rounded-lg border border-accent/40 bg-surface/90 p-5 backdrop-blur transition hover:border-accent/70"
+        >
+          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
+            <span className="size-1.5 rounded-full bg-accent-soft" />
+            full redesign · usable app
+          </div>
+          <h2 className="mt-2 text-lg font-semibold lowercase text-fg">
+            the ink redesign
+          </h2>
+          <p className="mt-2 max-w-2xl font-sans text-sm text-muted">
+            a true gray-black surface with the magenta accent popping again:
+            hero titles, a 65-char reading column, one quiet metadata line, and
+            our own collapsible sidebar. open it as the real app, not a preview.
+          </p>
+          <span className="mt-3 inline-block text-xs text-accent-soft transition group-hover:translate-x-0.5">
+            open redesign →
+          </span>
+        </Link>
+
         {EXPERIMENT_CATEGORY_ORDER.map((category) => {
           const items = activeExperiments.filter(
             (experiment) => experiment.category === category,
