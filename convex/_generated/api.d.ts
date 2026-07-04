@@ -11,12 +11,12 @@
 import type * as agentTasks from "../agentTasks.js";
 import type * as ai from "../ai.js";
 import type * as authUsers from "../authUsers.js";
+import type * as avatarPalette from "../avatarPalette.js";
 import type * as discussions from "../discussions.js";
 import type * as flashExperiments from "../flashExperiments.js";
 import type * as posts from "../posts.js";
 import type * as replies from "../replies.js";
 import type * as seed from "../seed.js";
-import type * as spaces from "../spaces.js";
 import type * as users from "../users.js";
 
 import type {
@@ -29,12 +29,12 @@ declare const fullApi: ApiFromModules<{
   agentTasks: typeof agentTasks;
   ai: typeof ai;
   authUsers: typeof authUsers;
+  avatarPalette: typeof avatarPalette;
   discussions: typeof discussions;
   flashExperiments: typeof flashExperiments;
   posts: typeof posts;
   replies: typeof replies;
   seed: typeof seed;
-  spaces: typeof spaces;
   users: typeof users;
 }>;
 

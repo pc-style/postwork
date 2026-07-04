@@ -14,6 +14,9 @@ import { LinkedOrgsPage } from "./routes/LinkedOrgsPage";
 import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
+import { RedesignLayout } from "./routes/redesign/RedesignShell";
+import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
+import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
 import { PRIORITIES } from "./lib/format";
 import type { Priority } from "./lib/types";
 
@@ -102,6 +105,38 @@ const flashExperimentRoute = createRoute({
   component: FlashExperimentPage,
 });
 
+// The "ink" redesign lives on its own pathless layout — a sibling of the app
+// layout, not a child — so it renders its own gray-black shell instead of the
+// classic postwork chrome.
+const redesignLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/redesign",
+  component: RedesignLayout,
+});
+
+const redesignIndexRoute = createRoute({
+  getParentRoute: () => redesignLayoutRoute,
+  path: "/",
+  validateSearch: (search: Record<string, unknown>): FeedSearch => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+    space: typeof search.space === "string" ? search.space : undefined,
+    priority: PRIORITIES.includes(search.priority as Priority)
+      ? (search.priority as Priority)
+      : undefined,
+    unread:
+      search.unread === true ||
+      search.unread === "true" ||
+      search.unread === "1",
+  }),
+  component: RedesignFeedPage,
+});
+
+const redesignPostRoute = createRoute({
+  getParentRoute: () => redesignLayoutRoute,
+  path: "/posts/$postId",
+  component: RedesignPostPage,
+});
+
 const routeTree = rootRoute.addChildren([
   appLayoutRoute.addChildren([
     indexRoute,
@@ -114,6 +149,7 @@ const routeTree = rootRoute.addChildren([
     flashExperimentsRoute,
     flashExperimentRoute,
   ]),
+  redesignLayoutRoute.addChildren([redesignIndexRoute, redesignPostRoute]),
 ]);
 
 export const router = createRouter({ routeTree });
