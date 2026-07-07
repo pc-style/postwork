@@ -23,6 +23,7 @@ dist
 .adenignore
 .agent
 .context
+.tmp
 
 # Local test artifacts / generated outputs
 artifacts
