@@ -61,7 +61,6 @@ export function Composer({
       const replyId = await store.createReply({
         postId,
         parentId,
-        authorId: currentUserId,
         body: text,
       });
       setBody("");

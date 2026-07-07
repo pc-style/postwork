@@ -12,8 +12,8 @@ import {
   type FlashExperiment,
 } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
-import { signIn, useAuth } from "../shoo";
 import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
+import { isDemo } from "../lib/demoMode";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const SLOT_LABELS: Partial<Record<ExperimentSlot, string>> = {
@@ -73,7 +73,6 @@ export function FlashExperimentsPage() {
   });
   const countsBySlug = new Map(counts?.map((c) => [c.slug, c]));
   const setVote = useMutation(api.flashExperiments.setVote);
-  const { isLoading, isAuthenticated } = useAuth();
   const { setSlug } = useActiveExperiment();
 
   // The lab list is "outside" any experiment — clear an active preview on entry.
@@ -82,11 +81,7 @@ export function FlashExperimentsPage() {
   }, [setSlug]);
 
   const handleVote = async (slug: string, next: "up" | "down") => {
-    if (isLoading) return;
-    if (!isAuthenticated) {
-      void signIn();
-      return;
-    }
+    if (isDemo) return;
     const current = votesBySlug.get(slug)?.viewerVote;
     const value = current === next ? null : next;
     try {
@@ -98,7 +93,6 @@ export function FlashExperimentsPage() {
         err.data !== null &&
         (err.data as { code?: string }).code === "UNAUTHENTICATED"
       ) {
-        void signIn();
         return;
       }
       console.error(err);
@@ -176,8 +170,8 @@ export function FlashExperimentsPage() {
                     experiment={experiment}
                     vote={votesBySlug.get(experiment.slug)}
                     replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
-                    isLoading={isLoading}
-                    isAuthenticated={isAuthenticated}
+                    isLoading={false}
+                    isAuthenticated={!isDemo}
                     onVote={handleVote}
                   />
                 ))}
@@ -295,7 +289,7 @@ function ExperimentCard({
         <div className="flex items-center gap-1.5 text-xs">
           <VoteButton
             active={vote?.viewerVote === "up"}
-            disabled={isLoading}
+            disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
             }
@@ -305,7 +299,7 @@ function ExperimentCard({
           </VoteButton>
           <VoteButton
             active={vote?.viewerVote === "down"}
-            disabled={isLoading}
+            disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
             }

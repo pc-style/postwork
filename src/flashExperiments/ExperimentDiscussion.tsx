@@ -10,7 +10,6 @@ import { Markdown } from "../components/Markdown";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { timeAgo } from "../lib/format";
 import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
-import { signIn } from "../shoo";
 
 type Thread = FunctionReturnType<typeof api.discussions.getThread>;
 type Reply = Thread["replies"][number];
@@ -101,7 +100,6 @@ function Thread({
   const post = async (body: string, parentId?: Id<"replies">) => {
     if (isLoading) return false;
     if (!isAuthenticated) {
-      void signIn();
       return false;
     }
     try {
@@ -109,7 +107,6 @@ function Thread({
       return true;
     } catch (err) {
       if (isUnauthenticated(err)) {
-        void signIn();
         return false;
       }
       console.error(err);
@@ -261,12 +258,9 @@ function Composer({
 
   if (!isLoading && !isAuthenticated) {
     return (
-      <button
-        onClick={() => void signIn()}
-        className="w-full rounded-md border border-dashed border-accent/40 bg-bg px-3 py-2 text-xs text-accent-soft transition hover:border-accent/60"
-      >
-        sign in to discuss
-      </button>
+      <div className="w-full rounded-md border border-dashed border-border bg-bg px-3 py-2 text-xs text-muted">
+        discussion is read-only in demo mode.
+      </div>
     );
   }
 

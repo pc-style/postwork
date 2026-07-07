@@ -10,13 +10,13 @@ import { PostPage } from "./routes/PostPage";
 import { AgentsPage } from "./routes/AgentsPage";
 import { SpacesPage } from "./routes/SpacesPage";
 import { SpacePage } from "./routes/SpacePage";
-import { LinkedOrgsPage } from "./routes/LinkedOrgsPage";
 import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
 import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
+import { isDemo } from "./lib/demoMode";
 import { PRIORITIES } from "./lib/format";
 import type { Priority } from "./lib/types";
 
@@ -76,12 +76,6 @@ const spaceRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/spaces/$slug",
   component: SpacePage,
-});
-
-const orgsRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: "/orgs",
-  component: LinkedOrgsPage,
 });
 
 const wallRoute = createRoute({
@@ -144,10 +138,8 @@ const routeTree = rootRoute.addChildren([
     agentsRoute,
     spacesRoute,
     spaceRoute,
-    orgsRoute,
     wallRoute,
-    flashExperimentsRoute,
-    flashExperimentRoute,
+    ...(isDemo ? [flashExperimentsRoute, flashExperimentRoute] : []),
   ]),
   redesignLayoutRoute.addChildren([redesignIndexRoute, redesignPostRoute]),
 ]);

@@ -1,6 +1,7 @@
 import { init } from "@plausible-analytics/tracker";
+import { getOptionalViteEnv } from "./lib/demoMode";
 
-const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
+const plausibleDomain = getOptionalViteEnv("VITE_PLAUSIBLE_DOMAIN");
 
 declare global {
   interface Window {

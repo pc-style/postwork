@@ -1,6 +1,17 @@
-import { type ReactNode, type RefObject, useEffect } from "react";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+} from "react";
 
 export function ComposerShell({
+  title,
+  setTitle,
+  titleRef,
+  titlePlaceholder,
+  titleClassName,
+  titleAutoFocus = false,
   body,
   setBody,
   textareaRef,
@@ -8,6 +19,9 @@ export function ComposerShell({
   rows,
   autoFocus = false,
   textareaClassName,
+  onFieldKeyDown,
+  beforeBody,
+  afterBody,
   footerClassName = "mt-2 flex items-center justify-between gap-2",
   hint,
   actions,
@@ -18,6 +32,12 @@ export function ComposerShell({
   submitButtonClassName,
   onSubmit,
 }: {
+  title?: string;
+  setTitle?: (title: string) => void;
+  titleRef?: RefObject<HTMLInputElement | null>;
+  titlePlaceholder?: string;
+  titleClassName?: string;
+  titleAutoFocus?: boolean;
   body: string;
   setBody: (body: string) => void;
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
@@ -25,8 +45,13 @@ export function ComposerShell({
   rows: number;
   autoFocus?: boolean;
   textareaClassName: string;
+  onFieldKeyDown?: (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
+  beforeBody?: ReactNode;
+  afterBody?: ReactNode;
   footerClassName?: string;
-  hint: ReactNode;
+  hint?: ReactNode;
   actions?: ReactNode;
   submitLabel: string;
   submittingLabel: string;
@@ -39,22 +64,41 @@ export function ComposerShell({
     if (autoFocus) textareaRef?.current?.focus();
   }, [autoFocus, textareaRef]);
 
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    onFieldKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      onSubmit();
+    }
+  };
+
   return (
     <>
+      {title !== undefined && setTitle ? (
+        <input
+          ref={titleRef}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={handleKeyDown}
+          autoFocus={titleAutoFocus}
+          placeholder={titlePlaceholder}
+          className={titleClassName}
+        />
+      ) : null}
+      {beforeBody}
       <textarea
         ref={textareaRef}
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-            e.preventDefault();
-            onSubmit();
-          }
-        }}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         rows={rows}
         className={textareaClassName}
       />
+      {afterBody}
       <div className={footerClassName}>
         <div className="flex items-center gap-2">{hint}</div>
         <div className="flex gap-2">

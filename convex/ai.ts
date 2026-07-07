@@ -1,10 +1,11 @@
 import { action, internalQuery } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { ConvexError, v } from "convex/values";
 import { generateText, type LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGateway } from "@ai-sdk/gateway";
+import { isDemo } from "./lib/demo";
 
 /**
  * Resolve a language model from environment variables.
@@ -110,6 +111,26 @@ export const getContext = internalQuery({
 export const summarizePost = action({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<{ summary: string; model: string }> => {
+    if (!isDemo()) {
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) {
+        throw new ConvexError({
+          code: "UNAUTHENTICATED",
+          message: "Sign in to generate summaries.",
+        });
+      }
+    }
+
+    const accessiblePost = await ctx.runQuery(api.posts.get, {
+      postId: args.postId,
+    });
+    if (!accessiblePost) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "You do not have access to this post.",
+      });
+    }
+
     const ctxData = await ctx.runQuery(internal.ai.getContext, {
       postId: args.postId,
     });
@@ -136,9 +157,21 @@ export const summarizePost = action({
       prompt: transcript,
     });
 
-    // Note: we deliberately do NOT persist the summary. The public demo keeps
-    // the database read-only; the client stores the result in its session so
-    // it disappears on refresh. Seed data ships baked summaries instead.
     return { summary: text.trim(), model: modelId };
+  },
+});
+
+export const regeneratePostSummary = action({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args): Promise<{ summary: string; model: string }> => {
+    const { summary, model } = await ctx.runAction(api.ai.summarizePost, {
+      postId: args.postId,
+    });
+    await ctx.runMutation(api.posts.storeSummary, {
+      postId: args.postId,
+      summary,
+      model,
+    });
+    return { summary, model };
   },
 });

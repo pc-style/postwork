@@ -1,9 +1,8 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { findUserForIdentity } from "./authUsers";
-import { AVATAR_PALETTE } from "./avatarPalette";
+import type { MutationCtx } from "./_generated/server";
+import { ensureViewerUser } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 
 /**
@@ -18,57 +17,6 @@ import { publicUser, type PublicUser } from "./users";
  */
 
 const DISCUSSION_SPACE = "flow lab";
-
-function unauthenticated(): never {
-  throw new ConvexError({
-    code: "UNAUTHENTICATED",
-    message: "Sign in to join the discussion.",
-  });
-}
-
-function initialsFrom(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "??";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function colorFor(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
-}
-
-/**
- * Resolve the shoo identity to a real `users` doc (created on first write).
- * Throws UNAUTHENTICATED when not signed in.
- */
-async function getOrCreateViewer(ctx: MutationCtx): Promise<Id<"users">> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) unauthenticated();
-
-  const existing = await findUserForIdentity(ctx, identity);
-  if (existing) return existing._id;
-
-  const name =
-    identity.name ??
-    identity.nickname ??
-    identity.preferredUsername ??
-    identity.email ??
-    "member";
-
-  return await ctx.db.insert("users", {
-    name,
-    title: "member",
-    avatarColor: colorFor(identity.tokenIdentifier),
-    initials: initialsFrom(name),
-    role: "member",
-    tokenIdentifier: identity.tokenIdentifier,
-    subject: identity.subject,
-  });
-}
 
 /** Find-or-create the single discussion post for an experiment slug. */
 async function ensureThreadDoc(
@@ -157,8 +105,10 @@ export const listCounts = query({
 export const ensureThread = mutation({
   args: { slug: v.string(), title: v.string() },
   handler: async (ctx, { slug, title }) => {
-    const viewerId = await getOrCreateViewer(ctx);
-    return await ensureThreadDoc(ctx, slug, title, viewerId);
+    const viewer = await ensureViewerUser(ctx, {
+      unauthenticatedMessage: "Sign in to join the discussion.",
+    });
+    return await ensureThreadDoc(ctx, slug, title, viewer._id);
   },
 });
 
@@ -176,23 +126,25 @@ export const addMessage = mutation({
       throw new ConvexError({ code: "EMPTY", message: "Write something first." });
     }
 
-    const viewerId = await getOrCreateViewer(ctx);
-    const postId = await ensureThreadDoc(ctx, slug, title, viewerId);
+    const viewer = await ensureViewerUser(ctx, {
+      unauthenticatedMessage: "Sign in to join the discussion.",
+    });
+    const postId = await ensureThreadDoc(ctx, slug, title, viewer._id);
 
     const now = Date.now();
     const replyId = await ctx.db.insert("replies", {
       postId,
       parentId,
-      authorId: viewerId,
+      authorId: viewer._id,
       body: trimmed,
       createdAt: now,
     });
 
     const post = await ctx.db.get(postId);
     if (post) {
-      const participantIds = post.participantIds.includes(viewerId)
+      const participantIds = post.participantIds.includes(viewer._id)
         ? post.participantIds
-        : [...post.participantIds, viewerId];
+        : [...post.participantIds, viewer._id];
       await ctx.db.patch(postId, {
         lastActivityAt: now,
         replyCount: post.replyCount + 1,
@@ -204,13 +156,13 @@ export const addMessage = mutation({
     const read = await ctx.db
       .query("postReads")
       .withIndex("by_user_post", (q) =>
-        q.eq("userId", viewerId).eq("postId", postId),
+        q.eq("userId", viewer._id).eq("postId", postId),
       )
       .unique();
     if (read) await ctx.db.patch(read._id, { lastReadAt: now });
     else
       await ctx.db.insert("postReads", {
-        userId: viewerId,
+        userId: viewer._id,
         postId,
         lastReadAt: now,
       });

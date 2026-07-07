@@ -28,7 +28,6 @@ export function WallPostDialog({
         onSubmit={async ({ title, body, priority }) => {
           if (!currentUserId) return;
           await store.createPost({
-            authorId: currentUserId,
             title: title || `note for ${wallOwnerName}`,
             body,
             space: "Wall",

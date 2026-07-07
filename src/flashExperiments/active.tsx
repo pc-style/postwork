@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isDemo } from "../lib/demoMode";
 import { getFlashExperiment } from "./registry";
 import { NO_SLOTS } from "./slots";
 
@@ -20,6 +21,7 @@ const Ctx = createContext<ActiveExperimentState | null>(null);
 const STORAGE_KEY = "postwork:active-experiment";
 
 function readInitialSlug(): string | null {
+  if (!isDemo) return null;
   if (typeof window === "undefined") return null;
   try {
     const stored = window.sessionStorage.getItem(STORAGE_KEY);
@@ -45,6 +47,10 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
   const [slug, setSlugState] = useState<string | null>(() => readInitialSlug());
 
   const setSlug = useCallback((next: string | null) => {
+    if (!isDemo) {
+      setSlugState(null);
+      return;
+    }
     setSlugState(next);
     if (typeof window === "undefined") return;
     try {
@@ -62,6 +68,7 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
   // Cross-tab/cross-window sync: clearing or switching in one tab should
   // immediately reflect in any other tab on the same session.
   useEffect(() => {
+    if (!isDemo) return;
     if (typeof window === "undefined") return;
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY) return;
@@ -90,9 +97,9 @@ function useExperimentCtx() {
 
 export function useActiveExperiment() {
   const { slug, setSlug } = useExperimentCtx();
-  const experiment = slug ? getFlashExperiment(slug) : null;
+  const experiment = isDemo && slug ? getFlashExperiment(slug) : null;
   return {
-    slug,
+    slug: isDemo ? slug : null,
     experiment,
     slots: experiment?.appSlots ?? NO_SLOTS,
     setSlug,

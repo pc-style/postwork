@@ -1,7 +1,10 @@
-import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
-import { findUserForIdentity } from "./authUsers";
+import {
+  ensureViewerUser,
+  findUserForIdentity,
+} from "./authUsers";
 
 export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
 
@@ -22,8 +25,24 @@ export const list = query({
   },
 });
 
-/** Update the signed-in member's own profile (identity comes from auth, never
- * from the client — and `role` is deliberately not editable here). */
+export const viewer = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const user = await findUserForIdentity(ctx, identity);
+    return publicUser(user);
+  },
+});
+
+export const ensureViewer = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ensureViewerUser(ctx);
+    return publicUser(user);
+  },
+});
+
 export const updateProfile = mutation({
   args: {
     name: v.string(),
@@ -31,21 +50,34 @@ export const updateProfile = mutation({
     initials: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity)
-      throw new ConvexError({
-        code: "UNAUTHENTICATED",
-        message: "Sign in to edit your profile.",
-      });
-
-    const user = await findUserForIdentity(ctx, identity);
-    if (!user)
-      throw new ConvexError({ code: "NOT_FOUND", message: "User not found" });
-
+    const user = await ensureViewerUser(ctx);
     await ctx.db.patch(user._id, {
-      name: args.name,
-      title: args.title,
-      initials: args.initials,
+      name: args.name.trim(),
+      title: args.title.trim(),
+      initials: args.initials.trim().toUpperCase(),
     });
+  },
+});
+
+export const setRole = mutation({
+  args: {
+    userId: v.id("users"),
+    role: v.union(v.literal("admin"), v.literal("member")),
+  },
+  handler: async (ctx, args) => {
+    const viewer = await ensureViewerUser(ctx);
+    if (viewer.role !== "admin") {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Only admins can manage roles.",
+      });
+    }
+
+    const target = await ctx.db.get(args.userId);
+    if (!target) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
+    }
+
+    await ctx.db.patch(args.userId, { role: args.role });
   },
 });

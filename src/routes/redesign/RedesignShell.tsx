@@ -3,6 +3,7 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { useCounts } from "../../lib/store";
 import { UserSwitcher } from "../../components/UserSwitcher";
 import { NewPostDialog } from "../../components/NewPostDialog";
+import { isDemo } from "../../lib/demoMode";
 
 /**
  * The "ink" redesign chrome. This is a self-contained shell (not a flash
@@ -122,7 +123,7 @@ function Sidebar({
         >
           ← classic postwork
         </Link>
-        <UserSwitcher />
+        {isDemo && <UserSwitcher />}
       </div>
     </aside>
   );

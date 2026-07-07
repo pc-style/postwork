@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
-import { SPACES, PRIORITIES } from "../lib/format";
-import { Button } from "./Button";
-import { PriorityPicker } from "./PostForm";
+import { PostForm } from "./PostForm";
 
 function ChevronUpIcon({ className = "" }: { className?: string }) {
   return (
@@ -41,16 +39,9 @@ export function QuickPostBar() {
   const [minimized, setMinimized] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [space, setSpace] = useState<string>(SPACES[0]);
-  const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>("normal");
-  const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const leaveTimer = useRef<number | null>(null);
-
-  const canPost = title.trim().length > 0 && body.trim().length > 0;
 
   useEffect(() => {
     return () => {
@@ -95,30 +86,8 @@ export function QuickPostBar() {
   const popped = !minimized && (hovered || focused);
 
   const reset = () => {
-    setTitle("");
-    setBody("");
-    setSpace(SPACES[0]);
-    setPriority("normal");
     setOpen(false);
     setMinimized(false);
-  };
-
-  const submit = async () => {
-    if (!canPost || !currentUserId) return;
-    setBusy(true);
-    try {
-      const postId = await store.createPost({
-        authorId: currentUserId,
-        title: title.trim(),
-        body: body.trim(),
-        space,
-        priority,
-      });
-      reset();
-      void navigate({ to: "/posts/$postId", params: { postId } });
-    } finally {
-      setBusy(false);
-    }
   };
 
   const reveal = () => {
@@ -145,11 +114,6 @@ export function QuickPostBar() {
     if (e.key === "Escape") {
       e.preventDefault();
       collapse();
-      return;
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      void submit();
     }
   };
 
@@ -189,66 +153,38 @@ export function QuickPostBar() {
         </button>
 
         <div className="px-3 pb-3 pt-1">
-          {open && (
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              onKeyDown={onFieldKeyDown}
-              placeholder="title — what's this about?"
-              className="mb-2 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
-            />
-          )}
-
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onFocus={() => setOpen(true)}
-              onChange={(event) => setBody(event.target.value)}
-              onKeyDown={onFieldKeyDown}
-              rows={open ? 3 : 1}
-              placeholder="share context, a decision, or a question…"
-              className="min-h-[2.5rem] w-full resize-none rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
-            />
-            <Button
-              onClick={() => void submit()}
-              disabled={busy || !canPost}
-              className="shrink-0"
-            >
-              {busy ? "posting…" : "post"}
-            </Button>
-          </div>
-
-          {open && (
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-muted">
-                space
-                <select
-                  value={space}
-                  onChange={(event) => setSpace(event.target.value)}
-                  className="rounded-md border border-border bg-bg px-2 py-1 text-xs outline-none focus:border-accent/50"
-                >
-                  {SPACES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="flex items-center gap-1.5 text-xs text-muted">
-                priority
-                <PriorityPicker priority={priority} onChange={setPriority} />
-              </div>
-
-              <button
-                onClick={reset}
-                className="ml-auto text-xs text-muted transition hover:text-fg"
-              >
-                cancel
-              </button>
-            </div>
-          )}
+          <PostForm
+            layout="quickBar"
+            showSpace
+            showTitle={open}
+            showMeta={open}
+            bodyRows={open ? 3 : 1}
+            bodyResizeClassName="resize-none"
+            autoFocusTitle={false}
+            textareaRef={textareaRef}
+            titlePlaceholder="title — what's this about?"
+            bodyPlaceholder="share context, a decision, or a question…"
+            resetOnSubmit
+            onCancel={open ? reset : undefined}
+            onSubmitted={open ? undefined : reveal}
+            titleClassName="mb-2 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
+            textareaClassName="min-h-[2.5rem] w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
+            metaClassName="mt-2 flex flex-wrap items-center gap-3"
+            submitButtonClassName="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+            onFieldKeyDown={onFieldKeyDown}
+            onSubmit={async ({ title, body, space, spaceId, priority }) => {
+              if (!currentUserId || !space) return;
+              const postId = await store.createPost({
+                title,
+                body,
+                space,
+                spaceId,
+                priority,
+              });
+              reset();
+              void navigate({ to: "/posts/$postId", params: { postId } });
+            }}
+          />
         </div>
       </div>
     </div>

@@ -14,13 +14,13 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
       <PostForm
         showSpace
         onCancel={onClose}
-        onSubmit={async ({ title, body, space, priority }) => {
+        onSubmit={async ({ title, body, space, spaceId, priority }) => {
           if (!currentUserId) return;
           const postId = await store.createPost({
-            authorId: currentUserId,
             title,
             body,
             space: space!,
+            spaceId,
             priority,
           });
           onClose();

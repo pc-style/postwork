@@ -31,13 +31,31 @@ export default defineSchema({
     subject: v.optional(v.string()),
   })
     .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_subject", ["subject"]),
+    .index("by_subject", ["subject"])
+    .index("by_role", ["role"]),
+
+  spaces: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  spaceMemberships: defineTable({
+    spaceId: v.id("spaces"),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_space_id", ["spaceId"])
+    .index("by_user_id", ["userId"])
+    .index("by_space_id_and_user_id", ["spaceId", "userId"]),
 
   posts: defineTable({
     authorId: v.id("users"),
     title: v.string(),
     body: v.string(),
     space: v.string(), // lightweight grouping label e.g. "Engineering", "Company"
+    spaceId: v.optional(v.id("spaces")),
     priority: priority,
     pinned: v.boolean(),
     createdAt: v.number(),
@@ -62,6 +80,7 @@ export default defineSchema({
   })
     .index("by_activity", ["lastActivityAt"])
     .index("by_space", ["space", "lastActivityAt"])
+    .index("by_space_id_and_last_activity_at", ["spaceId", "lastActivityAt"])
     .index("by_wall", ["wallOwnerId", "lastActivityAt"])
     .index("by_experiment_slug", ["experimentSlug"])
     .searchIndex("search_body", {
