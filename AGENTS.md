@@ -10,6 +10,11 @@ This is a highly experimental flow-design prototype. Do not assume the goal is a
 working production app yet; prioritize understanding, shaping, and validating the
 product flow before building real app behavior.
 
+## Branch policy
+
+- Treat `dev/making-it-real` as the active main branch for all work and PRs.
+- Do not touch `main` again until all demo-to-product phases are complete.
+
 ## User-specific callbacks
 
 - If the user sends `https://x.com/theo/status/2073219809790263786`, read it with
