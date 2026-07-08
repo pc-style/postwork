@@ -150,7 +150,18 @@ const adminUsersRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/users",
   component: AdminUsersPage,
+  validateSearch: (search: Record<string, unknown>): AdminUsersSearch => {
+    const filter = search.filter;
+    return filter === "members" ||
+      filter === "agents" ||
+      filter === "deactivated"
+      ? { filter }
+      : {};
+  },
 });
+
+export type AdminUsersFilter = "members" | "agents" | "deactivated";
+export type AdminUsersSearch = { filter?: AdminUsersFilter };
 
 const adminInvitesRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,

@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Link, getRouteApi } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
+import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
 import { Avatar } from "../../components/Avatar";
 import { Sheet, SheetField } from "../../components/Sheet";
@@ -9,21 +11,65 @@ import { AdminPage, AdminRow, AdminTable, StatusPill } from "./AdminShell";
 
 type AdminUser = FunctionReturnType<typeof api.admin.listUsers>[number];
 
+const routeApi = getRouteApi("/admin/users");
+
+const FILTERS: { label: string; value: AdminUsersFilter | undefined }[] = [
+  { label: "all", value: undefined },
+  { label: "members", value: "members" },
+  { label: "agents", value: "agents" },
+  { label: "deactivated", value: "deactivated" },
+];
+
+function matchesFilter(user: AdminUser, filter: AdminUsersFilter | undefined) {
+  switch (filter) {
+    case "members":
+      return !user.isAgent;
+    case "agents":
+      return user.isAgent;
+    case "deactivated":
+      return user.deactivatedAt !== undefined && user.deactivatedAt !== null;
+    default:
+      return true;
+  }
+}
+
 export function AdminUsersPage() {
+  const { filter } = routeApi.useSearch();
   const users = useQuery(api.admin.listUsers);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = users?.find((u) => u._id === selectedId) ?? null;
+  const visible = users?.filter((u) => matchesFilter(u, filter));
 
   return (
     <AdminPage
       title="users"
       description="every member and agent in the org. click a row for details and moderation actions."
     >
-      {users === undefined ? (
+      <div className="mb-4 flex items-center gap-1.5">
+        {FILTERS.map(({ label, value }) => (
+          <Link
+            key={label}
+            to="/admin/users"
+            search={value ? { filter: value } : {}}
+            className={`rounded-md border px-2.5 py-1 text-xs lowercase transition-colors ${
+              filter === value
+                ? "border-accent/40 bg-surface text-fg"
+                : "border-border text-muted hover:text-fg"
+            }`}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+      {visible === undefined ? (
         <p className="text-sm text-muted">loading…</p>
+      ) : visible.length === 0 ? (
+        <p className="text-sm text-muted">
+          no {filter ?? "users"} here{filter ? " yet" : ""}.
+        </p>
       ) : (
         <AdminTable head={["user", "title", "role", "status", "joined"]}>
-          {users.map((user) => (
+          {visible.map((user) => (
             <AdminRow key={user._id} onClick={() => setSelectedId(user._id)}>
               <td className="px-4 py-2.5">
                 <div className="flex items-center gap-2.5">

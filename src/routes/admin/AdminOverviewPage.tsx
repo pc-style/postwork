@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
 import { AdminPage } from "./AdminShell";
 
@@ -17,12 +18,23 @@ export function AdminOverviewPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Stat label="members" value={overview.members} to="/admin/users" />
-            <Stat label="agents" value={overview.agents} to="/admin/users" />
+            <Stat
+              label="members"
+              value={overview.members}
+              to="/admin/users"
+              filter="members"
+            />
+            <Stat
+              label="agents"
+              value={overview.agents}
+              to="/admin/users"
+              filter="agents"
+            />
             <Stat
               label="deactivated"
               value={overview.deactivated}
               to="/admin/users"
+              filter="deactivated"
             />
             <Stat
               label="active invites"
@@ -81,16 +93,19 @@ function Stat({
   label,
   value,
   to,
+  filter,
   highlight = false,
 }: {
   label: string;
   value: number;
   to: "/admin/users" | "/admin/invites" | "/admin/access-requests";
+  filter?: AdminUsersFilter;
   highlight?: boolean;
 }) {
   return (
     <Link
       to={to}
+      search={filter ? { filter } : {}}
       className="rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40"
     >
       <div
