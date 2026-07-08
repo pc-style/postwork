@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -108,9 +108,16 @@ export function AdminUsersPage() {
 
 function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) {
   const setRole = useMutation(api.users.setRole);
+  const setTitle = useMutation(api.admin.setTitle);
   const deactivate = useMutation(api.users.deactivate);
   const reactivate = useMutation(api.users.reactivate);
+  const [title, setTitleDraft] = useState(user.title);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTitleDraft(user.title);
+    setError(null);
+  }, [user._id, user.title]);
 
   const run = (action: () => Promise<unknown>) => {
     setError(null);
@@ -157,6 +164,34 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       }
     >
       <div className="divide-y divide-border/60">
+        <div className="py-2.5">
+          <label htmlFor="admin-user-title" className="block">
+            <span className="text-label font-medium lowercase text-muted">
+              job title
+            </span>
+            <input
+              id="admin-user-title"
+              value={title}
+              onChange={(event) => setTitleDraft(event.target.value)}
+              placeholder="role or description, not permissions"
+              className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg outline-none transition-colors placeholder:text-muted/60 focus:border-accent/50"
+            />
+          </label>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted">
+              permissions are controlled by role.
+            </p>
+            <ActionButton
+              onClick={() =>
+                run(() =>
+                  setTitle({ userId: user._id, title: title.trim() }),
+                )
+              }
+            >
+              save
+            </ActionButton>
+          </div>
+        </div>
         <SheetField label="role">{user.role ?? "member"}</SheetField>
         <SheetField label="type">{user.isAgent ? "coding agent" : "human"}</SheetField>
         <SheetField label="status">

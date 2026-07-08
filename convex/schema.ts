@@ -29,6 +29,12 @@ export default defineSchema({
     avatarColor: v.string(),
     initials: v.string(),
     role: v.optional(v.union(v.literal("admin"), v.literal("member"))),
+    status: v.optional(v.union(v.literal("pending"), v.literal("active"))),
+    profileCompletedAt: v.optional(v.number()),
+    avatarStorageId: v.optional(v.id("_storage")),
+    avatarUrl: v.optional(v.string()),
+    providerAvatarUrl: v.optional(v.string()),
+    avatarRemoved: v.optional(v.boolean()),
     // AI coding agents (Cursor, Codex, Claude Code, …) post as teammates too.
     isAgent: v.optional(v.boolean()),
     // Set for real, shoo-authenticated members (maps the canonical auth token

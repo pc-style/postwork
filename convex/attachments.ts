@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import {
-  ensureViewerUser,
+  ensureActiveViewerUser,
   canAccessPost,
   getViewerFromAuth,
 } from "./authUsers";
@@ -28,7 +28,7 @@ import { logInfo } from "./lib/observability";
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     await rateLimiter.limit(ctx, "uploadAttachment", {
       key: viewer._id,
       throws: true,
@@ -55,7 +55,8 @@ export type AttachmentWithUrl = {
 export const listForPost = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<AttachmentWithUrl[]> => {
-    const viewer = await getViewerFromAuth(ctx);
+    const authViewer = await getViewerFromAuth(ctx);
+    const viewer = authViewer?.status === "pending" ? null : authViewer;
     const post = await ctx.db.get(args.postId);
     if (!post || !(await canAccessPost(ctx, post, viewer?._id))) {
       return [];
@@ -92,7 +93,7 @@ export const listForPost = query({
 export const remove = mutation({
   args: { attachmentId: v.id("postAttachments") },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const att = await ctx.db.get(args.attachmentId);
     if (!att || att.orgId !== viewer.orgId) {
       throw new Error("Attachment not found.");

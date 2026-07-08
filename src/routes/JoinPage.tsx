@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
@@ -77,6 +77,11 @@ function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean })
   const navigate = useNavigate();
   const redeemInvite = useMutation(api.access.redeemInvite);
   const [state, setState] = useState<"idle" | "redeeming" | "error">("idle");
+
+  useEffect(() => {
+    if (canRedeem || isDemo) return;
+    window.localStorage.setItem("postwork.inviteCode", code);
+  }, [canRedeem, code]);
 
   const redeem = async () => {
     if (isDemo) {

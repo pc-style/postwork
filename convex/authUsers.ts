@@ -53,13 +53,92 @@ export function colorFor(seed: string): string {
 }
 
 export function nameFromIdentity(identity: AuthIdentity): string {
+  const givenFamily = [identity.givenName, identity.familyName]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
   return (
-    identity.name ??
-    identity.nickname ??
-    identity.preferredUsername ??
-    identity.email ??
+    identity.name?.trim() ||
+    identity.nickname?.trim() ||
+    identity.preferredUsername?.trim() ||
+    givenFamily ||
+    identity.email?.trim() ||
     "member"
   );
+}
+
+export function computeAvatarUrl(
+  user: Pick<Doc<"users">, "avatarRemoved" | "providerAvatarUrl">,
+  opts?: { uploadedUrl?: string | null },
+): string | undefined {
+  if (opts?.uploadedUrl) return opts.uploadedUrl;
+  if (user.avatarRemoved) return undefined;
+  return user.providerAvatarUrl;
+}
+
+export async function applyAvatarAction(
+  ctx: MutationCtx,
+  user: Doc<"users">,
+  action:
+    | { type: "upload"; storageId: Id<"_storage"> }
+    | { type: "remove" }
+    | { type: "useProvider" }
+    | undefined,
+): Promise<Partial<Doc<"users">>> {
+  if (!action) return {};
+  if (action.type === "upload") {
+    // Validate the uploaded blob server-side — the client 5 MB / image-type
+    // check is advisory only.
+    const meta = await ctx.db.system.get(action.storageId);
+    if (!meta) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "That upload could not be found.",
+      });
+    }
+    const ALLOWED_AVATAR_TYPES = [
+      "image/png",
+      "image/jpeg",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!meta.contentType || !ALLOWED_AVATAR_TYPES.includes(meta.contentType)) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "Avatar must be a PNG, JPEG, GIF, or WEBP image.",
+      });
+    }
+    if (meta.size > 5 * 1024 * 1024) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "Avatar image must be under 5 MB.",
+      });
+    }
+    const uploadedUrl = await ctx.storage.getUrl(action.storageId);
+    if (!uploadedUrl) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "Could not read that uploaded image.",
+      });
+    }
+    return {
+      avatarStorageId: action.storageId,
+      avatarRemoved: false,
+      avatarUrl: uploadedUrl,
+    };
+  }
+  if (action.type === "remove") {
+    return {
+      avatarStorageId: undefined,
+      avatarRemoved: true,
+      avatarUrl: undefined,
+    };
+  }
+  return {
+    avatarStorageId: undefined,
+    avatarRemoved: false,
+    avatarUrl: user.providerAvatarUrl,
+  };
 }
 
 export async function findUserForIdentity(
@@ -133,7 +212,7 @@ export async function resolveViewerForRead(
   requestedViewerId: Id<"users"> | undefined,
 ): Promise<Doc<"users"> | null> {
   const viewer = await getViewerFromAuth(ctx);
-  if (viewer) return viewer;
+  if (viewer) return viewer.status === "pending" ? null : viewer;
 
   if (!isDemo() || !requestedViewerId) {
     return null;
@@ -156,6 +235,9 @@ export async function ensureViewerUser(
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
+  // Absent `picture` claim (JWT template may omit it) means "unknown", not
+  // "clear" — the frontend syncs `providerAvatarUrl` from Clerk's imageUrl.
+  const identityPicture = identity.pictureUrl?.trim() || undefined;
 
   if (existing) {
     // Moderation (Phase 3.5): deactivated users cannot write.
@@ -163,8 +245,23 @@ export async function ensureViewerUser(
       forbidden("Your account has been deactivated. Contact an admin.");
     }
     const patch: Partial<Doc<"users">> = {};
-    if (existing.name !== name) patch.name = name;
-    if (existing.initials !== initials) patch.initials = initials;
+    // Only identity-sync name/initials until the user has completed their
+    // profile — afterwards their deliberate edits are authoritative.
+    if (existing.profileCompletedAt === undefined) {
+      if (existing.name !== name) patch.name = name;
+      if (existing.initials !== initials) patch.initials = initials;
+    }
+    const effectiveProvider = identityPicture ?? existing.providerAvatarUrl;
+    if (identityPicture !== undefined && existing.providerAvatarUrl !== identityPicture) {
+      patch.providerAvatarUrl = identityPicture;
+    }
+    if (!existing.avatarStorageId) {
+      const nextAvatarUrl = computeAvatarUrl({
+        avatarRemoved: existing.avatarRemoved,
+        providerAvatarUrl: effectiveProvider,
+      });
+      if (existing.avatarUrl !== nextAvatarUrl) patch.avatarUrl = nextAvatarUrl;
+    }
     if (!existing.avatarColor) patch.avatarColor = colorFor(identity.tokenIdentifier);
     if (!existing.role) {
       patch.role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
@@ -187,8 +284,14 @@ export async function ensureViewerUser(
     avatarColor,
     initials,
     role,
+    status: "pending",
     tokenIdentifier: identity.tokenIdentifier,
     subject: identity.subject,
+    providerAvatarUrl: identityPicture,
+    avatarUrl: computeAvatarUrl({
+      providerAvatarUrl: identityPicture,
+      avatarRemoved: false,
+    }),
   });
 
   return {
@@ -200,9 +303,29 @@ export async function ensureViewerUser(
     avatarColor,
     initials,
     role,
+    status: "pending",
     tokenIdentifier: identity.tokenIdentifier,
     subject: identity.subject,
+    providerAvatarUrl: identityPicture,
+    avatarUrl: computeAvatarUrl({
+      providerAvatarUrl: identityPicture,
+      avatarRemoved: false,
+    }),
   };
+}
+
+export async function ensureActiveViewerUser(
+  ctx: MutationCtx,
+  options?: { unauthenticatedMessage?: string },
+): Promise<Doc<"users">> {
+  const user = await ensureViewerUser(ctx, options);
+  if (user.status === "pending") {
+    throw new ConvexError({
+      code: "PENDING_ACTIVATION",
+      message: "Redeem an invite to activate your account.",
+    });
+  }
+  return user;
 }
 
 export async function isSpaceMember(
@@ -244,6 +367,10 @@ export async function canAccessPost(
 ): Promise<boolean> {
   const orgId = viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDefaultOrgId(ctx);
   if (post.orgId !== orgId) return false;
+
+  if (!viewerId && !isDemo()) {
+    return false;
+  }
 
   if (!post.spaceId) {
     return true;

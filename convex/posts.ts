@@ -5,7 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import {
   canAccessPost,
-  ensureViewerUser,
+  ensureActiveViewerUser,
   forbidden,
   notFound,
   requireSpaceMember,
@@ -312,7 +312,7 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
 
     // Rate limit (Phase 3.1).
@@ -382,7 +382,7 @@ export const markRead = mutation({
     postId: v.id("posts"),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== orgId) notFound("Post not found.");
@@ -397,7 +397,7 @@ export const markRead = mutation({
 export const markAllRead = mutation({
   args: {},
   handler: async (ctx) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
     const now = Date.now();
     const posts = await ctx.db
@@ -420,7 +420,7 @@ export const storeSummary = mutation({
     model: v.string(),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
     if (post.spaceId) {
@@ -475,7 +475,7 @@ export const edit = mutation({
     body: v.string(),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
     if (post.authorId !== viewer._id) {
@@ -503,7 +503,7 @@ export const edit = mutation({
 export const remove = mutation({
   args: { postId: v.id("posts") },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
     if (post.authorId !== viewer._id && viewer.role !== "admin") {

@@ -2,10 +2,15 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import {
+  applyAvatarAction,
+  computeAvatarUrl,
+  ensureActiveViewerUser,
   ensureViewerUser,
   findUserForIdentity,
   getDefaultOrgId,
+  getViewerFromAuth,
 } from "./authUsers";
+import { isDemo } from "./lib/demo";
 import { rateLimiter } from "./lib/rateLimit";
 import {
   parse,
@@ -16,6 +21,12 @@ import {
 import { logInfo } from "./lib/observability";
 
 export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
+
+const avatarActionValidator = v.optional(v.union(
+  v.object({ type: v.literal("upload"), storageId: v.id("_storage") }),
+  v.object({ type: v.literal("remove") }),
+  v.object({ type: v.literal("useProvider") }),
+));
 
 export function publicUser(user: Doc<"users">): PublicUser;
 export function publicUser(user: Doc<"users"> | null): PublicUser | null;
@@ -32,6 +43,13 @@ export function publicUser(user: Doc<"users"> | null): PublicUser | null {
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    // The org directory is members-only. Demo mode has no auth (the client
+    // switcher picks a persona), so it stays open there; product mode requires
+    // an activated viewer — pending/signed-out users get nothing.
+    if (!isDemo()) {
+      const viewer = await getViewerFromAuth(ctx);
+      if (!viewer || viewer.status === "pending") return [];
+    }
     const orgId = await getDefaultOrgId(ctx);
     const users = await ctx.db
       .query("users")
@@ -51,6 +69,28 @@ export const viewer = query({
   },
 });
 
+export const me = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const user = await findUserForIdentity(ctx, identity);
+    if (!user) {
+      return {
+        user: null,
+        status: "pending" as const,
+        needsProfileSetup: false,
+      };
+    }
+    return {
+      user: publicUser(user),
+      status: user.status ?? "active" as const,
+      needsProfileSetup:
+        user.profileCompletedAt === undefined && user.tokenIdentifier !== undefined,
+    };
+  },
+});
+
 export const ensureViewer = mutation({
   args: {},
   handler: async (ctx) => {
@@ -61,38 +101,93 @@ export const ensureViewer = mutation({
 
 export const syncViewerProfile = mutation({
   args: {
-    name: v.string(),
+    name: v.optional(v.string()),
+    providerAvatarUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ensureViewerUser(ctx);
-    const name = parse(profileNameSchema, args.name, "name");
+    const patch: Partial<Doc<"users">> = {};
 
-    const initials = name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 4)
-      .toUpperCase();
+    if (args.name !== undefined) {
+      const name = parse(profileNameSchema, args.name, "name");
+      const initials = name
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 4)
+        .toUpperCase();
+      if (user.name !== name) patch.name = name;
+      if (user.initials !== initials) patch.initials = initials;
+    }
 
-    if (user.name === name && user.initials === initials) {
+    if (args.providerAvatarUrl !== undefined) {
+      const providerAvatarUrl = args.providerAvatarUrl.trim() || undefined;
+      if (user.providerAvatarUrl !== providerAvatarUrl) {
+        patch.providerAvatarUrl = providerAvatarUrl;
+        if (!user.avatarStorageId) {
+          patch.avatarUrl = computeAvatarUrl({ ...user, providerAvatarUrl });
+        }
+      }
+    }
+
+    if (Object.keys(patch).length === 0) {
       return publicUser(user);
     }
 
+    await ctx.db.patch(user._id, patch);
+    return publicUser({ ...user, ...patch });
+  },
+});
+
+export const completeProfile = mutation({
+  args: {
+    name: v.string(),
+    title: v.string(),
+    initials: v.string(),
+    avatar: avatarActionValidator,
+  },
+  handler: async (ctx, args) => {
+    const user = await ensureViewerUser(ctx);
+    await rateLimiter.limit(ctx, "updateProfile", {
+      key: user._id,
+      throws: true,
+    });
+
+    const name = parse(profileNameSchema, args.name, "name");
+    const title = parse(profileTitleSchema, args.title, "title");
+    const initials = parse(profileInitialsSchema, args.initials, "initials");
+    const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
+
     await ctx.db.patch(user._id, {
       name,
-      initials,
+      title,
+      initials: initials.toUpperCase(),
+      profileCompletedAt: Date.now(),
+      ...avatarPatch,
     });
-    return publicUser({ ...user, name, initials });
+    logInfo("user.profileCompleted", { userId: user._id });
+  },
+});
+
+export const generateAvatarUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ensureViewerUser(ctx);
+    await rateLimiter.limit(ctx, "updateProfile", {
+      key: user._id,
+      throws: true,
+    });
+    return await ctx.storage.generateUploadUrl();
   },
 });
 
 export const updateProfile = mutation({
   args: {
     name: v.string(),
-    title: v.string(),
     initials: v.string(),
+    avatar: avatarActionValidator,
   },
   handler: async (ctx, args) => {
     const user = await ensureViewerUser(ctx);
@@ -105,13 +200,13 @@ export const updateProfile = mutation({
 
     // Input validation (Phase 3.2).
     const name = parse(profileNameSchema, args.name, "name");
-    const title = parse(profileTitleSchema, args.title, "title");
     const initials = parse(profileInitialsSchema, args.initials, "initials");
+    const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
 
     await ctx.db.patch(user._id, {
       name,
-      title,
       initials: initials.toUpperCase(),
+      ...avatarPatch,
     });
     logInfo("user.profileUpdated", { userId: user._id });
   },
@@ -123,7 +218,7 @@ export const setRole = mutation({
     role: v.union(v.literal("admin"), v.literal("member")),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     if (viewer.role !== "admin") {
       throw new ConvexError({
         code: "FORBIDDEN",
@@ -149,7 +244,7 @@ export const setRole = mutation({
 export const deactivate = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     if (viewer.role !== "admin") {
       throw new ConvexError({
         code: "FORBIDDEN",
@@ -177,7 +272,7 @@ export const deactivate = mutation({
 export const reactivate = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     if (viewer.role !== "admin") {
       throw new ConvexError({
         code: "FORBIDDEN",

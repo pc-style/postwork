@@ -6,8 +6,11 @@ a job title, not a role, and is admin-managed after onboarding.
 
 Product decisions (already made — do not relitigate):
 
-1. **Avatar**: initials + color stay the default; add real image upload
-   (Convex file storage). No provider-photo auto-import.
+1. **Avatar**: initials + color remain the fallback. Add real image upload
+   (Convex file storage) AND auto-import the profile photo from the login
+   provider (Clerk). AMENDMENT (2026-07-08): the provider photo is imported
+   and shown by default; the user can remove it, and once removed the avatar
+   falls back to the current initials + color. See "Avatar amendment" below.
 2. **Title**: stays a free-form *job title* (e.g. "design lead"). The UI must
    make clear it is not a permission level (that's `role`, already shown as a
    tag). Users set it once during onboarding; afterwards only admins can edit
@@ -104,6 +107,57 @@ export function ProfileDialog(props: {
 
 localStorage key for carrying an invite code through sign-in:
 `postwork.inviteCode`.
+
+---
+
+## Avatar amendment (2026-07-08) — provider photo import + removal
+
+Extends the pinned contract. The provider photo is imported and shown by
+default; users can remove it (→ initials) and re-enable it.
+
+Extra schema fields on `users`:
+
+```ts
+providerAvatarUrl: v.optional(v.string()), // last-seen Clerk identity.pictureUrl (or synced imageUrl)
+avatarRemoved: v.optional(v.boolean()),    // user explicitly removed their photo → show initials
+```
+
+Effective render URL is stored in `avatarUrl` with this precedence:
+1. uploaded image (`avatarStorageId`) → its storage URL, always wins;
+2. else provider photo (`providerAvatarUrl`) **unless** `avatarRemoved === true`;
+3. else `undefined` → Avatar renders initials + color.
+
+Shared avatar-action validator (workstream A owns; B sends it):
+
+```ts
+// undefined = leave avatar unchanged
+avatar: v.optional(v.union(
+  v.object({ type: v.literal("upload"), storageId: v.id("_storage") }),
+  v.object({ type: v.literal("remove") }),
+  v.object({ type: v.literal("useProvider") }),
+))
+```
+
+Action semantics (A implements a shared `applyAvatarAction` helper):
+- `upload`  → `avatarStorageId = storageId`, `avatarRemoved = false`,
+  `avatarUrl = await ctx.storage.getUrl(storageId)`.
+- `remove`  → `avatarStorageId = undefined`, `avatarRemoved = true`,
+  `avatarUrl = undefined`.
+- `useProvider` → `avatarStorageId = undefined`, `avatarRemoved = false`,
+  `avatarUrl = user.providerAvatarUrl`.
+
+`ensureViewerUser`: capture `identity.pictureUrl` into `providerAvatarUrl` on
+create and keep it fresh on sync; recompute `avatarUrl` from precedence but
+**never resurrect a removed photo** (respect `avatarRemoved`).
+
+Because the Clerk JWT template may omit the `picture` claim (same caveat as
+`name`), the frontend also syncs it: `users.syncViewerProfile` gains an
+optional `providerAvatarUrl` arg, and `ProductSessionProvider` passes Clerk
+`user.imageUrl`. This guarantees the pfp works without a JWT-template change.
+
+`completeProfile` / `updateProfile` both accept the `avatar` action above.
+`ProfileDialog` shows a preview that reflects upload/remove/useProvider and a
+"use login photo" affordance when `providerAvatarUrl` exists and isn't shown.
 
 ---
 

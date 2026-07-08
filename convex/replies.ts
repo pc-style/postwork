@@ -4,7 +4,7 @@ import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   canAccessPost,
-  ensureViewerUser,
+  ensureActiveViewerUser,
   forbidden,
   getViewerFromAuth,
   notFound,
@@ -29,7 +29,8 @@ export type EnrichedReply = Doc<"replies"> & {
 export const listForPost = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<EnrichedReply[]> => {
-    const viewer = await getViewerFromAuth(ctx);
+    const authViewer = await getViewerFromAuth(ctx);
+    const viewer = authViewer?.status === "pending" ? null : authViewer;
     const post = await ctx.db.get(args.postId);
     if (!post) return [];
     if (!(await canAccessPost(ctx, post, viewer?._id))) {
@@ -64,7 +65,8 @@ export const listForPostPaginated = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const viewer = await getViewerFromAuth(ctx);
+    const authViewer = await getViewerFromAuth(ctx);
+    const viewer = authViewer?.status === "pending" ? null : authViewer;
     const post = await ctx.db.get(args.postId);
     if (!post || !(await canAccessPost(ctx, post, viewer?._id))) {
       return { page: [], isDone: true, continueCursor: "" };
@@ -107,7 +109,7 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
     if (post.spaceId) {
@@ -205,7 +207,7 @@ export const edit = mutation({
     body: v.string(),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const reply = await ctx.db.get(args.replyId);
     if (!reply || reply.orgId !== viewer.orgId) notFound("Reply not found.");
     if (reply.authorId !== viewer._id) {
@@ -229,7 +231,7 @@ export const edit = mutation({
 export const remove = mutation({
   args: { replyId: v.id("replies") },
   handler: async (ctx, args) => {
-    const viewer = await ensureViewerUser(ctx);
+    const viewer = await ensureActiveViewerUser(ctx);
     const reply = await ctx.db.get(args.replyId);
     if (!reply || reply.orgId !== viewer.orgId) notFound("Reply not found.");
     if (reply.authorId !== viewer._id && viewer.role !== "admin") {

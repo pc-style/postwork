@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SignIn, useAuth } from "@clerk/clerk-react";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { ProfileDialog } from "../components/ProfileDialog";
 import { clerkAppearance } from "../lib/providers";
 import { isDemo } from "../lib/demoMode";
 import { useSession } from "../lib/session";
@@ -20,6 +21,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 function ProductAuthGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const me = useQuery(api.users.me, isSignedIn ? {} : "skip");
 
   if (!isLoaded) {
     return (
@@ -31,7 +33,134 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
 
   if (!isSignedIn) return <SignInScreen />;
 
+  if (me === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
+        loading…
+      </div>
+    );
+  }
+
+  if (me === null || me.user === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
+        setting up…
+      </div>
+    );
+  }
+
+  if (me.status === "pending") return <ActivationScreen />;
+
+  if (me.needsProfileSetup) {
+    return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
+  }
+
   return <>{children}</>;
+}
+
+function ActivationScreen() {
+  const convexClient = useConvex();
+  const redeemInvite = useMutation(api.access.redeemInvite);
+  const [invite, setInvite] = useState("");
+  const [state, setState] = useState<
+    "idle" | "checking" | "invalid" | "redeeming" | "error"
+  >("idle");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedInvite = window.localStorage.getItem("postwork.inviteCode") ?? "";
+    if (storedInvite) setInvite(storedInvite);
+  }, []);
+
+  const normalizedInvite = inviteCodeFromInput(invite);
+
+  const activate = async () => {
+    if (!normalizedInvite) return;
+    setState("checking");
+    try {
+      const result = await convexClient.query(api.access.checkInvite, {
+        code: normalizedInvite,
+      });
+      if (!result.valid) {
+        setState("invalid");
+        return;
+      }
+      setState("redeeming");
+      await redeemInvite({ code: normalizedInvite });
+      window.localStorage.removeItem("postwork.inviteCode");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-6 py-10">
+      <div className="w-full max-w-4xl rounded-lg border border-border bg-surface p-7 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:grid md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
+        <div className="flex flex-col justify-between pb-6 md:pb-0">
+          <div>
+            <p className="text-label font-medium lowercase text-accent-soft">
+              postwork
+            </p>
+            <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] lowercase text-fg md:text-4xl">
+              activate your invite
+            </h1>
+            <p className="mt-4 max-w-xs text-sm leading-6 text-muted">
+              enter the code an admin sent you. after activation, you’ll finish
+              your profile before entering the app.
+            </p>
+          </div>
+          <p className="mt-8 hidden max-w-xs border-t border-border pt-4 text-xs leading-5 text-faint md:block">
+            <Link to="/" className="text-accent-soft hover:text-fg">
+              ← back to the landing page
+            </Link>
+          </p>
+        </div>
+        <div className="rounded-lg border border-border bg-surface-2 p-5">
+          <div className="mb-1.5 text-label font-medium lowercase text-muted">
+            invite code
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={invite}
+              onChange={(e) => {
+                setInvite(e.target.value);
+                setState("idle");
+              }}
+              placeholder="pw-…"
+              className="w-full rounded-md border border-border bg-bg px-3 py-2 font-mono text-xs outline-none focus:border-accent/50"
+            />
+            <button
+              type="button"
+              onClick={() => void activate()}
+              disabled={
+                state === "checking" ||
+                state === "redeeming" ||
+                !normalizedInvite
+              }
+              className="rounded-md border border-border px-3 py-2 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
+            >
+              {state === "checking" || state === "redeeming"
+                ? "activating…"
+                : "activate"}
+            </button>
+          </div>
+          {state === "invalid" && (
+            <p className="mt-2 text-xs text-urgent">
+              that code isn't valid anymore.
+            </p>
+          )}
+          {state === "error" && (
+            <p className="mt-2 text-xs text-urgent">
+              couldn't activate that invite. try again.
+            </p>
+          )}
+          <div className="mt-6 border-t border-border pt-5">
+            <AccessOnboarding />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SignInScreen() {

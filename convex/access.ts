@@ -57,6 +57,7 @@ export const redeemInvite = mutation({
       });
     }
     await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
+    await ctx.db.patch(viewer._id, { status: "active" });
     await logAudit(ctx, {
       orgId: viewer.orgId,
       actorId: viewer._id,

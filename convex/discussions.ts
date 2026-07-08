@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { ensureViewerUser, getDefaultOrgId } from "./authUsers";
+import { ensureActiveViewerUser, getDefaultOrgId } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 
 /**
@@ -117,7 +117,7 @@ export const listCounts = query({
 export const ensureThread = mutation({
   args: { slug: v.string(), title: v.string() },
   handler: async (ctx, { slug, title }) => {
-    const viewer = await ensureViewerUser(ctx, {
+    const viewer = await ensureActiveViewerUser(ctx, {
       unauthenticatedMessage: "Sign in to join the discussion.",
     });
     return await ensureThreadDoc(ctx, slug, title, viewer._id);
@@ -138,7 +138,7 @@ export const addMessage = mutation({
       throw new ConvexError({ code: "EMPTY", message: "Write something first." });
     }
 
-    const viewer = await ensureViewerUser(ctx, {
+    const viewer = await ensureActiveViewerUser(ctx, {
       unauthenticatedMessage: "Sign in to join the discussion.",
     });
     const postId = await ensureThreadDoc(ctx, slug, title, viewer._id);

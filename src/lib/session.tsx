@@ -72,10 +72,13 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
   const syncViewerProfile = useMutation(api.users.syncViewerProfile);
   const ensureRequested = useRef(false);
   const syncedProfileName = useRef<string | null>(null);
+  const syncedProviderAvatarUrl = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
       ensureRequested.current = false;
+      syncedProfileName.current = null;
+      syncedProviderAvatarUrl.current = null;
       return;
     }
     if (viewer !== null || ensureRequested.current) return;
@@ -96,16 +99,36 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !viewer || !authDisplayName) return;
-    if (viewer.name !== "member" && viewer.initials !== "ME") return;
-    if (syncedProfileName.current === authDisplayName) return;
+    if (!isLoaded || !isSignedIn || !viewer) return;
 
-    syncedProfileName.current = authDisplayName;
-    void syncViewerProfile({ name: authDisplayName }).catch((error) => {
-      syncedProfileName.current = null;
+    const shouldSyncName =
+      !!authDisplayName &&
+      (viewer.name === "member" || viewer.initials === "ME") &&
+      syncedProfileName.current !== authDisplayName;
+    const providerAvatarUrl = user?.imageUrl;
+    const shouldSyncProviderAvatar =
+      !!providerAvatarUrl &&
+      viewer.providerAvatarUrl !== providerAvatarUrl &&
+      syncedProviderAvatarUrl.current !== providerAvatarUrl;
+
+    if (!shouldSyncName && !shouldSyncProviderAvatar) return;
+
+    const profilePatch: { name?: string; providerAvatarUrl?: string } = {};
+    if (shouldSyncName) profilePatch.name = authDisplayName;
+    if (shouldSyncProviderAvatar) {
+      profilePatch.providerAvatarUrl = providerAvatarUrl;
+    }
+
+    if (shouldSyncName) syncedProfileName.current = authDisplayName;
+    if (shouldSyncProviderAvatar) {
+      syncedProviderAvatarUrl.current = providerAvatarUrl;
+    }
+    void syncViewerProfile(profilePatch).catch((error) => {
+      if (shouldSyncName) syncedProfileName.current = null;
+      if (shouldSyncProviderAvatar) syncedProviderAvatarUrl.current = null;
       console.error("Failed to sync viewer profile", error);
     });
-  }, [authDisplayName, isLoaded, isSignedIn, syncViewerProfile, viewer]);
+  }, [authDisplayName, isLoaded, isSignedIn, syncViewerProfile, user, viewer]);
 
   const value = useMemo<SessionValue>(() => {
     const currentUser = viewer ?? undefined;

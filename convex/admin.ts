@@ -2,10 +2,15 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { ensureViewerUser, getViewerFromAuth, getDefaultOrgId } from "./authUsers";
+import {
+  ensureActiveViewerUser,
+  getViewerFromAuth,
+  getDefaultOrgId,
+} from "./authUsers";
 import { publicUser } from "./users";
 import { isDemo } from "./lib/demo";
 import { logInfo } from "./lib/observability";
+import { parse, profileTitleSchema } from "./lib/validation";
 
 /**
  * Admin control plane — users, invites, access requests, audit history.
@@ -38,7 +43,8 @@ async function requireAdminForRead(ctx: QueryCtx): Promise<Doc<"users">> {
     if (demoAdmin) return demoAdmin;
     throw new ConvexError({ code: "UNAUTHENTICATED", message: "Sign in first." });
   }
-  if (viewer.role !== "admin") {
+  // Admin implies an activated account — a pending user is never an admin.
+  if (viewer.status === "pending" || viewer.role !== "admin") {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
   return viewer;
@@ -50,7 +56,9 @@ async function requireAdminForWrite(ctx: MutationCtx): Promise<Doc<"users">> {
     const demoAdmin = await demoAdminFallback(ctx);
     if (demoAdmin) return demoAdmin;
   }
-  const viewer = await ensureViewerUser(ctx);
+  // ensureActiveViewerUser rejects pending (invite-not-redeemed) accounts, so
+  // a pending first-user cannot mint themselves an invite via the admin API.
+  const viewer = await ensureActiveViewerUser(ctx);
   if (viewer.role !== "admin") {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
@@ -84,7 +92,7 @@ export const viewerIsAdmin = query({
   args: {},
   handler: async (ctx) => {
     const viewer = await getViewerFromAuth(ctx);
-    return viewer?.role === "admin";
+    return viewer?.status !== "pending" && viewer?.role === "admin";
   },
 });
 
@@ -139,6 +147,28 @@ export const listUsers = query({
       .withIndex("by_org_id_and_role", (q) => q.eq("orgId", admin.orgId))
       .collect();
     return users.map((u) => publicUser(u));
+  },
+});
+
+export const setTitle = mutation({
+  args: { userId: v.id("users"), title: v.string() },
+  handler: async (ctx, args) => {
+    const admin = await requireAdminForWrite(ctx);
+    const target = await ctx.db.get(args.userId);
+    if (!target || target.orgId !== admin.orgId) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
+    }
+    const title = parse(profileTitleSchema, args.title, "title");
+    await ctx.db.patch(args.userId, { title });
+    await logAudit(ctx, {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "user.titleChanged",
+      targetType: "user",
+      targetId: args.userId,
+      metadata: { title },
+    });
+    logInfo("user.titleChanged", { userId: args.userId, adminId: admin._id });
   },
 });
 
