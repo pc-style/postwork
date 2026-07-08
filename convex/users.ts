@@ -59,6 +59,35 @@ export const ensureViewer = mutation({
   },
 });
 
+export const syncViewerProfile = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ensureViewerUser(ctx);
+    const name = parse(profileNameSchema, args.name, "name");
+
+    const initials = name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 4)
+      .toUpperCase();
+
+    if (user.name === name && user.initials === initials) {
+      return publicUser(user);
+    }
+
+    await ctx.db.patch(user._id, {
+      name,
+      initials,
+    });
+    return publicUser({ ...user, name, initials });
+  },
+});
+
 export const updateProfile = mutation({
   args: {
     name: v.string(),

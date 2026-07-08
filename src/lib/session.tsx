@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
@@ -65,10 +65,13 @@ function DemoSessionProvider({ children }: { children: ReactNode }) {
 
 function ProductSessionProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const users = useQuery(api.users.list);
   const viewer = useQuery(api.users.viewer);
   const ensureViewer = useMutation(api.users.ensureViewer);
+  const syncViewerProfile = useMutation(api.users.syncViewerProfile);
   const ensureRequested = useRef(false);
+  const syncedProfileName = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
@@ -82,6 +85,27 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
       console.error("Failed to ensure viewer", error);
     });
   }, [ensureViewer, isLoaded, isSignedIn, viewer]);
+
+  const authDisplayName = useMemo(() => {
+    const email = user?.primaryEmailAddress?.emailAddress;
+    return (
+      user?.fullName?.trim() ||
+      user?.username?.trim() ||
+      (email ? email.split("@")[0] : undefined)
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !viewer || !authDisplayName) return;
+    if (viewer.name !== "member" && viewer.initials !== "ME") return;
+    if (syncedProfileName.current === authDisplayName) return;
+
+    syncedProfileName.current = authDisplayName;
+    void syncViewerProfile({ name: authDisplayName }).catch((error) => {
+      syncedProfileName.current = null;
+      console.error("Failed to sync viewer profile", error);
+    });
+  }, [authDisplayName, isLoaded, isSignedIn, syncViewerProfile, viewer]);
 
   const value = useMemo<SessionValue>(() => {
     const currentUser = viewer ?? undefined;
