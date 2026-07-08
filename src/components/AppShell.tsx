@@ -10,11 +10,11 @@ import { ProductProfileCard } from "./ProductProfileCard";
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
 // not a duplicate of "home". Both point at "/" but carry different search.
 const ROUTE_NAV = [
-  { label: "spaces", to: "/spaces" },
-  { label: "agents", to: "/agents" },
+  { label: "spaces", to: "/app/spaces" },
+  { label: "agents", to: "/app/agents" },
 ] as const;
 
-const DEMO_ROUTE_NAV = [{ label: "experiments", to: "/flash-experiments" }] as const;
+const DEMO_ROUTE_NAV = [{ label: "experiments", to: "/app/flash-experiments" }] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const counts = useCounts();
@@ -24,13 +24,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-full">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,640px)_240px] lg:justify-center">
         <aside className="flex flex-col gap-4 md:sticky md:top-6 md:h-[calc(100vh-3rem)]">
-          <Link to="/" className="px-2 text-base font-semibold text-fg">
+          <Link to="/app" className="px-2 text-base font-semibold text-fg">
             postwork
           </Link>
 
           <nav className="space-y-1 text-sm text-muted">
             <Link
-              to="/"
+              to="/app"
               search={{}}
               activeOptions={{ exact: true, includeSearch: true }}
               activeProps={{
@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               home
             </Link>
             <Link
-              to="/"
+              to="/app"
               search={{ priority: "urgent" }}
               activeOptions={{ exact: true, includeSearch: true }}
               activeProps={{

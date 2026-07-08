@@ -147,6 +147,59 @@ export default defineSchema({
     .index("by_org_id_and_post_id", ["orgId", "postId"])
     .index("by_org_id_and_reply_id", ["orgId", "replyId"]),
 
+  // Access control plane (invite + approval onboarding).
+  //
+  // invites: admin-minted codes. A code admits `maxUses` sign-ups (0 = ∞).
+  // Revoking sets `revokedAt`; expiry is optional. Redemption is recorded by
+  // bumping `usedCount` and audit-logging the redeemer.
+  invites: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    code: v.string(),
+    note: v.optional(v.string()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    maxUses: v.number(),
+    usedCount: v.number(),
+    expiresAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_org_id_and_code", ["orgId", "code"])
+    .index("by_org_id_and_created_at", ["orgId", "createdAt"]),
+
+  // accessRequests: the "no invite? ask to join" path. Public mutation
+  // creates a pending row; admins approve (which mints a single-use invite)
+  // or deny. `email` is the join key shown to admins.
+  accessRequests: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    email: v.string(),
+    name: v.optional(v.string()),
+    message: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("denied"),
+    ),
+    createdAt: v.number(),
+    resolvedBy: v.optional(v.id("users")),
+    resolvedAt: v.optional(v.number()),
+    // set when approving: the invite minted for this requester
+    inviteId: v.optional(v.id("invites")),
+  })
+    .index("by_org_id_and_status_and_created_at", ["orgId", "status", "createdAt"])
+    .index("by_org_id_and_email", ["orgId", "email"]),
+
+  // auditLog: append-only record of control-plane actions. `actorId` is
+  // undefined for anonymous/public actions (e.g. an access request landing).
+  auditLog: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    actorId: v.optional(v.id("users")),
+    action: v.string(), // e.g. "invite.created", "user.deactivated"
+    targetType: v.optional(v.string()), // "user" | "invite" | "accessRequest" | …
+    targetId: v.optional(v.string()),
+    metadata: v.optional(v.string()), // JSON-encoded details
+    createdAt: v.number(),
+  }).index("by_org_id_and_created_at", ["orgId", "createdAt"]),
+
   flashExperimentVotes: defineTable({
     slug: v.string(),
     voterSubject: v.string(),

@@ -38,7 +38,7 @@ export function SpacePage() {
     return (
       <div className="py-12 text-center text-sm text-muted">
         space not found.{" "}
-        <Link to="/spaces" className="text-accent-soft">
+        <Link to="/app/spaces" className="text-accent-soft">
           back to spaces
         </Link>
       </div>

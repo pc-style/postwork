@@ -31,7 +31,7 @@ export function WallPage() {
     return (
       <div className="py-12 text-center text-sm text-muted">
         user not found. {" "}
-        <Link to="/" className="text-accent-soft">
+        <Link to="/app" className="text-accent-soft">
           back to feed
         </Link>
       </div>

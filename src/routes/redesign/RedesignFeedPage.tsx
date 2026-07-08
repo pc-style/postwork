@@ -22,7 +22,7 @@ export function RedesignFeedPage() {
 
   const setSearch = (next: FeedSearch) => {
     void navigate({
-      to: "/",
+      to: "/app",
       search: (prev) => ({ ...(prev as FeedSearch), ...next }),
       replace: true,
     });
@@ -162,7 +162,7 @@ function FeedRow({ post }: { post: EnrichedPost }) {
 
   return (
     <Link
-      to="/posts/$postId"
+      to="/app/posts/$postId"
       params={{ postId: post._id }}
       className="group block px-4 py-4 transition hover:bg-surface"
     >

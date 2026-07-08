@@ -36,7 +36,7 @@ export function WallPostDialog({
             attachments,
           });
           onClose();
-          navigate({ to: "/u/$userId", params: { userId: wallOwnerId } });
+          navigate({ to: "/app/u/$userId", params: { userId: wallOwnerId } });
         }}
       />
     </Dialog>

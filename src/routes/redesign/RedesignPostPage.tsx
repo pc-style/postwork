@@ -45,7 +45,7 @@ export function RedesignPostPage() {
     return (
       <div className="mx-auto max-w-3xl px-8 py-16 text-center text-sm text-muted">
         post not found.{" "}
-        <Link to="/" className="text-accent-soft">
+        <Link to="/app" className="text-accent-soft">
           back to feed
         </Link>
       </div>
@@ -59,7 +59,7 @@ export function RedesignPostPage() {
     <div className="mx-auto max-w-3xl px-8 pb-40 pt-10">
       {/* breadcrumb — quiet, one line */}
       <div className="mb-6 text-xs text-faint">
-        <Link to="/" search={{ space: post.space }} className="text-muted transition hover:text-fg">
+        <Link to="/app" search={{ space: post.space }} className="text-muted transition hover:text-fg">
           {post.space.toLowerCase()}
         </Link>
         {post.pinned && <span> / pinned</span>}

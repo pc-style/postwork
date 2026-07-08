@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ClerkProvider, SignIn, useAuth } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProvider } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { convex } from "./convexClient";
@@ -14,7 +14,7 @@ import { AgentTasksProvider } from "./agentTasks";
 import { ExperimentProvider } from "../flashExperiments/active";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
-const clerkAppearance = {
+export const clerkAppearance = {
   variables: {
     colorBackground: "#121014",
     colorText: "#e8e6e3",
@@ -72,11 +72,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
     getRequiredProductViteEnv("VITE_CLERK_PUBLISHABLE_KEY");
   }
 
+  // No global sign-in gate here: `/` is a public landing page. Auth gating
+  // happens at the route level (see RequireAuth / RequireAdmin in the router).
   return (
     <ErrorBoundary>
       <ClerkProvider publishableKey={publishableKey} appearance={clerkAppearance}>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <ProductModeGate>{children}</ProductModeGate>
+          <InnerProviders>{children}</InnerProviders>
         </ConvexProviderWithClerk>
       </ClerkProvider>
     </ErrorBoundary>
@@ -93,48 +95,4 @@ function InnerProviders({ children }: { children: ReactNode }) {
       </StoreProvider>
     </SessionProvider>
   );
-}
-
-function ProductModeGate({ children }: { children: ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
-
-  if (!isLoaded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        loading sign-in…
-      </div>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-6 py-10">
-        <div className="w-full max-w-4xl rounded-lg border border-border bg-surface p-7 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:grid md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
-          <div className="flex flex-col justify-between pb-6 md:pb-0">
-            <div>
-              <p className="text-label font-medium lowercase text-accent-soft">
-                product mode
-              </p>
-              <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] lowercase text-fg md:text-4xl">
-                sign in to enter postwork
-              </h1>
-              <p className="mt-4 max-w-xs text-sm leading-6 text-muted">
-                this build uses Clerk auth. demo mode keeps the local teammate
-                switcher instead.
-              </p>
-            </div>
-            <p className="mt-8 hidden max-w-xs border-t border-border pt-4 text-xs leading-5 text-faint md:block">
-              authenticated writes persist to Convex. demo writes stay in a local
-              session overlay.
-            </p>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <SignIn appearance={clerkAppearance} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return <InnerProviders>{children}</InnerProviders>;
 }

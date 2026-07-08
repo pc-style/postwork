@@ -93,9 +93,18 @@ dialog[open]::backdrop {
   opacity: 1;
   transition: opacity 250ms ease-out;
 }
+/* Side sheets slide in from the right instead of rising. */
+dialog.sheet-panel[open] {
+  transition-property: transform, opacity;
+}
 @starting-style {
   dialog[open] {
     translate: 0 10px;
+    opacity: 0;
+  }
+  dialog.sheet-panel[open] {
+    translate: 0 0;
+    transform: translateX(24px);
     opacity: 0;
   }
   dialog[open]::backdrop {

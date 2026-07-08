@@ -123,7 +123,7 @@ export function FlashExperimentsPage() {
         {/* The full "ink" redesign is too broad for the single-slot preview
             system, so it lives as its own usable surface. Feature it here. */}
         <Link
-          to="/redesign"
+          to="/app"
           className="group relative block overflow-hidden rounded-lg border border-accent/40 bg-surface/90 p-5 backdrop-blur transition hover:border-accent/70"
         >
           <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
@@ -225,7 +225,7 @@ function ExperimentCard({
   return (
     <div className="group rounded-lg border border-dashed border-border bg-surface/90 backdrop-blur transition hover:border-accent/50">
       <Link
-        to="/flash-experiments/$slug"
+        to="/app/flash-experiments/$slug"
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
@@ -280,7 +280,7 @@ function ExperimentCard({
 
       <div className="flex items-center justify-between gap-3 border-t border-dashed border-border px-4 py-2.5">
         <Link
-          to="/flash-experiments/$slug"
+          to="/app/flash-experiments/$slug"
           params={{ slug: experiment.slug }}
           className="text-xs text-accent-soft transition group-hover:translate-x-0.5"
         >
@@ -371,7 +371,7 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
   const { suggestion } = experiment;
   return (
     <Link
-      to="/flash-experiments/$slug"
+      to="/app/flash-experiments/$slug"
       params={{ slug: experiment.slug }}
       title={experiment.summary}
       className="group flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-surface/70 px-3 py-2 transition hover:border-accent/40 hover:bg-surface"

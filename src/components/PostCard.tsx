@@ -12,7 +12,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
 
   return (
     <Link
-      to="/posts/$postId"
+      to="/app/posts/$postId"
       params={{ postId: post._id }}
       className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2"
     >

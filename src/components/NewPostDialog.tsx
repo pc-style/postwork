@@ -25,7 +25,7 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
             attachments,
           });
           onClose();
-          navigate({ to: "/posts/$postId", params: { postId } });
+          navigate({ to: "/app/posts/$postId", params: { postId } });
         }}
       />
     </Dialog>

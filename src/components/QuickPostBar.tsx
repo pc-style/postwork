@@ -183,7 +183,7 @@ export function QuickPostBar() {
                 attachments,
               });
               reset();
-              void navigate({ to: "/posts/$postId", params: { postId } });
+              void navigate({ to: "/app/posts/$postId", params: { postId } });
             }}
           />
         </div>

@@ -47,12 +47,13 @@ export const run = internalMutation({
       initials: string,
       avatarColor: string,
       isAgent = false,
-    ) => ({ name, title, initials, avatarColor, isAgent });
+      role: "admin" | "member" = "member",
+    ) => ({ name, title, initials, avatarColor, isAgent, role });
 
     // Humans use the warm palette; AI agents get the cooler entries so they
     // read as "bot" teammates without breaking the page's color story.
     const userDefs = [
-      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0]),
+      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0], false, "admin"),
       user("Diego Ramos", "Staff Engineer", "DR", AVATAR_PALETTE[8]),
       user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1]),
       user("Tom Becker", "Design Lead", "TB", AVATAR_PALETTE[2]),

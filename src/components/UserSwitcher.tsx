@@ -64,7 +64,7 @@ export function UserSwitcher() {
                 </div>
               </button>
               <Link
-                to="/u/$userId"
+                to="/app/u/$userId"
                 params={{ userId: u._id }}
                 onClick={() => setOpen(false)}
                 className="shrink-0 rounded-md px-1.5 py-1 text-label text-muted transition hover:text-accent-soft"

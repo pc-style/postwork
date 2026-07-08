@@ -24,7 +24,7 @@ export function FeedPage() {
 
   const setSearch = (next: FeedSearch) => {
     void navigate({
-      to: "/",
+      to: "/app",
       search: (prev) => ({
         ...(prev as FeedSearch),
         ...next,
@@ -132,7 +132,7 @@ export function FeedPage() {
             slots.postCard ? (
               <Link
                 key={post._id}
-                to="/posts/$postId"
+                to="/app/posts/$postId"
                 params={{ postId: post._id }}
                 className="block"
               >

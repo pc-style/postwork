@@ -22,7 +22,7 @@ export function RedesignShell({ children }: { children: ReactNode }) {
   // Post pages carry their own sticky reply composer at the bottom, and the
   // flash experiments bring their own chrome — the dock stays out of the way.
   const showComposerDock =
-    !pathname.startsWith("/posts/") && !pathname.startsWith("/flash-experiments");
+    !pathname.startsWith("/app/posts/") && !pathname.startsWith("/app/flash-experiments");
 
   return (
     <div className="theme-ink flex min-h-screen w-full bg-bg text-fg">
@@ -56,10 +56,10 @@ export function RedesignLayout() {
 }
 
 const NAV = [
-  { label: "home", to: "/", search: {} as const, exact: true },
+  { label: "home", to: "/app", search: {} as const, exact: true },
   {
     label: "priority",
-    to: "/",
+    to: "/app",
     search: { priority: "urgent" } as const,
     exact: true,
   },
@@ -71,7 +71,7 @@ function Sidebar({ onCollapse }: { onCollapse: () => void }) {
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-border py-6">
       <div className="flex items-center justify-between px-5">
-        <Link to="/" className="text-base font-semibold tracking-tight">
+        <Link to="/app" className="text-base font-semibold tracking-tight">
           post<span className="text-accent">work</span>
         </Link>
         <button

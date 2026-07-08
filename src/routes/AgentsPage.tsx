@@ -59,7 +59,7 @@ function AgentCard({
                   <span className="text-label text-muted">session post</span>
                 ) : (
                   <Link
-                    to="/posts/$postId"
+                    to="/app/posts/$postId"
                     params={{ postId: task.postId }}
                     className="text-label text-accent-soft transition hover:text-fg"
                   >

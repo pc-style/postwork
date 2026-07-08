@@ -25,7 +25,7 @@ export function SpacesPage() {
           {spaces.map((space) => (
             <Link
               key={space._id}
-              to="/spaces/$slug"
+              to="/app/spaces/$slug"
               params={{ slug: space.slug }}
               className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2"
             >

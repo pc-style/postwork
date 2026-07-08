@@ -47,7 +47,7 @@ export function PostModeration({
     setError(null);
     try {
       await store.deletePost({ postId: post._id });
-      void navigate({ to: "/" });
+      void navigate({ to: "/app" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not delete post.");
       setBusy(false);
