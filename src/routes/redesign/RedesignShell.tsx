@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useCounts } from "../../lib/store";
+import { useSession } from "../../lib/session";
 import { UserSwitcher } from "../../components/UserSwitcher";
 import { QuickPostBar } from "../../components/QuickPostBar";
 import { ProductProfileCard } from "../../components/ProductProfileCard";
@@ -67,6 +68,7 @@ const NAV = [
 
 function Sidebar({ onCollapse }: { onCollapse: () => void }) {
   const counts = useCounts();
+  const { currentUser } = useSession();
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-border py-6">
@@ -108,6 +110,14 @@ function Sidebar({ onCollapse }: { onCollapse: () => void }) {
             {item.label}
           </Link>
         ))}
+        {currentUser?.role === "admin" && (
+          <Link
+            to="/admin"
+            className="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface hover:text-fg"
+          >
+            admin
+          </Link>
+        )}
       </nav>
 
       <div className="mt-auto max-h-[50vh] space-y-3 overflow-y-auto px-4 pb-2">
