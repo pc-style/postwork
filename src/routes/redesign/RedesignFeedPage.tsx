@@ -36,7 +36,7 @@ export function RedesignFeedPage() {
   const loadingMore = !searching && feed?.status === "LoadingMore";
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-10">
+    <div className="mx-auto max-w-3xl px-8 pt-10 pb-24">
       {/* search: an underline field, not a boxed cage */}
       <div className="relative mb-8 border-b border-border focus-within:border-accent/60">
         <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 font-semibold text-accent-soft">

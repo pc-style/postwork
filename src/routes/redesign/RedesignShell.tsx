@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useCounts } from "../../lib/store";
 import { UserSwitcher } from "../../components/UserSwitcher";
-import { NewPostDialog } from "../../components/NewPostDialog";
+import { QuickPostBar } from "../../components/QuickPostBar";
 import { ProductProfileCard } from "../../components/ProductProfileCard";
 import { isDemo } from "../../lib/demoMode";
 
@@ -16,7 +16,13 @@ import { isDemo } from "../../lib/demoMode";
  */
 export function RedesignShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [composing, setComposing] = useState(false);
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  // Post pages carry their own sticky reply composer at the bottom, and the
+  // flash experiments bring their own chrome — the dock stays out of the way.
+  const showComposerDock =
+    !pathname.startsWith("/posts/") && !pathname.startsWith("/flash-experiments");
 
   return (
     <div className="theme-ink flex min-h-screen w-full bg-bg text-fg">
@@ -29,17 +35,14 @@ export function RedesignShell({ children }: { children: ReactNode }) {
           »
         </button>
       ) : (
-        <Sidebar
-          onCollapse={() => setCollapsed(true)}
-          onNewPost={() => setComposing(true)}
-        />
+        <Sidebar onCollapse={() => setCollapsed(true)} />
       )}
 
       <main className="min-w-0 flex-1">
         {children}
       </main>
 
-      {composing && <NewPostDialog onClose={() => setComposing(false)} />}
+      {showComposerDock && <QuickPostBar />}
     </div>
   );
 }
@@ -62,13 +65,7 @@ const NAV = [
   },
 ] as const;
 
-function Sidebar({
-  onCollapse,
-  onNewPost,
-}: {
-  onCollapse: () => void;
-  onNewPost: () => void;
-}) {
+function Sidebar({ onCollapse }: { onCollapse: () => void }) {
   const counts = useCounts();
 
   return (
@@ -111,12 +108,6 @@ function Sidebar({
             {item.label}
           </Link>
         ))}
-        <button
-          onClick={onNewPost}
-          className="mt-1 rounded-md px-2 py-1.5 text-left text-muted transition hover:bg-surface hover:text-fg"
-        >
-          <span className="text-accent">+</span> new post
-        </button>
       </nav>
 
       <div className="mt-auto max-h-[50vh] space-y-3 overflow-y-auto px-4 pb-2">

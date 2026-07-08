@@ -128,10 +128,10 @@ export function QuickPostBar() {
         onPointerLeave={onPointerLeave}
         onFocus={onCardFocus}
         onBlur={onCardBlur}
-        className={`pointer-events-auto mx-auto max-w-3xl overflow-hidden rounded-lg border border-border bg-surface/95 shadow-2xl backdrop-blur will-change-transform transform-gpu transition-transform motion-reduce:transition-none ${
+        className={`pointer-events-auto mx-auto max-w-3xl overflow-hidden rounded-t-xl bg-surface/95 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_-4px_16px_rgba(0,0,0,0.35),0_-16px_48px_rgba(0,0,0,0.4)] backdrop-blur will-change-transform transform-gpu transition-transform motion-reduce:transition-none ${
           popped
             ? "translate-y-0 duration-300 ease-spring"
-            : "translate-y-[calc(100%_-_2.25rem)] duration-200 ease-out"
+            : "translate-y-[calc(100%_-_2.5rem)] duration-200 ease-out"
         }`}
       >
         {/* Peek handle — the only part visible at rest. Hover, click, or focus
@@ -141,7 +141,7 @@ export function QuickPostBar() {
           onClick={handleToggle}
           aria-label={popped ? "tuck the composer away" : "start a post"}
           aria-expanded={popped}
-          className="flex h-9 w-full items-center justify-center gap-2 text-xs text-muted transition hover:text-fg"
+          className="flex h-10 w-full items-center justify-center gap-2 text-xs text-muted transition-colors hover:text-fg"
         >
           <span className="text-accent-soft">+</span>
           <span>start a post…</span>
@@ -170,7 +170,7 @@ export function QuickPostBar() {
             titleClassName="mb-2 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
             textareaClassName="min-h-[2.5rem] w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
             metaClassName="mt-2 flex flex-wrap items-center gap-3"
-            submitButtonClassName="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+            submitButtonClassName="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40"
             onFieldKeyDown={onFieldKeyDown}
             onSubmit={async ({ title, body, space, spaceId, priority, attachments }) => {
               if (!currentUserId || !space) return;

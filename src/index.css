@@ -37,6 +37,12 @@
   --text-code: 0.8125rem;
 }
 
+:root {
+  /* Native controls, scrollbars, and the <dialog> UA color (CanvasText)
+     must resolve dark — otherwise dialogs render black-on-black text. */
+  color-scheme: dark;
+}
+
 html,
 body,
 #root {
@@ -73,6 +79,34 @@ kbd,
 samp {
   font-family: var(--font-mono);
   letter-spacing: 0;
+}
+
+/* Dialog enter: subtle rise + fade, backdrop fades in with it. */
+dialog[open] {
+  translate: 0 0;
+  opacity: 1;
+  transition-property: translate, opacity;
+  transition-duration: 250ms;
+  transition-timing-function: var(--ease-spring);
+}
+dialog[open]::backdrop {
+  opacity: 1;
+  transition: opacity 250ms ease-out;
+}
+@starting-style {
+  dialog[open] {
+    translate: 0 10px;
+    opacity: 0;
+  }
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog[open],
+  dialog[open]::backdrop {
+    transition: none;
+  }
 }
 
 .prose-post {
