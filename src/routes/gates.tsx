@@ -84,12 +84,14 @@ export function AccessOnboarding() {
     "idle" | "sending" | "sent" | "error"
   >("idle");
 
+  const normalizedInvite = inviteCodeFromInput(invite);
+
   const checkInvite = async () => {
-    if (!invite.trim()) return;
+    if (!normalizedInvite) return;
     setInviteState("checking");
     try {
       const result = await convexClient.query(api.access.checkInvite, {
-        code: invite,
+        code: normalizedInvite,
       });
       setInviteState(result.valid ? "valid" : "invalid");
     } catch {
@@ -127,7 +129,7 @@ export function AccessOnboarding() {
           <button
             type="button"
             onClick={() => void checkInvite()}
-            disabled={inviteState === "checking" || !invite.trim()}
+            disabled={inviteState === "checking" || !normalizedInvite}
             className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
           >
             {inviteState === "checking" ? "checking…" : "check"}
@@ -180,6 +182,13 @@ export function AccessOnboarding() {
       </div>
     </div>
   );
+}
+
+function inviteCodeFromInput(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const joinMatch = trimmed.match(/\/join\/([^/?#]+)/i);
+  return decodeURIComponent(joinMatch?.[1] ?? trimmed).trim();
 }
 
 export function RequireAdmin({ children }: { children: ReactNode }) {

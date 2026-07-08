@@ -12,6 +12,7 @@ import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
 import { LandingPage } from "./routes/LandingPage";
+import { JoinPage } from "./routes/JoinPage";
 import { RequireAuth } from "./routes/gates";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
@@ -56,6 +57,12 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: LandingPage,
+});
+
+const joinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/join/$code",
+  component: JoinPage,
 });
 
 // ---------------------------------------------------------------------------
@@ -232,6 +239,7 @@ const legacyFeedRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  joinRoute,
   appLayoutRoute.addChildren([
     appFeedRoute,
     appPostRoute,

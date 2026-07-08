@@ -109,13 +109,15 @@ function InviteSheet({
   onClose: () => void;
 }) {
   const revoke = useMutation(api.admin.revokeInvite);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const status = inviteStatus(invite);
 
-  const copy = () => {
-    void navigator.clipboard.writeText(invite.code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+  const inviteLink = `${window.location.origin}/join/${invite.code}`;
+
+  const copy = (kind: "code" | "link", value: string) => {
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 1500);
     });
   };
 
@@ -126,8 +128,11 @@ function InviteSheet({
       onClose={onClose}
       footer={
         <div className="flex flex-wrap items-center gap-2">
-          <ActionButton onClick={copy}>
-            {copied ? "copied" : "copy code"}
+          <ActionButton onClick={() => copy("code", invite.code)}>
+            {copied === "code" ? "copied" : "copy code"}
+          </ActionButton>
+          <ActionButton onClick={() => copy("link", inviteLink)}>
+            {copied === "link" ? "copied" : "copy link"}
           </ActionButton>
           {!invite.revokedAt && (
             <ActionButton
