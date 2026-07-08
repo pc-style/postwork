@@ -12,7 +12,7 @@ product flow before building real app behavior.
 
 ## Branch policy
 
-- Treat `dev/making-it-real` as the active main branch for all work and PRs.
+- Treat `beta` as the active main branch for all work and PRs.
 - Do not touch `main` again until all demo-to-product phases are complete.
 
 ## User-specific callbacks
@@ -36,7 +36,9 @@ product flow before building real app behavior.
 
 ```bash
 bun install
-bun run dev         # run-p: Vite (:5173) + convex dev (:3210). DO NOT auto-run.
+bun run dev         # run-p: Vite (:5173) + convex dev (:3210). Agents MAY run this,
+                    # but it is interactive/long-running — for one-shot backend sync
+                    # use `bunx convex dev --once` instead of leaving it running.
 bun run build       # tsc -b && vite build  (the canonical check)
 bun run typecheck   # tsc -b --noEmit
 bun run seed        # bunx convex run seed:run  (reseed demo data)
