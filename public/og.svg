@@ -1,46 +1,72 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0a0a0b"/>
-      <stop offset="1" stop-color="#121014"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.82" cy="0.12" r="0.9">
-      <stop offset="0" stop-color="#8c1862" stop-opacity="0.30"/>
-      <stop offset="0.5" stop-color="#8c1862" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#8c1862" stop-opacity="0"/>
-    </radialGradient>
     <style>
-      text { font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      text { font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-feature-settings: "cv02", "cv03", "cv04", "cv11"; }
     </style>
   </defs>
 
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="#0a0a0b"/>
+  <rect x="48" y="42" width="1104" height="546" rx="18" fill="#0d0c0f" stroke="#252327"/>
 
-  <!-- hairline grid accents -->
-  <g stroke="#252327" stroke-width="1">
-    <line x1="80" y1="120" x2="1120" y2="120"/>
-    <line x1="80" y1="510" x2="1120" y2="510"/>
+  <g opacity="0.34" stroke="#252327" stroke-width="1">
+    <path d="M96 176H1104"/>
+    <path d="M96 454H1104"/>
+    <path d="M694 84V546"/>
   </g>
 
-  <!-- top chrome label -->
-  <text x="80" y="106" fill="#8a8782" font-size="22" letter-spacing="2">postwork.pcstyle.dev</text>
-  <text x="1120" y="106" fill="#8a8782" font-size="22" letter-spacing="2" text-anchor="end">async · v1</text>
-
-  <!-- logo tile -->
-  <g transform="translate(80,210)">
-    <rect width="96" height="96" rx="8" fill="#8c1862"/>
-    <text x="48" y="68" fill="#e8e6e3" font-size="58" font-weight="700" text-anchor="middle">P</text>
+  <g transform="translate(96 84)">
+    <text x="0" y="22" fill="#aaa6a0" font-size="20" font-weight="500" letter-spacing="0.3">postwork.pcstyle.dev</text>
+    <g transform="translate(260 -5)">
+      <rect x="0" y="0" width="54" height="28" rx="5" fill="#160f14" stroke="#3a2432"/>
+      <text x="27" y="20" fill="#d05b9c" font-size="15" font-weight="700" text-anchor="middle">beta</text>
+    </g>
   </g>
 
-  <!-- wordmark -->
-  <text x="200" y="262" fill="#e8e6e3" font-size="50" font-weight="700">postwork</text>
-  <text x="201" y="300" fill="#8a8782" font-size="24" letter-spacing="1">async team communication</text>
+  <g transform="translate(96 219)">
+    <text x="0" y="0" fill="#e8e6e3" font-size="108" font-weight="750" letter-spacing="-5.4">postwork</text>
+    <text x="4" y="76" fill="#e8e6e3" font-size="55" font-weight="650" letter-spacing="-1.9">posts, not channels.</text>
+    <text x="6" y="128" fill="#b9b4ad" font-size="26" font-weight="550" letter-spacing="-0.2">a calm, durable record for team decisions</text>
+  </g>
 
-  <!-- headline -->
-  <text x="80" y="408" fill="#e8e6e3" font-size="64" font-weight="700">posts, not channels.</text>
-  <text x="80" y="476" fill="#b53a82" font-size="40" font-weight="600">threads that decide things.</text>
+  <g transform="translate(735 132)">
+    <rect x="0" y="0" width="346" height="370" rx="12" fill="#121014" stroke="#252327"/>
+    <rect x="0.5" y="0.5" width="345" height="62" rx="11.5" fill="#18151a" opacity="0.82"/>
+    <circle cx="34" cy="32" r="7" fill="#8c1862"/>
+    <text x="56" y="39" fill="#e8e6e3" font-size="23" font-weight="700">release train</text>
+    <rect x="244" y="19" width="74" height="27" rx="4" fill="#2a2117" stroke="#5a431c"/>
+    <circle cx="261" cy="32" r="4" fill="#d9a441"/>
+    <text x="274" y="38" fill="#d9a441" font-size="15" font-weight="700">high</text>
 
-  <!-- footer chrome -->
-  <text x="80" y="566" fill="#8a8782" font-size="22"><tspan fill="#8c1862">/</tspan> search  ·  nested replies  ·  <tspan fill="#8c1862">ai</tspan> summaries  ·  unread + priority</text>
+    <text x="30" y="113" fill="#e8e6e3" font-size="28" font-weight="700" letter-spacing="-0.5">ship checklist is closed</text>
+    <path d="M30 151H316" stroke="#252327"/>
+
+    <g transform="translate(30 188)">
+      <path d="M9 0V118" stroke="#4a4845" stroke-width="2"/>
+      <circle cx="9" cy="0" r="5" fill="#8c1862"/>
+      <circle cx="9" cy="64" r="5" fill="#4a4845"/>
+      <circle cx="9" cy="118" r="5" fill="#4a4845"/>
+
+      <g transform="translate(31 -18)">
+        <rect width="250" height="55" rx="7" fill="#18151a" stroke="#252327"/>
+        <text x="16" y="35" fill="#e8e6e3" font-size="21" font-weight="700">maya replied</text>
+      </g>
+      <g transform="translate(58 48)">
+        <rect width="223" height="55" rx="7" fill="#121014" stroke="#252327"/>
+        <text x="16" y="35" fill="#b9b4ad" font-size="20" font-weight="700">nested follow-up</text>
+      </g>
+      <g transform="translate(31 106)">
+        <rect width="250" height="50" rx="7" fill="#160f14" stroke="#3a2432"/>
+        <text x="16" y="32" fill="#d05b9c" font-size="19" font-weight="750">ai summary ready</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(96 502)">
+    <rect x="0" y="0" width="129" height="32" rx="5" fill="#160f14" stroke="#3a2432"/>
+    <text x="16" y="22" fill="#d05b9c" font-size="16" font-weight="700">nested replies</text>
+    <rect x="145" y="0" width="98" height="32" rx="5" fill="#121014" stroke="#252327"/>
+    <text x="162" y="22" fill="#aaa6a0" font-size="16" font-weight="650">priority</text>
+    <rect x="259" y="0" width="120" height="32" rx="5" fill="#121014" stroke="#252327"/>
+    <text x="276" y="22" fill="#aaa6a0" font-size="16" font-weight="650">findable log</text>
+  </g>
 </svg>
