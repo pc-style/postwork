@@ -147,7 +147,10 @@ export function ProductProfileCard() {
               <Button variant="quiet" onClick={() => setEditing(false)}>
                 cancel
               </Button>
-              <Button disabled={saving || !draft.name.trim() || !draft.title.trim()}>
+              <Button
+                type="submit"
+                disabled={saving || !draft.name.trim() || !draft.title.trim()}
+              >
                 {saving ? "saving…" : "save profile"}
               </Button>
             </div>
