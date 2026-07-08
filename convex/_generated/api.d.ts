@@ -10,11 +10,15 @@
 
 import type * as agentTasks from "../agentTasks.js";
 import type * as ai from "../ai.js";
+import type * as attachments from "../attachments.js";
 import type * as authUsers from "../authUsers.js";
 import type * as avatarPalette from "../avatarPalette.js";
 import type * as discussions from "../discussions.js";
 import type * as flashExperiments from "../flashExperiments.js";
 import type * as lib_demo from "../lib/demo.js";
+import type * as lib_observability from "../lib/observability.js";
+import type * as lib_rateLimit from "../lib/rateLimit.js";
+import type * as lib_validation from "../lib/validation.js";
 import type * as posts from "../posts.js";
 import type * as replies from "../replies.js";
 import type * as seed from "../seed.js";
@@ -30,11 +34,15 @@ import type {
 declare const fullApi: ApiFromModules<{
   agentTasks: typeof agentTasks;
   ai: typeof ai;
+  attachments: typeof attachments;
   authUsers: typeof authUsers;
   avatarPalette: typeof avatarPalette;
   discussions: typeof discussions;
   flashExperiments: typeof flashExperiments;
   "lib/demo": typeof lib_demo;
+  "lib/observability": typeof lib_observability;
+  "lib/rateLimit": typeof lib_rateLimit;
+  "lib/validation": typeof lib_validation;
   posts: typeof posts;
   replies: typeof replies;
   seed: typeof seed;
@@ -68,4 +76,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

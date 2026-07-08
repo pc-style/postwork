@@ -3,6 +3,7 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { useCounts } from "../../lib/store";
 import { UserSwitcher } from "../../components/UserSwitcher";
 import { NewPostDialog } from "../../components/NewPostDialog";
+import { ProductProfileCard } from "../../components/ProductProfileCard";
 import { isDemo } from "../../lib/demoMode";
 
 /**
@@ -50,10 +51,10 @@ export function RedesignLayout() {
 }
 
 const NAV = [
-  { label: "home", to: "/redesign", search: {} as const, exact: true },
+  { label: "home", to: "/", search: {} as const, exact: true },
   {
     label: "priority",
-    to: "/redesign",
+    to: "/",
     search: { priority: "urgent" } as const,
     exact: true,
   },
@@ -71,7 +72,7 @@ function Sidebar({
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-border py-6">
       <div className="flex items-center justify-between px-5">
-        <Link to="/redesign" className="text-base font-semibold tracking-tight">
+        <Link to="/" className="text-base font-semibold tracking-tight">
           post<span className="text-accent">work</span>
         </Link>
         <button
@@ -116,14 +117,8 @@ function Sidebar({
         </button>
       </nav>
 
-      <div className="mt-auto space-y-3 px-4">
-        <Link
-          to="/"
-          className="block px-1 text-xs text-faint transition hover:text-muted"
-        >
-          ← classic postwork
-        </Link>
-        {isDemo && <UserSwitcher />}
+      <div className="mt-auto max-h-[50vh] space-y-3 overflow-y-auto px-4 pb-2">
+        {isDemo ? <UserSwitcher /> : <ProductProfileCard />}
       </div>
     </aside>
   );

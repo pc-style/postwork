@@ -21,7 +21,7 @@ function buildContextText({
   users: Doc<"users">[];
 }) {
   const userById = new Map(users.map((user) => [user._id, user.name]));
-  const lines = replies.map((reply) => {
+  const lines = replies.replies.map((reply) => {
     const authorName = reply.author?.name ?? userById.get(reply.authorId) ?? "Unknown";
     return `- ${authorName}: ${reply.body}`;
   });

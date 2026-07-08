@@ -6,6 +6,8 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGateway } from "@ai-sdk/gateway";
 import { isDemo } from "./lib/demo";
+import { rateLimiter } from "./lib/rateLimit";
+import { logWarn } from "./lib/observability";
 
 /**
  * Resolve a language model from environment variables.
@@ -90,7 +92,9 @@ export const getContext = internalQuery({
     const author = await ctx.db.get(post.authorId);
     const replies = await ctx.db
       .query("replies")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .withIndex("by_org_id_and_post_id_and_created_at", (q) =>
+        q.eq("orgId", post.orgId).eq("postId", args.postId),
+      )
       .order("asc")
       .collect();
     const repliesWithAuthors = await Promise.all(
@@ -119,6 +123,11 @@ export const summarizePost = action({
           message: "Sign in to generate summaries.",
         });
       }
+      // Rate limit (Phase 3.1) — only in product mode where we have an identity.
+      await rateLimiter.limit(ctx, "summarize", {
+        key: identity.tokenIdentifier,
+        throws: true,
+      });
     }
 
     const accessiblePost = await ctx.runQuery(api.posts.get, {
@@ -146,16 +155,31 @@ export const summarizePost = action({
     ].join("\n");
 
     const { model, modelId } = resolveModel();
-    const { text } = await generateText({
-      model,
-      system:
-        "You are the team's communication assistant. Summarize the post and its " +
-        "discussion for a busy teammate who just got back online. Be concise. " +
-        "Use exactly these markdown sections when relevant: '**TL;DR**' (1-2 " +
-        "sentences), '**Decisions**' (bullets), '**Open questions**' (bullets), " +
-        "and '**Action items**' (bullets with owner names). Omit empty sections.",
-      prompt: transcript,
-    });
+    let text: string;
+    try {
+      const result = await generateText({
+        model,
+        system:
+          "You are the team's communication assistant. Summarize the post and its " +
+          "discussion for a busy teammate who just got back online. Be concise. " +
+          "Use exactly these markdown sections when relevant: '**TL;DR**' (1-2 " +
+          "sentences), '**Decisions**' (bullets), '**Open questions**' (bullets), " +
+          "and '**Action items**' (bullets with owner names). Omit empty sections.",
+        prompt: transcript,
+      });
+      text = result.text;
+    } catch (err) {
+      if (err instanceof ConvexError) throw err;
+      logWarn("ai.summarize.failed", {
+        postId: args.postId,
+        model: modelId,
+        error: String(err),
+      });
+      throw new ConvexError({
+        code: "AI_ERROR",
+        message: "The AI provider failed to generate a summary. Try again.",
+      });
+    }
 
     return { summary: text.trim(), model: modelId };
   },

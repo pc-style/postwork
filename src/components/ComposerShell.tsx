@@ -20,6 +20,7 @@ export function ComposerShell({
   autoFocus = false,
   textareaClassName,
   onFieldKeyDown,
+  onPaste,
   beforeBody,
   afterBody,
   footerClassName = "mt-2 flex items-center justify-between gap-2",
@@ -48,6 +49,7 @@ export function ComposerShell({
   onFieldKeyDown?: (
     event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
+  onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   beforeBody?: ReactNode;
   afterBody?: ReactNode;
   footerClassName?: string;
@@ -94,6 +96,7 @@ export function ComposerShell({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
+        onPaste={onPaste}
         placeholder={placeholder}
         rows={rows}
         className={textareaClassName}

@@ -25,7 +25,7 @@ export function WallPostDialog({
         titlePlaceholder={`note for ${wallOwnerName}`}
         bodyPlaceholder="leave context for their wall. fenced code blocks with ``` work here."
         onCancel={onClose}
-        onSubmit={async ({ title, body, priority }) => {
+        onSubmit={async ({ title, body, priority, attachments }) => {
           if (!currentUserId) return;
           await store.createPost({
             title: title || `note for ${wallOwnerName}`,
@@ -33,6 +33,7 @@ export function WallPostDialog({
             space: "Wall",
             priority,
             wallOwnerId,
+            attachments,
           });
           onClose();
           navigate({ to: "/u/$userId", params: { userId: wallOwnerId } });

@@ -1,14 +1,18 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { canAccessSpace, resolveViewerForRead } from "./authUsers";
+import { canAccessSpace, getDefaultOrgId, resolveViewerForRead } from "./authUsers";
 import { listPostsBySpaceId } from "./posts";
 
 export const list = query({
   args: { viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const spaces = await ctx.db.query("spaces").collect();
+    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const spaces = await ctx.db
+      .query("spaces")
+      .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", orgId))
+      .collect();
 
     const visible: Doc<"spaces">[] = [];
     for (const space of spaces) {
@@ -21,12 +25,14 @@ export const list = query({
       visible.map(async (space) => {
         const memberships = await ctx.db
           .query("spaceMemberships")
-          .withIndex("by_space_id", (q) => q.eq("spaceId", space._id))
+          .withIndex("by_org_id_and_space_id", (q) =>
+            q.eq("orgId", orgId).eq("spaceId", space._id),
+          )
           .collect();
         const posts = await ctx.db
           .query("posts")
-          .withIndex("by_space_id_and_last_activity_at", (q) =>
-            q.eq("spaceId", space._id),
+          .withIndex("by_org_id_and_space_id_and_last_activity_at", (q) =>
+            q.eq("orgId", orgId).eq("spaceId", space._id),
           )
           .order("desc")
           .collect();
@@ -47,16 +53,21 @@ export const getBySlug = query({
   args: { slug: v.string(), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
     const space = await ctx.db
       .query("spaces")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .withIndex("by_org_id_and_slug", (q) =>
+        q.eq("orgId", orgId).eq("slug", args.slug),
+      )
       .unique();
     if (!space) return null;
     if (!(await canAccessSpace(ctx, space._id, viewer?._id))) return null;
 
     const memberships = await ctx.db
       .query("spaceMemberships")
-      .withIndex("by_space_id", (q) => q.eq("spaceId", space._id))
+      .withIndex("by_org_id_and_space_id", (q) =>
+            q.eq("orgId", orgId).eq("spaceId", space._id),
+          )
       .collect();
 
     return {
@@ -70,13 +81,16 @@ export const membershipsForSpace = query({
   args: { spaceId: v.id("spaces"), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
     if (!(await canAccessSpace(ctx, args.spaceId, viewer?._id))) {
       return [];
     }
 
     const memberships = await ctx.db
       .query("spaceMemberships")
-      .withIndex("by_space_id", (q) => q.eq("spaceId", args.spaceId))
+      .withIndex("by_org_id_and_space_id", (q) =>
+        q.eq("orgId", orgId).eq("spaceId", args.spaceId),
+      )
       .collect();
 
     return await Promise.all(

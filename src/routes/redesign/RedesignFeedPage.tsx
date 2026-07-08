@@ -22,7 +22,7 @@ export function RedesignFeedPage() {
 
   const setSearch = (next: FeedSearch) => {
     void navigate({
-      to: "/redesign",
+      to: "/",
       search: (prev) => ({ ...(prev as FeedSearch), ...next }),
       replace: true,
     });
@@ -31,7 +31,9 @@ export function RedesignFeedPage() {
   const searching = term.trim().length > 0;
   const feed = useFeed({ space, priority, onlyUnread });
   const searchResults = useStoreSearch(term);
-  const posts = searching ? searchResults : feed;
+  const posts = searching ? searchResults : feed?.posts;
+  const canLoadMore = !searching && feed?.status === "CanLoadMore";
+  const loadingMore = !searching && feed?.status === "LoadingMore";
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-10">
@@ -110,7 +112,7 @@ export function RedesignFeedPage() {
 
       {posts === undefined ? (
         <LoadingState />
-      ) : posts.length === 0 ? (
+      ) : posts.length === 0 && !canLoadMore ? (
         <EmptyState>
           {searching
             ? "no posts match your search."
@@ -118,11 +120,34 @@ export function RedesignFeedPage() {
               ? "you're all caught up. nothing unread."
               : "no posts yet."}
         </EmptyState>
+      ) : posts.length === 0 && canLoadMore ? (
+        // Unread filter: the current page has no unread posts, but older pages
+        // might — don't dead-end with "all caught up". Offer to load older.
+        <div className="py-4">
+          <button
+            onClick={() => feed?.loadMore?.()}
+            disabled={loadingMore}
+            className="text-xs text-muted transition hover:text-fg disabled:opacity-60"
+          >
+            {loadingMore ? "loading…" : "load older unread"}
+          </button>
+        </div>
       ) : (
         <div className="-mx-4 divide-y divide-border">
           {posts.map((post) => (
             <FeedRow key={post._id} post={post} />
           ))}
+          {canLoadMore && (
+            <div className="px-4 py-3">
+              <button
+                onClick={() => feed?.loadMore?.()}
+                disabled={loadingMore}
+                className="text-xs text-muted transition hover:text-fg disabled:opacity-60"
+              >
+                {loadingMore ? "loading…" : "load more"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -137,7 +162,7 @@ function FeedRow({ post }: { post: EnrichedPost }) {
 
   return (
     <Link
-      to="/redesign/posts/$postId"
+      to="/posts/$postId"
       params={{ postId: post._id }}
       className="group block px-4 py-4 transition hover:bg-surface"
     >

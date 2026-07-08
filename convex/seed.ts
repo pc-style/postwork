@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { AVATAR_PALETTE } from "./avatarPalette";
+import { DEFAULT_ORG_NAME, DEFAULT_ORG_SLUG } from "./authUsers";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -26,12 +27,19 @@ export const run = internalMutation({
       "spaceMemberships",
       "spaces",
       "users",
+      "orgs",
     ] as const) {
       const rows = await ctx.db.query(table).collect();
       await Promise.all(rows.map((r) => ctx.db.delete(r._id)));
     }
 
     const now = Date.now();
+
+    const orgId = await ctx.db.insert("orgs", {
+      name: DEFAULT_ORG_NAME,
+      slug: DEFAULT_ORG_SLUG,
+      createdAt: now,
+    });
 
     const user = (
       name: string,
@@ -57,7 +65,7 @@ export const run = internalMutation({
     ];
     const u: Record<string, Id<"users">> = {};
     for (const d of userDefs) {
-      const id = await ctx.db.insert("users", d);
+      const id = await ctx.db.insert("users", { orgId, ...d });
       u[d.initials] = id;
     }
 
@@ -96,6 +104,7 @@ export const run = internalMutation({
 
     for (const space of spaceDefs) {
       const spaceId = await ctx.db.insert("spaces", {
+        orgId,
         name: space.name,
         slug: space.slug,
         description: space.description,
@@ -105,6 +114,7 @@ export const run = internalMutation({
 
       for (const member of space.members) {
         await ctx.db.insert("spaceMemberships", {
+          orgId,
           spaceId,
           userId: u[member],
           createdAt: now - space.createdAgo + 1000,
@@ -463,6 +473,7 @@ export const run = internalMutation({
         : createdAt;
 
       const postId = await ctx.db.insert("posts", {
+        orgId,
         authorId: u[p.author],
         title: p.title,
         body: p.body,
@@ -482,6 +493,7 @@ export const run = internalMutation({
       const replyIds: Id<"replies">[] = [];
       for (const r of replyDefs) {
         const id = await ctx.db.insert("replies", {
+          orgId,
           postId,
           parentId: r.parent !== undefined ? replyIds[r.parent] : undefined,
           authorId: u[r.who],
@@ -493,6 +505,7 @@ export const run = internalMutation({
     }
 
     return {
+      orgs: 1,
       users: userDefs.length,
       spaces: spaceDefs.length,
       posts: posts.length,

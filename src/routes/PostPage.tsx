@@ -26,7 +26,7 @@ export function PostPage() {
   const { slots } = useActiveExperiment();
 
   const post = usePost(postId);
-  const replies = useReplies(postId);
+  const replies = useReplies(postId).replies;
 
   useDocumentTitle(post ? `${post.title} · postwork` : "postwork");
 

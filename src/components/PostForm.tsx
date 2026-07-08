@@ -4,6 +4,12 @@ import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
 import { useSpacesList } from "../lib/spaces";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
+import {
+  useAttachmentPicker,
+  AttachmentButton,
+  AttachmentThumbnails,
+} from "./AttachmentPicker";
+import type { AttachmentInput } from "../lib/types";
 
 type Priority = (typeof PRIORITIES)[number];
 
@@ -13,6 +19,7 @@ export type PostFormFields = {
   space?: string;
   spaceId?: Id<"spaces">;
   priority: Priority;
+  attachments?: AttachmentInput[];
 };
 
 type SpaceOption = {
@@ -111,6 +118,16 @@ export function PostForm({
   const [body, setBody] = useState("");
   const [priority, setPriority] = useState<Priority>("normal");
   const [busy, setBusy] = useState(false);
+  const {
+    pending,
+    addFiles,
+    removeAttachment,
+    getReadyAttachments,
+    clear: clearAttachments,
+    canUpload,
+    hasUploading,
+    hasAttachmentErrors,
+  } = useAttachmentPicker();
   const fallbackSpaces = useMemo<SpaceOption[]>(
     () => SPACES.map((label) => ({ label })),
     [],
@@ -149,25 +166,30 @@ export function PostForm({
   const canSubmit =
     (!requireTitle || title.trim().length > 0) &&
     body.trim().length > 0 &&
-    (!showSpace || !!selectedSpace);
+    (!showSpace || !!selectedSpace) &&
+    !hasUploading &&
+    !hasAttachmentErrors;
 
   const reset = () => {
     setTitle("");
     setBody("");
     setPriority("normal");
     setSpaceKey(spaceOptions[0]?.id ?? spaceOptions[0]?.label ?? "");
+    clearAttachments();
   };
 
   const submit = async () => {
     if (!canSubmit) return;
     setBusy(true);
     try {
+      const attachments = getReadyAttachments();
       await onSubmit({
         title: title.trim(),
         body: body.trim(),
         space: showSpace || fixedSpace ? selectedSpace?.label : undefined,
         spaceId: showSpace || fixedSpace ? selectedSpace?.id : undefined,
         priority,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
       if (resetOnSubmit) reset();
       onSubmitted?.();
@@ -208,6 +230,7 @@ export function PostForm({
       </div>
 
       {extraFields}
+      {canUpload && <AttachmentButton onFiles={addFiles} />}
     </div>
   ) : null;
 
@@ -229,6 +252,14 @@ export function PostForm({
           />
         ) : null}
 
+        {pending.length > 0 && (
+          <div className="mb-2">
+            <AttachmentThumbnails
+              pending={pending}
+              onRemove={removeAttachment}
+            />
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -241,6 +272,16 @@ export function PostForm({
               if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
                 event.preventDefault();
                 void submit();
+              }
+            }}
+            onPaste={(e) => {
+              if (!canUpload) return;
+              const files = Array.from(e.clipboardData.files).filter((f) =>
+                f.type.startsWith("image/"),
+              );
+              if (files.length > 0) {
+                e.preventDefault();
+                void addFiles(files);
               }
             }}
             rows={bodyRows}
@@ -295,6 +336,13 @@ export function PostForm({
             </div>
 
             {extraFields}
+            {canUpload && <AttachmentButton onFiles={addFiles} />}
+            {hasUploading && (
+              <span className="text-xs text-accent-soft">uploading…</span>
+            )}
+            {hasAttachmentErrors && (
+              <span className="text-xs text-urgent">image failed — remove or retry</span>
+            )}
 
             {onCancel ? (
               <button
@@ -333,6 +381,26 @@ export function PostForm({
         `mb-3 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50 ${bodyResizeClassName}`
       }
       onFieldKeyDown={onFieldKeyDown}
+      onPaste={(e) => {
+        if (!canUpload) return;
+        const files = Array.from(e.clipboardData.files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (files.length > 0) {
+          e.preventDefault();
+          void addFiles(files);
+        }
+      }}
+      beforeBody={
+        pending.length > 0 ? (
+          <div className="mb-2">
+            <AttachmentThumbnails
+              pending={pending}
+              onRemove={removeAttachment}
+            />
+          </div>
+        ) : undefined
+      }
       afterBody={meta}
       footerClassName={footerClassName ?? "flex justify-end gap-2"}
       actions={

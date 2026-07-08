@@ -14,7 +14,7 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
       <PostForm
         showSpace
         onCancel={onClose}
-        onSubmit={async ({ title, body, space, spaceId, priority }) => {
+        onSubmit={async ({ title, body, space, spaceId, priority, attachments }) => {
           if (!currentUserId) return;
           const postId = await store.createPost({
             title,
@@ -22,6 +22,7 @@ export function NewPostDialog({ onClose }: { onClose: () => void }) {
             space: space!,
             spaceId,
             priority,
+            attachments,
           });
           onClose();
           navigate({ to: "/posts/$postId", params: { postId } });

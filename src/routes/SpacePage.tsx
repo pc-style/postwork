@@ -101,7 +101,7 @@ export function SpacePage() {
           titlePlaceholder="what needs attention in this space?"
           bodyPlaceholder="write the full context so the thread can carry the work without a meeting."
           resetOnSubmit
-          onSubmit={async ({ title, body, space: spaceLabel, spaceId, priority }) => {
+          onSubmit={async ({ title, body, space: spaceLabel, spaceId, priority, attachments }) => {
             if (!currentUserId) return;
             await store.createPost({
               title,
@@ -109,6 +109,7 @@ export function SpacePage() {
               space: spaceLabel ?? space.name,
               spaceId: spaceId ?? space._id,
               priority,
+              attachments,
             });
           }}
         />

@@ -172,7 +172,7 @@ export function QuickPostBar() {
             metaClassName="mt-2 flex flex-wrap items-center gap-3"
             submitButtonClassName="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
             onFieldKeyDown={onFieldKeyDown}
-            onSubmit={async ({ title, body, space, spaceId, priority }) => {
+            onSubmit={async ({ title, body, space, spaceId, priority, attachments }) => {
               if (!currentUserId || !space) return;
               const postId = await store.createPost({
                 title,
@@ -180,6 +180,7 @@ export function QuickPostBar() {
                 space,
                 spaceId,
                 priority,
+                attachments,
               });
               reset();
               void navigate({ to: "/posts/$postId", params: { postId } });

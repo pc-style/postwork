@@ -29,16 +29,16 @@ plan section for it, and dispatch it to `codex exec` with build verification
 - [x] 1.4 Access control in every query/mutation. Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
 
 ## Phase 2 — multi-tenancy groundwork
-- [ ] 2.1 `orgs` table + `orgId` columns/indexes on posts, spaces, users(membership), postReads
-- [ ] 2.2 Seed creates one demo org; all queries scoped by orgId
+- [x] 2.1 `orgs` table + optional transition `orgId` columns/indexes on posts, spaces, users(membership), postReads (build green; codegen unavailable in this environment)
+- [x] 2.2 Seed creates one demo org; all queries scoped by orgId (build green; codegen unavailable in this environment)
 
 ## Phase 3 — product hardening
-- [ ] 3.1 Rate limiting (Convex rate-limit component)
-- [ ] 3.2 Input limits/validation via shared zod schemas
-- [ ] 3.3 Pagination for feed + replies
-- [ ] 3.4 Image attachments (Convex storage), product mode only
-- [ ] 3.5 Moderation/admin ops
-- [ ] 3.6 Observability (log streams, error reporting)
+- [x] 3.1 Rate limiting (`convex/lib/rateLimit.ts` + `convex/convex.config.ts` registers `@convex-dev/rate-limiter`; per-user limits on createPost/createReply/summarize/updateProfile/uploadAttachment)
+- [x] 3.2 Input limits/validation via shared zod schemas (`convex/lib/validation.ts` — `LIMITS` + `postTitleSchema`/`postBodySchema`/`replyBodySchema`/`profile*Schema`/`attachmentInputSchema`, parsed in every mutation)
+- [x] 3.3 Pagination for feed + replies (`posts.feedPaginated`/`replies.listForPostPaginated`/`posts.counts` + frontend `usePaginatedQuery` in `useFeed`/`useReplies` with load-more; demo keeps bounded query)
+- [x] 3.4 Image attachments (Convex storage), product mode only (`convex/attachments.ts` generateUploadUrl/listForPost/remove; `src/lib/attachments.ts` + `AttachmentPicker.tsx`; wired into Composer/PostForm/ReplyTree/RedesignPostPage; hidden in demo)
+- [x] 3.5 Moderation/admin ops (backend `posts.edit`/`posts.remove`, `replies.edit`/`replies.remove`, `users.deactivate`/`users.reactivate`; frontend `PostModeration.tsx` + post edit form on RedesignPostPage, reply edit/delete in ReplyTree, deactivate/reactivate + deactivated badge in ProductProfileCard rendered in RedesignShell sidebar; demo-gated)
+- [x] 3.6 Observability (`convex/lib/observability.ts` logInfo in all mutations/actions + `src/components/ErrorBoundary.tsx` wrapped in providers). Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
 
 ## Phase 4 — agents loop
 - [ ] 4.1 Persist agentTasks table + /agents page from Convex
@@ -54,3 +54,4 @@ plan section for it, and dispatch it to `codex exec` with build verification
 
 ## Log
 - (start) tracker created; nothing dispatched yet.
+- Phase 3 complete: 3.1 rate limiting, 3.2 zod validation, 3.3 cursor pagination, 3.4 image attachments, 3.5 moderation/admin (post+reply edit/delete, user deactivate/reactivate), 3.6 observability (backend logInfo + frontend ErrorBoundary). Both `bun run build` and `VITE_DEMO=false bun run build` green.

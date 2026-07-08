@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { ensureViewerUser } from "./authUsers";
+import { ensureViewerUser, getDefaultOrgId } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 
 /**
@@ -25,14 +25,18 @@ async function ensureThreadDoc(
   title: string,
   viewerId: Id<"users">,
 ): Promise<Id<"posts">> {
+  const orgId = await getDefaultOrgId(ctx);
   const existing = await ctx.db
     .query("posts")
-    .withIndex("by_experiment_slug", (q) => q.eq("experimentSlug", slug))
+    .withIndex("by_org_id_and_experiment_slug", (q) =>
+      q.eq("orgId", orgId).eq("experimentSlug", slug),
+    )
     .first();
   if (existing) return existing._id;
 
   const now = Date.now();
   const postId = await ctx.db.insert("posts", {
+    orgId,
     authorId: viewerId,
     title: `discussion · ${title}`,
     body: `open discussion for the "${title}" flash experiment. share what works, what doesn't, and what you'd change.`,
@@ -45,7 +49,7 @@ async function ensureThreadDoc(
     participantIds: [viewerId],
     experimentSlug: slug,
   });
-  await ctx.db.insert("postReads", { userId: viewerId, postId, lastReadAt: now });
+  await ctx.db.insert("postReads", { orgId, userId: viewerId, postId, lastReadAt: now });
   return postId;
 }
 
@@ -62,16 +66,21 @@ export type DiscussionThread = {
 export const getThread = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }): Promise<DiscussionThread> => {
+    const orgId = await getDefaultOrgId(ctx);
     const post = await ctx.db
       .query("posts")
-      .withIndex("by_experiment_slug", (q) => q.eq("experimentSlug", slug))
+      .withIndex("by_org_id_and_experiment_slug", (q) =>
+        q.eq("orgId", orgId).eq("experimentSlug", slug),
+      )
       .first();
     if (!post) return { post: null, replies: [] };
 
     const author = publicUser(await ctx.db.get(post.authorId));
     const replies = await ctx.db
       .query("replies")
-      .withIndex("by_post", (q) => q.eq("postId", post._id))
+      .withIndex("by_org_id_and_post_id_and_created_at", (q) =>
+        q.eq("orgId", orgId).eq("postId", post._id),
+      )
       .order("asc")
       .collect();
 
@@ -91,9 +100,12 @@ export const listCounts = query({
   handler: async (ctx, { slugs }) => {
     return await Promise.all(
       slugs.map(async (slug) => {
+        const orgId = await getDefaultOrgId(ctx);
         const post = await ctx.db
           .query("posts")
-          .withIndex("by_experiment_slug", (q) => q.eq("experimentSlug", slug))
+          .withIndex("by_org_id_and_experiment_slug", (q) =>
+            q.eq("orgId", orgId).eq("experimentSlug", slug),
+          )
           .first();
         return { slug, replyCount: post?.replyCount ?? 0, exists: post !== null };
       }),
@@ -131,8 +143,16 @@ export const addMessage = mutation({
     });
     const postId = await ensureThreadDoc(ctx, slug, title, viewer._id);
 
+    if (parentId) {
+      const parent = await ctx.db.get(parentId);
+      if (!parent || parent.orgId !== viewer.orgId || parent.postId !== postId) {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Parent reply not found." });
+      }
+    }
+
     const now = Date.now();
     const replyId = await ctx.db.insert("replies", {
+      orgId: viewer.orgId,
       postId,
       parentId,
       authorId: viewer._id,
@@ -155,13 +175,14 @@ export const addMessage = mutation({
     // The author has implicitly read the thread up to now.
     const read = await ctx.db
       .query("postReads")
-      .withIndex("by_user_post", (q) =>
-        q.eq("userId", viewer._id).eq("postId", postId),
+      .withIndex("by_org_id_and_user_id_and_post_id", (q) =>
+        q.eq("orgId", viewer.orgId).eq("userId", viewer._id).eq("postId", postId),
       )
       .unique();
     if (read) await ctx.db.patch(read._id, { lastReadAt: now });
     else
       await ctx.db.insert("postReads", {
+        orgId: viewer.orgId,
         userId: viewer._id,
         postId,
         lastReadAt: now,

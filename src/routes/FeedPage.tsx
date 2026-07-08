@@ -42,7 +42,7 @@ export function FeedPage() {
   });
   const searchResults = useStoreSearch(term);
 
-  const posts = searching ? searchResults : feed;
+  const posts = searching ? searchResults : feed?.posts;
 
   return (
     <div>

@@ -12,6 +12,11 @@ import { insertCodeFence } from "../lib/codeFence";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
+import {
+  useAttachmentPicker,
+  AttachmentButton,
+  AttachmentThumbnails,
+} from "./AttachmentPicker";
 
 export function Composer({
   postId,
@@ -34,6 +39,16 @@ export function Composer({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    pending,
+    addFiles,
+    removeAttachment,
+    getReadyAttachments,
+    clear: clearAttachments,
+    canUpload,
+    hasUploading,
+    hasAttachmentErrors,
+  } = useAttachmentPicker();
 
   // Live preview of which agents this message will summon.
   const mentioned = parseAgentMentions(body);
@@ -58,12 +73,15 @@ export function Composer({
     setBusy(true);
     try {
       const text = body.trim();
+      const attachments = getReadyAttachments();
       const replyId = await store.createReply({
         postId,
         parentId,
         body: text,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
       setBody("");
+      clearAttachments();
       onDone?.();
 
       // @agent invocation: any @cursor/@codex/@claude mention dispatches an
@@ -97,6 +115,26 @@ export function Composer({
           placeholder={placeholder}
           rows={compact ? 2 : 3}
           textareaClassName="w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
+          onPaste={(e) => {
+            if (!canUpload) return;
+            const files = Array.from(e.clipboardData.files).filter((f) =>
+              f.type.startsWith("image/"),
+            );
+            if (files.length > 0) {
+              e.preventDefault();
+              void addFiles(files);
+            }
+          }}
+          beforeBody={
+            pending.length > 0 ? (
+              <div className="mb-2">
+                <AttachmentThumbnails
+                  pending={pending}
+                  onRemove={removeAttachment}
+                />
+              </div>
+            ) : undefined
+          }
           hint={
             <>
               <button
@@ -107,7 +145,12 @@ export function Composer({
               >
                 {"</> code"}
               </button>
-              {mentioned.length > 0 ? (
+              {canUpload && <AttachmentButton onFiles={addFiles} />}
+              {hasUploading ? (
+                <span className="text-label text-accent-soft">uploading…</span>
+              ) : hasAttachmentErrors ? (
+                <span className="text-label text-urgent">image failed — remove or retry</span>
+              ) : mentioned.length > 0 ? (
                 <span className="text-label text-accent-soft">
                   summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
                 </span>
@@ -128,7 +171,7 @@ export function Composer({
           submitLabel="reply"
           submittingLabel="sending…"
           submitting={busy}
-          disabled={busy || !body.trim()}
+          disabled={busy || !body.trim() || hasUploading || hasAttachmentErrors}
           submitButtonClassName="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
           onSubmit={() => void submit()}
         />

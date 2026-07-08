@@ -6,6 +6,33 @@ import { isDemo } from "./lib/demo";
 
 type AuthCtx = MutationCtx | QueryCtx;
 
+export const DEFAULT_ORG_SLUG = "postwork-demo";
+export const DEFAULT_ORG_NAME = "Postwork Demo";
+
+export async function getDefaultOrgId(ctx: AuthCtx): Promise<Id<"orgs">> {
+  const org = await ctx.db
+    .query("orgs")
+    .withIndex("by_slug", (q) => q.eq("slug", DEFAULT_ORG_SLUG))
+    .unique();
+  if (!org) {
+    notFound("Default organization not found. Run the seed or create it first.");
+  }
+  return org._id;
+}
+
+export async function ensureDefaultOrg(ctx: MutationCtx): Promise<Id<"orgs">> {
+  const existing = await ctx.db
+    .query("orgs")
+    .withIndex("by_slug", (q) => q.eq("slug", DEFAULT_ORG_SLUG))
+    .unique();
+  if (existing) return existing._id;
+  return await ctx.db.insert("orgs", {
+    name: DEFAULT_ORG_NAME,
+    slug: DEFAULT_ORG_SLUG,
+    createdAt: Date.now(),
+  });
+}
+
 export type AuthIdentity = NonNullable<
   Awaited<ReturnType<AuthCtx["auth"]["getUserIdentity"]>>
 >;
@@ -38,18 +65,22 @@ export function nameFromIdentity(identity: AuthIdentity): string {
 export async function findUserForIdentity(
   ctx: AuthCtx,
   identity: AuthIdentity,
+  orgId?: Id<"orgs">,
 ): Promise<Doc<"users"> | null> {
+  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
   const byToken = await ctx.db
     .query("users")
-    .withIndex("by_token_identifier", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    .withIndex("by_org_id_and_token_identifier", (q) =>
+      q.eq("orgId", resolvedOrgId).eq("tokenIdentifier", identity.tokenIdentifier),
     )
     .first();
   if (byToken) return byToken;
 
   const bySubject = await ctx.db
     .query("users")
-    .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+    .withIndex("by_org_id_and_subject", (q) =>
+      q.eq("orgId", resolvedOrgId).eq("subject", identity.subject),
+    )
     .first();
   if (!bySubject) return null;
 
@@ -63,8 +94,8 @@ export async function findUserForIdentity(
   return bySubject;
 }
 
-export async function countAdmins(ctx: AuthCtx): Promise<number> {
-  const admins = await ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "admin")).take(2);
+export async function countAdmins(ctx: AuthCtx, orgId: Id<"orgs">): Promise<number> {
+  const admins = await ctx.db.query("users").withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId).eq("role", "admin")).take(2);
   return admins.length;
 }
 
@@ -120,18 +151,23 @@ export async function ensureViewerUser(
     unauthenticated(options?.unauthenticatedMessage ?? "Sign in to continue.");
   }
 
-  const existing = await findUserForIdentity(ctx, identity);
+  const orgId = await ensureDefaultOrg(ctx);
+  const existing = await findUserForIdentity(ctx, identity, orgId);
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
 
   if (existing) {
+    // Moderation (Phase 3.5): deactivated users cannot write.
+    if (existing.deactivatedAt) {
+      forbidden("Your account has been deactivated. Contact an admin.");
+    }
     const patch: Partial<Doc<"users">> = {};
     if (existing.name !== name) patch.name = name;
     if (existing.initials !== initials) patch.initials = initials;
     if (!existing.avatarColor) patch.avatarColor = colorFor(identity.tokenIdentifier);
     if (!existing.role) {
-      patch.role = (await countAdmins(ctx)) === 0 ? "admin" : "member";
+      patch.role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
     }
 
     if (Object.keys(patch).length > 0) {
@@ -142,9 +178,10 @@ export async function ensureViewerUser(
     return existing;
   }
 
-  const role = (await countAdmins(ctx)) === 0 ? "admin" : "member";
+  const role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
   const avatarColor = colorFor(identity.tokenIdentifier);
   const userId = await ctx.db.insert("users", {
+    orgId,
     name,
     title,
     avatarColor,
@@ -157,6 +194,7 @@ export async function ensureViewerUser(
   return {
     _id: userId,
     _creationTime: Date.now(),
+    orgId,
     name,
     title,
     avatarColor,
@@ -172,10 +210,11 @@ export async function isSpaceMember(
   spaceId: Id<"spaces">,
   userId: Id<"users">,
 ): Promise<boolean> {
+  const orgId = await getDefaultOrgId(ctx);
   const membership = await ctx.db
     .query("spaceMemberships")
-    .withIndex("by_space_id_and_user_id", (q) =>
-      q.eq("spaceId", spaceId).eq("userId", userId),
+    .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
+      q.eq("orgId", orgId).eq("spaceId", spaceId).eq("userId", userId),
     )
     .unique();
   return membership !== null;
@@ -186,6 +225,11 @@ export async function canAccessSpace(
   spaceId: Id<"spaces">,
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
+  const space = await ctx.db.get(spaceId);
+  if (!space || space.orgId !== (viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDefaultOrgId(ctx))) {
+    return false;
+  }
+
   if (viewerId) {
     return await isSpaceMember(ctx, spaceId, viewerId);
   }
@@ -198,6 +242,9 @@ export async function canAccessPost(
   post: Doc<"posts">,
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
+  const orgId = viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDefaultOrgId(ctx);
+  if (post.orgId !== orgId) return false;
+
   if (!post.spaceId) {
     return true;
   }

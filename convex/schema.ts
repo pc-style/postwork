@@ -16,7 +16,14 @@ export const priority = v.union(
 );
 
 export default defineSchema({
+  orgs: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
   users: defineTable({
+    orgId: v.optional(v.id("orgs")),
     name: v.string(),
     title: v.string(),
     avatarColor: v.string(),
@@ -29,28 +36,34 @@ export default defineSchema({
     // personas leave this undefined. `subject` is retained only as legacy data.
     tokenIdentifier: v.optional(v.string()),
     subject: v.optional(v.string()),
+    // Moderation: set when an admin deactivates a user. Deactivated users
+    // cannot write; their existing content stays.
+    deactivatedAt: v.optional(v.number()),
   })
-    .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_subject", ["subject"])
-    .index("by_role", ["role"]),
+    .index("by_org_id_and_token_identifier", ["orgId", "tokenIdentifier"])
+    .index("by_org_id_and_subject", ["orgId", "subject"])
+    .index("by_org_id_and_role", ["orgId", "role"]),
 
   spaces: defineTable({
+    orgId: v.optional(v.id("orgs")),
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
     createdAt: v.number(),
-  }).index("by_slug", ["slug"]),
+  }).index("by_org_id_and_slug", ["orgId", "slug"]),
 
   spaceMemberships: defineTable({
+    orgId: v.optional(v.id("orgs")),
     spaceId: v.id("spaces"),
     userId: v.id("users"),
     createdAt: v.number(),
   })
-    .index("by_space_id", ["spaceId"])
-    .index("by_user_id", ["userId"])
-    .index("by_space_id_and_user_id", ["spaceId", "userId"]),
+    .index("by_org_id_and_space_id", ["orgId", "spaceId"])
+    .index("by_org_id_and_user_id", ["orgId", "userId"])
+    .index("by_org_id_and_space_id_and_user_id", ["orgId", "spaceId", "userId"]),
 
   posts: defineTable({
+    orgId: v.optional(v.id("orgs")),
     authorId: v.id("users"),
     title: v.string(),
     body: v.string(),
@@ -77,36 +90,62 @@ export default defineSchema({
     // "open discussion" thread for the experiment with this slug. One post
     // per slug (enforced at the write path in `discussions.ts`).
     experimentSlug: v.optional(v.string()),
+    // Moderation: set when the author (or admin) edits the post body/title.
+    editedAt: v.optional(v.number()),
   })
-    .index("by_activity", ["lastActivityAt"])
-    .index("by_space", ["space", "lastActivityAt"])
-    .index("by_space_id_and_last_activity_at", ["spaceId", "lastActivityAt"])
-    .index("by_wall", ["wallOwnerId", "lastActivityAt"])
-    .index("by_experiment_slug", ["experimentSlug"])
+    .index("by_org_id_and_last_activity_at", ["orgId", "lastActivityAt"])
+    .index("by_org_id_and_space_and_last_activity_at", ["orgId", "space", "lastActivityAt"])
+    .index("by_org_id_and_space_id_and_last_activity_at", ["orgId", "spaceId", "lastActivityAt"])
+    .index("by_org_id_and_wall_owner_id_and_last_activity_at", ["orgId", "wallOwnerId", "lastActivityAt"])
+    .index("by_org_id_and_experiment_slug", ["orgId", "experimentSlug"])
     .searchIndex("search_body", {
       searchField: "body",
-      filterFields: ["space", "priority"],
+      filterFields: ["orgId", "space", "priority"],
     })
     .searchIndex("search_title", {
       searchField: "title",
-      filterFields: ["space", "priority"],
+      filterFields: ["orgId", "space", "priority"],
     }),
 
   replies: defineTable({
+    orgId: v.optional(v.id("orgs")),
     postId: v.id("posts"),
     parentId: v.optional(v.id("replies")), // null/undefined = top-level reply
     authorId: v.id("users"),
     body: v.string(),
     createdAt: v.number(),
+    // Moderation: set when the author edits the reply body.
+    editedAt: v.optional(v.number()),
   })
-    .index("by_post", ["postId", "createdAt"])
-    .index("by_parent", ["parentId"]),
+    .index("by_org_id_and_post_id_and_created_at", ["orgId", "postId", "createdAt"])
+    .index("by_org_id_and_parent_id", ["orgId", "parentId"]),
 
   postReads: defineTable({
+    orgId: v.optional(v.id("orgs")),
     userId: v.id("users"),
     postId: v.id("posts"),
     lastReadAt: v.number(),
-  }).index("by_user_post", ["userId", "postId"]),
+  }).index("by_org_id_and_user_id_and_post_id", ["orgId", "userId", "postId"]),
+
+  // Image attachments (Phase 3.4). Product mode only — the demo overlay can't
+  // hold files. An attachment belongs to a post (replyId = undefined) or to a
+  // specific reply (replyId set). postId is always set for org-scoping and to
+  // fetch all attachments in a thread in one query.
+  postAttachments: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    postId: v.id("posts"),
+    replyId: v.optional(v.id("replies")),
+    storageId: v.id("_storage"),
+    filename: v.string(),
+    contentType: v.string(),
+    size: v.number(),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    uploadedBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_org_id_and_post_id", ["orgId", "postId"])
+    .index("by_org_id_and_reply_id", ["orgId", "replyId"]),
 
   flashExperimentVotes: defineTable({
     slug: v.string(),

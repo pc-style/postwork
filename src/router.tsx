@@ -4,9 +4,6 @@ import {
   createRouter,
   Outlet,
 } from "@tanstack/react-router";
-import { RootLayout } from "./routes/RootLayout";
-import { FeedPage } from "./routes/FeedPage";
-import { PostPage } from "./routes/PostPage";
 import { AgentsPage } from "./routes/AgentsPage";
 import { SpacesPage } from "./routes/SpacesPage";
 import { SpacePage } from "./routes/SpacePage";
@@ -37,7 +34,7 @@ const rootRoute = createRootRoute({ component: Outlet });
 const appLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "app",
-  component: RootLayout,
+  component: RedesignLayout,
 });
 
 const indexRoute = createRoute({
@@ -51,13 +48,13 @@ const indexRoute = createRoute({
       : undefined,
     unread: search.unread === true || search.unread === "true" || search.unread === "1",
   }),
-  component: FeedPage,
+  component: RedesignFeedPage,
 });
 
 const postRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/posts/$postId",
-  component: PostPage,
+  component: RedesignPostPage,
 });
 
 const agentsRoute = createRoute({
