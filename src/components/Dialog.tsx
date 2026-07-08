@@ -32,7 +32,7 @@ export function Dialog({
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className="w-full max-w-2xl rounded-lg border border-border bg-surface p-5 shadow-2xl backdrop:bg-black/60"
+      className="m-auto max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-5 shadow-2xl backdrop:bg-black/60"
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>

@@ -36,7 +36,6 @@ export function RedesignShell({ children }: { children: ReactNode }) {
       )}
 
       <main className="min-w-0 flex-1">
-        <LoveNotice />
         {children}
       </main>
 
@@ -50,40 +49,6 @@ export function RedesignLayout() {
     <RedesignShell>
       <Outlet />
     </RedesignShell>
-  );
-}
-
-function LoveNotice() {
-  return (
-    <section className="mx-auto mt-5 mb-2 flex max-w-3xl items-center gap-4 rounded-2xl border border-accent/35 bg-[radial-gradient(circle_at_20%_20%,rgba(225,75,143,0.2),transparent_34%),linear-gradient(135deg,rgba(225,75,143,0.16),rgba(21,21,23,0.95))] px-5 py-4 shadow-[0_22px_80px_rgba(225,75,143,0.16)]">
-      <KittenHeartIcon />
-      <div className="min-w-0">
-        <p className="text-label font-medium tracking-[0.16em] text-accent-soft uppercase">
-          notification
-        </p>
-        <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-fg">
-          kocham cię roksanko
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function KittenHeartIcon() {
-  return (
-    <div
-      aria-hidden="true"
-      className="relative grid size-16 shrink-0 place-items-center rounded-2xl border border-accent/30 bg-bg/70"
-    >
-      <div className="absolute top-3 left-4 h-4 w-3 -rotate-12 rounded-t-full bg-accent-soft" />
-      <div className="absolute top-3 right-4 h-4 w-3 rotate-12 rounded-t-full bg-accent-soft" />
-      <div className="relative size-10 rounded-[44%_44%_50%_50%] bg-accent-soft shadow-[inset_0_-7px_0_rgba(0,0,0,0.16)]">
-        <div className="absolute top-3 left-2 size-1.5 rounded-full bg-bg" />
-        <div className="absolute top-3 right-2 size-1.5 rounded-full bg-bg" />
-        <div className="absolute top-5 left-1/2 size-1 -translate-x-1/2 rotate-45 rounded-[1px] bg-bg" />
-        <div className="absolute right-1 bottom-1 h-5 w-5 rotate-45 rounded-tl-lg rounded-tr-lg rounded-bl-lg bg-[#f3a3c6]" />
-      </div>
-    </div>
   );
 }
 
