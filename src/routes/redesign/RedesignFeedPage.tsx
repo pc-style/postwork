@@ -1,5 +1,10 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useStore, useFeed, useSearch as useStoreSearch } from "../../lib/store";
+import {
+  useStore,
+  useFeed,
+  usePrefetchPost,
+  useSearch as useStoreSearch,
+} from "../../lib/store";
 import { LoadingState } from "../../components/LoadingState";
 import { EmptyState } from "../../components/EmptyState";
 import { SPACES, PRIORITIES, priorityStyles, timeAgo } from "../../lib/format";
@@ -159,12 +164,17 @@ export function RedesignFeedPage() {
 function FeedRow({ post }: { post: EnrichedPost }) {
   const showPriority = post.priority !== "normal";
   const p = priorityStyles[post.priority];
+  const prefetchPost = usePrefetchPost();
+  const prefetch = () => prefetchPost(post._id);
 
   return (
     <Link
       to="/app/posts/$postId"
       params={{ postId: post._id }}
       className="group block px-4 py-4 transition hover:bg-surface"
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
+      onTouchStart={prefetch}
     >
       <h3
         className={`text-[15px] leading-snug tracking-tight ${

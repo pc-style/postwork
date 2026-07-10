@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { usePrefetchPost } from "../lib/store";
 import type { EnrichedPost } from "../lib/types";
 import { Avatar } from "./Avatar";
 import { AgentTag } from "./AgentTag";
@@ -9,12 +10,17 @@ import { timeAgo } from "../lib/format";
 export function PostCard({ post }: { post: EnrichedPost }) {
   const snippet =
     post.body.length > 180 ? post.body.slice(0, 180).trimEnd() + "…" : post.body;
+  const prefetchPost = usePrefetchPost();
+  const prefetch = () => prefetchPost(post._id);
 
   return (
     <Link
       to="/app/posts/$postId"
       params={{ postId: post._id }}
       className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2"
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
+      onTouchStart={prefetch}
     >
       <div className="flex items-start gap-3">
         {post.unread ? (

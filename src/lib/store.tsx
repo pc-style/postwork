@@ -19,6 +19,7 @@ import type {
   RepliesResult,
 } from "./types";
 import { isDemo } from "./demoMode";
+import { prefetchQuery } from "./prefetch";
 import { useSession } from "./session";
 
 /**
@@ -848,6 +849,29 @@ export function useSearch(term: string) {
     .map(enrichSessionPost);
   if (backend === undefined) return undefined;
   return [...sessionMatched, ...backend.map(applyOverlay)].sort(sortPosts);
+}
+
+/**
+ * Returns a callback that warms the Convex cache for a post page before
+ * navigation (call it on hover/focus/touch of a post link). Prefetches the
+ * same `api.posts.get` args `usePost` will use, so the post page renders
+ * without a loading state. Demo mode also prefetches the (non-paginated)
+ * replies list; the product replies query paginates with a per-mount
+ * pagination id, so its cache can't be warmed from outside the hook.
+ */
+export function usePrefetchPost() {
+  const store = useStore();
+  const viewerId = store.currentUserId;
+  return useCallback(
+    (postId: Id<"posts">) => {
+      if (isLocalId(postId)) return;
+      prefetchQuery(api.posts.get, { postId, viewerId });
+      if (isDemo) {
+        prefetchQuery(api.replies.listForPost, { postId });
+      }
+    },
+    [viewerId],
+  );
 }
 
 export function usePost(postId: Id<"posts">) {

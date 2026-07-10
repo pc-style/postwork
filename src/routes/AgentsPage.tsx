@@ -4,7 +4,7 @@ import { AgentTag } from "../components/AgentTag";
 import { Avatar } from "../components/Avatar";
 import { useAgentTasks, type AgentTask } from "../lib/agentTasks";
 import { useSession } from "../lib/session";
-import { isLocalId } from "../lib/store";
+import { isLocalId, usePrefetchPost } from "../lib/store";
 import { timeAgo } from "../lib/format";
 import { StatusChip } from "../components/StatusChip";
 import { PageHeader } from "../components/PageHeader";
@@ -23,6 +23,7 @@ function AgentCard({
   agentTasks: AgentTask[];
 }) {
   const recent = agentTasks.slice(0, 5);
+  const prefetchPost = usePrefetchPost();
 
   return (
     <article className="rounded-lg border border-border bg-surface p-4">
@@ -62,6 +63,9 @@ function AgentCard({
                     to="/app/posts/$postId"
                     params={{ postId: task.postId }}
                     className="text-label text-accent-soft transition hover:text-fg"
+                    onMouseEnter={() => prefetchPost(task.postId)}
+                    onFocus={() => prefetchPost(task.postId)}
+                    onTouchStart={() => prefetchPost(task.postId)}
                   >
                     open post
                   </Link>

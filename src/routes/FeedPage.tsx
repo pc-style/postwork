@@ -1,5 +1,10 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useStore, useFeed, useSearch as useStoreSearch } from "../lib/store";
+import {
+  useStore,
+  useFeed,
+  usePrefetchPost,
+  useSearch as useStoreSearch,
+} from "../lib/store";
 import { PostCard } from "../components/PostCard";
 import { QuickPostBar } from "../components/QuickPostBar";
 import { LoadingState } from "../components/LoadingState";
@@ -10,6 +15,7 @@ import { useDocumentTitle } from "../lib/useDocumentTitle";
 import type { FeedSearch } from "../router";
 
 export function FeedPage() {
+  const prefetchPost = usePrefetchPost();
   useDocumentTitle("postwork");
   const store = useStore();
   const { slots } = useActiveExperiment();
@@ -135,6 +141,9 @@ export function FeedPage() {
                 to="/app/posts/$postId"
                 params={{ postId: post._id }}
                 className="block"
+                onMouseEnter={() => prefetchPost(post._id)}
+                onFocus={() => prefetchPost(post._id)}
+                onTouchStart={() => prefetchPost(post._id)}
               >
                 {slots.postCard({ post })}
               </Link>
