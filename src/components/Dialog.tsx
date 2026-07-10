@@ -1,51 +1,96 @@
-import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { Button } from "./Button";
 
 export function Dialog({
   title,
+  description,
   onClose,
   children,
+  initialFocusRef,
+  returnFocusRef,
+  dismissible = true,
 }: {
   title: ReactNode;
+  description?: ReactNode;
   onClose: () => void;
   children: ReactNode;
+  initialFocusRef?: RefObject<HTMLElement | null>;
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const triggerRef = useRef<Element | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
-    triggerRef.current = document.activeElement;
+    triggerRef.current =
+      returnFocusRef?.current ??
+      (document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null);
     const dialog = ref.current;
     dialog?.showModal();
+    requestAnimationFrame(() => initialFocusRef?.current?.focus());
+
     return () => {
-      if (triggerRef.current instanceof HTMLElement) {
-        triggerRef.current.focus();
-      }
+      const target = returnFocusRef?.current ?? triggerRef.current;
+      requestAnimationFrame(() => target?.isConnected && target.focus());
     };
-  }, []);
+  }, [initialFocusRef, returnFocusRef]);
 
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
       onClose={onClose}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
+      onCancel={(event) => {
+        event.preventDefault();
+        if (dismissible) onClose();
       }}
-      className="m-auto max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-surface p-6 text-fg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.45),0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      onClick={(event) => {
+        if (dismissible && event.target === ref.current) onClose();
+      }}
+      className="ui-dialog m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-0 text-fg backdrop:bg-black/70 sm:max-h-[85vh] sm:w-[calc(100%-2rem)]"
     >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-fg [text-wrap:balance]">
-          {title}
-        </h2>
-        <button
-          onClick={onClose}
-          className="-m-2 p-2 text-sm text-muted transition-colors hover:text-fg"
-        >
-          close
-        </button>
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 id={titleId} className="text-lg font-semibold text-fg [text-wrap:balance]">
+            {title}
+          </h2>
+          {description ? (
+            <p id={descriptionId} className="mt-1 text-sm leading-6 text-muted">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {dismissible ? (
+          <Button variant="icon" aria-label="Close dialog" onClick={onClose}>
+            <CloseIcon />
+          </Button>
+        ) : null}
       </div>
-      {children}
+      <div className="px-4 py-5 sm:px-6">{children}</div>
     </dialog>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+      <path
+        d="M6 6l12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

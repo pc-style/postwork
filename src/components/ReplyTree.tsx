@@ -1,27 +1,29 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
-import type { EnrichedReply, AttachmentWithUrl } from "../lib/types";
+import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
+import { timeAgo } from "../lib/format";
+import { isLocalId, useStore } from "../lib/store";
 import { useSession } from "../lib/session";
-import { useStore, isLocalId } from "../lib/store";
-import { Avatar } from "./Avatar";
-import { Composer } from "./Composer";
+import type { AttachmentWithUrl, EnrichedReply } from "../lib/types";
 import { AgentTag } from "./AgentTag";
-import { UserRoleTag } from "./UserRoleTag";
+import { AnchoredConfirmation } from "./AnchoredConfirmation";
+import { AttachmentGallery } from "./AttachmentPicker";
+import { Avatar } from "./Avatar";
+import { Button } from "./Button";
+import { Composer } from "./Composer";
+import { FormField } from "./FormField";
 import { RichText } from "./RichText";
 import { SendAgentButton } from "./SendAgentButton";
-import { AttachmentGallery } from "./AttachmentPicker";
-import { timeAgo } from "../lib/format";
-import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
+import { UserRoleTag } from "./UserRoleTag";
 
 type Node = ReplyTreeNode<EnrichedReply>;
 
-/** Flatten a reply and its descendants into a transcript an agent can read. */
-function subthreadText(node: Node): string {
+function subthreadText(node: Node) {
   const lines: string[] = [];
-  const walk = (n: Node, depth: number) => {
-    const who = n.author?.name ?? "Unknown";
-    lines.push(`${"  ".repeat(depth)}- ${who}: ${n.body}`);
-    n.children.forEach((c) => walk(c, depth + 1));
+  const walk = (item: Node, depth: number) => {
+    const author = item.author?.name ?? "Unknown";
+    lines.push(`${"  ".repeat(depth)}- ${author}: ${item.body}`);
+    item.children.forEach((child) => walk(child, depth + 1));
   };
   walk(node, 0);
   return lines.join("\n");
@@ -32,11 +34,13 @@ function ReplyNode({
   postId,
   depth,
   attachments,
+  fallbackFocusRef,
 }: {
   node: Node;
   postId: Id<"posts">;
   depth: number;
   attachments: AttachmentWithUrl[];
+  fallbackFocusRef: RefObject<HTMLDivElement | null>;
 }) {
   const store = useStore();
   const { currentUserId, currentUser } = useSession();
@@ -45,101 +49,96 @@ function ReplyNode({
   const [editBody, setEditBody] = useState(node.body);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const editRef = useRef<HTMLTextAreaElement>(null);
   const replyAttachments = attachments.filter(
-    (a) => a.replyId === node._id,
+    (attachment) => attachment.replyId === node._id,
   );
 
   const local = isLocalId(node._id);
   const isAuthor = currentUserId === node.authorId;
   const isAdmin = currentUser?.role === "admin";
-  // Demo mode: only local (session-created) replies can be moderated, and only
-  // by their author. Product mode: edit is author-only, delete is author/admin.
   const canEdit = isAuthor && (store.mode === "product" || local);
   const canDelete =
     (store.mode === "product" || local) &&
     (isAuthor || (isAdmin && store.mode === "product"));
 
   const saveEdit = async () => {
-    if (!editBody.trim()) return;
+    if (!editBody.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
       await store.editReply({ replyId: node._id, body: editBody.trim() });
       setEditing(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save edit.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "We couldn't save the reply. Try again.",
+      );
     } finally {
       setBusy(false);
     }
   };
 
-  const confirmDelete = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await store.deleteReply({ replyId: node._id });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete reply.");
-      setBusy(false);
-    }
-  };
+  const indentation =
+    depth === 0
+      ? ""
+      : depth < 4
+        ? "ml-2 border-l border-border pl-2 sm:ml-4 sm:pl-4"
+        : "border-l border-border pl-2 sm:pl-4";
 
   return (
-    <div className={depth > 0 ? "ml-4 border-l border-border pl-4" : ""}>
-      <div className="py-2.5">
+    <div className={indentation}>
+      <article className="py-3">
         <div className="flex items-start gap-2.5">
           <Avatar user={node.author} size={30} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-sm font-medium text-fg">
                 {node.author?.name ?? "Unknown"}
               </span>
-              {node.author?.isAgent && <AgentTag />}
+              {node.author?.isAgent ? <AgentTag /> : null}
               <UserRoleTag role={node.author?.role} />
-              <span className="text-label text-muted">
-                {timeAgo(node.createdAt)}
-              </span>
-              {node.editedAt && (
-                <span className="text-label text-faint">edited</span>
-              )}
+              <span className="text-label text-muted">{timeAgo(node.createdAt)}</span>
+              {node.editedAt ? <span className="text-label text-muted">edited</span> : null}
             </div>
-            <div className="mt-0.5">
+
+            <div className="mt-1">
               {editing ? (
-                <div className="rounded-md border border-border bg-surface p-2">
-                  <textarea
-                    ref={editRef}
-                    value={editBody}
-                    onChange={(e) => setEditBody(e.target.value)}
-                    autoFocus
-                    rows={3}
-                    className="w-full resize-y rounded border border-border bg-bg px-2 py-1.5 text-sm outline-none focus:border-accent/50"
-                  />
-                  <div className="mt-2 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
+                <div className="rounded-md border border-border bg-surface p-3">
+                  <FormField label="Reply" error={error} required>
+                    <textarea
+                      value={editBody}
+                      onChange={(event) => {
+                        setEditBody(event.target.value);
+                        setError(null);
+                      }}
+                      autoFocus
+                      rows={3}
+                      className="ui-field resize-y"
+                    />
+                  </FormField>
+                  <div className="mt-3 flex flex-wrap justify-end gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setEditing(false);
                         setError(null);
                       }}
                       disabled={busy}
-                      className="text-xs text-muted transition hover:text-fg disabled:opacity-40"
                     >
                       cancel
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      size="sm"
                       onClick={() => void saveEdit()}
-                      disabled={busy || !editBody.trim()}
-                      className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={!editBody.trim()}
+                      loading={busy}
+                      loadingLabel="saving…"
                     >
-                      {busy ? "saving…" : "save"}
-                    </button>
+                      save
+                    </Button>
                   </div>
-                  {error && (
-                    <p className="mt-1.5 text-xs text-urgent">{error}</p>
-                  )}
                 </div>
               ) : (
                 <>
@@ -148,79 +147,65 @@ function ReplyNode({
                 </>
               )}
             </div>
-            {!editing && (
-              <div className="mt-1 flex items-center gap-3">
-                <button
-                  onClick={() => setReplying((r) => !r)}
-                  className="text-xs text-muted transition hover:text-accent-soft"
+
+            {!editing ? (
+              <div className="mt-1 flex min-h-9 flex-wrap items-center gap-1">
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  className="min-h-9 px-1.5 text-xs"
+                  onClick={() => setReplying((value) => !value)}
+                  aria-expanded={replying}
                 >
                   {replying ? "cancel" : "reply"}
-                </button>
-                {canEdit && (
-                  <button
+                </Button>
+                {canEdit ? (
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    className="min-h-9 px-1.5 text-xs"
                     onClick={() => {
                       setEditBody(node.body);
                       setError(null);
                       setEditing(true);
                     }}
-                    className="text-xs text-muted transition hover:text-fg"
                   >
                     edit
-                  </button>
-                )}
-                {canDelete && !confirmingDelete && (
-                  <button
-                    onClick={() => setConfirmingDelete(true)}
-                    className="text-xs text-muted transition hover:text-urgent"
-                  >
-                    delete
-                  </button>
-                )}
-                {confirmingDelete && (
-                  <span className="flex items-center gap-2">
-                    <span className="text-xs text-faint">delete?</span>
-                    <button
-                      type="button"
-                      onClick={() => void confirmDelete()}
-                      disabled={busy}
-                      className="rounded bg-urgent/15 px-1.5 py-0.5 text-xs text-urgent transition hover:bg-urgent/25 disabled:opacity-40"
-                    >
-                      {busy ? "deleting…" : "yes"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingDelete(false)}
-                      disabled={busy}
-                      className="text-xs text-muted transition hover:text-fg disabled:opacity-40"
-                    >
-                      no
-                    </button>
-                  </span>
-                )}
-                {error && <span className="text-xs text-urgent">{error}</span>}
+                  </Button>
+                ) : null}
+                {canDelete ? (
+                  <AnchoredConfirmation
+                    triggerLabel="delete"
+                    title="Delete reply?"
+                    description="This can't be undone."
+                    confirmLabel="delete reply"
+                    fallbackFocusRef={fallbackFocusRef}
+                    onConfirm={() => store.deleteReply({ replyId: node._id })}
+                  />
+                ) : null}
                 <SendAgentButton
                   postId={postId}
                   replyId={node._id}
                   contextText={subthreadText(node)}
                 />
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {replying && (
-          <div className="mt-2 ml-10">
+        {replying ? (
+          <div className="mt-2 pl-8 sm:pl-10">
             <Composer
               postId={postId}
               parentId={node._id}
               compact
               autoFocus
-              placeholder={`reply to ${node.author?.name ?? "this"}…`}
+              placeholder={`Reply to ${node.author?.name ?? "this reply"}.`}
               onDone={() => setReplying(false)}
             />
           </div>
-        )}
-      </div>
+        ) : null}
+      </article>
 
       {node.children.map((child) => (
         <ReplyNode
@@ -229,6 +214,7 @@ function ReplyNode({
           postId={postId}
           depth={depth + 1}
           attachments={attachments}
+          fallbackFocusRef={fallbackFocusRef}
         />
       ))}
     </div>
@@ -245,15 +231,19 @@ export function ReplyTree({
   attachments?: AttachmentWithUrl[];
 }) {
   const tree = buildReplyTree(replies);
+  const focusFallbackRef = useRef<HTMLDivElement>(null);
+
   if (tree.length === 0) {
-    return (
-      <p className="py-4 text-sm text-muted">
-        No replies yet. Start the thread.
-      </p>
-    );
+    return <p className="py-4 text-sm text-muted">No replies yet. Start the thread.</p>;
   }
+
   return (
-    <div className="divide-y divide-border/60">
+    <div
+      ref={focusFallbackRef}
+      tabIndex={-1}
+      aria-label="Replies"
+      className="divide-y divide-border/60 focus:outline-none"
+    >
       {tree.map((node) => (
         <ReplyNode
           key={node._id}
@@ -261,6 +251,7 @@ export function ReplyTree({
           postId={postId}
           depth={0}
           attachments={attachments}
+          fallbackFocusRef={focusFallbackRef}
         />
       ))}
     </div>

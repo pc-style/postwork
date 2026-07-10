@@ -6,6 +6,8 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
 import { ComposerShell } from "../components/ComposerShell";
+import { Button } from "../components/Button";
+import { Skeleton } from "../components/Skeleton";
 import { Markdown } from "../components/Markdown";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { timeAgo } from "../lib/format";
@@ -47,8 +49,10 @@ export function ExperimentDiscussion({
   return (
     <div className="border-t border-dashed border-border">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-xs text-muted transition hover:text-fg"
+        aria-expanded={open}
+        className="flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-xs text-muted transition-colors hover:text-fg"
       >
         <span>
           discussion
@@ -64,7 +68,7 @@ export function ExperimentDiscussion({
       {open && (
         <div className="space-y-3 px-4 pb-4">
           {thread === undefined ? (
-            <p className="text-xs text-muted">loading…</p>
+            <Skeleton label="Loading discussion" preset="inline" count={2} />
           ) : (
             <Thread
               slug={slug}
@@ -118,7 +122,7 @@ function Thread({
     <>
       {tree.length === 0 ? (
         <p className="rounded-md border border-dashed border-border bg-bg px-3 py-3 text-xs text-muted">
-          no replies yet — start the conversation about this experiment.
+          No replies yet. Start the discussion about this experiment.
         </p>
       ) : (
         <ul className="space-y-2.5">
@@ -138,7 +142,7 @@ function Thread({
       )}
 
       <Composer
-        placeholder="add to the discussion…"
+        placeholder="Add to the discussion."
         isAuthenticated={isAuthenticated}
         isLoading={isLoading}
         onSubmit={(body) => post(body)}
@@ -187,18 +191,21 @@ function ReplyItem({
         <div className="mt-1.5 font-sans text-sm text-fg">
           <Markdown text={node.body} />
         </div>
-        <button
+        <Button
+          variant="quiet"
+          size="sm"
+          className="mt-1.5 min-h-9 px-1.5 text-label"
           onClick={() => setReplyingTo(isReplying ? null : node._id)}
-          className="mt-1.5 text-label text-muted transition hover:text-accent-soft"
+          aria-expanded={isReplying}
         >
           {isReplying ? "cancel" : "reply"}
-        </button>
+        </Button>
       </div>
 
       {isReplying && (
         <div className="mt-2">
           <Composer
-            placeholder={`reply to ${node.author?.name ?? "member"}…`}
+            placeholder={`Reply to ${node.author?.name ?? "member"}.`}
             autoFocus
             isAuthenticated={isAuthenticated}
             isLoading={isLoading}
@@ -259,7 +266,7 @@ function Composer({
   if (!isLoading && !isAuthenticated) {
     return (
       <div className="w-full rounded-md border border-dashed border-border bg-bg px-3 py-2 text-xs text-muted">
-        discussion is read-only in demo mode.
+        Discussion is read-only in demo mode.
       </div>
     );
   }
@@ -272,14 +279,15 @@ function Composer({
         autoFocus={autoFocus}
         placeholder={placeholder}
         rows={2}
-        textareaClassName="w-full resize-none rounded-md border border-border bg-bg px-3 py-2 font-sans text-sm text-fg placeholder:text-muted focus:border-accent/50 focus:outline-none"
-        footerClassName="flex items-center justify-between"
-        hint={<span className="text-label text-muted">⌘/ctrl + enter to post</span>}
+        bodyLabel="Discussion reply"
+        srOnlyBodyLabel
+        textareaClassName="ui-field min-h-20 resize-none font-sans"
+        footerClassName="flex flex-wrap items-center justify-between gap-2"
+        hint={<span>Cmd or Ctrl + Enter to post.</span>}
         submitLabel="post"
         submittingLabel="posting…"
         submitting={submitting}
         disabled={!body.trim() || submitting}
-        submitButtonClassName="rounded-md border border-accent/50 bg-accent/15 px-3 py-1 text-xs text-accent-soft transition hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
         onSubmit={() => void submit()}
       />
     </div>

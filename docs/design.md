@@ -173,8 +173,9 @@ of signal; everything else is a tonal neutral.
   flat layering leans on these instead of shadows.
 - **Ink** (`#e8e6e3`): Primary text and headings. Warm off-white, not pure white.
 - **Muted** (`#8a8782`): Secondary text — metadata, snippets, labels, timestamps.
-- **Faint** (`#4a4845`): The quietest neutral; backgrounds for the `Normal`
-  priority chip and the lowest-emphasis surfaces.
+- **Faint** (`#5c5956`): Decorative separators, disabled ornament, and low-emphasis
+  surfaces only. Faint never carries instructions, required metadata, errors, or
+  disabled control labels. Meaningful secondary text uses Muted (`#a19d98`).
 
 ### Tertiary (priority state colors)
 
@@ -278,8 +279,10 @@ screen to screen. Every interactive element should read as obviously itself.
   primary action per view.
 - **Ghost / Secondary:** Transparent with a wine-tinted hairline border, Wine Glow
   text; hover adds a faint `accent/15` wash. Used for `generate` / `regenerate`.
-- **Disabled:** `opacity-40`, `cursor-not-allowed`, no color change (e.g. an
-  unsaved post's submit button).
+- **Disabled:** Keep labels legible and preserve the control's shape. Use a muted
+  border/fill and muted text rather than fading the whole control. Loading keeps
+  the label footprint stable, adds a small progress indicator, sets
+  `aria-busy`, and blocks duplicate activation.
 
 ### Cards (post)
 
@@ -318,25 +321,28 @@ screen to screen. Every interactive element should read as obviously itself.
 
 ### Inputs / Fields
 
-- **Style:** 1px hairline border, near-black fill, `rounded-md`/`rounded-lg` (pill
-  for the inline `@handle` invite), muted placeholder.
-- **Focus:** border shifts to `accent/50`; no glow, no ring bloat.
+- **Style:** 1px hairline border, near-black fill, `rounded-md`/`rounded-lg`, and
+  at least 44px height for primary form controls. Labels stay visible above the
+  control; placeholders are examples, never labels.
+- **Focus:** border shifts to Wine Glow and a visible 2px focus outline remains
+  unclipped. Errors keep an urgent border plus specific inline recovery copy.
+- **Selection:** priority is one labeled native radio group. Independent filters
+  use `aria-pressed`; selected state changes border, fill, weight, and text so it
+  never depends on hue alone.
 
 ### Header / Nav
 
-- Shipped shell is a responsive three-column layout: a centered reading column
-  (`minmax(0, 640px)`) flanked by sticky side rails inside a `max-w-6xl` grid.
-  There is no top glass header.
-- **Left rail:** plain `postwork` wordmark, then lowercase nav items (`home`,
-  `priority`, `spaces`, `agents`, `orgs`, `experiments`). Items are `rounded-md`
-  text rows; hover uses `surface`, active state uses `surface` plus Wine Glow text.
-- The `+ new post` primary CTA sits directly beneath the nav, before account
-  controls, so creation is global but not a floating action.
-- The user switcher is pinned to the bottom of the left rail (`mt-auto`) and uses
-  sentence-case label treatment, not tracked uppercase.
-- **Right rail:** a sticky `your queue` panel shows unread and urgent counts in a
-  flat `surface` card. Queue context lives here instead of in the brand/header
-  row, keeping the central feed reserved for reading.
+- On tablet and desktop, the shell uses a flexible rail sized with `clamp()` and
+  a centered reading column. On narrow screens the rail is removed completely
+  and replaced with a compact sticky top bar plus a full-height navigation panel.
+- Navigation links are lowercase, at least 44px tall on touch layouts, and expose
+  the current route with `aria-current`. The user switcher remains reachable in
+  both shell forms.
+- The global `new post` action is a stable bottom dock trigger with safe-area
+  spacing. It opens the complete dialog immediately and never reveals fields on
+  hover, uses a timer, or hides required validation state.
+- Admin uses the same responsive shell rule. Desktop tables remain semantic;
+  narrow screens show labeled record cards with explicit `view details` actions.
 
 ### Space Glyph (signature)
 
@@ -348,8 +354,17 @@ screen to screen. Every interactive element should read as obviously itself.
 ### States (all interactive components)
 
 Standardize: default · hover · focus · active · disabled · loading · error.
-Loading is text-based and in-place (`summarizing…`), never a centered spinner.
-Errors render as a small `red-300`-on-`red/10` inline note, not a modal.
+Disabled labels remain readable. Loading uses stable in-place copy plus a small
+progress indicator for controls; page and list loading use layout-appropriate
+skeletons hidden from assistive technology with one concise announced status.
+Errors remain visible in a small urgent-on-urgent/10 inline note until resolved.
+
+Destructive post and reply actions open a trigger-anchored `alertdialog` without
+replacing or shifting the action row. Focus moves to Cancel, Tab remains within
+the panel, Escape and outside click dismiss it, and focus returns to the trigger
+or a configured fallback. Dialogs and sheets use native focus trapping, named
+headings, reliable trigger restoration, mobile safe-area padding, and full-screen
+sheet layout on narrow viewports.
 
 ### Named Rules
 

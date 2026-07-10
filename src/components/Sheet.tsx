@@ -1,58 +1,88 @@
-import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { Button } from "./Button";
 
-/**
- * Right-side detail sheet for admin records. Native <dialog> for focus
- * trapping + Escape handling; positioned as a full-height right drawer.
- * Slide-in uses @starting-style (see index.css `dialog[open]` rules — the
- * sheet overrides translate on its own class).
- */
 export function Sheet({
   title,
   subtitle,
   onClose,
   children,
   footer,
+  initialFocusRef,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  initialFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const titleId = useId();
+  const subtitleId = useId();
 
   useEffect(() => {
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     ref.current?.showModal();
-  }, []);
+    requestAnimationFrame(() =>
+      (initialFocusRef?.current ?? headingRef.current)?.focus(),
+    );
+    return () => {
+      const target = triggerRef.current;
+      requestAnimationFrame(() => target?.isConnected && target.focus());
+    };
+  }, [initialFocusRef]);
 
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={subtitle ? subtitleId : undefined}
       onClose={onClose}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
       }}
-      className="sheet-panel fixed inset-y-0 right-0 m-0 flex h-full max-h-none w-full max-w-md flex-col bg-surface text-fg shadow-[0_0_0_1px_rgba(255,255,255,0.08),-8px_0_24px_rgba(0,0,0,0.45),-24px_0_64px_rgba(0,0,0,0.55)] backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === ref.current) onClose();
+      }}
+      className="sheet-panel fixed inset-0 m-0 flex h-dvh max-h-none w-full max-w-none flex-col border-0 bg-surface p-0 text-fg backdrop:bg-black/70 sm:inset-y-0 sm:right-0 sm:left-auto sm:w-[min(30rem,100vw)] sm:border-l sm:border-border"
     >
-      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+      <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-6">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-fg">{title}</h2>
+          <h2
+            ref={headingRef}
+            id={titleId}
+            tabIndex={-1}
+            className="break-words text-base font-semibold text-fg focus:outline-none"
+          >
+            {title}
+          </h2>
           {subtitle ? (
-            <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
+            <p id={subtitleId} className="mt-1 break-words text-xs leading-5 text-muted">
+              {subtitle}
+            </p>
           ) : null}
         </div>
-        <button
-          onClick={onClose}
-          className="-m-2 shrink-0 p-2 text-sm text-muted transition-colors hover:text-fg"
-        >
-          close
-        </button>
+        <Button variant="icon" aria-label="Close panel" onClick={onClose}>
+          <CloseIcon />
+        </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        {children}
+      </div>
       {footer ? (
-        <div className="border-t border-border px-6 py-4">{footer}</div>
+        <div className="border-t border-border bg-surface px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+          {footer}
+        </div>
       ) : null}
     </dialog>
   );
@@ -68,11 +98,28 @@ export function SheetField({
   mono?: boolean;
 }) {
   return (
-    <div className="py-2.5">
-      <div className="text-label font-medium lowercase text-muted">{label}</div>
-      <div className={`mt-1 text-sm text-fg ${mono ? "font-mono text-xs" : ""}`}>
+    <div className="py-3">
+      <div className="text-xs font-medium text-muted">{label}</div>
+      <div
+        className={`mt-1 break-words text-sm text-fg ${
+          mono ? "overflow-x-auto font-mono text-xs" : ""
+        }`}
+      >
         {children}
       </div>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+      <path
+        d="M6 6l12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

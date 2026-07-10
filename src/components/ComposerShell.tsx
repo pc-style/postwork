@@ -4,48 +4,67 @@ import {
   type RefObject,
   useEffect,
 } from "react";
+import { Button } from "./Button";
+import { FormField } from "./FormField";
 
 export function ComposerShell({
   title,
   setTitle,
   titleRef,
+  titleLabel = "Title",
+  titleHelp,
+  titleError,
   titlePlaceholder,
-  titleClassName,
+  titleClassName = "ui-field",
   titleAutoFocus = false,
+  titleRequired = false,
+  titleOptional = false,
   body,
   setBody,
   textareaRef,
+  bodyLabel = "Reply",
+  bodyHelp,
+  bodyError,
+  srOnlyBodyLabel = false,
   placeholder,
   rows,
   autoFocus = false,
-  textareaClassName,
+  textareaClassName = "ui-field resize-y",
   onFieldKeyDown,
   onPaste,
   beforeBody,
   afterBody,
-  footerClassName = "mt-2 flex items-center justify-between gap-2",
+  footerClassName = "mt-3 flex flex-wrap items-center justify-between gap-3",
   hint,
   actions,
   submitLabel,
   submittingLabel,
   submitting,
   disabled,
-  submitButtonClassName,
   onSubmit,
 }: {
   title?: string;
   setTitle?: (title: string) => void;
   titleRef?: RefObject<HTMLInputElement | null>;
+  titleLabel?: string;
+  titleHelp?: ReactNode;
+  titleError?: ReactNode;
   titlePlaceholder?: string;
   titleClassName?: string;
   titleAutoFocus?: boolean;
+  titleRequired?: boolean;
+  titleOptional?: boolean;
   body: string;
   setBody: (body: string) => void;
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
+  bodyLabel?: string;
+  bodyHelp?: ReactNode;
+  bodyError?: ReactNode;
+  srOnlyBodyLabel?: boolean;
   placeholder: string;
   rows: number;
   autoFocus?: boolean;
-  textareaClassName: string;
+  textareaClassName?: string;
   onFieldKeyDown?: (
     event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
@@ -59,7 +78,6 @@ export function ComposerShell({
   submittingLabel: string;
   submitting: boolean;
   disabled: boolean;
-  submitButtonClassName: string;
   onSubmit: () => void;
 }) {
   useEffect(() => {
@@ -80,40 +98,59 @@ export function ComposerShell({
   return (
     <>
       {title !== undefined && setTitle ? (
-        <input
-          ref={titleRef}
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus={titleAutoFocus}
-          placeholder={titlePlaceholder}
-          className={titleClassName}
-        />
+        <FormField
+          label={titleLabel}
+          help={titleHelp}
+          error={titleError}
+          required={titleRequired}
+          optional={titleOptional}
+        >
+          <input
+            ref={titleRef}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onKeyDown={handleKeyDown}
+            autoFocus={titleAutoFocus}
+            placeholder={titlePlaceholder}
+            className={titleClassName}
+          />
+        </FormField>
       ) : null}
       {beforeBody}
-      <textarea
-        ref={textareaRef}
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onPaste={onPaste}
-        placeholder={placeholder}
-        rows={rows}
-        className={textareaClassName}
-      />
+      <FormField
+        label={bodyLabel}
+        help={bodyHelp}
+        error={bodyError}
+        required
+        srOnlyLabel={srOnlyBodyLabel}
+      >
+        <textarea
+          ref={textareaRef}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onPaste={onPaste}
+          placeholder={placeholder}
+          rows={rows}
+          className={textareaClassName}
+        />
+      </FormField>
       {afterBody}
       <div className={footerClassName}>
-        <div className="flex items-center gap-2">{hint}</div>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted">
+          {hint}
+        </div>
+        <div className="ml-auto flex flex-wrap justify-end gap-2">
           {actions}
-          <button
+          <Button
             type="button"
             onClick={onSubmit}
             disabled={disabled}
-            className={submitButtonClassName}
+            loading={submitting}
+            loadingLabel={submittingLabel}
           >
-            {submitting ? submittingLabel : submitLabel}
-          </button>
+            {submitLabel}
+          </Button>
         </div>
       </div>
     </>

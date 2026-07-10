@@ -1,51 +1,53 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { useStore, usePost, useReplies, isLocalId } from "../../lib/store";
-import { useAttachments } from "../../lib/attachments";
 import type { Id } from "../../../convex/_generated/dataModel";
-import type { EnrichedPost } from "../../lib/types";
-import { ReplyTree } from "../../components/ReplyTree";
-import { Composer } from "../../components/Composer";
-import { ComposerShell } from "../../components/ComposerShell";
-import { RichText } from "../../components/RichText";
-import { Markdown } from "../../components/Markdown";
+import { AgentSummary } from "../../components/AgentSummary";
 import { AgentTag } from "../../components/AgentTag";
 import { AttachmentGallery } from "../../components/AttachmentPicker";
-import { PostModeration } from "../../components/PostModeration";
+import { Button } from "../../components/Button";
+import { Composer } from "../../components/Composer";
+import { ComposerShell } from "../../components/ComposerShell";
 import { LoadingState } from "../../components/LoadingState";
-import { timeAgo, priorityStyles } from "../../lib/format";
+import { PostModeration } from "../../components/PostModeration";
+import { ReplyTree } from "../../components/ReplyTree";
+import { RichText } from "../../components/RichText";
+import { useAttachments } from "../../lib/attachments";
+import { priorityStyles, timeAgo } from "../../lib/format";
+import { usePost, useReplies, useStore } from "../../lib/store";
+import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 
 export function RedesignPostPage() {
   const { postId: postIdParam } = useParams({ strict: false });
   const postId = postIdParam as Id<"posts">;
   const store = useStore();
-
   const post = usePost(postId);
   const repliesResult = useReplies(postId);
-  const replies = repliesResult.replies;
   const attachments = useAttachments(postId);
   const [editing, setEditing] = useState(false);
 
-  useDocumentTitle(post ? `${post.title} · postwork` : "postwork · ink");
+  useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
 
   useEffect(() => {
     if (post) store.markRead(postId);
+    // Re-run only when the post identity or latest activity changes,
+    // not on every object identity change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.lastActivityAt]);
 
   if (post === undefined) {
     return (
-      <div className="mx-auto max-w-3xl px-8 py-10">
-        <LoadingState />
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <LoadingState label="Loading post" preset="post" />
       </div>
     );
   }
+
   if (post === null) {
     return (
-      <div className="mx-auto max-w-3xl px-8 py-16 text-center text-sm text-muted">
-        post not found.{" "}
-        <Link to="/app" className="text-accent-soft">
+      <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center text-sm text-muted sm:px-6">
+        <p>We couldn't find this post.</p>
+        <Link to="/app" className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg">
           back to feed
         </Link>
       </div>
@@ -53,169 +55,92 @@ export function RedesignPostPage() {
   }
 
   const showPriority = post.priority !== "normal";
-  const p = priorityStyles[post.priority];
+  const priority = priorityStyles[post.priority];
 
   return (
-    <div className="mx-auto max-w-3xl px-8 pb-40 pt-10">
-      {/* breadcrumb — quiet, one line */}
-      <div className="mb-6 text-xs text-faint">
-        <Link to="/app" search={{ space: post.space }} className="text-muted transition hover:text-fg">
-          {post.space.toLowerCase()}
+    <article className="mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
+      <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted">
+        <Link
+          to="/app"
+          search={{ space: post.space }}
+          className="inline-flex min-h-11 items-center hover:text-fg"
+        >
+          {post.space}
         </Link>
-        {post.pinned && <span> / pinned</span>}
-      </div>
+        {post.pinned ? <span className="ml-3 text-accent-soft">Pinned</span> : null}
+      </nav>
 
-      {/* the post is the hero — or the edit form when editing */}
       {editing ? (
         <PostEditForm post={post} onDone={() => setEditing(false)} />
       ) : (
-        <h1 className="text-3xl font-bold leading-tight tracking-tight text-fg">
+        <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg sm:text-3xl">
           {post.title}
         </h1>
       )}
 
-      {/* one quiet byline line */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-muted">
-        <span className="font-medium text-fg">{post.author?.name}</span>
-        {post.author?.isAgent && <AgentTag />}
-        <span>posted {timeAgo(post.createdAt)}</span>
-        {showPriority && (
-          <span className={p.dot === "bg-urgent" ? "text-urgent" : "text-high"}>
-            · {p.label.toLowerCase()} priority
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+        <span className="font-medium text-fg">{post.author?.name ?? "Unknown"}</span>
+        {post.author?.isAgent ? <AgentTag /> : null}
+        <span>Posted {timeAgo(post.createdAt)}</span>
+        {showPriority ? (
+          <span className={`inline-flex items-center gap-1.5 ${post.priority === "urgent" ? "text-urgent" : "text-high"}`}>
+            <span className={`size-1.5 rounded-full ${priority.dot}`} aria-hidden="true" />
+            {priority.label} priority
           </span>
-        )}
-        {post.editedAt && (
-          <span className="text-faint">· edited {timeAgo(post.editedAt)}</span>
-        )}
+        ) : null}
+        {post.editedAt ? <span>Edited {timeAgo(post.editedAt)}</span> : null}
       </div>
 
-      {!editing && (
-        <PostModeration
-          post={post}
-          onStartEdit={() => setEditing(true)}
+      {!editing ? (
+        <PostModeration post={post} onStartEdit={() => setEditing(true)} />
+      ) : null}
+
+      {!editing ? (
+        <div className="mt-7 max-w-[65ch]">
+          <RichText text={post.body} className="prose-post text-[15px] text-fg/95" />
+          <AttachmentGallery attachments={attachments.filter((attachment) => !attachment.replyId)} />
+        </div>
+      ) : null}
+
+      <div className="my-8">
+        <AgentSummary
+          postId={post._id}
+          summary={post.summary}
+          model={post.summaryModel}
+          updatedAt={post.summaryUpdatedAt}
         />
-      )}
-
-      {/* body in a ~65ch reading column */}
-      {!editing && (
-        <div className="mt-8 max-w-[65ch]">
-          <RichText text={post.body} className="prose-post text-[15px] text-fg/90" />
-          <AttachmentGallery
-            attachments={attachments.filter((a) => !a.replyId)}
-          />
-        </div>
-      )}
-
-      <AgentSummarySection
-        postId={post._id}
-        summary={post.summary}
-        model={post.summaryModel}
-        updatedAt={post.summaryUpdatedAt}
-      />
-
-      <h2 className="mb-2 text-xs text-faint">
-        {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
-      </h2>
-      <ReplyTree
-        replies={replies}
-        postId={post._id}
-        attachments={attachments}
-      />
-      {repliesResult.status === "CanLoadMore" && repliesResult.loadMore && (
-        <button
-          onClick={repliesResult.loadMore}
-          className="mt-2 text-xs text-muted transition hover:text-fg"
-        >
-          load more replies
-        </button>
-      )}
-
-      {/* sticky composer that fades up from the page */}
-      <div className="sticky bottom-0 -mx-8 mt-8 bg-gradient-to-t from-bg from-40% to-transparent px-8 pt-10 pb-6">
-        <Composer postId={post._id} placeholder="add to the discussion…" />
       </div>
-    </div>
+
+      <section aria-labelledby="replies-heading">
+        <h2 id="replies-heading" className="mb-2 text-sm font-semibold text-fg">
+          {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+        </h2>
+        {repliesResult.status === "LoadingFirstPage" ? (
+          <LoadingState label="Loading replies" preset="feed" count={3} />
+        ) : (
+          <ReplyTree replies={repliesResult.replies} postId={post._id} attachments={attachments} />
+        )}
+        {(repliesResult.status === "CanLoadMore" || repliesResult.status === "LoadingMore") && repliesResult.loadMore ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-3"
+            onClick={repliesResult.loadMore}
+            loading={repliesResult.status === "LoadingMore"}
+            loadingLabel="loading…"
+          >
+            load more replies
+          </Button>
+        ) : null}
+      </section>
+
+      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-border bg-bg px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <Composer postId={post._id} placeholder="Add a reply." />
+      </div>
+    </article>
   );
 }
 
-// A quiet, ruled agent-summary section — no boxed card, matching rule 3.
-function AgentSummarySection({
-  postId,
-  summary,
-  model,
-  updatedAt,
-}: {
-  postId: Id<"posts">;
-  summary?: string;
-  model?: string;
-  updatedAt?: number;
-}) {
-  const store = useStore();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const local = isLocalId(postId);
-
-  const onRegenerate = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await store.summarize(postId);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(
-        /API_KEY|not set/i.test(msg)
-          ? "no ai provider configured — set a key in the convex env to enable live summaries."
-          : msg,
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <section className="my-9 border-y border-border py-5">
-      <div className="mb-3 flex items-baseline justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-          agent summary
-        </span>
-        <button
-          onClick={onRegenerate}
-          disabled={busy || local}
-          title={local ? "save the post to generate a summary" : undefined}
-          className="text-xs text-faint transition hover:text-fg disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? "summarizing…" : local ? "unsaved" : summary ? "regenerate" : "generate"}
-        </button>
-      </div>
-
-      {summary ? (
-        <div className="max-w-[65ch] text-[15px] text-fg/90">
-          <Markdown text={summary} />
-        </div>
-      ) : (
-        <p className="text-sm text-muted">
-          no summary yet. generate one to catch up on this thread instantly.
-        </p>
-      )}
-
-      {error && (
-        <p className="mt-2 rounded-md bg-red-500/10 px-2 py-1.5 text-xs text-red-300">
-          {error}
-        </p>
-      )}
-
-      {(model || updatedAt) && !error && (
-        <p className="mt-3 text-label text-faint">
-          {model === "seed/baked" ? "demo summary" : `model: ${model}`}
-          {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
-        </p>
-      )}
-    </section>
-  );
-}
-
-// Inline edit form for a post's title + body (Phase 3.5). Replaces the hero
-// title and body in place while editing; calls `store.editPost` on save.
 function PostEditForm({
   post,
   onDone,
@@ -232,7 +157,7 @@ function PostEditForm({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const save = async () => {
-    if (!title.trim() || !body.trim()) return;
+    if (!title.trim() || !body.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -242,8 +167,12 @@ function PostEditForm({
         body: body.trim(),
       });
       onDone();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save edits.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "We couldn't save the post. Try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -253,36 +182,39 @@ function PostEditForm({
     <div className="rounded-lg border border-border bg-surface p-4">
       <ComposerShell
         title={title}
-        setTitle={setTitle}
+        setTitle={(value) => {
+          setTitle(value);
+          setError(null);
+        }}
         titleRef={titleRef}
         titleAutoFocus
-        titlePlaceholder="title"
-        titleClassName="w-full rounded-lg border border-border bg-bg px-3 py-2 text-2xl font-bold tracking-tight outline-none focus:border-accent/50"
+        titleLabel="Title"
+        titleRequired
+        titlePlaceholder="Post title"
+        titleClassName="ui-field text-lg font-semibold"
         body={body}
-        setBody={setBody}
+        setBody={(value) => {
+          setBody(value);
+          setError(null);
+        }}
         textareaRef={bodyRef}
-        placeholder="body"
+        bodyLabel="Post"
+        placeholder="Post content"
         rows={8}
-        textareaClassName="mt-2 w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-[15px] outline-none focus:border-accent/50"
-        footerClassName="mt-3 flex items-center justify-between gap-2"
+        textareaClassName="ui-field min-h-48 resize-y"
+        footerClassName="mt-3 flex flex-wrap items-center justify-end gap-2"
         actions={
-          <button
-            type="button"
-            onClick={onDone}
-            disabled={busy}
-            className="rounded-md text-xs text-muted transition hover:text-fg disabled:opacity-40"
-          >
+          <Button variant="secondary" onClick={onDone} disabled={busy}>
             cancel
-          </button>
+          </Button>
         }
-        submitLabel={busy ? "saving…" : "save"}
+        submitLabel="save"
         submittingLabel="saving…"
         submitting={busy}
-        disabled={busy || !title.trim() || !body.trim()}
-        submitButtonClassName="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={!title.trim() || !body.trim()}
         onSubmit={() => void save()}
       />
-      {error && <p className="mt-2 text-xs text-urgent">{error}</p>}
+      {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
     </div>
   );
 }

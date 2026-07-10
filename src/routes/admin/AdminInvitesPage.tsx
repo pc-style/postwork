@@ -4,12 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
 import { Sheet, SheetField } from "../../components/Sheet";
-import {
-  AdminPage,
-  AdminRow,
-  AdminTable,
-  StatusPill,
-} from "./AdminShell";
+import { Skeleton } from "../../components/Skeleton";
+import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
 import { ActionButton } from "./AdminUsersPage";
 
 type Invite = FunctionReturnType<typeof api.admin.listInvites>[number];
@@ -66,7 +62,7 @@ export function AdminInvitesPage() {
   return (
     <AdminPage
       title="invites"
-      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person — they activate automatically on sign-in."
+      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person. they activate automatically on sign-in."
       actions={
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-2">
@@ -98,42 +94,52 @@ export function AdminInvitesPage() {
       }
     >
       {invites === undefined ? (
-        <p className="text-sm text-muted">loading…</p>
+        <Skeleton preset="table" count={5} label="Loading invites" />
       ) : invites.length === 0 ? (
         <p className="text-sm text-muted">
           no invites yet. mint one and share the code.
         </p>
       ) : (
-        <AdminTable head={["code", "for", "note", "uses", "status", "created"]}>
-          {invites.map((invite) => {
-            const status = inviteStatus(invite);
-            return (
-              <AdminRow
-                key={invite._id}
-                onClick={() => setSelectedId(invite._id)}
-              >
-                <td className="px-4 py-2.5 font-mono text-xs text-fg">
-                  {invite.code}
-                </td>
-                <td className="max-w-[12rem] truncate px-4 py-2.5 font-mono text-xs text-accent-soft">
-                  {formatTarget(invite) ?? <span className="text-muted">—</span>}
-                </td>
-                <td className="max-w-[16rem] truncate px-4 py-2.5 text-muted">
-                  {invite.note ?? "—"}
-                </td>
-                <td className="px-4 py-2.5 text-xs text-muted tabular-nums">
-                  {invite.usedCount}/{invite.maxUses === 0 ? "∞" : invite.maxUses}
-                </td>
-                <td className="px-4 py-2.5">
-                  <StatusPill tone={status.tone}>{status.label}</StatusPill>
-                </td>
-                <td className="px-4 py-2.5 text-xs text-muted tabular-nums">
-                  {timeAgo(invite.createdAt)}
-                </td>
-              </AdminRow>
-            );
-          })}
-        </AdminTable>
+        <AdminRecordList
+          items={invites}
+          recordLabel={(invite) => invite.code}
+          onView={(invite) => setSelectedId(invite._id)}
+          columns={[
+            {
+              label: "code",
+              primary: true,
+              className: "font-mono text-xs text-fg",
+              render: (invite) => invite.code,
+            },
+            {
+              label: "for",
+              className: "max-w-[12rem] truncate font-mono text-xs text-accent-soft",
+              render: (invite) => formatTarget(invite) ?? <span className="text-muted">none</span>,
+            },
+            {
+              label: "note",
+              className: "max-w-[16rem] truncate text-muted",
+              render: (invite) => invite.note ?? "none",
+            },
+            {
+              label: "uses",
+              className: "text-xs text-muted tabular-nums",
+              render: (invite) => `${invite.usedCount}/${invite.maxUses === 0 ? "unlimited" : invite.maxUses}`,
+            },
+            {
+              label: "status",
+              render: (invite) => {
+                const status = inviteStatus(invite);
+                return <StatusPill tone={status.tone}>{status.label}</StatusPill>;
+              },
+            },
+            {
+              label: "created",
+              className: "text-xs text-muted tabular-nums",
+              render: (invite) => timeAgo(invite.createdAt),
+            },
+          ]}
+        />
       )}
 
       {selected && (
@@ -199,7 +205,7 @@ function InviteSheet({
         <SheetField label="uses">
           {invite.usedCount} of {invite.maxUses === 0 ? "unlimited" : invite.maxUses}
         </SheetField>
-        <SheetField label="note">{invite.note ?? "—"}</SheetField>
+        <SheetField label="note">{invite.note ?? "none"}</SheetField>
         <SheetField label="created">{timeAgo(invite.createdAt)}</SheetField>
         {invite.expiresAt ? (
           <SheetField label="expires">{timeAgo(invite.expiresAt)}</SheetField>

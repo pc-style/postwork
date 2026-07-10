@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  /* Palette adapted from pcstyle.dev: warm near-black, deep wine accent. */
   --color-bg: #0a0a0b;
   --color-surface: #121014;
   --color-surface-2: #18151a;
-  --color-border: #252327;
+  --color-border: #302d32;
   --color-fg: #e8e6e3;
-  --color-muted: #8a8782;
-  --color-faint: #4a4845;
+  --color-muted: #a19d98;
+  --color-faint: #5c5956;
   --color-accent: #8c1862;
   --color-accent-soft: #b53a82;
 
-  --color-urgent: #ff6b6b;
-  --color-high: #d9a441;
-  --color-normal: #8a8782;
+  --color-urgent: #ff7b7b;
+  --color-high: #e1b452;
+  --color-normal: #a19d98;
 
   --font-sans:
     "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
@@ -23,7 +22,6 @@
     ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas,
     monospace;
 
-  /* Lively pop: fast start, gentle landing — no wobble. */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
   --radius-sm: 2px;
@@ -38,29 +36,35 @@
 }
 
 :root {
-  /* Native controls, scrollbars, and the <dialog> UA color (CanvasText)
-     must resolve dark — otherwise dialogs render black-on-black text. */
   color-scheme: dark;
 }
 
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
+}
+
+html {
+  background: var(--color-bg);
+  overflow-x: clip;
 }
 
 body {
+  margin: 0;
   background-color: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.011em;
+  overflow-x: clip;
 }
 
 * {
-  scrollbar-width: thin;
+  box-sizing: border-box;
   scrollbar-color: var(--color-border) transparent;
+  scrollbar-width: thin;
 }
 
 ::selection {
@@ -69,8 +73,43 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline: 2px solid var(--color-accent-soft);
   outline-offset: 2px;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+input,
+textarea,
+select {
+  accent-color: var(--color-accent-soft);
+}
+
+@media (max-width: 639px) {
+  input,
+  textarea,
+  select {
+    font-size: 1rem;
+  }
 }
 
 code,
@@ -81,65 +120,147 @@ samp {
   letter-spacing: 0;
 }
 
-/* Dialog enter: subtle rise + fade, backdrop fades in with it. */
+.prose-post {
+  white-space: pre-wrap;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.theme-ink {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.ui-field {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  padding: 0.625rem 0.75rem;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.ui-field:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+.ui-field:focus {
+  border-color: var(--color-accent-soft);
+  outline: none;
+}
+
+.ui-field[aria-invalid="true"] {
+  border-color: var(--color-urgent);
+}
+
+.ui-field:disabled {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+
+.ui-error {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-urgent) 10%, transparent);
+  color: var(--color-urgent);
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.ui-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: ui-spin 700ms linear infinite;
+}
+
+.ui-skeleton {
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-fg) 7%, transparent),
+    transparent
+  );
+  background-size: 220% 100%;
+  animation: ui-skeleton 1.4s ease-in-out infinite;
+}
+
+.ui-dialog {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-fg) 6%, transparent),
+    0 24px 64px rgb(0 0 0 / 0.58);
+}
+
 dialog[open] {
   translate: 0 0;
   opacity: 1;
   transition-property: translate, opacity;
-  transition-duration: 250ms;
+  transition-duration: 200ms;
   transition-timing-function: var(--ease-spring);
 }
+
 dialog[open]::backdrop {
   opacity: 1;
-  transition: opacity 250ms ease-out;
+  transition: opacity 180ms ease-out;
 }
-/* Side sheets slide in from the right instead of rising. */
+
 dialog.sheet-panel[open] {
   transition-property: transform, opacity;
 }
+
 @starting-style {
   dialog[open] {
-    translate: 0 10px;
+    translate: 0 8px;
     opacity: 0;
   }
+
   dialog.sheet-panel[open] {
     translate: 0 0;
-    transform: translateX(24px);
+    transform: translateX(20px);
     opacity: 0;
   }
+
   dialog[open]::backdrop {
     opacity: 0;
   }
 }
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ui-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   dialog[open],
   dialog[open]::backdrop {
     transition: none;
   }
-}
-
-.prose-post {
-  white-space: pre-wrap;
-  line-height: 1.65;
-}
-
-/*
- * "ink" redesign palette — a scoped override of the product tokens for the
- * /redesign surface. Because every Tailwind color utility resolves through
- * `var(--color-*)`, remapping the variables on this container re-skins the
- * whole subtree: truly gray-black surfaces (no purple cast) so the magenta
- * accent pops again. Nothing outside `.theme-ink` is affected.
- */
-.theme-ink {
-  --color-bg: #0e0e10;
-  --color-surface: #151517;
-  --color-surface-2: #1c1c20;
-  --color-border: #262629;
-  --color-fg: #ececec;
-  --color-muted: #9a9aa2;
-  --color-faint: #66666e;
-  --color-accent: #e14b8f;
-  --color-accent-soft: #ee79ac;
-  background-color: var(--color-bg);
-  color: var(--color-fg);
 }

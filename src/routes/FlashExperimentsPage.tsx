@@ -34,7 +34,7 @@ const categoryMeta: Record<
 > = {
   community: {
     label: "community",
-    blurb: "suggested from outside the team — with credit to whoever asked.",
+    blurb: "Suggestions from outside the team, with credit to the requester.",
   },
   testing: {
     label: "testing",
@@ -53,7 +53,7 @@ type VoteState = {
 };
 
 // Shipped experiments graduate out of the lab list into a compact "implemented"
-// archive row: no votes, no open discussion, no slot chips — just a title, an
+// archive row: no votes, no open discussion, and no slot chips. It keeps a title, an
 // implemented badge, and a link to still preview them.
 const activeExperiments = flashExperiments.filter(
   (experiment) => experiment.status !== "shipped",
@@ -103,20 +103,17 @@ export function FlashExperimentsPage() {
     // Deliberately set apart from the rest of the app: a "lab" zone with a
     // blueprint grid, dashed accent edges, and all-mono chrome so you always
     // know you've stepped out of the normal product surface.
-    <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
+    <div className="min-h-screen bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
           <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
-            flow lab · work in progress
+            flow lab, work in progress
           </div>
-          <h1 className="mt-2 text-xl font-semibold lowercase text-fg">
-            flash experiments
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted">
-            sandboxed single-change previews, grouped by where they came from.
-            open one to use it as if it shipped; vote here to make review
-            pressure visible. nothing here is production behavior.
+          <h1 className="mt-2 text-xl font-semibold text-fg">Flash experiments</h1>
+          <p className="mt-2 max-w-2xl font-sans text-sm leading-6 text-muted">
+            Review isolated interface changes before they become part of the app.
+            Open an experiment to try it, then vote or add a reply.
           </p>
         </header>
 
@@ -128,15 +125,11 @@ export function FlashExperimentsPage() {
         >
           <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
-            full redesign · usable app
+            current app design
           </div>
-          <h2 className="mt-2 text-lg font-semibold lowercase text-fg">
-            the ink redesign
-          </h2>
-          <p className="mt-2 max-w-2xl font-sans text-sm text-muted">
-            a true gray-black surface with the magenta accent popping again:
-            hero titles, a 65-char reading column, one quiet metadata line, and
-            our own collapsible sidebar. open it as the real app, not a preview.
+          <h2 className="mt-2 text-lg font-semibold text-fg">Open Postwork</h2>
+          <p className="mt-2 max-w-2xl font-sans text-sm leading-6 text-muted">
+            Return to the current app without an experiment active.
           </p>
           <span className="mt-3 inline-block text-xs text-accent-soft transition group-hover:translate-x-0.5">
             open redesign →
@@ -190,8 +183,7 @@ export function FlashExperimentsPage() {
                 </span>
               </h2>
               <p className="text-right text-label text-muted">
-                community suggestions that shipped — now part of the default
-                app.
+                Community suggestions that are now part of the app.
               </p>
             </div>
             <div className="grid gap-1.5">
@@ -235,7 +227,7 @@ function ExperimentCard({
           >
             {experiment.status}
           </span>
-          <span className="text-faint">·</span>
+          <span className="sr-only">Slots:</span>
           {Object.keys(experiment.appSlots).map((slot) => (
             <span
               key={slot}
@@ -289,6 +281,7 @@ function ExperimentCard({
         <div className="flex items-center gap-1.5 text-xs">
           <VoteButton
             active={vote?.viewerVote === "up"}
+            ariaLabel="Vote for this experiment"
             disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
@@ -299,6 +292,7 @@ function ExperimentCard({
           </VoteButton>
           <VoteButton
             active={vote?.viewerVote === "down"}
+            ariaLabel="Vote against this experiment"
             disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
@@ -327,19 +321,24 @@ function VoteButton({
   children,
   disabled,
   title,
+  ariaLabel,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   disabled?: boolean;
   title?: string;
+  ariaLabel: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`rounded-md border px-2 py-1 tabular-nums transition disabled:cursor-not-allowed disabled:opacity-60 ${
+      type="button"
+      aria-label={ariaLabel}
+      aria-pressed={active}
+      className={`min-h-11 rounded-md border px-3 py-2 tabular-nums transition-colors disabled:cursor-not-allowed disabled:border-border disabled:text-muted/70 ${
         active
           ? "border-accent/50 bg-accent/15 text-accent-soft"
           : "border-border text-muted hover:border-accent/40 hover:text-fg"

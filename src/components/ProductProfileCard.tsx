@@ -5,6 +5,7 @@ import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ProfileDialog } from "../components/ProfileDialog";
 import { UserRoleTag } from "./UserRoleTag";
+import { Skeleton } from "./Skeleton";
 
 export function ProductProfileCard() {
   const { signOut } = useClerk();
@@ -13,8 +14,8 @@ export function ProductProfileCard() {
 
   if (!currentUser) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
-        loading profile…
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <Skeleton label="Loading profile" preset="inline" count={2} />
       </div>
     );
   }
@@ -33,8 +34,8 @@ export function ProductProfileCard() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setDialogOpen(true)}>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setDialogOpen(true)}>
             edit profile
           </Button>
           <Button variant="quiet" size="sm" onClick={() => void signOut()}>

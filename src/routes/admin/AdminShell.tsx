@@ -124,63 +124,6 @@ export function AdminPage({
   );
 }
 
-export function AdminTable({
-  head,
-  children,
-}: {
-  head: string[];
-  children: ReactNode;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[40rem] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border bg-surface text-label font-medium text-muted">
-            {head.map((label) => (
-              <th key={label} className="px-4 py-3 font-medium">
-                {label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
-  );
-}
-
-export function AdminRow({
-  onClick,
-  children,
-}: {
-  onClick?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <tr
-      className={`border-b border-border/60 last:border-b-0 ${
-        onClick
-          ? "cursor-pointer transition-colors hover:bg-surface focus-within:bg-surface"
-          : ""
-      }`}
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      tabIndex={onClick ? 0 : undefined}
-    >
-      {children}
-    </tr>
-  );
-}
-
 type AdminColumn<T> = {
   label: string;
   render: (item: T) => ReactNode;

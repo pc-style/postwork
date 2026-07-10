@@ -7,7 +7,8 @@ import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
 import { Avatar } from "../../components/Avatar";
 import { Sheet, SheetField } from "../../components/Sheet";
-import { AdminPage, AdminRow, AdminTable, StatusPill } from "./AdminShell";
+import { Skeleton } from "../../components/Skeleton";
+import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
 
 type AdminUser = FunctionReturnType<typeof api.admin.listUsers>[number];
 
@@ -62,41 +63,57 @@ export function AdminUsersPage() {
         ))}
       </div>
       {visible === undefined ? (
-        <p className="text-sm text-muted">loading…</p>
+        <Skeleton preset="table" count={5} label="Loading users" />
       ) : visible.length === 0 ? (
         <p className="text-sm text-muted">
           no {filter ?? "users"} here{filter ? " yet" : ""}.
         </p>
       ) : (
-        <AdminTable head={["user", "title", "role", "status", "joined"]}>
-          {visible.map((user) => (
-            <AdminRow key={user._id} onClick={() => setSelectedId(user._id)}>
-              <td className="px-4 py-2.5">
+        <AdminRecordList
+          items={visible}
+          recordLabel={(user) => user.name}
+          onView={(user) => setSelectedId(user._id)}
+          columns={[
+            {
+              label: "user",
+              primary: true,
+              render: (user) => (
                 <div className="flex items-center gap-2.5">
                   <Avatar user={user} size={24} />
                   <span className="text-fg">{user.name}</span>
                   {user.isAgent && <StatusPill tone="muted">agent</StatusPill>}
                 </div>
-              </td>
-              <td className="px-4 py-2.5 text-muted">{user.title}</td>
-              <td className="px-4 py-2.5">
+              ),
+            },
+            {
+              label: "title",
+              className: "text-muted",
+              render: (user) => user.title,
+            },
+            {
+              label: "role",
+              render: (user) => (
                 <StatusPill tone={user.role === "admin" ? "good" : "muted"}>
                   {user.role ?? "member"}
                 </StatusPill>
-              </td>
-              <td className="px-4 py-2.5">
-                {user.deactivatedAt ? (
+              ),
+            },
+            {
+              label: "status",
+              render: (user) =>
+                user.deactivatedAt ? (
                   <StatusPill tone="bad">deactivated</StatusPill>
                 ) : (
                   <StatusPill tone="muted">active</StatusPill>
-                )}
-              </td>
-              <td className="px-4 py-2.5 text-xs text-muted tabular-nums">
-                {timeAgo(user._creationTime)}
-              </td>
-            </AdminRow>
-          ))}
-        </AdminTable>
+                ),
+            },
+            {
+              label: "joined",
+              className: "text-xs text-muted tabular-nums",
+              render: (user) => timeAgo(user._creationTime),
+            },
+          ]}
+        />
       )}
 
       {selected && (

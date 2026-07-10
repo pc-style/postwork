@@ -3,16 +3,13 @@ import { Link } from "@tanstack/react-router";
 import { SignIn, useAuth } from "@clerk/clerk-react";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { Button } from "../components/Button";
+import { FormField } from "../components/FormField";
 import { ProfileDialog } from "../components/ProfileDialog";
-import { clerkAppearance } from "../lib/providers";
+import { Skeleton } from "../components/Skeleton";
 import { isDemo } from "../lib/demoMode";
+import { clerkAppearance } from "../lib/providers";
 import { useSession } from "../lib/session";
-
-/**
- * Route-level gates. `/` stays public; these wrap /app and /admin.
- * They are client-side convenience only — every Convex function enforces
- * authorization server-side.
- */
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   if (isDemo) return <>{children}</>;
@@ -23,39 +20,25 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
   const me = useQuery(api.users.me, isSignedIn ? {} : "skip");
 
-  if (!isLoaded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        loading sign-in…
-      </div>
-    );
-  }
-
+  if (!isLoaded) return <GateLoading label="Loading sign-in" />;
   if (!isSignedIn) return <SignInScreen />;
-
-  if (me === undefined) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        loading…
-      </div>
-    );
-  }
-
-  if (me === null || me.user === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        setting up…
-      </div>
-    );
-  }
-
+  if (me === undefined) return <GateLoading label="Loading account" />;
+  if (me === null || me.user === null) return <GateLoading label="Setting up account" />;
   if (me.status === "pending") return <ActivationScreen />;
-
   if (me.needsProfileSetup) {
     return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
   }
-
   return <>{children}</>;
+}
+
+function GateLoading({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-bg px-6">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-surface p-5">
+        <Skeleton label={label} preset="inline" count={3} />
+      </div>
+    </div>
+  );
 }
 
 function ActivationScreen() {
@@ -66,15 +49,12 @@ function ActivationScreen() {
   const [state, setState] = useState<
     "idle" | "checking" | "invalid" | "redeeming" | "error"
   >("idle");
-  // Hot-invite auto-claim: if an admin invited this github handle/email,
-  // activate on arrival — the user never types a code.
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
 
   useEffect(() => {
     let cancelled = false;
     claimTargetedInvite({})
       .then((result) => {
-        // On success `users.me` flips to active and the gate unmounts us.
         if (!cancelled && !result.activated) setAutoClaim("none");
       })
       .catch(() => {
@@ -83,11 +63,9 @@ function ActivationScreen() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [claimTargetedInvite]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const storedInvite = window.localStorage.getItem("postwork.inviteCode") ?? "";
     if (storedInvite) setInvite(storedInvite);
   }, []);
@@ -113,125 +91,103 @@ function ActivationScreen() {
     }
   };
 
-  if (autoClaim === "checking") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        checking for an invite matched to your account…
-      </div>
-    );
-  }
+  if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-6 py-10">
-      <div className="w-full max-w-4xl rounded-lg border border-border bg-surface p-7 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:grid md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
-        <div className="flex flex-col justify-between pb-6 md:pb-0">
-          <div>
-            <p className="text-label font-medium lowercase text-accent-soft">
-              postwork
-            </p>
-            <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] lowercase text-fg md:text-4xl">
-              activate your invite
-            </h1>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-muted">
-              enter the code an admin sent you. after activation, you’ll finish
-              your profile before entering the app.
-            </p>
-          </div>
-          <p className="mt-8 hidden max-w-xs border-t border-border pt-4 text-xs leading-5 text-faint md:block">
-            <Link to="/" className="text-accent-soft hover:text-fg">
-              ← back to the landing page
-            </Link>
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface-2 p-5">
-          <div className="mb-1.5 text-label font-medium lowercase text-muted">
-            invite code
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+    <AuthFrame
+      title="Activate your invite"
+      description="Enter the code an admin sent you. You will finish your profile after activation."
+    >
+      <div className="rounded-lg border border-border bg-surface-2 p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <FormField
+            label="Invite code"
+            required
+            error={
+              state === "invalid"
+                ? "This invite code is no longer valid."
+                : state === "error"
+                  ? "We couldn't activate this invite. Check the code and try again."
+                  : undefined
+            }
+          >
             <input
               value={invite}
-              onChange={(e) => {
-                setInvite(e.target.value);
+              onChange={(event) => {
+                setInvite(event.target.value);
                 setState("idle");
               }}
-              placeholder="pw-…"
-              className="w-full rounded-md border border-border bg-bg px-3 py-2 font-mono text-xs outline-none focus:border-accent/50"
+              placeholder="Example: pw-1234"
+              className="ui-field font-mono"
             />
-            <button
-              type="button"
-              onClick={() => void activate()}
-              disabled={
-                state === "checking" ||
-                state === "redeeming" ||
-                !normalizedInvite
-              }
-              className="rounded-md border border-border px-3 py-2 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
-            >
-              {state === "checking" || state === "redeeming"
-                ? "activating…"
-                : "activate"}
-            </button>
-          </div>
-          {state === "invalid" && (
-            <p className="mt-2 text-xs text-urgent">
-              that code isn't valid anymore.
-            </p>
-          )}
-          {state === "error" && (
-            <p className="mt-2 text-xs text-urgent">
-              couldn't activate that invite. try again.
-            </p>
-          )}
-          <div className="mt-6 border-t border-border pt-5">
-            <AccessOnboarding />
-          </div>
+          </FormField>
+          <Button
+            onClick={() => void activate()}
+            disabled={!normalizedInvite}
+            loading={state === "checking" || state === "redeeming"}
+            loadingLabel="activating…"
+            className="w-full sm:w-auto"
+          >
+            activate
+          </Button>
+        </div>
+        <div className="mt-6 border-t border-border pt-5">
+          <AccessOnboarding />
         </div>
       </div>
-    </div>
+    </AuthFrame>
   );
 }
 
 function SignInScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-6 py-10">
-      <div className="w-full max-w-4xl rounded-lg border border-border bg-surface p-7 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:grid md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
-        <div className="flex flex-col justify-between pb-6 md:pb-0">
-          <div>
-            <p className="text-label font-medium lowercase text-accent-soft">
-              postwork
-            </p>
-            <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] lowercase text-fg md:text-4xl">
-              sign in to enter postwork
-            </h1>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-muted">
-              have an invite code or need access? sort it out below, then sign
-              in with any provider.
-            </p>
-            <AccessOnboarding />
-          </div>
-          <p className="mt-8 hidden max-w-xs border-t border-border pt-4 text-xs leading-5 text-faint md:block">
-            <Link to="/" className="text-accent-soft hover:text-fg">
-              ← back to the landing page
-            </Link>
-          </p>
+    <AuthFrame
+      title="Sign in to Postwork"
+      description="Use your existing provider. If you need access, check an invite or send a request first."
+      sidebar={<AccessOnboarding />}
+    >
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <SignIn appearance={clerkAppearance} />
+      </div>
+    </AuthFrame>
+  );
+}
+
+function AuthFrame({
+  title,
+  description,
+  sidebar,
+  children,
+}: {
+  title: string;
+  description: string;
+  sidebar?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-4 py-8 sm:px-6 sm:py-10">
+      <div className="grid w-full max-w-4xl gap-6 rounded-lg border border-border bg-surface p-5 sm:p-7 md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
+        <div className="flex min-w-0 flex-col">
+          <p className="text-label font-medium lowercase text-accent-soft">postwork</p>
+          <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] text-fg sm:text-4xl">
+            {title}
+          </h1>
+          <p className="mt-4 max-w-sm text-sm leading-6 text-muted">{description}</p>
+          {sidebar}
+          <Link to="/" className="mt-8 inline-flex min-h-11 items-center text-xs text-accent-soft hover:text-fg">
+            <span aria-hidden="true" className="mr-1.5">←</span>
+            back to the landing page
+          </Link>
         </div>
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          <SignIn appearance={clerkAppearance} />
-        </div>
+        <div className="min-w-0">{children}</div>
       </div>
     </div>
   );
 }
 
-/**
- * Invite-code check + request-access form shown next to sign-in. The invite
- * check is a public query; a valid code just means "go ahead and sign in"
- * (redemption binds to the account after auth — see convex/access.ts).
- */
 export function AccessOnboarding() {
   const convexClient = useConvex();
   const requestAccess = useMutation(api.access.requestAccess);
-
   const [invite, setInvite] = useState("");
   const [inviteState, setInviteState] = useState<
     "idle" | "checking" | "valid" | "invalid"
@@ -268,80 +224,74 @@ export function AccessOnboarding() {
   };
 
   return (
-    <div className="mt-6 space-y-4 text-sm">
-      <div>
-        <div className="mb-1.5 text-label font-medium lowercase text-muted">
-          invite code
-        </div>
-        <div className="flex gap-2">
+    <div className="mt-6 space-y-5 text-sm">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <FormField
+          label="Invite code"
+          error={inviteState === "invalid" ? "This invite code is no longer valid." : undefined}
+          help={inviteState === "valid" ? "This code works. Sign in to activate it." : undefined}
+        >
           <input
             value={invite}
-            onChange={(e) => {
-              setInvite(e.target.value);
+            onChange={(event) => {
+              setInvite(event.target.value);
               setInviteState("idle");
             }}
-            placeholder="pw-…"
-            className="w-full max-w-[14rem] rounded-md border border-border bg-bg px-3 py-1.5 font-mono text-xs outline-none focus:border-accent/50"
+            placeholder="Example: pw-1234"
+            className="ui-field font-mono"
           />
-          <button
-            type="button"
-            onClick={() => void checkInvite()}
-            disabled={inviteState === "checking" || !normalizedInvite}
-            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
-          >
-            {inviteState === "checking" ? "checking…" : "check"}
-          </button>
-        </div>
-        {inviteState === "valid" && (
-          <p className="mt-1.5 text-xs text-accent-soft">
-            code works. sign in and you're set.
-          </p>
-        )}
-        {inviteState === "invalid" && (
-          <p className="mt-1.5 text-xs text-urgent">
-            that code isn't valid anymore.
-          </p>
-        )}
+        </FormField>
+        <Button
+          variant="secondary"
+          onClick={() => void checkInvite()}
+          disabled={!normalizedInvite}
+          loading={inviteState === "checking"}
+          loadingLabel="checking…"
+          className="w-full sm:w-auto"
+        >
+          check
+        </Button>
       </div>
 
-      <div>
-        <div className="mb-1.5 text-label font-medium lowercase text-muted">
-          no invite? request access
-        </div>
-        {requestState === "sent" ? (
-          <p className="text-xs text-accent-soft">
-            request sent. an admin will approve it and you'll get a code.
-          </p>
-        ) : (
-          <div className="flex gap-2">
+      {requestState === "sent" ? (
+        <p className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent-soft" role="status">
+          Request sent. An admin can approve it and send you an invite.
+        </p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <FormField
+            label="Work email"
+            help="Use this to request access without an invite."
+            error={requestState === "error" ? "We couldn't send the request. Check the address and try again." : undefined}
+          >
             <input
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setRequestState("idle");
+              }}
               placeholder="you@company.com"
               type="email"
-              className="w-full max-w-[14rem] rounded-md border border-border bg-bg px-3 py-1.5 text-xs outline-none focus:border-accent/50"
+              className="ui-field"
             />
-            <button
-              type="button"
-              onClick={() => void sendRequest()}
-              disabled={requestState === "sending" || !email.trim()}
-              className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
-            >
-              {requestState === "sending" ? "sending…" : "request"}
-            </button>
-          </div>
-        )}
-        {requestState === "error" && (
-          <p className="mt-1.5 text-xs text-urgent">
-            couldn't send that. check the email and try again.
-          </p>
-        )}
-      </div>
+          </FormField>
+          <Button
+            variant="secondary"
+            onClick={() => void sendRequest()}
+            disabled={!email.trim()}
+            loading={requestState === "sending"}
+            loadingLabel="sending…"
+            className="w-full sm:w-auto"
+          >
+            request access
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
-function inviteCodeFromInput(value: string): string {
+function inviteCodeFromInput(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
   const joinMatch = trimmed.match(/\/join\/([^/?#]+)/i);
@@ -358,32 +308,21 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 
 function AdminGate({ children }: { children: ReactNode }) {
   const { currentUser } = useSession();
-  // In product mode the server is the source of truth; in demo mode the
-  // switcher's current persona decides (server checks still apply to writes).
-  const serverIsAdmin = useQuery(
-    api.admin.viewerIsAdmin,
-    isDemo ? "skip" : {},
-  );
-
+  const serverIsAdmin = useQuery(api.admin.viewerIsAdmin, isDemo ? "skip" : {});
   const isAdmin = isDemo ? currentUser?.role === "admin" : serverIsAdmin;
 
   if (isAdmin === undefined || (isDemo && !currentUser)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
-        checking access…
-      </div>
-    );
+    return <GateLoading label="Checking admin access" />;
   }
 
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg px-6 text-center">
-        <p className="text-sm text-fg">this area is for admins.</p>
-        <p className="text-xs text-muted">
-          if you think you should have access, ask an existing admin.
-        </p>
-        <Link to="/app" className="text-xs text-accent-soft hover:text-fg">
-          ← back to the app
+        <h1 className="text-lg font-semibold text-fg">Admin access required</h1>
+        <p className="max-w-sm text-sm text-muted">Ask an existing admin if you need access to this area.</p>
+        <Link to="/app" className="inline-flex min-h-11 items-center text-sm text-accent-soft hover:text-fg">
+          <span aria-hidden="true" className="mr-1.5">←</span>
+          back to the app
         </Link>
       </div>
     );

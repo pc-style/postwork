@@ -4,7 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
 import { Sheet, SheetField } from "../../components/Sheet";
-import { AdminPage, AdminRow, AdminTable, StatusPill } from "./AdminShell";
+import { Skeleton } from "../../components/Skeleton";
+import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
 
 type AuditEntry = FunctionReturnType<typeof api.admin.listAuditLog>[number];
 
@@ -19,34 +20,44 @@ export function AdminAuditLogPage() {
       description="append-only history of control-plane actions. click an event for the full record."
     >
       {entries === undefined ? (
-        <p className="text-sm text-muted">loading…</p>
+        <Skeleton preset="table" count={5} label="Loading audit log" />
       ) : entries.length === 0 ? (
         <p className="text-sm text-muted">
           empty so far. admin actions and onboarding events land here.
         </p>
       ) : (
-        <AdminTable head={["action", "actor", "target", "when"]}>
-          {entries.map((entry) => (
-            <AdminRow key={entry._id} onClick={() => setSelectedId(entry._id)}>
-              <td className="px-4 py-2.5 font-mono text-xs text-fg">
-                {entry.action}
-              </td>
-              <td className="px-4 py-2.5 text-muted">
-                {entry.actorName ?? "system"}
-              </td>
-              <td className="px-4 py-2.5">
-                {entry.targetType ? (
+        <AdminRecordList
+          items={entries}
+          recordLabel={(entry) => entry.action}
+          onView={(entry) => setSelectedId(entry._id)}
+          columns={[
+            {
+              label: "action",
+              primary: true,
+              className: "font-mono text-xs text-fg",
+              render: (entry) => entry.action,
+            },
+            {
+              label: "actor",
+              className: "text-muted",
+              render: (entry) => entry.actorName ?? "system",
+            },
+            {
+              label: "target",
+              render: (entry) =>
+                entry.targetType ? (
                   <StatusPill tone="muted">{entry.targetType}</StatusPill>
                 ) : (
-                  "—"
-                )}
-              </td>
-              <td className="px-4 py-2.5 text-xs text-muted tabular-nums">
-                {timeAgo(entry.createdAt)}
-              </td>
-            </AdminRow>
-          ))}
-        </AdminTable>
+                  "none"
+                ),
+            },
+            {
+              label: "when",
+              className: "text-xs text-muted tabular-nums",
+              render: (entry) => timeAgo(entry.createdAt),
+            },
+          ]}
+        />
       )}
 
       {selected && (
@@ -80,7 +91,7 @@ function AuditSheet({
     >
       <div className="divide-y divide-border/60">
         <SheetField label="actor">{entry.actorName ?? "system"}</SheetField>
-        <SheetField label="target type">{entry.targetType ?? "—"}</SheetField>
+        <SheetField label="target type">{entry.targetType ?? "none"}</SheetField>
         {entry.targetId ? (
           <SheetField label="target id" mono>
             {entry.targetId}

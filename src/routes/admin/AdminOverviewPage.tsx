@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
+import { Skeleton } from "../../components/Skeleton";
 import { AdminPage } from "./AdminShell";
 
 export function AdminOverviewPage() {
@@ -11,10 +12,10 @@ export function AdminOverviewPage() {
   return (
     <AdminPage
       title="overview"
-      description="the state of the org at a glance. everything here has a detail view in the sections on the left."
+      description="counts for members, invites, requests, and recent audit activity."
     >
       {overview === undefined ? (
-        <p className="text-sm text-muted">loading…</p>
+        <Skeleton preset="stats" count={5} label="Loading admin overview" />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -56,9 +57,9 @@ export function AdminOverviewPage() {
               </h2>
               <Link
                 to="/admin/audit-log"
-                className="text-xs text-accent-soft hover:text-fg"
+                className="inline-flex min-h-11 items-center rounded-md px-2 text-xs text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
-                full audit log →
+                view details
               </Link>
             </div>
             {overview.recentAudit.length === 0 ? (
@@ -106,7 +107,7 @@ function Stat({
     <Link
       to={to}
       search={filter ? { filter } : {}}
-      className="rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40"
+      className="flex min-h-11 flex-col justify-center rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
     >
       <div
         className={`text-2xl font-semibold tabular-nums ${

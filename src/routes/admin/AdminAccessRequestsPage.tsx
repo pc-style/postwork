@@ -4,7 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
 import { Sheet, SheetField } from "../../components/Sheet";
-import { AdminPage, AdminRow, AdminTable, StatusPill } from "./AdminShell";
+import { Skeleton } from "../../components/Skeleton";
+import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
 import { ActionButton } from "./AdminUsersPage";
 
 type AccessRequest = FunctionReturnType<
@@ -28,32 +29,43 @@ export function AdminAccessRequestsPage() {
       description="people who asked to join. approving mints a single-use invite for them."
     >
       {requests === undefined ? (
-        <p className="text-sm text-muted">loading…</p>
+        <Skeleton preset="table" count={5} label="Loading access requests" />
       ) : requests.length === 0 ? (
         <p className="text-sm text-muted">
           no requests yet. they land here when someone asks to join from the
           sign-in screen.
         </p>
       ) : (
-        <AdminTable head={["email", "name", "status", "requested"]}>
-          {requests.map((request) => (
-            <AdminRow
-              key={request._id}
-              onClick={() => setSelectedId(request._id)}
-            >
-              <td className="px-4 py-2.5 text-fg">{request.email}</td>
-              <td className="px-4 py-2.5 text-muted">{request.name ?? "—"}</td>
-              <td className="px-4 py-2.5">
+        <AdminRecordList
+          items={requests}
+          recordLabel={(request) => request.email}
+          onView={(request) => setSelectedId(request._id)}
+          columns={[
+            {
+              label: "email",
+              primary: true,
+              render: (request) => request.email,
+            },
+            {
+              label: "name",
+              className: "text-muted",
+              render: (request) => request.name ?? "none",
+            },
+            {
+              label: "status",
+              render: (request) => (
                 <StatusPill tone={STATUS_TONE[request.status]}>
                   {request.status}
                 </StatusPill>
-              </td>
-              <td className="px-4 py-2.5 text-xs text-muted tabular-nums">
-                {timeAgo(request.createdAt)}
-              </td>
-            </AdminRow>
-          ))}
-        </AdminTable>
+              ),
+            },
+            {
+              label: "requested",
+              className: "text-xs text-muted tabular-nums",
+              render: (request) => timeAgo(request.createdAt),
+            },
+          ]}
+        />
       )}
 
       {selected && (
@@ -128,7 +140,7 @@ function RequestSheet({
       </div>
       {request.status === "approved" && (
         <p className="mt-4 text-xs text-muted">
-          the invite code is in the invites section — copy it there and send it
+          the invite code is in the invites section. copy it there and send it
           to the requester.
         </p>
       )}

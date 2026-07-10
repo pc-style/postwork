@@ -1,15 +1,23 @@
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
-import type { Id } from "../../convex/_generated/dataModel";
-import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
-import { useSpacesList } from "../lib/spaces";
-import { Button } from "./Button";
-import { ComposerShell } from "./ComposerShell";
 import {
-  useAttachmentPicker,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import type { Id } from "../../convex/_generated/dataModel";
+import { PRIORITIES, SPACES, priorityStyles } from "../lib/format";
+import { useSpacesList } from "../lib/spaces";
+import type { AttachmentInput } from "../lib/types";
+import {
   AttachmentButton,
   AttachmentThumbnails,
+  useAttachmentPicker,
 } from "./AttachmentPicker";
-import type { AttachmentInput } from "../lib/types";
+import { Button } from "./Button";
+import { ComposerShell } from "./ComposerShell";
+import { FormField } from "./FormField";
+import { SelectionGroup } from "./SelectionGroup";
 
 type Priority = (typeof PRIORITIES)[number];
 
@@ -27,6 +35,13 @@ type SpaceOption = {
   label: string;
 };
 
+type StoredDraft = {
+  title?: string;
+  body?: string;
+  priority?: Priority;
+  spaceKey?: string;
+};
+
 export function PriorityPicker({
   priority,
   onChange,
@@ -35,89 +50,72 @@ export function PriorityPicker({
   onChange: (priority: Priority) => void;
 }) {
   return (
-    <div className="flex gap-1">
-      {PRIORITIES.map((pr) => (
-        <button
-          key={pr}
-          type="button"
-          onClick={() => onChange(pr)}
-          className={`rounded-md border px-2.5 py-1 text-xs lowercase transition ${
-            priority === pr
-              ? priorityStyles[pr].className
-              : "border-border text-muted hover:text-fg"
-          }`}
-        >
-          {pr}
-        </button>
-      ))}
-    </div>
+    <SelectionGroup
+      label="Priority"
+      value={priority}
+      onChange={onChange}
+      options={PRIORITIES.map((value) => ({
+        value,
+        label: priorityStyles[value].label,
+        className: priorityStyles[value].className,
+      }))}
+    />
   );
 }
 
 export function PostForm({
-  layout = "default",
   showSpace = false,
   fixedSpace,
   requireTitle = true,
-  showTitle = true,
-  showMeta = true,
   bodyRows = 7,
-  bodyResizeClassName = "resize-y",
   autoFocusTitle = true,
   autoFocusBody = false,
   titleRef,
   textareaRef,
-  titlePlaceholder = "what's this about? write a clear title.",
-  bodyPlaceholder = "share the full context. posts are durable, write it so someone finds it in search next quarter.",
+  titlePlaceholder = "Example: Release checklist update",
+  bodyPlaceholder = "Add the context, decision, or question.",
+  titleHelp = "Summarize the post in one line.",
+  bodyHelp = "Add the context, decision, or question.",
   submitLabel = "post",
   submittingLabel = "posting…",
   resetOnSubmit = false,
   extraFields,
   onCancel,
-  onSubmitted,
-  titleClassName,
-  textareaClassName,
-  footerClassName,
-  metaClassName,
-  submitButtonClassName,
-  onFieldKeyDown,
+  draftKey,
   onSubmit,
 }: {
-  layout?: "default" | "quickBar";
   showSpace?: boolean;
   fixedSpace?: SpaceOption;
   requireTitle?: boolean;
-  showTitle?: boolean;
-  showMeta?: boolean;
   bodyRows?: number;
-  bodyResizeClassName?: string;
   autoFocusTitle?: boolean;
   autoFocusBody?: boolean;
   titleRef?: RefObject<HTMLInputElement | null>;
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
   titlePlaceholder?: string;
   bodyPlaceholder?: string;
+  titleHelp?: string;
+  bodyHelp?: string;
   submitLabel?: string;
   submittingLabel?: string;
   resetOnSubmit?: boolean;
   extraFields?: ReactNode;
   onCancel?: () => void;
-  onSubmitted?: () => void;
-  titleClassName?: string;
-  textareaClassName?: string;
-  footerClassName?: string;
-  metaClassName?: string;
-  submitButtonClassName?: string;
-  onFieldKeyDown?: (
-    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => void;
+  draftKey?: string;
   onSubmit: (fields: PostFormFields) => Promise<void> | void;
 }) {
+  const draft = useMemo(() => readDraft(draftKey), [draftKey]);
   const spaces = useSpacesList();
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [priority, setPriority] = useState<Priority>("normal");
+  const [title, setTitle] = useState(draft?.title ?? "");
+  const [body, setBody] = useState(draft?.body ?? "");
+  const [priority, setPriority] = useState<Priority>(draft?.priority ?? "normal");
+  const [spaceKey, setSpaceKey] = useState(
+    draft?.spaceKey ?? fixedSpace?.id ?? fixedSpace?.label ?? "",
+  );
   const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [bodyTouched, setBodyTouched] = useState(false);
   const {
     pending,
     addFiles,
@@ -128,6 +126,7 @@ export function PostForm({
     hasUploading,
     hasAttachmentErrors,
   } = useAttachmentPicker();
+
   const fallbackSpaces = useMemo<SpaceOption[]>(
     () => SPACES.map((label) => ({ label })),
     [],
@@ -137,15 +136,9 @@ export function PostForm({
       fixedSpace
         ? [fixedSpace]
         : spaces.length > 0
-          ? spaces.map((space) => ({
-              id: space._id,
-              label: space.name,
-            }))
+          ? spaces.map((space) => ({ id: space._id, label: space.name }))
           : fallbackSpaces,
     [fallbackSpaces, fixedSpace, spaces],
-  );
-  const [spaceKey, setSpaceKey] = useState<string>(
-    fixedSpace?.id ?? fixedSpace?.label ?? "",
   );
 
   useEffect(() => {
@@ -158,15 +151,25 @@ export function PostForm({
     }
   }, [fixedSpace, showSpace, spaceKey, spaceOptions]);
 
+  useEffect(() => {
+    if (!draftKey) return;
+    window.sessionStorage.setItem(
+      draftKey,
+      JSON.stringify({ title, body, priority, spaceKey } satisfies StoredDraft),
+    );
+  }, [body, draftKey, priority, spaceKey, title]);
+
   const selectedSpace =
     spaceOptions.find((option) => (option.id ?? option.label) === spaceKey) ??
     fixedSpace ??
     spaceOptions[0];
-
+  const titleMissing = requireTitle && title.trim().length === 0;
+  const bodyMissing = body.trim().length === 0;
+  const spaceMissing = showSpace && !selectedSpace;
   const canSubmit =
-    (!requireTitle || title.trim().length > 0) &&
-    body.trim().length > 0 &&
-    (!showSpace || !!selectedSpace) &&
+    !titleMissing &&
+    !bodyMissing &&
+    !spaceMissing &&
     !hasUploading &&
     !hasAttachmentErrors;
 
@@ -175,12 +178,17 @@ export function PostForm({
     setBody("");
     setPriority("normal");
     setSpaceKey(spaceOptions[0]?.id ?? spaceOptions[0]?.label ?? "");
+    setTitleTouched(false);
+    setBodyTouched(false);
     clearAttachments();
   };
 
   const submit = async () => {
-    if (!canSubmit) return;
+    setTitleTouched(true);
+    setBodyTouched(true);
+    if (!canSubmit || busy) return;
     setBusy(true);
+    setFormError(null);
     try {
       const attachments = getReadyAttachments();
       await onSubmit({
@@ -191,128 +199,71 @@ export function PostForm({
         priority,
         attachments: attachments.length > 0 ? attachments : undefined,
       });
+      if (draftKey) window.sessionStorage.removeItem(draftKey);
       if (resetOnSubmit) reset();
-      onSubmitted?.();
+    } catch (caught) {
+      setFormError(
+        caught instanceof Error
+          ? caught.message
+          : "We couldn't create the post. Check the fields and try again.",
+      );
     } finally {
       setBusy(false);
     }
   };
 
-  const meta = showMeta ? (
-    <div className={metaClassName ?? "mb-4 flex flex-wrap items-center gap-4"}>
-      {showSpace ? (
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted">space</span>
-          <select
-            value={selectedSpace ? (selectedSpace.id ?? selectedSpace.label) : ""}
-            onChange={(event) => setSpaceKey(event.target.value)}
-            className="rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm outline-none focus:border-accent/50"
-          >
-            {spaceOptions.map((space) => (
-              <option key={space.id ?? space.label} value={space.id ?? space.label}>
-                {space.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : fixedSpace ? (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted">space</span>
-          <span className="rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm text-fg">
-            {fixedSpace.label}
-          </span>
-        </div>
-      ) : null}
-
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted">priority</span>
-        <PriorityPicker priority={priority} onChange={setPriority} />
-      </div>
-
-      {extraFields}
-      {canUpload && <AttachmentButton onFiles={addFiles} />}
-    </div>
-  ) : null;
-
-  if (layout === "quickBar") {
-    return (
-      <div>
-        {showTitle ? (
-          <input
-            ref={titleRef}
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            onKeyDown={onFieldKeyDown}
-            autoFocus={autoFocusTitle}
-            placeholder={titlePlaceholder}
-            className={
-              titleClassName ??
-              "mb-2 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm font-medium outline-none focus:border-accent/50"
-            }
-          />
-        ) : null}
-
-        {pending.length > 0 && (
-          <div className="mb-2">
-            <AttachmentThumbnails
-              pending={pending}
-              onRemove={removeAttachment}
-            />
-          </div>
-        )}
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            value={body}
-            onFocus={() => onSubmitted?.()}
-            onChange={(event) => setBody(event.target.value)}
-            onKeyDown={(event) => {
-              onFieldKeyDown?.(event);
-              if (event.defaultPrevented) return;
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                event.preventDefault();
-                void submit();
-              }
-            }}
-            onPaste={(e) => {
-              if (!canUpload) return;
-              const files = Array.from(e.clipboardData.files).filter((f) =>
-                f.type.startsWith("image/"),
-              );
-              if (files.length > 0) {
-                e.preventDefault();
-                void addFiles(files);
-              }
-            }}
-            rows={bodyRows}
-            placeholder={bodyPlaceholder}
-            className={
-              textareaClassName ??
-              "min-h-[2.5rem] w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
-            }
-          />
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={busy || !canSubmit}
-            className={
-              submitButtonClassName ??
-              "shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
-            }
-          >
-            {busy ? submittingLabel : submitLabel}
-          </button>
-        </div>
-
-        {showMeta ? (
-          <div className={metaClassName ?? "mt-2 flex flex-wrap items-center gap-3"}>
+  return (
+    <div className="space-y-5">
+      <ComposerShell
+        title={title}
+        setTitle={(value) => {
+          setTitle(value);
+          setFormError(null);
+        }}
+        titleRef={titleRef}
+        titleLabel="Title"
+        titleHelp={titleHelp}
+        titleError={titleTouched && titleMissing ? "Add a title." : undefined}
+        titlePlaceholder={titlePlaceholder}
+        titleAutoFocus={autoFocusTitle}
+        titleRequired={requireTitle}
+        titleOptional={!requireTitle}
+        body={body}
+        setBody={(value) => {
+          setBody(value);
+          setFormError(null);
+        }}
+        textareaRef={textareaRef}
+        bodyLabel="Post"
+        bodyHelp={bodyHelp}
+        bodyError={bodyTouched && bodyMissing ? "Add the post content." : undefined}
+        placeholder={bodyPlaceholder}
+        rows={bodyRows}
+        autoFocus={autoFocusBody}
+        textareaClassName="ui-field min-h-32 resize-y"
+        onPaste={(event) => {
+          if (!canUpload) return;
+          const files = Array.from(event.clipboardData.files).filter((file) =>
+            file.type.startsWith("image/"),
+          );
+          if (files.length > 0) {
+            event.preventDefault();
+            void addFiles(files);
+          }
+        }}
+        beforeBody={
+          pending.length > 0 ? (
+            <AttachmentThumbnails pending={pending} onRemove={removeAttachment} />
+          ) : undefined
+        }
+        afterBody={
+          <div className="grid gap-5">
             {showSpace ? (
-              <label className="flex items-center gap-1.5 text-xs text-muted">
-                space
+              <FormField label="Space" required error={spaceMissing ? "Choose a space." : undefined}>
                 <select
-                  value={selectedSpace ? (selectedSpace.id ?? selectedSpace.label) : ""}
+                  value={selectedSpace ? selectedSpace.id ?? selectedSpace.label : ""}
                   onChange={(event) => setSpaceKey(event.target.value)}
-                  className="rounded-md border border-border bg-bg px-2 py-1 text-xs outline-none focus:border-accent/50"
+                  className="ui-field"
                 >
                   {spaceOptions.map((space) => (
                     <option key={space.id ?? space.label} value={space.id ?? space.label}>
@@ -320,105 +271,67 @@ export function PostForm({
                     </option>
                   ))}
                 </select>
-              </label>
+              </FormField>
             ) : fixedSpace ? (
-              <div className="flex items-center gap-1.5 text-xs text-muted">
-                <span>space</span>
-                <span className="rounded-md border border-border bg-bg px-2 py-1 text-xs text-fg">
+              <div>
+                <p className="text-sm font-medium text-fg">Space</p>
+                <p className="mt-1.5 rounded-md border border-border bg-bg px-3 py-2.5 text-sm text-muted">
                   {fixedSpace.label}
-                </span>
+                </p>
               </div>
             ) : null}
-
-            <div className="flex items-center gap-1.5 text-xs text-muted">
-              priority
-              <PriorityPicker priority={priority} onChange={setPriority} />
-            </div>
-
+            <PriorityPicker priority={priority} onChange={setPriority} />
             {extraFields}
-            {canUpload && <AttachmentButton onFiles={addFiles} />}
-            {hasUploading && (
-              <span className="text-xs text-accent-soft">uploading…</span>
-            )}
-            {hasAttachmentErrors && (
-              <span className="text-xs text-urgent">image failed — remove or retry</span>
-            )}
-
-            {onCancel ? (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="ml-auto text-xs text-muted transition hover:text-fg"
-              >
-                cancel
-              </button>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+              {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
+              {hasUploading ? <span className="text-xs text-accent-soft">Uploading images…</span> : null}
+              {hasAttachmentErrors ? (
+                <span className="ui-error">An image failed to upload. Remove it and try again.</span>
+              ) : null}
+            </div>
           </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <ComposerShell
-      title={showTitle ? title : undefined}
-      setTitle={showTitle ? setTitle : undefined}
-      titleRef={titleRef}
-      titlePlaceholder={titlePlaceholder}
-      titleAutoFocus={autoFocusTitle}
-      titleClassName={
-        titleClassName ??
-        "mb-3 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-base font-medium outline-none focus:border-accent/50"
-      }
-      body={body}
-      setBody={setBody}
-      textareaRef={textareaRef}
-      placeholder={bodyPlaceholder}
-      rows={bodyRows}
-      autoFocus={autoFocusBody}
-      textareaClassName={
-        textareaClassName ??
-        `mb-3 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50 ${bodyResizeClassName}`
-      }
-      onFieldKeyDown={onFieldKeyDown}
-      onPaste={(e) => {
-        if (!canUpload) return;
-        const files = Array.from(e.clipboardData.files).filter((f) =>
-          f.type.startsWith("image/"),
-        );
-        if (files.length > 0) {
-          e.preventDefault();
-          void addFiles(files);
         }
-      }}
-      beforeBody={
-        pending.length > 0 ? (
-          <div className="mb-2">
-            <AttachmentThumbnails
-              pending={pending}
-              onRemove={removeAttachment}
-            />
-          </div>
-        ) : undefined
-      }
-      afterBody={meta}
-      footerClassName={footerClassName ?? "flex justify-end gap-2"}
-      actions={
-        onCancel ? (
-          <Button variant="quiet" onClick={onCancel}>
-            cancel
-          </Button>
-        ) : undefined
-      }
-      submitLabel={submitLabel}
-      submittingLabel={submittingLabel}
-      submitting={busy}
-      disabled={busy || !canSubmit}
-      submitButtonClassName={
-        submitButtonClassName ??
-        "rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
-      }
-      onSubmit={() => void submit()}
-    />
+        footerClassName="mt-1 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end"
+        actions={
+          onCancel ? (
+            <Button variant="secondary" onClick={onCancel} disabled={busy} className="w-full sm:w-auto">
+              cancel
+            </Button>
+          ) : undefined
+        }
+        hint={
+          <span>
+            {canSubmit
+              ? "Press Cmd or Ctrl + Enter to post."
+              : "Complete the required fields before posting."}
+          </span>
+        }
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+        submitting={busy}
+        disabled={busy || !canSubmit}
+        onSubmit={() => void submit()}
+      />
+      {formError ? <p role="alert" className="ui-error">{formError}</p> : null}
+    </div>
   );
+}
+
+function readDraft(key: string | undefined): StoredDraft | null {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const value: unknown = JSON.parse(window.sessionStorage.getItem(key) ?? "null");
+    if (!value || typeof value !== "object") return null;
+    const candidate = value as StoredDraft;
+    return {
+      title: typeof candidate.title === "string" ? candidate.title : undefined,
+      body: typeof candidate.body === "string" ? candidate.body : undefined,
+      priority: PRIORITIES.includes(candidate.priority as Priority)
+        ? candidate.priority
+        : undefined,
+      spaceKey: typeof candidate.spaceKey === "string" ? candidate.spaceKey : undefined,
+    };
+  } catch {
+    return null;
+  }
 }

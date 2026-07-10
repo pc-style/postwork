@@ -4,6 +4,7 @@ import {
   ATTACHMENT_ALLOWED_TYPES,
 } from "../lib/attachments";
 import type { AttachmentInput, AttachmentWithUrl } from "../lib/types";
+import { Button } from "./Button";
 
 /**
  * Image attachment picker + gallery components (Phase 3.4).
@@ -124,20 +125,20 @@ export function AttachmentButton({
         type="file"
         accept={ATTACHMENT_ALLOWED_TYPES.join(",")}
         multiple
+        aria-label="Choose image attachments"
         className="hidden"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) onFiles(e.target.files);
           e.target.value = "";
         }}
       />
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="sm"
         onClick={() => ref.current?.click()}
-        title="attach images"
-        className="rounded-md border border-border px-2 py-1 text-label text-muted transition hover:text-fg"
       >
-        {"+ image"}
-      </button>
+        add images
+      </Button>
     </>
   );
 }
@@ -152,11 +153,11 @@ export function AttachmentThumbnails({
 }) {
   if (pending.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-3" aria-live="polite">
       {pending.map((p) => (
         <div
           key={p.key}
-          className="relative size-16 overflow-hidden rounded-md border border-border bg-surface"
+          className="relative size-20 overflow-hidden rounded-md border border-border bg-surface"
         >
           <img
             src={p.previewUrl}
@@ -164,22 +165,24 @@ export function AttachmentThumbnails({
             className="size-full object-cover"
           />
           {p.uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg/60 text-[10px] text-muted">
-              uploading…
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-xs text-muted">
+              Uploading…
             </div>
           )}
           {p.error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-urgent/20 p-1 text-center text-[9px] leading-tight text-urgent">
-              {p.error}
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/90 p-1 text-center text-[10px] leading-tight text-urgent">
+              Upload failed
             </div>
           )}
           <button
             type="button"
             onClick={() => onRemove(p.key)}
-            className="absolute top-0 right-0 flex size-4 items-center justify-center rounded bg-bg/80 text-[10px] text-fg hover:bg-bg"
-            aria-label="remove image"
+            className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-md bg-bg/90 text-fg transition-colors hover:bg-surface-2"
+            aria-label={`Remove ${p.filename}`}
           >
-            x
+            <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
       ))}
@@ -203,12 +206,12 @@ export function AttachmentGallery({
             href={att.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block overflow-hidden rounded-md border border-border transition hover:border-accent/40"
+            className="block max-w-full overflow-hidden rounded-md border border-border transition hover:border-accent/40"
           >
             <img
               src={att.url}
               alt={att.filename}
-              className="max-h-48 max-w-xs object-cover"
+              className="max-h-48 max-w-full object-cover"
               loading="lazy"
             />
           </a>
