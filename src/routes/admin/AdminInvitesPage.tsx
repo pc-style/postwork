@@ -76,7 +76,7 @@ export function AdminInvitesPage() {
                 if (e.key === "Enter" && !creating) void mint();
               }}
               placeholder="@github-handle or email (optional)"
-              className="w-56 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs outline-none placeholder:font-sans focus:border-accent/50"
+              className="min-h-11 w-full max-w-56 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
             />
             <button
               type="button"

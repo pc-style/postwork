@@ -90,6 +90,7 @@ export function AnchoredConfirmation({
     setError(null);
     try {
       await onConfirm();
+      setBusy(false);
       setOpen(false);
       restoreFocus();
     } catch (caught) {
@@ -121,10 +122,10 @@ export function AnchoredConfirmation({
       {open ? (
         <span
           role="alertdialog"
-          aria-modal="false"
+          aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
-          className={`absolute top-full z-40 mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 text-left shadow-[0_12px_36px_rgba(0,0,0,0.5)] ${
+          className={`absolute bottom-full z-40 mb-2 w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 text-left shadow-[0_12px_36px_rgba(0,0,0,0.5)] ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

@@ -17,7 +17,7 @@ export function AdminAuditLogPage() {
   return (
     <AdminPage
       title="audit log"
-      description="append-only history of control-plane actions. click an event for the full record."
+      description="append-only history of control-plane actions. open view details for the full record."
     >
       {entries === undefined ? (
         <Skeleton preset="table" count={5} label="Loading audit log" />

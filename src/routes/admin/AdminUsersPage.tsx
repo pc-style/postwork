@@ -44,7 +44,7 @@ export function AdminUsersPage() {
   return (
     <AdminPage
       title="users"
-      description="every member and agent in the org. click a row for details and moderation actions."
+      description="every member and agent in the org. open view details for moderation actions."
     >
       <div className="mb-4 flex items-center gap-1.5">
         {FILTERS.map(({ label, value }) => (
@@ -191,7 +191,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
               value={title}
               onChange={(event) => setTitleDraft(event.target.value)}
               placeholder="role or description, not permissions"
-              className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg outline-none transition-colors placeholder:text-muted/60 focus:border-accent/50"
+              className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg transition-colors placeholder:text-muted/60 focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
             />
           </label>
           <div className="mt-2 flex items-center justify-between gap-2">

@@ -243,32 +243,32 @@ function ExperimentCard({
         <p className="mt-1 font-sans text-sm text-muted">
           {experiment.summary}
         </p>
-
-        {suggestion ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-label">
-            <span className="text-muted">suggested by</span>
-            <span className="text-fg">{suggestion.name}</span>
-            <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
-              {suggestion.handle}
-            </span>
-            {suggestion.link && (
-              <a
-                href={suggestion.link}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-accent-soft underline-offset-2 transition hover:underline"
-              >
-                view suggestion →
-              </a>
-            )}
-          </div>
-        ) : (
+        {suggestion ? null : (
           <p className="mt-3 text-label text-muted">
             requested by {experiment.requestedBy}
           </p>
         )}
       </Link>
+
+      {suggestion ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-label">
+          <span className="text-muted">suggested by</span>
+          <span className="text-fg">{suggestion.name}</span>
+          <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
+            {suggestion.handle}
+          </span>
+          {suggestion.link && (
+            <a
+              href={suggestion.link}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent-soft underline-offset-2 transition hover:underline"
+            >
+              view suggestion →
+            </a>
+          )}
+        </div>
+      ) : null}
 
       <div className="flex items-center justify-between gap-3 border-t border-dashed border-border px-4 py-2.5">
         <Link
