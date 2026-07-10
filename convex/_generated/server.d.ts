@@ -32,6 +32,9 @@ type Env = {
   readonly DEMO: string | undefined;
   readonly OPENAI_API_KEY: string | undefined;
   readonly OPENAI_MODEL: string | undefined;
+  readonly OPENROUTER_API_KEY: string | undefined;
+  readonly OPENROUTER_BASE_URL: string | undefined;
+  readonly OPENROUTER_MODEL: string | undefined;
   readonly PIONEER_API_KEY: string | undefined;
   readonly PIONEER_BASE_URL: string | undefined;
   readonly PIONEER_MODEL: string | undefined;

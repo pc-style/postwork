@@ -12,13 +12,16 @@ import { logWarn } from "./lib/observability";
 /**
  * Resolve a language model from environment variables.
  *
- *   AI_PROVIDER = "openai" | "gateway" | "pioneer"   (default: "openai")
+ *   AI_PROVIDER = "openai" | "gateway" | "openrouter" | "pioneer"   (default: "openai")
  *
  * OpenAI (direct, https://platform.openai.com):
  *   OPENAI_API_KEY, OPENAI_MODEL  (default "gpt-5.4-mini")
  *
  * Vercel AI Gateway (routes to OpenAI & others):
  *   AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL  (e.g. "openai/gpt-5.4-mini")
+ *
+ * OpenRouter (OpenAI-compatible, https://openrouter.ai):
+ *   OPENROUTER_API_KEY, OPENROUTER_MODEL  (default "openai/gpt-5.4-mini"), OPENROUTER_BASE_URL?
  *
  * Pioneer (OpenAI-compatible, https://docs.pioneer.ai):
  *   PIONEER_API_KEY, PIONEER_MODEL, PIONEER_BASE_URL?
@@ -35,6 +38,22 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
       });
     const modelId = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-5.4-mini";
     return { model: createGateway({ apiKey })(modelId), modelId };
+  }
+
+  if (provider === "openrouter") {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey)
+      throw new ConvexError({
+        code: "NO_AI_KEY",
+        message: "OPENROUTER_API_KEY is not set",
+      });
+    const modelId = process.env.OPENROUTER_MODEL ?? "openai/gpt-5.4-mini";
+    const openrouter = createOpenAICompatible({
+      name: "openrouter",
+      baseURL: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
+      apiKey,
+    });
+    return { model: openrouter.chatModel(modelId), modelId };
   }
 
   if (provider === "pioneer") {
@@ -79,6 +98,7 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
 export function aiConfigured(): boolean {
   const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
   if (provider === "gateway") return !!process.env.AI_GATEWAY_API_KEY;
+  if (provider === "openrouter") return !!process.env.OPENROUTER_API_KEY;
   if (provider === "pioneer")
     return !!process.env.PIONEER_API_KEY && !!process.env.PIONEER_MODEL;
   return !!process.env.OPENAI_API_KEY;

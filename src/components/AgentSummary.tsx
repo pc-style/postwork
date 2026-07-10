@@ -32,7 +32,7 @@ export function AgentSummary({
       const msg = e instanceof Error ? e.message : String(e);
       setError(
         /API_KEY|not set/i.test(msg)
-          ? "No AI provider configured. Set OPENAI_API_KEY (or AI_GATEWAY_API_KEY/PIONEER_API_KEY with AI_PROVIDER) in your Convex env to enable live summaries."
+          ? "No AI provider configured. Set OPENAI_API_KEY, or set AI_PROVIDER with AI_GATEWAY_API_KEY/OPENROUTER_API_KEY/PIONEER_API_KEY, in your Convex env to enable live summaries."
           : msg,
       );
     } finally {
