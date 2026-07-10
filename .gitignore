@@ -16,6 +16,9 @@ dist
 .vercel
 
 # Local agent/editor state
+.agents/skills/
+.claude/skills/
+skills-lock.json
 .amp
 .pi
 .impeccable
