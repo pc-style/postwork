@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, Outlet } from "@tanstack/react-router";
+import { Button } from "../../components/Button";
+import { Sheet } from "../../components/Sheet";
 import { RequireAdmin } from "../gates";
 
 const ADMIN_NAV = [
@@ -10,50 +12,48 @@ const ADMIN_NAV = [
   { label: "audit log", to: "/admin/audit-log" as const, exact: false },
 ];
 
-/**
- * The platform control plane. Deliberately its own chrome (not the app
- * shell): admin is a different mode of the product, and it should feel like
- * a place that will grow more sections (billing, integrations, policies).
- */
 export function AdminShell({ children }: { children: ReactNode }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
     <RequireAdmin>
-      <div className="theme-ink flex min-h-screen w-full bg-bg text-fg">
-        <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-border py-6">
-          <div className="px-5">
-            <Link to="/" className="text-base font-semibold tracking-tight">
-              post<span className="text-accent">work</span>
-            </Link>
-            <div className="mt-1 text-label font-medium lowercase text-muted">
-              admin
-            </div>
-          </div>
+      <div className="theme-ink min-h-screen w-full bg-bg text-fg">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-bg/95 px-4 backdrop-blur md:hidden">
+          <Link to="/admin" className="text-base font-semibold tracking-tight">
+            post<span className="text-accent-soft">work</span>
+            <span className="ml-2 text-xs font-medium text-muted">admin</span>
+          </Link>
+          <Button variant="icon" aria-label="Open admin navigation" onClick={() => setMobileNavOpen(true)}>
+            <MenuIcon />
+          </Button>
+        </header>
 
-          <nav className="mt-6 flex flex-col gap-0.5 px-3 text-sm">
-            {ADMIN_NAV.map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                activeOptions={{ exact: item.exact }}
-                activeProps={{ className: "bg-surface text-accent-soft" }}
-                className="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface hover:text-fg"
-              >
-                {item.label}
+        <div className="flex min-h-screen w-full">
+          <aside className="sticky top-0 hidden h-screen w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border py-6 md:flex">
+            <div className="px-5">
+              <Link to="/" className="text-base font-semibold tracking-tight">
+                post<span className="text-accent-soft">work</span>
               </Link>
-            ))}
-          </nav>
+              <div className="mt-1 text-label font-medium text-muted">Admin</div>
+            </div>
+            <AdminNav />
+            <div className="mt-auto px-5 pb-2">
+              <BackToApp />
+            </div>
+          </aside>
+          <main className="min-w-0 flex-1">{children}</main>
+        </div>
 
-          <div className="mt-auto px-5 pb-2">
-            <Link
-              to="/app"
-              className="text-xs text-muted transition-colors hover:text-fg"
-            >
-              ← back to the app
-            </Link>
-          </div>
-        </aside>
-
-        <main className="min-w-0 flex-1">{children}</main>
+        {mobileNavOpen ? (
+          <Sheet title="Admin navigation" onClose={() => setMobileNavOpen(false)}>
+            <div className="flex min-h-full flex-col">
+              <AdminNav onSelect={() => setMobileNavOpen(false)} />
+              <div className="mt-auto border-t border-border pt-5">
+                <BackToApp onSelect={() => setMobileNavOpen(false)} />
+              </div>
+            </div>
+          </Sheet>
+        ) : null}
       </div>
     </RequireAdmin>
   );
@@ -67,7 +67,38 @@ export function AdminLayout() {
   );
 }
 
-/** Shared page scaffolding so every admin section reads the same. */
+function AdminNav({ onSelect }: { onSelect?: () => void }) {
+  return (
+    <nav aria-label="Admin navigation" className="mt-6 flex flex-col gap-1 px-3 text-sm">
+      {ADMIN_NAV.map((item) => (
+        <Link
+          key={item.label}
+          to={item.to}
+          activeOptions={{ exact: item.exact }}
+          activeProps={{ className: "bg-surface text-accent-soft", "aria-current": "page" }}
+          className="flex min-h-11 items-center rounded-md px-3 py-2 text-muted transition-colors hover:bg-surface hover:text-fg"
+          onClick={onSelect}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function BackToApp({ onSelect }: { onSelect?: () => void }) {
+  return (
+    <Link
+      to="/app"
+      className="inline-flex min-h-11 items-center text-xs text-muted transition-colors hover:text-fg"
+      onClick={onSelect}
+    >
+      <span aria-hidden="true" className="mr-1.5">←</span>
+      back to the app
+    </Link>
+  );
+}
+
 export function AdminPage({
   title,
   description,
@@ -80,15 +111,13 @@ export function AdminPage({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-4xl px-8 py-10">
-      <div className="mb-8 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          {description ? (
-            <p className="mt-1 max-w-lg text-sm text-muted">{description}</p>
-          ) : null}
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-fg">{title}</h1>
+          {description ? <p className="mt-1 max-w-xl text-sm leading-6 text-muted">{description}</p> : null}
         </div>
-        {actions}
+        {actions ? <div className="w-full sm:w-auto">{actions}</div> : null}
       </div>
       {children}
     </div>
@@ -103,13 +132,13 @@ export function AdminTable({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <table className="w-full text-left text-sm">
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="w-full min-w-[40rem] text-left text-sm">
         <thead>
-          <tr className="border-b border-border bg-surface text-label font-medium lowercase text-muted">
-            {head.map((h) => (
-              <th key={h} className="px-4 py-2.5 font-medium">
-                {h}
+          <tr className="border-b border-border bg-surface text-label font-medium text-muted">
+            {head.map((label) => (
+              <th key={label} className="px-4 py-3 font-medium">
+                {label}
               </th>
             ))}
           </tr>
@@ -124,16 +153,109 @@ export function AdminRow({
   onClick,
   children,
 }: {
-  onClick: () => void;
+  onClick?: () => void;
   children: ReactNode;
 }) {
   return (
     <tr
+      className={`border-b border-border/60 last:border-b-0 ${
+        onClick
+          ? "cursor-pointer transition-colors hover:bg-surface focus-within:bg-surface"
+          : ""
+      }`}
       onClick={onClick}
-      className="cursor-pointer border-b border-border/60 transition-colors last:border-b-0 hover:bg-surface"
+      onKeyDown={
+        onClick
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      tabIndex={onClick ? 0 : undefined}
     >
       {children}
     </tr>
+  );
+}
+
+type AdminColumn<T> = {
+  label: string;
+  render: (item: T) => ReactNode;
+  className?: string;
+  primary?: boolean;
+};
+
+export function AdminRecordList<T extends { _id: string }>({
+  items,
+  columns,
+  onView,
+  recordLabel,
+}: {
+  items: T[];
+  columns: AdminColumn<T>[];
+  onView: (item: T) => void;
+  recordLabel: (item: T) => string;
+}) {
+  return (
+    <>
+      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
+        <table className="w-full min-w-[44rem] text-left text-sm">
+          <thead>
+            <tr className="border-b border-border bg-surface text-label font-medium text-muted">
+              {columns.map((column) => (
+                <th key={column.label} className="px-4 py-3 font-medium">{column.label}</th>
+              ))}
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item._id} className="border-b border-border/60 last:border-b-0 hover:bg-surface">
+                {columns.map((column) => (
+                  <td key={column.label} className={`px-4 py-3 ${column.className ?? ""}`}>
+                    {column.render(item)}
+                  </td>
+                ))}
+                <td className="px-4 py-2 text-right">
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    className="min-h-9"
+                    onClick={() => onView(item)}
+                    aria-label={`View details for ${recordLabel(item)}`}
+                  >
+                    view details
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid gap-3 md:hidden">
+        {items.map((item) => (
+          <article key={item._id} className="rounded-lg border border-border bg-surface p-4">
+            <dl className="grid gap-3">
+              {columns.map((column) => (
+                <div key={column.label} className={column.primary ? "border-b border-border pb-3" : "grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3"}>
+                  <dt className={column.primary ? "sr-only" : "text-xs font-medium text-muted"}>{column.label}</dt>
+                  <dd className={`min-w-0 break-words text-sm ${column.primary ? "text-fg" : "text-fg/90"}`}>
+                    {column.render(item)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <Button variant="secondary" className="mt-4 w-full" onClick={() => onView(item)}>
+              view details
+            </Button>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -145,16 +267,22 @@ export function StatusPill({
   children: ReactNode;
 }) {
   const tones = {
-    good: "text-accent-soft border-accent/40",
-    warn: "text-high border-high/40",
-    bad: "text-urgent border-urgent/40",
-    muted: "text-muted border-border",
+    good: "border-accent/40 bg-accent/10 text-accent-soft",
+    warn: "border-high/40 bg-high/10 text-high",
+    bad: "border-urgent/40 bg-urgent/10 text-urgent",
+    muted: "border-border bg-surface-2 text-muted",
   } as const;
   return (
-    <span
-      className={`inline-block rounded-md border px-2 py-0.5 text-xs lowercase ${tones[tone]}`}
-    >
+    <span className={`inline-flex rounded-md border px-2 py-0.5 text-xs ${tones[tone]}`}>
       {children}
     </span>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
+      <path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
