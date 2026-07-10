@@ -16,8 +16,8 @@ type AvatarAction =
 type AvatarDraft = "unchanged" | "upload" | "remove" | "provider";
 
 type NotificationDraft = FunctionArgs<
-  typeof api.notificationPreferences.update
->;
+  typeof api.users.updateProfileAndNotifications
+>["notificationPreferences"];
 
 export function ProfileDialog(props: {
   mode: "onboarding" | "edit";
