@@ -27,7 +27,7 @@ if (!KEY) {
   process.exit(1);
 }
 
-const PROJECT_SLUG = "postwork";
+const PROJECT_ID = "fdf9acb8-2808-48c4-b71e-3e11f1bee493";
 const OUTPUT_JSON = process.argv.includes("--json");
 const MILESTONE_FILTER = (() => {
   const idx = process.argv.indexOf("--milestone");
@@ -58,9 +58,9 @@ async function fetchAllIssues(projectId) {
 
   while (hasNext) {
     const data = await gql(
-      `query($projectId: ID!, $after: String) {
+      `query($projectId: String!, $after: String) {
         project(id: $projectId) {
-          issues(first: 100, after: $after, orderBy: FIELD, orderDirection: ASC) {
+          issues(first: 100, after: $after) {
             pageInfo { hasNextPage endCursor }
             nodes {
               id
@@ -78,13 +78,6 @@ async function fetchAllIssues(projectId) {
               labels(first: 20) { nodes { name color } }
               projectMilestone { id name }
               parent { id identifier title }
-              children(first: 100) { nodes { id identifier title state { name } } }
-              relations {
-                nodes {
-                  type
-                  issue { id identifier title }
-                }
-              }
             }
           }
         }
@@ -104,15 +97,15 @@ async function fetchAllIssues(projectId) {
 async function main() {
   // Fetch the project
   const projectData = await gql(
-    `query($slug: String!) {
-      projectBySlug(slug: $slug) {
+    `query($id: String!) {
+      project(id: $id) {
         id
         name
         url
         state
         targetDate
         description
-        milestones(first: 50, orderBy: FIELD, orderDirection: ASC) {
+        projectMilestones(first: 50) {
           nodes {
             id
             name
@@ -121,15 +114,14 @@ async function main() {
             sortOrder
           }
         }
-        labels(first: 50) { nodes { id name color } }
       }
     }`,
-    { slug: PROJECT_SLUG },
+    { id: PROJECT_ID },
   );
 
-  const project = projectData.projectBySlug;
+  const project = projectData.project;
   if (!project) {
-    console.error(`Project with slug "${PROJECT_SLUG}" not found.`);
+    console.error(`Project with ID "${PROJECT_ID}" not found.`);
     console.error("Check that your LINEAR_API_KEY has access to the workspace.");
     process.exit(1);
   }
@@ -138,19 +130,28 @@ async function main() {
   const issues = await fetchAllIssues(project.id);
 
   // Build milestone lookup
-  const milestones = project.milestones.nodes;
+  const milestones = project.projectMilestones.nodes;
+
+  // Derive unique labels from issues (issue labels are team-level, not project-level)
+  const labelMap = new Map();
+  for (const issue of issues) {
+    for (const label of issue.labels.nodes) {
+      if (!labelMap.has(label.name)) {
+        labelMap.set(label.name, label);
+      }
+    }
+  }
+  const allLabels = [...labelMap.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   // Build issue lookup for dependency resolution
   const issueMap = new Map(issues.map((i) => [i.id, i]));
 
-  // Build blocked-by map from relations
-  const blockedBy = new Map();
+  // Build children map from parent field
+  const childrenMap = new Map(); // parentId -> [issue, ...]
   for (const issue of issues) {
-    for (const rel of issue.relations.nodes) {
-      if (rel.type === "BLOCKED_BY") {
-        if (!blockedBy.has(issue.id)) blockedBy.set(issue.id, []);
-        blockedBy.get(issue.id).push(rel.issue);
-      }
+    if (issue.parent) {
+      if (!childrenMap.has(issue.parent.id)) childrenMap.set(issue.parent.id, []);
+      childrenMap.get(issue.parent.id).push(issue);
     }
   }
 
@@ -169,7 +170,7 @@ async function main() {
         description: m.description,
         targetDate: m.targetDate,
       })),
-      labels: project.labels.nodes.map((l) => ({
+      labels: allLabels.map((l) => ({
         name: l.name,
         color: l.color,
       })),
@@ -185,12 +186,11 @@ async function main() {
         parent: i.parent
           ? `${i.parent.identifier} — ${i.parent.title}`
           : null,
-        children: i.children.nodes.map((c) => ({
+        children: (childrenMap.get(i.id) || []).map((c) => ({
           identifier: c.identifier,
           title: c.title,
           state: c.state?.name,
         })),
-        blockedBy: (blockedBy.get(i.id) || []).map((b) => `${b.identifier} — ${b.title}`),
         labels: i.labels.nodes.map((l) => l.name),
         dueDate: i.dueDate,
         updatedAt: i.updatedAt,
@@ -264,7 +264,7 @@ async function main() {
       .filter((i) => i.projectMilestone?.id === filterMs.id)
       .sort((a, b) => a.identifier.localeCompare(b.identifier));
     for (const issue of msIssues.filter((i) => !i.parent)) {
-      lines.push(formatIssue(issue, issueMap, blockedBy, 0, issues));
+      lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
     }
   } else {
     for (const m of milestones) {
@@ -276,7 +276,7 @@ async function main() {
       lines.push("");
       const roots = msIssues.filter((i) => !i.parent);
       for (const issue of roots) {
-        lines.push(formatIssue(issue, issueMap, blockedBy, 0, issues));
+        lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
       }
       lines.push("");
     }
@@ -290,7 +290,7 @@ async function main() {
       lines.push("");
       const roots = noMs.filter((i) => !i.parent);
       for (const issue of roots) {
-        lines.push(formatIssue(issue, issueMap, blockedBy, 0, issues));
+        lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
       }
       lines.push("");
     }
@@ -299,7 +299,7 @@ async function main() {
   // Labels reference
   lines.push("## Labels");
   lines.push("");
-  for (const l of project.labels.nodes) {
+  for (const l of allLabels) {
     lines.push(`- \`${l.name}\` (${l.color})`);
   }
   lines.push("");
@@ -307,7 +307,7 @@ async function main() {
   console.log(lines.join("\n"));
 }
 
-function formatIssue(issue, issueMap, blockedBy, depth, allIssues) {
+function formatIssue(issue, issueMap, childrenMap, depth, allIssues) {
   const indent = "  ".repeat(depth);
   const stateBadge = issue.state?.name || "unknown";
   const priority =
@@ -319,23 +319,14 @@ function formatIssue(issue, issueMap, blockedBy, depth, allIssues) {
       ? ` *${issue.labels.nodes.map((l) => l.name).join(", ")}*`
       : "";
   const assignee = issue.assignee ? ` @${issue.assignee.name}` : "";
-  const blockers = blockedBy.get(issue.id) || [];
-  const blockedStr =
-    blockers.length > 0
-      ? ` blocked by ${blockers.map((b) => b.identifier).join(", ")}`
-      : "";
 
-  let line = `${indent}- [${issue.identifier}](${issue.url}) [${stateBadge}]${priority}${labels}${assignee}${blockedStr} — ${issue.title}`;
+  let line = `${indent}- [${issue.identifier}](${issue.url}) [${stateBadge}]${priority}${labels}${assignee} — ${issue.title}`;
 
-  if (allIssues && issue.children?.nodes?.length > 0) {
-    const childLines = issue.children.nodes
-      .map((child) => {
-        const childIssue = issueMap.get(child.id);
-        if (!childIssue) {
-          return `${indent}  - [${child.identifier}] [${child.state?.name || "unknown"}] — ${child.title}`;
-        }
-        return formatIssue(childIssue, issueMap, blockedBy, depth + 1, allIssues);
-      })
+  const children = childrenMap.get(issue.id);
+  if (children?.length > 0) {
+    const childLines = children
+      .sort((a, b) => a.identifier.localeCompare(b.identifier))
+      .map((child) => formatIssue(child, issueMap, childrenMap, depth + 1, allIssues))
       .join("\n");
     return line + "\n" + childLines;
   }

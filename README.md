@@ -28,9 +28,10 @@ public demo as fictional seed data only.
   internal simulated AI workflow that writes its result back as an agent reply;
   it is not yet an external coding-agent or inbound-integration connector.
 
-For the authoritative implementation tracker, see
-[`docs/plan/demo-to-product-progress.md`](docs/plan/demo-to-product-progress.md).
-For the prioritized remaining work, see [`docs/next.md`](docs/next.md).
+For the live roadmap and issue tracker, see the
+[Postwork project on Linear](https://linear.app/pcstyle-cc/project/postwork-e17b8653df70).
+Pull it locally with `bun run linear:pull` (requires `LINEAR_API_KEY` in `.env`).
+Historical planning docs are in [`docs/archive/`](docs/archive/).
 
 ## Stack
 
@@ -170,10 +171,12 @@ src/
   components/          posts, replies, profiles, moderation, dialogs, app chrome
   lib/                 demo/product mode, sessions, writes, attachments, providers
 docs/
-  next.md              authoritative prioritized next work
-  plan/                live execution tracker and historical planning records
-  organizations.md     active multi-organization gap list
-  archive/             completed or superseded historical material
+  product.md           product register, users, brand personality
+  design.md            visual system (canonical design reference)
+  archive/             historical planning docs (roadmap now on Linear)
+scripts/
+  linear-setup-postwork.mjs  one-shot Linear bootstrap (creates issues)
+  linear-pull.mjs            pull live Linear state as markdown or JSON
 ```
 
 ## Product direction
@@ -182,5 +185,28 @@ The current priority is a trustworthy catch-up loop: make summaries visibly
 stale after replies, build per-user catch-up, then add priority-aware outbound
 delivery. External agent and inbound integration connectors come after that
 loop is proven. Multi-organization creation and routing remain a separate
-future milestone; [`docs/organizations.md`](docs/organizations.md) records its
-specific gaps.
+future milestone; see the Phase 2 issues on Linear for the specific gaps.
+
+## Linear integration
+
+The roadmap lives on Linear. Two scripts interact with the Linear GraphQL API:
+
+```bash
+# Pull the full project state as markdown (for agent context)
+bun run linear:pull
+
+# Pull as JSON for programmatic consumption
+bun run linear:pull:json
+
+# Filter to a specific milestone
+bun run scripts/linear-pull.mjs --milestone "Phase 4"
+```
+
+Both require `LINEAR_API_KEY` in your environment (or `.env`, which is
+gitignored). Create a key at
+[Linear settings](https://linear.app/settings/account/security).
+
+Alternatively, the unofficial [linear-cli](https://github.com/schpet/linear-cli)
+(`brew install schpet/tap/linear` or `bunx linear`) provides interactive CLI
+access: list, view, create, and start issues, all with `--json` output for
+agent use.
