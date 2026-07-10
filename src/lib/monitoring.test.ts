@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  getSafeRouteTag,
   getSentryConfiguration,
   PUBLIC_DEMO_DOMAIN,
   shouldInitializePlausible,
@@ -54,5 +55,12 @@ describe("browser observability policy", () => {
         hostname: "localhost",
       }),
     ).toBe(false);
+  });
+
+  test("redacts identifiers from error-reporting route tags", () => {
+    expect(getSafeRouteTag("/join/secret-invite-code")).toBe("/join/:code");
+    expect(getSafeRouteTag("/app/posts/post_123")).toBe("/app/posts/:postId");
+    expect(getSafeRouteTag("/unexpected/private/value")).toBe("unknown");
+    expect(getSafeRouteTag("/admin")).toBe("/admin");
   });
 });

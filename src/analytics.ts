@@ -2,7 +2,7 @@ import { init } from "@plausible-analytics/tracker";
 import { getOptionalViteEnv, isDemo } from "./lib/demoMode";
 import { shouldInitializePlausible } from "./lib/monitoring";
 
-const plausibleDomain = getOptionalViteEnv("VITE_PLAUSIBLE_DOMAIN");
+const plausibleDomain = getOptionalViteEnv("VITE_PLAUSIBLE_DOMAIN")?.trim();
 
 declare global {
   interface Window {

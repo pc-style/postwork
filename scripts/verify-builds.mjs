@@ -1,5 +1,5 @@
 const buildModes = [
-  { name: "default demo build", environment: {} },
+  { name: "default demo build", environment: { VITE_DEMO: undefined } },
   { name: "explicit product build", environment: { VITE_DEMO: "false" } },
 ];
 

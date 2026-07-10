@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/react";
 import type { ErrorInfo } from "react";
 import { isDemo, getOptionalViteEnv } from "./lib/demoMode";
-import { getSentryConfiguration } from "./lib/monitoring";
+import { getSafeRouteTag, getSentryConfiguration } from "./lib/monitoring";
 
 declare global {
   interface Window {
@@ -68,7 +68,7 @@ export function captureErrorBoundaryException(
   try {
     Sentry.withScope((scope) => {
       scope.setTag("postwork.error_source", "react.error_boundary");
-      scope.setTag("postwork.path", path);
+      scope.setTag("postwork.path", getSafeRouteTag(path));
       Sentry.captureReactException(error, info);
     });
   } catch {

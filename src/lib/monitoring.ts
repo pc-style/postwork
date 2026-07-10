@@ -15,9 +15,25 @@ export type SentryConfiguration = {
   mode: "demo" | "product";
 };
 
+const ROUTE_TEMPLATES: Array<[RegExp, string]> = [
+  [/^\/join\/[^/]+$/, "/join/:code"],
+  [/^(?:\/app)?\/posts\/[^/]+$/, "/app/posts/:postId"],
+  [/^(?:\/app)?\/spaces\/[^/]+$/, "/app/spaces/:slug"],
+  [/^(?:\/app)?\/u\/[^/]+$/, "/app/u/:userId"],
+  [/^\/app\/flash-experiments\/[^/]+$/, "/app/flash-experiments/:slug"],
+];
+
 function getTrimmedValue(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed || undefined;
+}
+
+/** Returns a low-cardinality route tag without user-controlled identifiers. */
+export function getSafeRouteTag(path: string): string {
+  const matchedRoute = ROUTE_TEMPLATES.find(([pattern]) => pattern.test(path));
+  if (matchedRoute) return matchedRoute[1];
+
+  return path === "/" || /^\/[a-z-]+\/?$/.test(path) ? path : "unknown";
 }
 
 /**
