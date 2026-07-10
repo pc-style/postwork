@@ -1,17 +1,7 @@
-import { Skeleton, type SkeletonPreset } from "./Skeleton";
-
-export function LoadingState({
-  label = "Loading content",
-  preset = "inline",
-  count = 1,
-}: {
-  label?: string;
-  preset?: SkeletonPreset;
-  count?: number;
-}) {
+export function LoadingState({ label = "loading…" }: { label?: string }) {
   return (
-    <div className="py-4">
-      <Skeleton label={label} preset={preset} count={count} />
+    <div className="py-12 text-center text-sm lowercase text-muted">
+      {label}
     </div>
   );
 }

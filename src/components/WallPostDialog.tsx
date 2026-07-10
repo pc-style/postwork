@@ -19,29 +19,24 @@ export function WallPostDialog({
   const navigate = useNavigate();
 
   return (
-    <Dialog
-      title={`Post on ${wallOwnerName}'s wall`}
-      description="Add a note that remains attached to this profile."
-      onClose={onClose}
-    >
+    <Dialog title={`post on ${wallOwnerName}'s wall`} onClose={onClose}>
       <PostForm
         requireTitle={false}
-        titlePlaceholder={`Example: Note for ${wallOwnerName}`}
-        titleHelp="Add a title or leave it blank to use the default."
-        bodyPlaceholder={`Write a note for ${wallOwnerName}.`}
+        titlePlaceholder={`note for ${wallOwnerName}`}
+        bodyPlaceholder="leave context for their wall. fenced code blocks with ``` work here."
         onCancel={onClose}
-        onSubmit={async ({ title, body, priority, attachments }) => {
-          if (!currentUserId) throw new Error("Choose a teammate before posting.");
+        onSubmit={async ({ title, body, priority }) => {
+          if (!currentUserId) return;
           await store.createPost({
+            authorId: currentUserId,
             title: title || `note for ${wallOwnerName}`,
             body,
             space: "Wall",
             priority,
             wallOwnerId,
-            attachments,
           });
           onClose();
-          await navigate({ to: "/app/u/$userId", params: { userId: wallOwnerId } });
+          navigate({ to: "/u/$userId", params: { userId: wallOwnerId } });
         }}
       />
     </Dialog>

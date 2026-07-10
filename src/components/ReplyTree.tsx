@@ -1,29 +1,24 @@
-import { useRef, useState, type RefObject } from "react";
+import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
-import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
-import { timeAgo } from "../lib/format";
-import { isLocalId, useStore } from "../lib/store";
-import { useSession } from "../lib/session";
-import type { AttachmentWithUrl, EnrichedReply } from "../lib/types";
-import { AgentTag } from "./AgentTag";
-import { AnchoredConfirmation } from "./AnchoredConfirmation";
-import { AttachmentGallery } from "./AttachmentPicker";
+import type { EnrichedReply } from "../lib/types";
 import { Avatar } from "./Avatar";
-import { Button } from "./Button";
 import { Composer } from "./Composer";
-import { FormField } from "./FormField";
+import { AgentTag } from "./AgentTag";
+import { UserRoleTag } from "./UserRoleTag";
 import { RichText } from "./RichText";
 import { SendAgentButton } from "./SendAgentButton";
-import { UserRoleTag } from "./UserRoleTag";
+import { timeAgo } from "../lib/format";
+import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 
 type Node = ReplyTreeNode<EnrichedReply>;
 
-function subthreadText(node: Node) {
+/** Flatten a reply and its descendants into a transcript an agent can read. */
+function subthreadText(node: Node): string {
   const lines: string[] = [];
-  const walk = (item: Node, depth: number) => {
-    const author = item.author?.name ?? "Unknown";
-    lines.push(`${"  ".repeat(depth)}- ${author}: ${item.body}`);
-    item.children.forEach((child) => walk(child, depth + 1));
+  const walk = (n: Node, depth: number) => {
+    const who = n.author?.name ?? "Unknown";
+    lines.push(`${"  ".repeat(depth)}- ${who}: ${n.body}`);
+    n.children.forEach((c) => walk(c, depth + 1));
   };
   walk(node, 0);
   return lines.join("\n");
@@ -33,189 +28,63 @@ function ReplyNode({
   node,
   postId,
   depth,
-  attachments,
-  fallbackFocusRef,
 }: {
   node: Node;
   postId: Id<"posts">;
   depth: number;
-  attachments: AttachmentWithUrl[];
-  fallbackFocusRef: RefObject<HTMLDivElement | null>;
 }) {
-  const store = useStore();
-  const { currentUserId, currentUser } = useSession();
   const [replying, setReplying] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [editBody, setEditBody] = useState(node.body);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const replyAttachments = attachments.filter(
-    (attachment) => attachment.replyId === node._id,
-  );
-
-  const local = isLocalId(node._id);
-  const isAuthor = currentUserId === node.authorId;
-  const isAdmin = currentUser?.role === "admin";
-  const canEdit = isAuthor && (store.mode === "product" || local);
-  const canDelete =
-    (store.mode === "product" || local) &&
-    (isAuthor || (isAdmin && store.mode === "product"));
-
-  const saveEdit = async () => {
-    if (!editBody.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await store.editReply({ replyId: node._id, body: editBody.trim() });
-      setEditing(false);
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "We couldn't save the reply. Try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const indentation =
-    depth === 0
-      ? ""
-      : depth < 4
-        ? "ml-2 border-l border-border pl-2 sm:ml-4 sm:pl-4"
-        : "border-l border-border pl-2 sm:pl-4";
-
   return (
-    <div className={indentation}>
-      <article className="py-3">
+    <div className={depth > 0 ? "ml-4 border-l border-border pl-4" : ""}>
+      <div className="py-2.5">
         <div className="flex items-start gap-2.5">
           <Avatar user={node.author} size={30} />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="text-sm font-medium text-fg">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-medium">
                 {node.author?.name ?? "Unknown"}
               </span>
-              {node.author?.isAgent ? <AgentTag /> : null}
+              {node.author?.isAgent && <AgentTag />}
               <UserRoleTag role={node.author?.role} />
-              <span className="text-label text-muted">{timeAgo(node.createdAt)}</span>
-              {node.editedAt ? <span className="text-label text-muted">edited</span> : null}
+              <span className="text-label text-muted">
+                {timeAgo(node.createdAt)}
+              </span>
             </div>
-
-            <div className="mt-1">
-              {editing ? (
-                <div className="rounded-md border border-border bg-surface p-3">
-                  <FormField label="Reply" error={error} required>
-                    <textarea
-                      value={editBody}
-                      onChange={(event) => {
-                        setEditBody(event.target.value);
-                        setError(null);
-                      }}
-                      autoFocus
-                      rows={3}
-                      className="ui-field resize-y"
-                    />
-                  </FormField>
-                  <div className="mt-3 flex flex-wrap justify-end gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setEditing(false);
-                        setError(null);
-                      }}
-                      disabled={busy}
-                    >
-                      cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => void saveEdit()}
-                      disabled={!editBody.trim()}
-                      loading={busy}
-                      loadingLabel="saving…"
-                    >
-                      save
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <RichText text={node.body} className="prose-post text-sm text-fg" />
-                  <AttachmentGallery attachments={replyAttachments} />
-                </>
-              )}
+            <div className="mt-0.5">
+              <RichText text={node.body} className="prose-post text-sm text-fg" />
             </div>
-
-            {!editing ? (
-              <div className="mt-1 flex min-h-11 flex-wrap items-center gap-1 sm:min-h-9">
-                <Button
-                  variant="quiet"
-                  size="sm"
-                  className="min-h-11 px-1.5 text-xs sm:min-h-9"
-                  onClick={() => setReplying((value) => !value)}
-                  aria-expanded={replying}
-                >
-                  {replying ? "cancel" : "reply"}
-                </Button>
-                {canEdit ? (
-                  <Button
-                    variant="quiet"
-                    size="sm"
-                    className="min-h-11 px-1.5 text-xs sm:min-h-9"
-                    onClick={() => {
-                      setEditBody(node.body);
-                      setError(null);
-                      setEditing(true);
-                    }}
-                  >
-                    edit
-                  </Button>
-                ) : null}
-                {canDelete ? (
-                  <AnchoredConfirmation
-                    triggerLabel="delete"
-                    title="Delete reply?"
-                    description="This can't be undone."
-                    confirmLabel="delete reply"
-                    fallbackFocusRef={fallbackFocusRef}
-                    onConfirm={() => store.deleteReply({ replyId: node._id })}
-                  />
-                ) : null}
-                <SendAgentButton
-                  postId={postId}
-                  replyId={node._id}
-                  contextText={subthreadText(node)}
-                />
-              </div>
-            ) : null}
+            <div className="mt-1 flex items-center gap-3">
+              <button
+                onClick={() => setReplying((r) => !r)}
+                className="text-xs text-muted transition hover:text-accent-soft"
+              >
+                {replying ? "cancel" : "reply"}
+              </button>
+              <SendAgentButton
+                postId={postId}
+                replyId={node._id}
+                contextText={subthreadText(node)}
+              />
+            </div>
           </div>
         </div>
 
-        {replying ? (
-          <div className="mt-2 pl-8 sm:pl-10">
+        {replying && (
+          <div className="mt-2 ml-10">
             <Composer
               postId={postId}
               parentId={node._id}
               compact
               autoFocus
-              placeholder={`Reply to ${node.author?.name ?? "this reply"}.`}
+              placeholder={`reply to ${node.author?.name ?? "this"}…`}
               onDone={() => setReplying(false)}
             />
           </div>
-        ) : null}
-      </article>
+        )}
+      </div>
 
       {node.children.map((child) => (
-        <ReplyNode
-          key={child._id}
-          node={child}
-          postId={postId}
-          depth={depth + 1}
-          attachments={attachments}
-          fallbackFocusRef={fallbackFocusRef}
-        />
+        <ReplyNode key={child._id} node={child} postId={postId} depth={depth + 1} />
       ))}
     </div>
   );
@@ -224,35 +93,22 @@ function ReplyNode({
 export function ReplyTree({
   replies,
   postId,
-  attachments = [],
 }: {
   replies: EnrichedReply[];
   postId: Id<"posts">;
-  attachments?: AttachmentWithUrl[];
 }) {
   const tree = buildReplyTree(replies);
-  const focusFallbackRef = useRef<HTMLDivElement>(null);
-
   if (tree.length === 0) {
-    return <p className="py-4 text-sm text-muted">No replies yet. Start the thread.</p>;
+    return (
+      <p className="py-4 text-sm text-muted">
+        No replies yet. Start the thread.
+      </p>
+    );
   }
-
   return (
-    <div
-      ref={focusFallbackRef}
-      tabIndex={-1}
-      aria-label="Replies"
-      className="divide-y divide-border/60 focus:outline-none"
-    >
+    <div className="divide-y divide-border/60">
       {tree.map((node) => (
-        <ReplyNode
-          key={node._id}
-          node={node}
-          postId={postId}
-          depth={0}
-          attachments={attachments}
-          fallbackFocusRef={focusFallbackRef}
-        />
+        <ReplyNode key={node._id} node={node} postId={postId} depth={0} />
       ))}
     </div>
   );

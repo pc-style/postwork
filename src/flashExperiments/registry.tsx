@@ -1,4 +1,6 @@
 import { compactCards } from "./experiments/compact-cards";
+import { centeredRail } from "./experiments/centered-rail";
+import { inlineBottomComposer } from "./experiments/inline-bottom-composer";
 import type { ExperimentSlots } from "./slots";
 
 export type { ExperimentSlots } from "./slots";
@@ -45,6 +47,9 @@ export type FlashExperiment = {
 };
 
 export const flashExperiments: FlashExperiment[] = [
+  // community — suggested from outside the team
+  centeredRail,
+  inlineBottomComposer,
   // testing — our own in-house probes
   compactCards,
 ];

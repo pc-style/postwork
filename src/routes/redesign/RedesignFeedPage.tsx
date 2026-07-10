@@ -1,21 +1,14 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { Button } from "../../components/Button";
-import { EmptyState } from "../../components/EmptyState";
+import { useStore, useFeed, useSearch as useStoreSearch } from "../../lib/store";
 import { LoadingState } from "../../components/LoadingState";
-import { ToggleButton } from "../../components/SelectionGroup";
-import { PRIORITIES, SPACES, priorityStyles, timeAgo } from "../../lib/format";
-import {
-  useFeed,
-  usePrefetchPost,
-  useSearch as useStoreSearch,
-  useStore,
-} from "../../lib/store";
-import type { EnrichedPost } from "../../lib/types";
+import { EmptyState } from "../../components/EmptyState";
+import { SPACES, PRIORITIES, priorityStyles, timeAgo } from "../../lib/format";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
+import type { EnrichedPost } from "../../lib/types";
 import type { FeedSearch } from "../../router";
 
 export function RedesignFeedPage() {
-  useDocumentTitle("Feed · postwork");
+  useDocumentTitle("postwork · ink");
   const store = useStore();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as FeedSearch;
@@ -29,8 +22,8 @@ export function RedesignFeedPage() {
 
   const setSearch = (next: FeedSearch) => {
     void navigate({
-      to: "/app",
-      search: (previous) => ({ ...(previous as FeedSearch), ...next }),
+      to: "/redesign",
+      search: (prev) => ({ ...(prev as FeedSearch), ...next }),
       replace: true,
     });
   };
@@ -38,171 +31,164 @@ export function RedesignFeedPage() {
   const searching = term.trim().length > 0;
   const feed = useFeed({ space, priority, onlyUnread });
   const searchResults = useStoreSearch(term);
-  const posts = searching ? searchResults : feed?.posts;
-  const canLoadMore = !searching && feed?.status === "CanLoadMore";
-  const loadingMore = !searching && feed?.status === "LoadingMore";
+  const posts = searching ? searchResults : feed;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
-      <div className="relative">
-        <label htmlFor="feed-search" className="sr-only">Search posts</label>
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">
+    <div className="mx-auto max-w-3xl px-8 py-10">
+      {/* search: an underline field, not a boxed cage */}
+      <div className="relative mb-8 border-b border-border focus-within:border-accent/60">
+        <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 font-semibold text-accent-soft">
           /
         </span>
         <input
-          id="feed-search"
           value={term}
-          onChange={(event) => setSearch({ q: event.target.value || undefined })}
-          placeholder="Search by title, text, or teammate"
-          className="ui-field pl-8 pr-20"
+          onChange={(e) => setSearch({ q: e.target.value || undefined })}
+          placeholder="search posts…"
+          className="w-full bg-transparent py-2.5 pr-16 pl-5 text-sm outline-none placeholder:text-faint"
         />
-        {searching ? (
+        {searching && (
           <button
-            type="button"
             onClick={() => setSearch({ q: undefined })}
-            className="absolute right-1 top-1/2 flex min-h-9 -translate-y-1/2 items-center rounded-md px-3 text-xs text-muted transition-colors hover:bg-surface hover:text-fg"
+            className="absolute top-1/2 right-0 -translate-y-1/2 text-xs text-muted hover:text-fg"
           >
             clear
           </button>
-        ) : null}
+        )}
       </div>
 
-      {!searching ? (
-        <div className="my-5 grid gap-3 border-b border-border pb-5">
-          <div className="flex flex-wrap gap-2" aria-label="Space filters">
-            <ToggleButton
-              pressed={!space}
-              onPressedChange={() => setSearch({ space: undefined })}
+      {!searching && (
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+          <FilterText active={!space} onClick={() => setSearch({ space: undefined })}>
+            all
+          </FilterText>
+          {SPACES.map((s) => (
+            <FilterText
+              key={s}
+              active={space === s}
+              onClick={() => setSearch({ space: s })}
             >
-              all spaces
-            </ToggleButton>
-            {SPACES.map((item) => (
-              <ToggleButton
-                key={item}
-                pressed={space === item}
-                onPressedChange={() => setSearch({ space: item })}
-              >
-                {item}
-              </ToggleButton>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2" aria-label="Feed filters">
-            {PRIORITIES.map((item) => (
-              <ToggleButton
-                key={item}
-                pressed={priority === item}
-                onPressedChange={(pressed) =>
-                  setSearch({ priority: pressed ? item : undefined })
-                }
-              >
-                {item}
-              </ToggleButton>
-            ))}
-            <ToggleButton
-              pressed={onlyUnread}
-              onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}
+              {s.toLowerCase()}
+            </FilterText>
+          ))}
+          <span className="h-3 w-px bg-border" />
+          {PRIORITIES.map((pr) => (
+            <FilterText
+              key={pr}
+              active={priority === pr}
+              onClick={() =>
+                setSearch({ priority: priority === pr ? undefined : pr })
+              }
             >
-              unread
-            </ToggleButton>
-            <Button
-              variant="quiet"
-              size="sm"
-              className="ml-auto min-h-11"
-              onClick={() => store.markAllRead()}
-            >
-              mark all read
-            </Button>
-          </div>
+              {pr}
+            </FilterText>
+          ))}
+          <span className="h-3 w-px bg-border" />
+          <FilterText
+            active={onlyUnread}
+            onClick={() => setSearch({ unread: onlyUnread ? undefined : true })}
+          >
+            unread
+          </FilterText>
+          <button
+            onClick={() => store.markAllRead()}
+            className="ml-auto text-muted transition hover:text-fg"
+          >
+            mark all read
+          </button>
         </div>
-      ) : (
-        <p className="my-4 text-sm text-muted" aria-live="polite">
+      )}
+
+      {searching && (
+        <p className="mb-4 text-sm text-muted">
           {searchResults === undefined
-            ? "Searching…"
-            : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"} for “${term}”`}
+            ? "searching…"
+            : `${searchResults.length} result${
+                searchResults.length === 1 ? "" : "s"
+              } for "${term}"`}
         </p>
       )}
 
       {posts === undefined ? (
-        <LoadingState label={searching ? "Searching posts" : "Loading posts"} preset="feed" count={5} />
-      ) : posts.length === 0 && !canLoadMore ? (
+        <LoadingState />
+      ) : posts.length === 0 ? (
         <EmptyState>
           {searching
-            ? "No posts match this search. Try a different term."
+            ? "no posts match your search."
             : onlyUnread
-              ? "No unread posts match these filters. Clear a filter to review more posts."
-              : "No posts match these filters. Clear a filter or search again."}
+              ? "you're all caught up. nothing unread."
+              : "no posts yet."}
         </EmptyState>
-      ) : posts.length === 0 && canLoadMore ? (
-        <div className="py-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => feed?.loadMore?.()}
-            loading={loadingMore}
-            loadingLabel="loading…"
-          >
-            load older unread posts
-          </Button>
-        </div>
       ) : (
-        <div className="divide-y divide-border border-y border-border">
-          {posts.map((post) => <FeedRow key={post._id} post={post} />)}
-          {canLoadMore ? (
-            <div className="py-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => feed?.loadMore?.()}
-                loading={loadingMore}
-                loadingLabel="loading…"
-              >
-                load more
-              </Button>
-            </div>
-          ) : null}
+        <div className="-mx-4 divide-y divide-border">
+          {posts.map((post) => (
+            <FeedRow key={post._id} post={post} />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
+// One post = one hero title + one quiet meta line. No card cage, no pill
+// storm: a single priority badge appears only when it's above normal.
 function FeedRow({ post }: { post: EnrichedPost }) {
   const showPriority = post.priority !== "normal";
-  const priority = priorityStyles[post.priority];
-  const prefetchPost = usePrefetchPost();
-  const prefetch = () => prefetchPost(post._id);
+  const p = priorityStyles[post.priority];
 
   return (
     <Link
-      to="/app/posts/$postId"
+      to="/redesign/posts/$postId"
       params={{ postId: post._id }}
-      className="group block min-h-20 px-1 py-4 transition-colors hover:bg-surface sm:px-3"
-      onMouseEnter={prefetch}
-      onFocus={prefetch}
-      onTouchStart={prefetch}
+      className="group block px-4 py-4 transition hover:bg-surface"
     >
-      <h2 className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
-        {post.unread ? (
-          <>
-            <span className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle" aria-hidden="true" />
-            <span className="sr-only">Unread: </span>
-          </>
-        ) : null}
-        {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
+      <h3
+        className={`text-[15px] leading-snug tracking-tight ${
+          post.unread ? "font-semibold text-fg" : "font-medium text-fg/85"
+        }`}
+      >
+        {post.unread && (
+          <span className="mr-2 inline-block size-1.5 -translate-y-px rounded-full bg-accent align-middle" />
+        )}
+        {post.pinned && <span className="mr-1.5 text-accent-soft">★</span>}
         {post.title}
-      </h2>
-      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-        <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
-        <span>{post.space}</span>
-        <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-        <span className="tabular-nums">Active {timeAgo(post.lastActivityAt)}</span>
-        {showPriority ? (
-          <span className={`inline-flex items-center gap-1.5 ${post.priority === "urgent" ? "text-urgent" : "text-high"}`}>
-            <span className={`size-1.5 rounded-full ${priority.dot}`} aria-hidden="true" />
-            {priority.label}
+      </h3>
+      <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+        <span className="text-muted">{post.author?.name ?? "Unknown"}</span>
+        <span>·</span>
+        <span>{post.space.toLowerCase()}</span>
+        <span>·</span>
+        <span className="tabular-nums">
+          {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+        </span>
+        <span>·</span>
+        <span className="tabular-nums">active {timeAgo(post.lastActivityAt)}</span>
+        {showPriority && (
+          <span className={`ml-1 ${p.dot === "bg-urgent" ? "text-urgent" : "text-high"}`}>
+            {p.label.toLowerCase()}
           </span>
-        ) : null}
+        )}
       </p>
     </Link>
+  );
+}
+
+function FilterText({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`lowercase transition ${
+        active ? "text-accent-soft" : "text-muted hover:text-fg"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

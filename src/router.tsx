@@ -2,29 +2,21 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
   Outlet,
 } from "@tanstack/react-router";
+import { RootLayout } from "./routes/RootLayout";
+import { FeedPage } from "./routes/FeedPage";
+import { PostPage } from "./routes/PostPage";
 import { AgentsPage } from "./routes/AgentsPage";
 import { SpacesPage } from "./routes/SpacesPage";
 import { SpacePage } from "./routes/SpacePage";
+import { LinkedOrgsPage } from "./routes/LinkedOrgsPage";
 import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
-import { LandingPage } from "./routes/LandingPage";
-import { JoinPage } from "./routes/JoinPage";
-import { RequireAuth } from "./routes/gates";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
 import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
-import { AdminLayout } from "./routes/admin/AdminShell";
-import { AdminOverviewPage } from "./routes/admin/AdminOverviewPage";
-import { AdminUsersPage } from "./routes/admin/AdminUsersPage";
-import { AdminModelsPage } from "./routes/admin/AdminModelsPage";
-import { AdminInvitesPage } from "./routes/admin/AdminInvitesPage";
-import { AdminAccessRequestsPage } from "./routes/admin/AdminAccessRequestsPage";
-import { AdminAuditLogPage } from "./routes/admin/AdminAuditLogPage";
-import { isDemo } from "./lib/demoMode";
 import { PRIORITIES } from "./lib/format";
 import type { Priority } from "./lib/types";
 
@@ -35,86 +27,64 @@ export type FeedSearch = {
   unread?: boolean;
 };
 
-function validateFeedSearch(search: Record<string, unknown>): FeedSearch {
-  return {
+// Pass-through root: global providers live in main.tsx, so the root just
+// renders whatever route matched. This lets the experiment preview opt out of
+// the app chrome (see appLayoutRoute below).
+const rootRoute = createRootRoute({ component: Outlet });
+
+// Pathless layout route that paints the normal postwork chrome (header, nav,
+// new-post, user switcher). Every "real app" route lives under here.
+const appLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "app",
+  component: RootLayout,
+});
+
+const indexRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/",
+  validateSearch: (search: Record<string, unknown>): FeedSearch => ({
     q: typeof search.q === "string" ? search.q : undefined,
     space: typeof search.space === "string" ? search.space : undefined,
     priority: PRIORITIES.includes(search.priority as Priority)
       ? (search.priority as Priority)
       : undefined,
-    unread:
-      search.unread === true || search.unread === "true" || search.unread === "1",
-  };
-}
-
-// Pass-through root: global providers live in main.tsx.
-const rootRoute = createRootRoute({ component: Outlet });
-
-// ---------------------------------------------------------------------------
-// Public landing — `/` is NEVER auth-gated. Logged-in users see it too and
-// get an "open app" CTA.
-// ---------------------------------------------------------------------------
-const landingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  component: LandingPage,
+    unread: search.unread === true || search.unread === "true" || search.unread === "1",
+  }),
+  component: FeedPage,
 });
 
-const joinRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/join/$code",
-  component: JoinPage,
-});
-
-// ---------------------------------------------------------------------------
-// The authenticated product app lives under /app.
-// ---------------------------------------------------------------------------
-function AppLayout() {
-  return (
-    <RequireAuth>
-      <RedesignLayout />
-    </RequireAuth>
-  );
-}
-
-const appLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/app",
-  component: AppLayout,
-});
-
-const appFeedRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: "/",
-  validateSearch: validateFeedSearch,
-  component: RedesignFeedPage,
-});
-
-const appPostRoute = createRoute({
+const postRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/posts/$postId",
-  component: RedesignPostPage,
+  component: PostPage,
 });
 
-const appAgentsRoute = createRoute({
+const agentsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/agents",
   component: AgentsPage,
 });
 
-const appSpacesRoute = createRoute({
+const spacesRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/spaces",
   component: SpacesPage,
 });
 
-const appSpaceRoute = createRoute({
+const spaceRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/spaces/$slug",
   component: SpacePage,
 });
 
-const appWallRoute = createRoute({
+const orgsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/orgs",
+  component: LinkedOrgsPage,
+});
+
+const wallRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/u/$userId",
   component: WallPage,
@@ -126,163 +96,60 @@ const flashExperimentsRoute = createRoute({
   component: FlashExperimentsPage,
 });
 
+// The experiment preview lives under the app layout so it renders the *real*
+// shell. Entering it activates the experiment (see FlashExperimentPage); the
+// override then stays applied as you navigate the real feed → post → reply.
 const flashExperimentRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/flash-experiments/$slug",
   component: FlashExperimentPage,
 });
 
-// ---------------------------------------------------------------------------
-// Admin control plane — /admin, gated to admins (server-enforced too).
-// ---------------------------------------------------------------------------
-const adminLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: AdminLayout,
-});
-
-const adminOverviewRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/",
-  component: AdminOverviewPage,
-});
-
-const adminUsersRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/users",
-  component: AdminUsersPage,
-  validateSearch: (search: Record<string, unknown>): AdminUsersSearch => {
-    const filter = search.filter;
-    return filter === "members" ||
-      filter === "agents" ||
-      filter === "deactivated"
-      ? { filter }
-      : {};
-  },
-});
-
-export type AdminUsersFilter = "members" | "agents" | "deactivated";
-export type AdminUsersSearch = { filter?: AdminUsersFilter };
-
-const adminModelsRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/models",
-  component: AdminModelsPage,
-});
-
-const adminInvitesRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/invites",
-  component: AdminInvitesPage,
-});
-
-const adminAccessRequestsRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/access-requests",
-  component: AdminAccessRequestsPage,
-});
-
-const adminAuditLogRoute = createRoute({
-  getParentRoute: () => adminLayoutRoute,
-  path: "/audit-log",
-  component: AdminAuditLogPage,
-});
-
-// ---------------------------------------------------------------------------
-// Legacy redirects — the app used to live at the root (and /redesign).
-// ---------------------------------------------------------------------------
-const legacyPostRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/posts/$postId",
-  beforeLoad: ({ params }) => {
-    throw redirect({ to: "/app/posts/$postId", params });
-  },
-});
-
-const legacyAgentsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/agents",
-  beforeLoad: () => {
-    throw redirect({ to: "/app/agents" });
-  },
-});
-
-const legacySpacesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/spaces",
-  beforeLoad: () => {
-    throw redirect({ to: "/app/spaces" });
-  },
-});
-
-const legacySpaceRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/spaces/$slug",
-  beforeLoad: ({ params }) => {
-    throw redirect({ to: "/app/spaces/$slug", params });
-  },
-});
-
-const legacyWallRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/u/$userId",
-  beforeLoad: ({ params }) => {
-    throw redirect({ to: "/app/u/$userId", params });
-  },
-});
-
-const legacyRedesignRoute = createRoute({
+// The "ink" redesign lives on its own pathless layout — a sibling of the app
+// layout, not a child — so it renders its own gray-black shell instead of the
+// classic postwork chrome.
+const redesignLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/redesign",
-  beforeLoad: () => {
-    throw redirect({ to: "/app" });
-  },
+  component: RedesignLayout,
 });
 
-const legacyRedesignPostRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/redesign/posts/$postId",
-  beforeLoad: ({ params }) => {
-    throw redirect({ to: "/app/posts/$postId", params });
-  },
+const redesignIndexRoute = createRoute({
+  getParentRoute: () => redesignLayoutRoute,
+  path: "/",
+  validateSearch: (search: Record<string, unknown>): FeedSearch => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+    space: typeof search.space === "string" ? search.space : undefined,
+    priority: PRIORITIES.includes(search.priority as Priority)
+      ? (search.priority as Priority)
+      : undefined,
+    unread:
+      search.unread === true ||
+      search.unread === "true" ||
+      search.unread === "1",
+  }),
+  component: RedesignFeedPage,
 });
 
-const legacyFeedRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/feed",
-  beforeLoad: () => {
-    throw redirect({ to: "/app" });
-  },
+const redesignPostRoute = createRoute({
+  getParentRoute: () => redesignLayoutRoute,
+  path: "/posts/$postId",
+  component: RedesignPostPage,
 });
 
 const routeTree = rootRoute.addChildren([
-  landingRoute,
-  joinRoute,
   appLayoutRoute.addChildren([
-    appFeedRoute,
-    appPostRoute,
-    appAgentsRoute,
-    appSpacesRoute,
-    appSpaceRoute,
-    appWallRoute,
-    ...(isDemo ? [flashExperimentsRoute, flashExperimentRoute] : []),
+    indexRoute,
+    postRoute,
+    agentsRoute,
+    spacesRoute,
+    spaceRoute,
+    orgsRoute,
+    wallRoute,
+    flashExperimentsRoute,
+    flashExperimentRoute,
   ]),
-  adminLayoutRoute.addChildren([
-    adminOverviewRoute,
-    adminUsersRoute,
-    adminModelsRoute,
-    adminInvitesRoute,
-    adminAccessRequestsRoute,
-    adminAuditLogRoute,
-  ]),
-  legacyPostRoute,
-  legacyAgentsRoute,
-  legacySpacesRoute,
-  legacySpaceRoute,
-  legacyWallRoute,
-  legacyRedesignRoute,
-  legacyRedesignPostRoute,
-  legacyFeedRoute,
+  redesignLayoutRoute.addChildren([redesignIndexRoute, redesignPostRoute]),
 ]);
 
 export const router = createRouter({ routeTree });

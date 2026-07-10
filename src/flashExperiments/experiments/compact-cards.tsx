@@ -17,8 +17,7 @@ function CompactCard({ post }: { post: EnrichedPost }) {
           post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"
         }`}
       >
-        {post.pinned ? <span className="mr-1.5 text-xs text-accent-soft">Pinned</span> : null}
-        {post.unread ? <span className="sr-only">Unread: </span> : null}
+        {post.pinned && <span className="mr-1.5 text-accent-soft">★</span>}
         {post.title}
       </span>
 
@@ -44,7 +43,7 @@ export const compactCards: FlashExperiment = {
   slug: "compact-cards",
   title: "compact feed cards",
   summary:
-    "Collapse each post into one scannable line with priority, title, space, reply count, and last activity.",
+    "Collapse each post into a single scannable line — priority dot, title, space, reply count and last activity — so the feed reads like a triage list.",
   requestedBy: "triage workflow",
   status: "liked",
   category: "testing",

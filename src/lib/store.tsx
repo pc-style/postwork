@@ -7,19 +7,10 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useAction, useMutation, useQuery, usePaginatedQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id, TableNames } from "../../convex/_generated/dataModel";
-import type {
-  EnrichedPost,
-  EnrichedReply,
-  Priority,
-  AttachmentInput,
-  FeedResult,
-  RepliesResult,
-} from "./types";
-import { isDemo } from "./demoMode";
-import { prefetchQuery } from "./prefetch";
+import type { EnrichedPost, EnrichedReply, Priority } from "./types";
 import { useSession } from "./session";
 
 /**
@@ -66,60 +57,38 @@ type PostBump = {
 
 type SummaryEntry = { summary: string; model: string; updatedAt: number };
 
-type OverlayState = {
+type StoreValue = {
+  // overlay state, exposed for the module-level query hooks below
   posts: SessionPost[];
   replies: Record<string, SessionReply[]>;
+  currentUserId: Id<"users"> | undefined;
   applyOverlay: (p: EnrichedPost) => EnrichedPost;
   enrichSessionPost: (sp: SessionPost) => EnrichedPost;
   enrichSessionReply: (r: SessionReply) => EnrichedReply;
-};
 
-type StoreValue = {
-  mode: "demo" | "product";
-  overlay: OverlayState;
-  currentUserId: Id<"users"> | undefined;
+  // session-only mutations (replace the Convex mutations)
   markRead: (postId: Id<"posts">) => void;
   markAllRead: () => void;
   createReply: (args: {
     postId: Id<"posts">;
-    authorId?: Id<"users">;
+    authorId: Id<"users">;
     body: string;
     parentId?: Id<"replies">;
-    attachments?: AttachmentInput[];
   }) => Promise<Id<"replies">>;
   createPost: (args: {
+    authorId: Id<"users">;
     title: string;
     body: string;
     space: string;
-    spaceId?: Id<"spaces">;
     priority: Priority;
     wallOwnerId?: Id<"users">;
-    attachments?: AttachmentInput[];
   }) => Promise<Id<"posts">>;
   summarize: (postId: Id<"posts">) => Promise<void>;
-  // Moderation (Phase 3.5). Product mode calls the Convex mutations; the
-  // demo overlay is read-only so these surface a friendly error.
-  editPost: (args: {
-    postId: Id<"posts">;
-    title: string;
-    body: string;
-  }) => Promise<void>;
-  deletePost: (args: { postId: Id<"posts"> }) => Promise<void>;
-  editReply: (args: { replyId: Id<"replies">; body: string }) => Promise<void>;
-  deleteReply: (args: { replyId: Id<"replies"> }) => Promise<void>;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  if (isDemo) {
-    return <OverlayStoreProvider>{children}</OverlayStoreProvider>;
-  }
-
-  return <ConvexStoreProvider>{children}</ConvexStoreProvider>;
-}
-
-function OverlayStoreProvider({ children }: { children: ReactNode }) {
   const { users, currentUserId } = useSession();
 
   const [posts, setPosts] = useState<SessionPost[]>([]);
@@ -231,7 +200,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       if (!k) return;
       setReads((prev) => ({ ...prev, [k]: Date.now() }));
     },
-    [currentUserId, userById],
+    [currentUserId],
   );
 
   const markAllRead = useCallback(() => {
@@ -242,29 +211,19 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
   const createReply = useCallback(
     async (args: {
       postId: Id<"posts">;
-      authorId?: Id<"users">;
+      authorId: Id<"users">;
       body: string;
       parentId?: Id<"replies">;
-      attachments?: AttachmentInput[];
     }) => {
-      const authorId = args.authorId ?? currentUserId;
-      if (!authorId) {
-        throw new Error("No current user.");
-      }
       replyCounter.current += 1;
       const id = makeLocalId("replies", replyCounter.current);
       const now = Date.now();
-      const author = userById.get(authorId);
-      if (!author) {
-        throw new Error("Unknown author.");
-      }
       const reply: SessionReply = {
         _id: id,
         _creationTime: now,
-        orgId: author.orgId,
         postId: args.postId,
         parentId: args.parentId,
-        authorId,
+        authorId: args.authorId,
         body: args.body,
         createdAt: now,
       };
@@ -284,64 +243,56 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
           [args.postId]: {
             lastActivityAt: now,
             replyCountDelta: existing.replyCountDelta + 1,
-            addedParticipantIds: existing.addedParticipantIds.includes(authorId)
+            addedParticipantIds: existing.addedParticipantIds.includes(
+              args.authorId,
+            )
               ? existing.addedParticipantIds
-              : [...existing.addedParticipantIds, authorId],
+              : [...existing.addedParticipantIds, args.authorId],
           },
         };
       });
       // The replier has implicitly read up to now.
-      const k = readKey(authorId, args.postId);
+      const k = readKey(args.authorId, args.postId);
       if (k) setReads((prev) => ({ ...prev, [k]: now }));
       return id;
     },
-    [currentUserId, userById],
+    [],
   );
 
   const createPost = useCallback(
     async (args: {
+      authorId: Id<"users">;
       title: string;
       body: string;
       space: string;
-      spaceId?: Id<"spaces">;
       priority: Priority;
       wallOwnerId?: Id<"users">;
-      attachments?: AttachmentInput[];
     }) => {
-      if (!currentUserId) {
-        throw new Error("No current user.");
-      }
       postCounter.current += 1;
       const id = makeLocalId("posts", postCounter.current);
       const now = Date.now();
-      const author = userById.get(currentUserId);
-      if (!author) {
-        throw new Error("Unknown author.");
-      }
       const sp: SessionPost = {
         _id: id,
         _creationTime: now,
-        orgId: author.orgId,
-        authorId: currentUserId,
+        authorId: args.authorId,
         title: args.title,
         body: args.body,
         space: args.space,
-        spaceId: args.spaceId,
         priority: args.priority,
         pinned: false,
         createdAt: now,
         lastActivityAt: now,
         replyCount: 0,
-        participantIds: [currentUserId],
+        participantIds: [args.authorId],
         wallOwnerId: args.wallOwnerId,
       };
       setPosts((prev) => [sp, ...prev]);
       // Author has read their own new post.
-      const k = readKey(currentUserId, id);
+      const k = readKey(args.authorId, id);
       if (k) setReads((prev) => ({ ...prev, [k]: now }));
       return id;
     },
-    [currentUserId, userById],
+    [],
   );
 
   const summarizeAction = useAction(api.ai.summarizePost);
@@ -361,312 +312,32 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     [summarizeAction],
   );
 
-  // Moderation: the demo overlay is read-only for seeded content. Editing or
-  // deleting your own session-created posts/replies is supported so the demo
-  // flow stays honest; backend (seeded) content surfaces a friendly error.
-  const editPost = useCallback(
-    async (args: { postId: Id<"posts">; title: string; body: string }) => {
-      if (!isLocalId(args.postId)) {
-        throw new Error("Editing isn't available in the public demo.");
-      }
-      const now = Date.now();
-      setPosts((prev) =>
-        prev.map((p) =>
-          p._id === args.postId
-            ? { ...p, title: args.title, body: args.body, editedAt: now }
-            : p,
-        ),
-      );
-    },
-    [],
-  );
-
-  const deletePost = useCallback(
-    async (args: { postId: Id<"posts"> }) => {
-      if (!isLocalId(args.postId)) {
-        throw new Error("Deleting isn't available in the public demo.");
-      }
-      setPosts((prev) => prev.filter((p) => p._id !== args.postId));
-      setReplies((prev) => {
-        const next = { ...prev };
-        delete next[args.postId];
-        return next;
-      });
-      setPostBumps((prev) => {
-        const next = { ...prev };
-        delete next[args.postId];
-        return next;
-      });
-    },
-    [],
-  );
-
-  const editReply = useCallback(
-    async (args: { replyId: Id<"replies">; body: string }) => {
-      if (!isLocalId(args.replyId)) {
-        throw new Error("Editing isn't available in the public demo.");
-      }
-      const now = Date.now();
-      setReplies((prev) => {
-        const next: Record<string, SessionReply[]> = {};
-        for (const [pid, list] of Object.entries(prev)) {
-          next[pid] = list.map((r) =>
-            r._id === args.replyId ? { ...r, body: args.body, editedAt: now } : r,
-          );
-        }
-        return next;
-      });
-    },
-    [],
-  );
-
-  const deleteReply = useCallback(
-    async (args: { replyId: Id<"replies"> }) => {
-      if (!isLocalId(args.replyId)) {
-        throw new Error("Deleting isn't available in the public demo.");
-      }
-      // Cascade-collect this reply + its descendants from the current overlay
-      // state, then drop them and decrement the owning post's reply-count bump.
-      let ownerPostId: string | null = null;
-      const toDelete = new Set<string>([args.replyId]);
-      for (const [pid, list] of Object.entries(replies)) {
-        if (!list.some((r) => r._id === args.replyId)) continue;
-        ownerPostId = pid;
-        const frontier: string[] = [args.replyId];
-        while (frontier.length > 0) {
-          const nextFrontier: string[] = [];
-          for (const id of frontier) {
-            for (const r of list) {
-              if (r.parentId === id && !toDelete.has(r._id)) {
-                toDelete.add(r._id);
-                nextFrontier.push(r._id);
-              }
-            }
-          }
-          frontier.splice(0, frontier.length, ...nextFrontier);
-        }
-        break;
-      }
-      if (!ownerPostId) return;
-      const pid = ownerPostId;
-      setReplies((prev) => ({
-        ...prev,
-        [pid]: (prev[pid] ?? []).filter((r) => !toDelete.has(r._id)),
-      }));
-      const removedCount = toDelete.size;
-      setPostBumps((prev) => {
-        const bump = prev[pid];
-        if (!bump) return prev;
-        return {
-          ...prev,
-          [pid]: {
-            ...bump,
-            replyCountDelta: Math.max(0, bump.replyCountDelta - removedCount),
-          },
-        };
-      });
-    },
-    [replies],
-  );
-
-  const overlay = useMemo<OverlayState>(
+  const value: StoreValue = useMemo(
     () => ({
       posts,
       replies,
+      currentUserId,
       applyOverlay,
       enrichSessionPost,
       enrichSessionReply,
-    }),
-    [posts, replies, applyOverlay, enrichSessionPost, enrichSessionReply],
-  );
-
-  const value: StoreValue = useMemo(
-    () => ({
-      mode: "demo",
-      overlay,
-      currentUserId,
       markRead,
       markAllRead,
       createReply,
       createPost,
       summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
     }),
     [
-      overlay,
+      posts,
+      replies,
       currentUserId,
+      applyOverlay,
+      enrichSessionPost,
+      enrichSessionReply,
       markRead,
       markAllRead,
       createReply,
       createPost,
       summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    ],
-  );
-
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
-}
-
-function ConvexStoreProvider({ children }: { children: ReactNode }) {
-  const { currentUserId } = useSession();
-  const createPostMutation = useMutation(api.posts.create);
-  const createReplyMutation = useMutation(api.replies.create);
-  const markReadMutation = useMutation(api.posts.markRead);
-  const markAllReadMutation = useMutation(api.posts.markAllRead);
-  const summarizeAction = useAction(api.ai.regeneratePostSummary);
-  const editPostMutation = useMutation(api.posts.edit);
-  const deletePostMutation = useMutation(api.posts.remove);
-  const editReplyMutation = useMutation(api.replies.edit);
-  const deleteReplyMutation = useMutation(api.replies.remove);
-
-  const overlay = useMemo<OverlayState>(
-    () => ({
-      posts: [],
-      replies: {},
-      applyOverlay: (post) => post,
-      enrichSessionPost: (post) => ({
-        ...post,
-        author: null,
-        participants: [],
-        unread: false,
-        lastReadAt: 0,
-      }),
-      enrichSessionReply: (reply) => ({
-        ...reply,
-        author: null,
-      }),
-    }),
-    [],
-  );
-
-  const markRead = useCallback(
-    (postId: Id<"posts">) => {
-      if (!currentUserId) return;
-      void markReadMutation({ postId }).catch((error) => {
-        console.error("Failed to mark post read", error);
-      });
-    },
-    [currentUserId, markReadMutation],
-  );
-
-  const markAllRead = useCallback(() => {
-    if (!currentUserId) return;
-    void markAllReadMutation({}).catch((error) => {
-      console.error("Failed to mark all posts read", error);
-    });
-  }, [currentUserId, markAllReadMutation]);
-
-  const createReply = useCallback(
-    async (args: {
-      postId: Id<"posts">;
-      authorId?: Id<"users">;
-      body: string;
-      parentId?: Id<"replies">;
-      attachments?: AttachmentInput[];
-    }) =>
-      await createReplyMutation({
-        postId: args.postId,
-        body: args.body,
-        parentId: args.parentId,
-        attachments: args.attachments,
-      }),
-    [createReplyMutation],
-  );
-
-  const createPost = useCallback(
-    async (args: {
-      title: string;
-      body: string;
-      space: string;
-      spaceId?: Id<"spaces">;
-      priority: Priority;
-      wallOwnerId?: Id<"users">;
-      attachments?: AttachmentInput[];
-    }) =>
-      await createPostMutation({
-        title: args.title,
-        body: args.body,
-        space: args.space,
-        spaceId: args.spaceId,
-        priority: args.priority,
-        wallOwnerId: args.wallOwnerId,
-        attachments: args.attachments,
-      }),
-    [createPostMutation],
-  );
-
-  const summarize = useCallback(
-    async (postId: Id<"posts">) => {
-      await summarizeAction({ postId });
-    },
-    [summarizeAction],
-  );
-
-  const editPost = useCallback(
-    async (args: { postId: Id<"posts">; title: string; body: string }) => {
-      await editPostMutation({
-        postId: args.postId,
-        title: args.title,
-        body: args.body,
-      });
-    },
-    [editPostMutation],
-  );
-
-  const deletePost = useCallback(
-    async (args: { postId: Id<"posts"> }) => {
-      await deletePostMutation({ postId: args.postId });
-    },
-    [deletePostMutation],
-  );
-
-  const editReply = useCallback(
-    async (args: { replyId: Id<"replies">; body: string }) => {
-      await editReplyMutation({ replyId: args.replyId, body: args.body });
-    },
-    [editReplyMutation],
-  );
-
-  const deleteReply = useCallback(
-    async (args: { replyId: Id<"replies"> }) => {
-      await deleteReplyMutation({ replyId: args.replyId });
-    },
-    [deleteReplyMutation],
-  );
-
-  const value = useMemo<StoreValue>(
-    () => ({
-      mode: "product",
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    }),
-    [
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
     ],
   );
 
@@ -686,34 +357,20 @@ function sortPosts(a: EnrichedPost, b: EnrichedPost) {
 
 // ---- merged query hooks ---------------------------------------------------
 
-const FEED_PAGE_SIZE = 20;
-
-/**
- * Activity-bumped feed. In product mode this is cursor-paginated via
- * `usePaginatedQuery` (Phase 3.3); in demo mode it merges the session overlay
- * onto the bounded backend query (no pagination — the demo dataset is small).
- *
- * `isDemo` is a build-time constant, so the implementation is selected once at
- * module load — no conditional hook calls at runtime.
- */
-export const useFeed = isDemo ? useFeedDemo : useFeedProduct;
-
-function useFeedDemo(args: {
+export function useFeed(args: {
   space?: string;
   priority?: Priority;
   onlyUnread?: boolean;
-}): FeedResult | undefined {
-  const store = useStore();
+}) {
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
   const backend = useQuery(api.posts.feed, {
-    viewerId: store.currentUserId,
+    viewerId: currentUserId,
     space: args.space,
     priority: args.priority,
     // onlyUnread is applied client-side so session activity can flip it.
   });
 
   if (backend === undefined) return undefined;
-
-  const { posts, applyOverlay, enrichSessionPost } = store.overlay;
 
   const sessionMatched = posts
     .filter(
@@ -730,52 +387,14 @@ function useFeedDemo(args: {
     ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
   ];
   merged.sort(sortPosts);
-  const result = args.onlyUnread ? merged.filter((p) => p.unread) : merged;
-  return { posts: result, status: "Exhausted", loadMore: null };
-}
-
-function useFeedProduct(args: {
-  space?: string;
-  priority?: Priority;
-  onlyUnread?: boolean;
-}): FeedResult | undefined {
-  const store = useStore();
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.posts.feedPaginated,
-    {
-      viewerId: store.currentUserId,
-      space: args.space,
-      priority: args.priority,
-    },
-    { initialNumItems: FEED_PAGE_SIZE },
-  );
-
-  // Treat the very first load (no results yet) as "loading" so the existing
-  // `feed === undefined → <LoadingState/>` check keeps working.
-  if (status === "LoadingFirstPage" && results.length === 0) return undefined;
-
-  // onlyUnread is applied client-side: a page may yield fewer visible items
-  // than numItems — the user hits "load more" to fill in.
-  const posts = args.onlyUnread ? results.filter((p) => p.unread) : results;
-  return {
-    posts,
-    status,
-    loadMore: status === "CanLoadMore" ? () => loadMore(FEED_PAGE_SIZE) : null,
-  };
+  return args.onlyUnread ? merged.filter((p) => p.unread) : merged;
 }
 
 // Group C — wall feed: a user's own posts plus posts left on their wall.
 export function useWall(userId: Id<"users">) {
-  const store = useStore();
-  const backend = useQuery(api.posts.feed, { viewerId: store.currentUserId });
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
+  const backend = useQuery(api.posts.feed, { viewerId: currentUserId });
   if (backend === undefined) return undefined;
-  if (store.mode === "product") {
-    return backend.filter(
-      (post) => post.wallOwnerId === userId || (!post.wallOwnerId && post.authorId === userId),
-    );
-  }
-
-  const { posts, applyOverlay, enrichSessionPost } = store.overlay;
   const onWall = (p: { wallOwnerId?: Id<"users">; authorId: Id<"users"> }) =>
     p.wallOwnerId === userId || (!p.wallOwnerId && p.authorId === userId);
   const sessionMatched = posts.filter(onWall).map(enrichSessionPost);
@@ -787,60 +406,14 @@ export function useWall(userId: Id<"users">) {
   return merged;
 }
 
-export function useSpaceFeed(
-  args:
-    | {
-        spaceId: Id<"spaces">;
-        spaceLabel: string;
-      }
-    | undefined,
-) {
-  const store = useStore();
-  const backend = useQuery(
-    api.spaces.postsForSpace,
-    args
-      ? {
-          spaceId: args.spaceId,
-          viewerId: store.currentUserId,
-        }
-      : "skip",
-  );
-
-  if (!args) return undefined;
-  if (backend === undefined) return undefined;
-  if (store.mode === "product") {
-    return backend;
-  }
-
-  const { posts, applyOverlay, enrichSessionPost } = store.overlay;
-
-  const sessionMatched = posts
-    .filter(
-      (post) =>
-        !post.wallOwnerId &&
-        (post.spaceId === args.spaceId ||
-          (!post.spaceId && post.space === args.spaceLabel)),
-    )
-    .map(enrichSessionPost);
-
-  const merged = [...sessionMatched, ...backend.map(applyOverlay)];
-  merged.sort(sortPosts);
-  return merged;
-}
-
 export function useSearch(term: string) {
-  const store = useStore();
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
   const backend = useQuery(
     api.posts.search,
-    term.trim() ? { term, viewerId: store.currentUserId } : "skip",
+    term.trim() ? { term, viewerId: currentUserId } : "skip",
   );
   const t = term.trim().toLowerCase();
   if (!t) return undefined;
-  if (store.mode === "product") {
-    return backend;
-  }
-
-  const { posts, applyOverlay, enrichSessionPost } = store.overlay;
   const sessionMatched = posts
     .filter(
       (p) =>
@@ -851,42 +424,13 @@ export function useSearch(term: string) {
   return [...sessionMatched, ...backend.map(applyOverlay)].sort(sortPosts);
 }
 
-/**
- * Returns a callback that warms the Convex cache for a post page before
- * navigation (call it on hover/focus/touch of a post link). Prefetches the
- * same `api.posts.get` args `usePost` will use, so the post page renders
- * without a loading state. Demo mode also prefetches the (non-paginated)
- * replies list; the product replies query paginates with a per-mount
- * pagination id, so its cache can't be warmed from outside the hook.
- */
-export function usePrefetchPost() {
-  const store = useStore();
-  const viewerId = store.currentUserId;
-  return useCallback(
-    (postId: Id<"posts">) => {
-      if (isLocalId(postId)) return;
-      prefetchQuery(api.posts.get, { postId, viewerId });
-      if (isDemo) {
-        prefetchQuery(api.replies.listForPost, { postId });
-      }
-    },
-    [viewerId],
-  );
-}
-
 export function usePost(postId: Id<"posts">) {
-  const store = useStore();
+  const { posts, currentUserId, applyOverlay, enrichSessionPost } = useStore();
   const local = isLocalId(postId);
   const backend = useQuery(
     api.posts.get,
-    local ? "skip" : { postId, viewerId: store.currentUserId },
+    local ? "skip" : { postId, viewerId: currentUserId },
   );
-  if (store.mode === "product") {
-    if (local) return null;
-    return backend;
-  }
-
-  const { posts, applyOverlay, enrichSessionPost } = store.overlay;
   if (local) {
     const sp = posts.find((p) => p._id === postId);
     return sp ? enrichSessionPost(sp) : null;
@@ -896,63 +440,29 @@ export function usePost(postId: Id<"posts">) {
   return applyOverlay(backend);
 }
 
-const REPLIES_PAGE_SIZE = 50;
-
-export const useReplies = isDemo ? useRepliesDemo : useRepliesProduct;
-
-function useRepliesDemo(postId: Id<"posts">): RepliesResult {
-  const store = useStore();
+export function useReplies(postId: Id<"posts">) {
+  const { replies, enrichSessionReply } = useStore();
   const local = isLocalId(postId);
   const backend = useQuery(
     api.replies.listForPost,
     local ? "skip" : { postId },
   );
-
-  const { replies, enrichSessionReply } = store.overlay;
   const session = (replies[postId] ?? []).map(enrichSessionReply);
-  const merged = [...(backend ?? []), ...session].sort(
+  return [...(backend ?? []), ...session].sort(
     (a, b) => a.createdAt - b.createdAt,
   );
-  return { replies: merged, status: "Exhausted", loadMore: null };
 }
 
-function useRepliesProduct(postId: Id<"posts">): RepliesResult {
-  // Product mode never produces local ids (no overlay), so we always paginate.
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.replies.listForPostPaginated,
-    {
-      postId,
-    },
-    { initialNumItems: REPLIES_PAGE_SIZE },
-  );
-  return {
-    replies: results,
-    status,
-    loadMore: status === "CanLoadMore" ? () => loadMore(REPLIES_PAGE_SIZE) : null,
-  };
-}
-
-export const useCounts = isDemo ? useCountsDemo : useCountsProduct;
-
-function useCountsDemo() {
-  const all = useFeedDemo({});
+export function useCounts() {
+  const all = useFeed({});
   if (all === undefined) return undefined;
   let unread = 0;
   let urgent = 0;
-  for (const p of all.posts) {
+  for (const p of all) {
     if (p.unread) {
       unread++;
       if (p.priority === "urgent") urgent++;
     }
   }
-  return { total: all.posts.length, unread, urgent };
-}
-
-function useCountsProduct() {
-  const store = useStore();
-  // Dedicated counts query (Phase 3.3) — a paginated feed can't give an
-  // accurate total, so the sidebar badge reads from here instead.
-  return useQuery(api.posts.counts, {
-    viewerId: store.currentUserId,
-  });
+  return { total: all.length, unread, urgent };
 }
