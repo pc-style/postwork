@@ -57,7 +57,11 @@ export function getRequiredViteEnv(
 export function getOptionalViteEnv(
   key: keyof Pick<
     ImportMetaEnv,
-    "VITE_PLAUSIBLE_DOMAIN" | "VITE_CLERK_PUBLISHABLE_KEY"
+    | "VITE_PLAUSIBLE_DOMAIN"
+    | "VITE_CLERK_PUBLISHABLE_KEY"
+    | "VITE_SENTRY_DSN"
+    | "VITE_SENTRY_ENVIRONMENT"
+    | "VITE_SENTRY_RELEASE"
   >,
 ): string | undefined {
   return import.meta.env[key];

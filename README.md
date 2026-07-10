@@ -71,6 +71,8 @@ Useful checks:
 
 ```bash
 bun run build
+ bun run verify:builds
+ bun run test:observability
 bun run typecheck
 bun run codegen
 ```
@@ -131,7 +133,7 @@ authenticated product so their data never mix.
 
 ```bash
 bunx convex dev --configure
-# configure Vercel with CONVEX_DEPLOY_KEY and VITE_PLAUSIBLE_DOMAIN
+# configure Vercel with CONVEX_DEPLOY_KEY and the mode-specific environment values
 # build command: bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'
 ```
 
@@ -142,6 +144,10 @@ environment values. Seed only the demo deployment:
 ```bash
 bunx convex run --prod seed:run
 ```
+
+See [`docs/deployment.md`](docs/deployment.md) for the complete Vercel demo and
+product environment matrix, including optional Sentry error reporting and the
+demo-only Plausible policy.
 
 ## Project layout
 

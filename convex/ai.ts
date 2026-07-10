@@ -364,6 +364,8 @@ export const summarizePost = action({
 export const regeneratePostSummary = action({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<{ summary: string; model: string }> => {
+    // Refresh stays manual: generating per newly added reply would bypass the
+    // existing per-user rate limit and spend provider capacity without intent.
     const { summary, model } = await ctx.runAction(api.ai.summarizePost, {
       postId: args.postId,
     });
