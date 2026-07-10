@@ -26,6 +26,10 @@ type OpenRouterModel = {
   id: string;
   name?: string;
   context_length?: number;
+  architecture?: {
+    input_modalities?: string[];
+    output_modalities?: string[];
+  };
   pricing?: Record<string, string | undefined>;
 };
 
@@ -177,6 +181,36 @@ function isFreeOpenRouterModel(model: OpenRouterModel): boolean {
   ].every(priceIsZero);
 }
 
+function isAllowedOpenRouterModel(model: OpenRouterModel): boolean {
+  if (model.id === DEFAULT_OPENROUTER_MODEL) return true;
+
+  const id = model.id.toLowerCase();
+  const name = model.name?.toLowerCase() ?? "";
+  if (
+    id.startsWith("liquid/") ||
+    id.startsWith("meta-llama/") ||
+    id.includes("nemotron")
+  ) {
+    return false;
+  }
+  if (
+    /channel[-_ ]?rating|content[-_ ]?safety|moderation|guardrail/.test(
+      `${id} ${name}`,
+    )
+  ) {
+    return false;
+  }
+
+  const inputModalities = model.architecture?.input_modalities;
+  const outputModalities = model.architecture?.output_modalities;
+  return (
+    inputModalities?.length === 1 &&
+    inputModalities[0] === "text" &&
+    outputModalities?.length === 1 &&
+    outputModalities[0] === "text"
+  );
+}
+
 export const listOpenRouterFreeModels = action({
   args: {},
   handler: async (): Promise<
@@ -194,7 +228,10 @@ export const listOpenRouterFreeModels = action({
     const payload = (await response.json()) as { data?: OpenRouterModel[] };
     const models = payload.data ?? [];
     const free = models
-      .filter(isFreeOpenRouterModel)
+      .filter(
+        (model) =>
+          isFreeOpenRouterModel(model) && isAllowedOpenRouterModel(model),
+      )
       .map((model) => ({
         id: model.id,
         name: model.name ?? model.id,
