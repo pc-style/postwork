@@ -4,6 +4,11 @@ import type { Doc } from "./_generated/dataModel";
 import { ensureViewerUser, getDefaultOrgId } from "./authUsers";
 import { logAudit } from "./admin";
 import { logInfo } from "./lib/observability";
+import {
+  formatInviteTarget,
+  identityMatchesInvite,
+  identityTargetCandidates,
+} from "./lib/inviteTargets";
 
 /**
  * Public onboarding surface: join with an invite code, or request access
@@ -56,6 +61,13 @@ export const redeemInvite = mutation({
         message: "That invite code is not valid anymore.",
       });
     }
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity && !identityMatchesInvite(identity, invite)) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: `This invite is reserved for ${formatInviteTarget(invite)}.`,
+      });
+    }
     await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
     await ctx.db.patch(viewer._id, { status: "active" });
     await logAudit(ctx, {
@@ -68,6 +80,52 @@ export const redeemInvite = mutation({
     });
     logInfo("access.inviteRedeemed", { inviteId: invite._id, userId: viewer._id });
     return { ok: true as const };
+  },
+});
+
+/**
+ * Auto-claim a "hot" (targeted) invite. Called by the activation gate right
+ * after sign-in: if an open invite targets this user's github handle or
+ * email, activate them without any code entry.
+ */
+export const claimTargetedInvite = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const viewer = await ensureViewerUser(ctx);
+    if (viewer.status === "active") return { activated: true as const };
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return { activated: false as const };
+
+    for (const candidate of identityTargetCandidates(identity)) {
+      const invites = await ctx.db
+        .query("invites")
+        .withIndex("by_org_id_and_target", (q) =>
+          q
+            .eq("orgId", viewer.orgId)
+            .eq("targetKind", candidate.kind)
+            .eq("targetValue", candidate.value),
+        )
+        .collect();
+      const invite = invites.find(inviteIsUsable);
+      if (!invite) continue;
+
+      await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
+      await ctx.db.patch(viewer._id, { status: "active" });
+      await logAudit(ctx, {
+        orgId: viewer.orgId,
+        actorId: viewer._id,
+        action: "invite.redeemed",
+        targetType: "invite",
+        targetId: invite._id,
+        metadata: { code: invite.code, target: formatInviteTarget(invite), auto: true },
+      });
+      logInfo("access.hotInviteClaimed", {
+        inviteId: invite._id,
+        userId: viewer._id,
+      });
+      return { activated: true as const };
+    }
+    return { activated: false as const };
   },
 });
 

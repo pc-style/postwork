@@ -9,6 +9,7 @@ import {
 } from "./authUsers";
 import { publicUser } from "./users";
 import { isDemo } from "./lib/demo";
+import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
 import { logInfo } from "./lib/observability";
 import { parse, profileTitleSchema } from "./lib/validation";
 
@@ -252,10 +253,25 @@ export const createInvite = mutation({
     note: v.optional(v.string()),
     maxUses: v.optional(v.number()),
     expiresInDays: v.optional(v.number()),
+    // "Hot" invite target: a github handle (with or without @) or an email.
+    // The targeted person is auto-activated on sign-in, no code entry needed.
+    target: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdminForWrite(ctx);
-    const maxUses = Math.min(Math.max(Math.floor(args.maxUses ?? 1), 0), 1000);
+    let target: InviteTarget | null;
+    try {
+      target = parseInviteTarget(args.target);
+    } catch (err) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: err instanceof Error ? err.message : "Invalid invite target.",
+      });
+    }
+    // Targeted invites admit exactly the one person.
+    const maxUses = target
+      ? 1
+      : Math.min(Math.max(Math.floor(args.maxUses ?? 1), 0), 1000);
     const note = args.note?.trim().slice(0, 200) || undefined;
     const expiresAt =
       args.expiresInDays && args.expiresInDays > 0
@@ -270,6 +286,8 @@ export const createInvite = mutation({
       maxUses,
       usedCount: 0,
       expiresAt,
+      targetKind: target?.kind,
+      targetValue: target?.value,
     });
     await logAudit(ctx, {
       orgId: admin.orgId,
@@ -277,7 +295,11 @@ export const createInvite = mutation({
       action: "invite.created",
       targetType: "invite",
       targetId: inviteId,
-      metadata: { maxUses, note },
+      metadata: {
+        maxUses,
+        note,
+        ...(target ? { target: `${target.kind}:${target.value}` } : {}),
+      },
     });
     logInfo("admin.inviteCreated", { inviteId, adminId: admin._id });
     return inviteId;

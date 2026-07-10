@@ -168,9 +168,15 @@ export default defineSchema({
     usedCount: v.number(),
     expiresAt: v.optional(v.number()),
     revokedAt: v.optional(v.number()),
+    // "Hot" invites are reserved for a specific person: a github handle or
+    // email. On sign-in a pending user auto-claims a matching invite (no code
+    // entry), and the code itself only redeems for the targeted identity.
+    targetKind: v.optional(v.union(v.literal("github"), v.literal("email"))),
+    targetValue: v.optional(v.string()),
   })
     .index("by_org_id_and_code", ["orgId", "code"])
-    .index("by_org_id_and_created_at", ["orgId", "createdAt"]),
+    .index("by_org_id_and_created_at", ["orgId", "createdAt"])
+    .index("by_org_id_and_target", ["orgId", "targetKind", "targetValue"]),
 
   // accessRequests: the "no invite? ask to join" path. Public mutation
   // creates a pending row; admins approve (which mints a single-use invite)

@@ -14,6 +14,13 @@ import { ActionButton } from "./AdminUsersPage";
 
 type Invite = FunctionReturnType<typeof api.admin.listInvites>[number];
 
+function formatTarget(invite: Invite): string | null {
+  if (!invite.targetKind || !invite.targetValue) return null;
+  return invite.targetKind === "github"
+    ? `@${invite.targetValue}`
+    : invite.targetValue;
+}
+
 function inviteStatus(invite: Invite): {
   label: string;
   tone: "good" | "bad" | "muted";
@@ -31,13 +38,26 @@ export function AdminInvitesPage() {
   const createInvite = useMutation(api.admin.createInvite);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [target, setTarget] = useState("");
+  const [targetError, setTargetError] = useState<string | null>(null);
   const selected = invites?.find((i) => i._id === selectedId) ?? null;
 
   const mint = async () => {
     setCreating(true);
+    setTargetError(null);
     try {
-      const id = await createInvite({ maxUses: 1 });
+      const id = await createInvite({
+        maxUses: 1,
+        target: target.trim() || undefined,
+      });
+      setTarget("");
       setSelectedId(id);
+    } catch (err) {
+      setTargetError(
+        err instanceof Error && err.message.includes("valid")
+          ? "enter a github handle or email."
+          : "couldn't mint that invite.",
+      );
     } finally {
       setCreating(false);
     }
@@ -46,16 +66,35 @@ export function AdminInvitesPage() {
   return (
     <AdminPage
       title="invites"
-      description="codes that admit new members. single-use by default; revoke anytime."
+      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person — they activate automatically on sign-in."
       actions={
-        <button
-          type="button"
-          onClick={() => void mint()}
-          disabled={creating}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96] disabled:opacity-40"
-        >
-          {creating ? "minting…" : "new invite"}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <input
+              value={target}
+              onChange={(e) => {
+                setTarget(e.target.value);
+                setTargetError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !creating) void mint();
+              }}
+              placeholder="@github-handle or email (optional)"
+              className="w-56 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs outline-none placeholder:font-sans focus:border-accent/50"
+            />
+            <button
+              type="button"
+              onClick={() => void mint()}
+              disabled={creating}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96] disabled:opacity-40"
+            >
+              {creating ? "minting…" : target.trim() ? "invite" : "new invite"}
+            </button>
+          </div>
+          {targetError && (
+            <p className="text-xs text-urgent">{targetError}</p>
+          )}
+        </div>
       }
     >
       {invites === undefined ? (
@@ -65,7 +104,7 @@ export function AdminInvitesPage() {
           no invites yet. mint one and share the code.
         </p>
       ) : (
-        <AdminTable head={["code", "note", "uses", "status", "created"]}>
+        <AdminTable head={["code", "for", "note", "uses", "status", "created"]}>
           {invites.map((invite) => {
             const status = inviteStatus(invite);
             return (
@@ -75,6 +114,9 @@ export function AdminInvitesPage() {
               >
                 <td className="px-4 py-2.5 font-mono text-xs text-fg">
                   {invite.code}
+                </td>
+                <td className="max-w-[12rem] truncate px-4 py-2.5 font-mono text-xs text-accent-soft">
+                  {formatTarget(invite) ?? <span className="text-muted">—</span>}
                 </td>
                 <td className="max-w-[16rem] truncate px-4 py-2.5 text-muted">
                   {invite.note ?? "—"}
@@ -149,6 +191,11 @@ function InviteSheet({
         <SheetField label="status">
           <StatusPill tone={status.tone}>{status.label}</StatusPill>
         </SheetField>
+        {formatTarget(invite) && (
+          <SheetField label="reserved for" mono>
+            {formatTarget(invite)}
+          </SheetField>
+        )}
         <SheetField label="uses">
           {invite.usedCount} of {invite.maxUses === 0 ? "unlimited" : invite.maxUses}
         </SheetField>

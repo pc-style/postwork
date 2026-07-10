@@ -61,10 +61,30 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
 function ActivationScreen() {
   const convexClient = useConvex();
   const redeemInvite = useMutation(api.access.redeemInvite);
+  const claimTargetedInvite = useMutation(api.access.claimTargetedInvite);
   const [invite, setInvite] = useState("");
   const [state, setState] = useState<
     "idle" | "checking" | "invalid" | "redeeming" | "error"
   >("idle");
+  // Hot-invite auto-claim: if an admin invited this github handle/email,
+  // activate on arrival — the user never types a code.
+  const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+    claimTargetedInvite({})
+      .then((result) => {
+        // On success `users.me` flips to active and the gate unmounts us.
+        if (!cancelled && !result.activated) setAutoClaim("none");
+      })
+      .catch(() => {
+        if (!cancelled) setAutoClaim("none");
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -92,6 +112,14 @@ function ActivationScreen() {
       setState("error");
     }
   };
+
+  if (autoClaim === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg px-6 text-sm text-muted">
+        checking for an invite matched to your account…
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-6 py-10">
