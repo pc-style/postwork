@@ -1,7 +1,8 @@
 import { init } from "@plausible-analytics/tracker";
-import { getOptionalViteEnv } from "./lib/demoMode";
+import { getOptionalViteEnv, isDemo } from "./lib/demoMode";
+import { shouldInitializePlausible } from "./lib/monitoring";
 
-const plausibleDomain = getOptionalViteEnv("VITE_PLAUSIBLE_DOMAIN");
+const plausibleDomain = getOptionalViteEnv("VITE_PLAUSIBLE_DOMAIN")?.trim();
 
 declare global {
   interface Window {
@@ -9,10 +10,18 @@ declare global {
   }
 }
 
-if (plausibleDomain && typeof window !== "undefined" && !window.__postworkPlausibleInitialized) {
+if (
+  typeof window !== "undefined" &&
+  !window.__postworkPlausibleInitialized &&
+  shouldInitializePlausible({
+    isDemo,
+    configuredDomain: plausibleDomain,
+    hostname: window.location.hostname,
+  })
+) {
   try {
     init({
-      domain: plausibleDomain,
+      domain: plausibleDomain!,
       outboundLinks: true,
     });
     window.__postworkPlausibleInitialized = true;
