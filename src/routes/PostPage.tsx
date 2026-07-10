@@ -84,6 +84,7 @@ export function PostPage() {
             summary={post.summary}
             model={post.summaryModel}
             updatedAt={post.summaryUpdatedAt}
+            isStale={post.isStale}
           />
         </div>
 

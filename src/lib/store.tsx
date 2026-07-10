@@ -21,6 +21,7 @@ import type {
 import { isDemo } from "./demoMode";
 import { prefetchQuery } from "./prefetch";
 import { useSession } from "./session";
+import { isSummaryStale } from "../../convex/lib/summaryStaleness";
 
 /**
  * Session-only overlay store.
@@ -167,6 +168,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       const bump = postBumps[p._id];
       const summary = summaries[p._id];
       const lastActivityAt = bump?.lastActivityAt ?? p.lastActivityAt;
+      const summaryUpdatedAt = summary?.updatedAt ?? p.summaryUpdatedAt;
       const readAt = effReadAt(p._id, p.lastReadAt);
       // Dedupe across backend + session: the replier may already be a backend
       // participant (duplicates would double their avatar and collide keys).
@@ -181,8 +183,9 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
         participants: bump ? resolveParticipants(participantIds) : p.participants,
         summary: summary?.summary ?? p.summary,
         summaryModel: summary?.model ?? p.summaryModel,
-        summaryUpdatedAt: summary?.updatedAt ?? p.summaryUpdatedAt,
+        summaryUpdatedAt,
         unread: lastActivityAt > readAt,
+        isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
       };
     },
     [postBumps, summaries, effReadAt, resolveParticipants],
@@ -194,6 +197,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       const bump = postBumps[sp._id];
       const summary = summaries[sp._id];
       const lastActivityAt = bump?.lastActivityAt ?? sp.lastActivityAt;
+      const summaryUpdatedAt = summary?.updatedAt ?? sp.summaryUpdatedAt;
       const participantIds = bump
         ? [...new Set([...sp.participantIds, ...bump.addedParticipantIds])]
         : sp.participantIds;
@@ -207,8 +211,9 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
         participants: resolveParticipants(participantIds),
         summary: summary?.summary ?? sp.summary,
         summaryModel: summary?.model ?? sp.summaryModel,
-        summaryUpdatedAt: summary?.updatedAt ?? sp.summaryUpdatedAt,
+        summaryUpdatedAt,
         unread: lastActivityAt > readAt,
+        isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
         lastReadAt: readAt,
       };
     },
@@ -562,6 +567,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
         author: null,
         participants: [],
         unread: false,
+        isStale: false,
         lastReadAt: 0,
       }),
       enrichSessionReply: (reply) => ({
