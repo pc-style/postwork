@@ -23,11 +23,13 @@ import {
   LIMITS,
 } from "./lib/validation";
 import { logInfo } from "./lib/observability";
+import { isSummaryStale } from "./lib/summaryStaleness";
 
 export type EnrichedPost = Doc<"posts"> & {
   author: PublicUser | null;
   participants: PublicUser[];
   unread: boolean;
+  isStale: boolean;
   // Raw per-viewer read timestamp, so the client can layer session-only
   // read state on top without re-querying the backend.
   lastReadAt: number;
@@ -58,8 +60,9 @@ async function enrich(
   }
 
   const unread = post.lastActivityAt > lastReadAt;
+  const isStale = isSummaryStale(post.lastActivityAt, post.summaryUpdatedAt);
 
-  return { ...post, author, participants, unread, lastReadAt };
+  return { ...post, author, participants, unread, isStale, lastReadAt };
 }
 
 export async function listPostsBySpaceId(

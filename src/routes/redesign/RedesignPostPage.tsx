@@ -109,6 +109,7 @@ export function RedesignPostPage() {
           summary={post.summary}
           model={post.summaryModel}
           updatedAt={post.summaryUpdatedAt}
+          isStale={post.isStale}
         />
       </div>
 
