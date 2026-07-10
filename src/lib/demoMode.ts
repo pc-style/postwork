@@ -1,4 +1,4 @@
-function parseDemoFlag(value: string | undefined): boolean {
+export function parseDemoFlag(value: string | undefined): boolean {
   if (value === undefined) {
     return true;
   }
@@ -11,7 +11,37 @@ function parseDemoFlag(value: string | undefined): boolean {
   return true;
 }
 
-export const isDemo = parseDemoFlag(import.meta.env.VITE_DEMO);
+export type DemoPolicy = Readonly<{
+  mode: "demo" | "product";
+  publicDemoBanner: boolean;
+  flashExperimentsLab: boolean;
+  userSwitcher: boolean;
+  sessionOverlay: boolean;
+  productAuth: boolean;
+}>;
+
+/**
+ * The frontend's small, explicit demo policy. Keep demo-only surfaces here so
+ * product promotion decisions do not become scattered environment checks.
+ */
+export function getDemoPolicy(demo: boolean): DemoPolicy {
+  return {
+    mode: demo ? "demo" : "product",
+    publicDemoBanner: demo,
+    flashExperimentsLab: demo,
+    userSwitcher: demo,
+    sessionOverlay: demo,
+    productAuth: !demo,
+  };
+}
+
+const configuredDemo =
+  typeof import.meta.env === "undefined" ? undefined : import.meta.env.VITE_DEMO;
+
+export const isDemo = parseDemoFlag(configuredDemo);
+export const demoPolicy = getDemoPolicy(isDemo);
+export const DEMO_BANNER_MESSAGE =
+  "public demo — data resets, pick a teammate";
 
 export function getRequiredViteEnv(
   key: keyof Pick<ImportMetaEnv, "VITE_CONVEX_URL">,

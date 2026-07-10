@@ -8,6 +8,8 @@
     "dev:web": "vite",
     "dev:convex": "convex dev",
     "build": "tsc -b && vite build",
+    "test": "bun test",
+    "test:demo": "bun test tests/demoMode.test.ts",
     "verify:builds": "bun run scripts/verify-builds.mjs",
     "test:observability": "bun test src/lib/monitoring.test.ts",
     "preview": "vite preview",

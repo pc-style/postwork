@@ -13,7 +13,7 @@ import {
 } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
 import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
-import { isDemo } from "../lib/demoMode";
+import { demoPolicy } from "../lib/demoMode";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const SLOT_LABELS: Partial<Record<ExperimentSlot, string>> = {
@@ -81,7 +81,7 @@ export function FlashExperimentsPage() {
   }, [setSlug]);
 
   const handleVote = async (slug: string, next: "up" | "down") => {
-    if (isDemo) return;
+    if (demoPolicy.flashExperimentsLab) return;
     const current = votesBySlug.get(slug)?.viewerVote;
     const value = current === next ? null : next;
     try {
@@ -165,7 +165,7 @@ export function FlashExperimentsPage() {
                     vote={votesBySlug.get(experiment.slug)}
                     replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
                     isLoading={false}
-                    isAuthenticated={!isDemo}
+                    isAuthenticated={!demoPolicy.flashExperimentsLab}
                     onVote={handleVote}
                   />
                 ))}

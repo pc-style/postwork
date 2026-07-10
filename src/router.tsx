@@ -24,7 +24,7 @@ import { AdminModelsPage } from "./routes/admin/AdminModelsPage";
 import { AdminInvitesPage } from "./routes/admin/AdminInvitesPage";
 import { AdminAccessRequestsPage } from "./routes/admin/AdminAccessRequestsPage";
 import { AdminAuditLogPage } from "./routes/admin/AdminAuditLogPage";
-import { isDemo } from "./lib/demoMode";
+import { demoPolicy } from "./lib/demoMode";
 import { PRIORITIES } from "./lib/format";
 import type { Priority } from "./lib/types";
 
@@ -265,7 +265,9 @@ const routeTree = rootRoute.addChildren([
     appSpacesRoute,
     appSpaceRoute,
     appWallRoute,
-    ...(isDemo ? [flashExperimentsRoute, flashExperimentRoute] : []),
+    ...(demoPolicy.flashExperimentsLab
+      ? [flashExperimentsRoute, flashExperimentRoute]
+      : []),
   ]),
   adminLayoutRoute.addChildren([
     adminOverviewRoute,

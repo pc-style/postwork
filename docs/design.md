@@ -344,6 +344,15 @@ screen to screen. Every interactive element should read as obviously itself.
 - Admin uses the same responsive shell rule. Desktop tables remain semantic;
   narrow screens show labeled record cards with explicit `view details` actions.
 
+### Public demo notice
+
+- The demo app shell carries a persistent, non-dismissible notice reading
+  `public demo — data resets, pick a teammate`.
+- It sits as quiet shell chrome above the responsive navigation, using a surface
+  fill, hairline divider, muted text, and the existing deep-wine border token.
+- The notice is rendered only when demo mode is enabled; product mode has no
+  visible demo notice.
+
 ### Space Glyph (signature)
 
 - A `size-20` `rounded-lg` tile with a hairline border and a faint radial wine
