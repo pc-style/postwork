@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useCounts } from "../lib/store";
 import { UserSwitcher } from "./UserSwitcher";
@@ -19,6 +19,7 @@ const DEMO_ROUTE_NAV = [{ label: "experiments", to: "/app/flash-experiments" }] 
 export function AppShell({ children }: { children: ReactNode }) {
   const counts = useCounts();
   const [composing, setComposing] = useState(false);
+  const composeTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="min-h-full">
@@ -79,7 +80,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <Button onClick={() => setComposing(true)} className="mt-1 text-center">
+          <Button
+            ref={composeTriggerRef}
+            onClick={() => setComposing(true)}
+            className="mt-1 text-center"
+          >
             + new post
           </Button>
 
@@ -126,7 +131,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
       </div>
 
-      {composing && <NewPostDialog onClose={() => setComposing(false)} />}
+      {composing && (
+        <NewPostDialog
+          onClose={() => setComposing(false)}
+          returnFocusRef={composeTriggerRef}
+        />
+      )}
     </div>
   );
 }
