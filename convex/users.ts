@@ -19,6 +19,7 @@ import {
   profileInitialsSchema,
 } from "./lib/validation";
 import { logInfo } from "./lib/observability";
+import { preferenceArgs, savePreferences } from "./notificationPreferences";
 
 export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
 
@@ -203,6 +204,33 @@ export const updateProfile = mutation({
     const initials = parse(profileInitialsSchema, args.initials, "initials");
     const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
 
+    await ctx.db.patch(user._id, {
+      name,
+      initials: initials.toUpperCase(),
+      ...avatarPatch,
+    });
+    logInfo("user.profileUpdated", { userId: user._id });
+  },
+});
+
+export const updateProfileAndNotifications = mutation({
+  args: {
+    name: v.string(),
+    initials: v.string(),
+    avatar: avatarActionValidator,
+    notificationPreferences: v.object(preferenceArgs),
+  },
+  handler: async (ctx, args) => {
+    const user = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "updateProfile", {
+      key: user._id,
+      throws: true,
+    });
+
+    const name = parse(profileNameSchema, args.name, "name");
+    const initials = parse(profileInitialsSchema, args.initials, "initials");
+    const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
+    await savePreferences(ctx, user, args.notificationPreferences);
     await ctx.db.patch(user._id, {
       name,
       initials: initials.toUpperCase(),

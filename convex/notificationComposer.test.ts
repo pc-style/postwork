@@ -89,6 +89,12 @@ describe("composeOutboundCandidates", () => {
     expect(isWithinQuietHours(duringQuietHours, enabledPreferences)).toBe(true);
     expect(
       isWithinQuietHours(
+        new Date("2026-07-10T22:00:00.000Z"),
+        enabledPreferences,
+      ),
+    ).toBe(true);
+    expect(
+      isWithinQuietHours(
         new Date("2026-07-11T08:00:00.000Z"),
         enabledPreferences,
       ),

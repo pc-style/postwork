@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
   forbidden,
@@ -12,7 +12,7 @@ import {
   type NotificationPreferences,
 } from "./notificationComposer";
 
-const preferenceArgs = {
+export const preferenceArgs = {
   outboundEnabled: v.boolean(),
   immediateUrgentEnabled: v.boolean(),
   digestEnabled: v.boolean(),
@@ -58,6 +58,15 @@ export const update = mutation({
     const viewer = await ensureActiveViewerUser(ctx, {
       unauthenticatedMessage: "Sign in to update notification preferences.",
     });
+    return await savePreferences(ctx, viewer, args);
+  },
+});
+
+export async function savePreferences(
+  ctx: MutationCtx,
+  viewer: Awaited<ReturnType<typeof ensureActiveViewerUser>>,
+  args: NotificationPreferences,
+) {
     const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
     const preferences = validatePreferences(args);
     const existing = await ctx.db
@@ -81,8 +90,7 @@ export const update = mutation({
     }
 
     return { ...preferences, isDefault: false as const };
-  },
-});
+}
 
 function toPublicPreferences(
   stored: NotificationPreferences,
@@ -103,7 +111,10 @@ function validatePreferences(
 ): NotificationPreferences {
   validateTime(args.quietHoursStart, "quietHoursStart");
   validateTime(args.quietHoursEnd, "quietHoursEnd");
-  if (args.quietHoursStart === args.quietHoursEnd) {
+  if (
+    args.quietHoursEnabled &&
+    args.quietHoursStart === args.quietHoursEnd
+  ) {
     invalidPreference(
       "quietHoursEnd",
       "Quiet hours must have different start and end times.",

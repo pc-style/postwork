@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionArgs } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -14,15 +15,9 @@ type AvatarAction =
 
 type AvatarDraft = "unchanged" | "upload" | "remove" | "provider";
 
-type NotificationDraft = {
-  outboundEnabled: boolean;
-  immediateUrgentEnabled: boolean;
-  digestEnabled: boolean;
-  quietHoursEnabled: boolean;
-  quietHoursStart: string;
-  quietHoursEnd: string;
-  quietHoursTimeZone: string;
-};
+type NotificationDraft = FunctionArgs<
+  typeof api.notificationPreferences.update
+>;
 
 export function ProfileDialog(props: {
   mode: "onboarding" | "edit";
@@ -56,14 +51,13 @@ function ProfileDialogBody({
 }) {
   const me = useQuery(api.users.me, {});
   const completeProfile = useMutation(api.users.completeProfile);
-  const updateProfile = useMutation(api.users.updateProfile);
+  const updateProfileAndNotifications = useMutation(
+    api.users.updateProfileAndNotifications,
+  );
   const generateAvatarUploadUrl = useMutation(api.users.generateAvatarUploadUrl);
   const notificationPreferences = useQuery(
     api.notificationPreferences.current,
     mode === "edit" ? {} : "skip",
-  );
-  const updateNotificationPreferences = useMutation(
-    api.notificationPreferences.update,
   );
 
   const user = me?.user ?? null;
@@ -193,11 +187,11 @@ function ProfileDialogBody({
         if (!notificationDraft) {
           throw new Error("Notification preferences are still loading.");
         }
-        await updateNotificationPreferences(notificationDraft);
-        await updateProfile({
+        await updateProfileAndNotifications({
           name: trimmedName,
           initials: normalizedInitials,
           avatar: avatarAction,
+          notificationPreferences: notificationDraft,
         });
         onClose();
       }

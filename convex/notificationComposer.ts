@@ -65,7 +65,7 @@ export function composeOutboundCandidates({
 
   const quiet = isWithinQuietHours(now, preferences);
   const urgent = unreadItems.filter((item) => item.priority === "urgent");
-  const digestOnly = unreadItems.filter((item) => item.priority !== "urgent");
+  const digestItems = unreadItems.filter((item) => item.priority !== "urgent");
   const candidates: OutboundDeliveryCandidate[] = [];
 
   if (preferences.immediateUrgentEnabled && !quiet && urgent.length > 0) {
@@ -75,15 +75,15 @@ export function composeOutboundCandidates({
       omittedCount: Math.max(0, urgent.length - IMMEDIATE_ITEM_LIMIT),
     });
   } else {
-    digestOnly.unshift(...urgent);
+    digestItems.unshift(...urgent);
   }
 
-  if (preferences.digestEnabled && digestOnly.length > 0) {
-    digestOnly.sort(compareItems);
+  if (preferences.digestEnabled && digestItems.length > 0) {
+    digestItems.sort(compareItems);
     candidates.push({
       kind: "digest",
-      items: digestOnly.slice(0, DIGEST_ITEM_LIMIT),
-      omittedCount: Math.max(0, digestOnly.length - DIGEST_ITEM_LIMIT),
+      items: digestItems.slice(0, DIGEST_ITEM_LIMIT),
+      omittedCount: Math.max(0, digestItems.length - DIGEST_ITEM_LIMIT),
     });
   }
 

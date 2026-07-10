@@ -61,6 +61,16 @@ describe("notification preferences API", () => {
       outboundEnabled: true,
       immediateUrgentEnabled: false,
       digestEnabled: true,
+      quietHoursEnabled: false,
+      quietHoursStart: "21:30",
+      quietHoursEnd: "21:30",
+      quietHoursTimeZone: "Europe/Warsaw",
+    });
+
+    await authed.mutation(api.notificationPreferences.update, {
+      outboundEnabled: true,
+      immediateUrgentEnabled: false,
+      digestEnabled: true,
       quietHoursEnabled: true,
       quietHoursStart: "21:30",
       quietHoursEnd: "07:15",
