@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "./Button";
+import { captureErrorBoundaryException } from "../monitoring";
 
 /**
  * Top-level error boundary (Phase 3.6).
@@ -34,6 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
         componentStack: info.componentStack ?? undefined,
       }),
     );
+    captureErrorBoundaryException(error, info, path);
   }
 
   render() {
