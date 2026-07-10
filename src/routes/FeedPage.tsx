@@ -1,16 +1,24 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useStore, useFeed, useSearch as useStoreSearch } from "../lib/store";
+import { Button } from "../components/Button";
+import { EmptyState } from "../components/EmptyState";
+import { LoadingState } from "../components/LoadingState";
 import { PostCard } from "../components/PostCard";
 import { QuickPostBar } from "../components/QuickPostBar";
-import { LoadingState } from "../components/LoadingState";
-import { EmptyState } from "../components/EmptyState";
-import { SPACES, PRIORITIES, priorityStyles } from "../lib/format";
+import { ToggleButton } from "../components/SelectionGroup";
 import { useActiveExperiment } from "../flashExperiments/active";
+import { PRIORITIES, SPACES } from "../lib/format";
+import {
+  useFeed,
+  usePrefetchPost,
+  useSearch as useStoreSearch,
+  useStore,
+} from "../lib/store";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import type { FeedSearch } from "../router";
 
 export function FeedPage() {
-  useDocumentTitle("postwork");
+  const prefetchPost = usePrefetchPost();
+  useDocumentTitle("Postwork");
   const store = useStore();
   const { slots } = useActiveExperiment();
   const navigate = useNavigate();
@@ -24,117 +32,101 @@ export function FeedPage() {
 
   const setSearch = (next: FeedSearch) => {
     void navigate({
-      to: "/",
-      search: (prev) => ({
-        ...(prev as FeedSearch),
-        ...next,
-      }),
+      to: "/app",
+      search: (previous) => ({ ...(previous as FeedSearch), ...next }),
       replace: true,
     });
   };
 
   const searching = term.trim().length > 0;
-
-  const feed = useFeed({
-    space,
-    priority,
-    onlyUnread,
-  });
+  const feed = useFeed({ space, priority, onlyUnread });
   const searchResults = useStoreSearch(term);
-
-  const posts = searching ? searchResults : feed;
+  const posts = searching ? searchResults : feed?.posts;
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       {slots.feedHeader}
-      {!slots.feedHeader && <QuickPostBar />}
+      {!slots.feedHeader ? <QuickPostBar /> : null}
 
-      <div className="mb-4">
-        <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-semibold text-accent-soft">
-            /
-          </span>
-          <input
-            value={term}
-            onChange={(e) => setSearch({ q: e.target.value || undefined })}
-            placeholder="search posts: decisions, incidents, anything…"
-            className="w-full rounded-lg border border-border bg-surface py-2.5 pr-3 pl-8 text-sm outline-none focus:border-accent/50"
-          />
-          {searching && (
-            <button
-              onClick={() => setSearch({ q: undefined })}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted hover:text-fg"
-            >
-              clear
-            </button>
-          )}
-        </div>
+      <div className="relative mb-4">
+        <label htmlFor="experiment-feed-search" className="sr-only">Search posts</label>
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">/</span>
+        <input
+          id="experiment-feed-search"
+          value={term}
+          onChange={(event) => setSearch({ q: event.target.value || undefined })}
+          placeholder="Search by title, text, or teammate"
+          className="ui-field pl-8 pr-20"
+        />
+        {searching ? (
+          <button
+            type="button"
+            onClick={() => setSearch({ q: undefined })}
+            className="absolute right-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center rounded-md px-3 text-xs text-muted hover:bg-surface hover:text-fg sm:min-h-9"
+          >
+            clear
+          </button>
+        ) : null}
       </div>
 
-      {!searching && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <FilterChip active={!space} onClick={() => setSearch({ space: undefined })}>
-            all spaces
-          </FilterChip>
-          {SPACES.map((s) => (
-            <FilterChip key={s} active={space === s} onClick={() => setSearch({ space: s })}>
-              {s}
-            </FilterChip>
-          ))}
-          <span className="mx-1 h-4 w-px bg-border" />
-          {PRIORITIES.map((pr) => (
-            <FilterChip
-              key={pr}
-              active={priority === pr}
-              onClick={() => setSearch({ priority: priority === pr ? undefined : pr })}
-              className={priority === pr ? priorityStyles[pr].className : ""}
-            >
-              {pr}
-            </FilterChip>
-          ))}
-          <span className="mx-1 h-4 w-px bg-border" />
-          <FilterChip active={onlyUnread} onClick={() => setSearch({ unread: onlyUnread ? undefined : true })}>
-            unread only
-          </FilterChip>
-
-          <button
-            onClick={() => store.markAllRead()}
-            className="ml-auto text-xs text-muted transition hover:text-fg"
-          >
-            mark all read
-          </button>
+      {!searching ? (
+        <div className="mb-5 grid gap-3">
+          <div className="flex flex-wrap gap-2" aria-label="Space filters">
+            <ToggleButton pressed={!space} onPressedChange={() => setSearch({ space: undefined })}>all spaces</ToggleButton>
+            {SPACES.map((item) => (
+              <ToggleButton key={item} pressed={space === item} onPressedChange={() => setSearch({ space: item })}>
+                {item}
+              </ToggleButton>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2" aria-label="Feed filters">
+            {PRIORITIES.map((item) => (
+              <ToggleButton
+                key={item}
+                pressed={priority === item}
+                onPressedChange={(pressed) => setSearch({ priority: pressed ? item : undefined })}
+              >
+                {item}
+              </ToggleButton>
+            ))}
+            <ToggleButton pressed={onlyUnread} onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}>
+              unread
+            </ToggleButton>
+            <Button variant="quiet" size="sm" className="ml-auto min-h-11" onClick={() => store.markAllRead()}>
+              mark all read
+            </Button>
+          </div>
         </div>
-      )}
-
-      {searching && (
-        <p className="mb-3 text-sm text-muted">
+      ) : (
+        <p className="mb-3 text-sm text-muted" aria-live="polite">
           {searchResults === undefined
-            ? "searching…"
-            : `${searchResults.length} result${
-                searchResults.length === 1 ? "" : "s"
-              } for "${term}"`}
+            ? "Searching…"
+            : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"} for “${term}”`}
         </p>
       )}
 
       {posts === undefined ? (
-        <LoadingState />
+        <LoadingState label="Loading posts" preset="feed" count={4} />
       ) : posts.length === 0 ? (
         <EmptyState>
           {searching
-            ? "no posts match your search."
+            ? "No posts match this search. Try a different term."
             : onlyUnread
-              ? "you're all caught up. nothing unread."
-              : "no posts yet."}
+              ? "You're all caught up. Nothing unread here."
+              : "No posts match these filters. Clear a filter or search again."}
         </EmptyState>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {posts.map((post) =>
             slots.postCard ? (
               <Link
                 key={post._id}
-                to="/posts/$postId"
+                to="/app/posts/$postId"
                 params={{ postId: post._id }}
                 className="block"
+                onMouseEnter={() => prefetchPost(post._id)}
+                onFocus={() => prefetchPost(post._id)}
+                onTouchStart={() => prefetchPost(post._id)}
               >
                 {slots.postCard({ post })}
               </Link>
@@ -145,30 +137,5 @@ export function FeedPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-  className = "",
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-lg border px-2.5 py-1 text-xs lowercase transition ${
-        active
-          ? className || "border-accent/40 bg-accent/15 text-accent-soft"
-          : "border-border text-muted hover:text-fg"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

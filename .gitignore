@@ -16,6 +16,9 @@ dist
 .vercel
 
 # Local agent/editor state
+.agents/skills/
+.claude/skills/
+skills-lock.json
 .amp
 .pi
 .impeccable
@@ -23,6 +26,7 @@ dist
 .adenignore
 .agent
 .context
+.tmp
 
 # Local test artifacts / generated outputs
 artifacts

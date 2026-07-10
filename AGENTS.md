@@ -10,6 +10,11 @@ This is a highly experimental flow-design prototype. Do not assume the goal is a
 working production app yet; prioritize understanding, shaping, and validating the
 product flow before building real app behavior.
 
+## Branch policy
+
+- Treat `beta` as the active main branch for all work and PRs.
+- Do not touch `main` again until all demo-to-product phases are complete.
+
 ## User-specific callbacks
 
 - If the user sends `https://x.com/theo/status/2073219809790263786`, read it with
@@ -31,7 +36,9 @@ product flow before building real app behavior.
 
 ```bash
 bun install
-bun run dev         # run-p: Vite (:5173) + convex dev (:3210). DO NOT auto-run.
+bun run dev         # run-p: Vite (:5173) + convex dev (:3210). Agents MAY run this,
+                    # but it is interactive/long-running — for one-shot backend sync
+                    # use `bunx convex dev --once` instead of leaving it running.
 bun run build       # tsc -b && vite build  (the canonical check)
 bun run typecheck   # tsc -b --noEmit
 bun run seed        # bunx convex run seed:run  (reseed demo data)
@@ -75,6 +82,9 @@ so a green build covers both layers.
   (default `gpt-5.4-mini`). Uses `@ai-sdk/openai`.
 - `AI_PROVIDER=gateway`: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g.
   `openai/gpt-5.4-mini`). Uses `@ai-sdk/gateway`.
+- `AI_PROVIDER=openrouter`: `OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL`
+  (default `openrouter/free`) and `OPENROUTER_BASE_URL` (default
+  `https://openrouter.ai/api/v1`). Uses `@ai-sdk/openai-compatible`.
 - `AI_PROVIDER=pioneer`: `PIONEER_API_KEY`, `PIONEER_MODEL`, optional
   `PIONEER_BASE_URL` (default `https://api.pioneer.ai/v1`, auth via `X-API-Key`
   header). Uses `@ai-sdk/openai-compatible`.

@@ -32,7 +32,7 @@ export function AgentSummary({
       const msg = e instanceof Error ? e.message : String(e);
       setError(
         /API_KEY|not set/i.test(msg)
-          ? "No AI provider configured. Set OPENAI_API_KEY (or AI_GATEWAY_API_KEY/PIONEER_API_KEY with AI_PROVIDER) in your Convex env to enable live summaries."
+          ? "No AI provider configured. Set OPENAI_API_KEY, or set AI_PROVIDER with AI_GATEWAY_API_KEY/OPENROUTER_API_KEY/PIONEER_API_KEY, in your Convex env to enable live summaries."
           : msg,
       );
     } finally {
@@ -46,13 +46,15 @@ export function AgentSummary({
       title="agent summary"
       action={
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={onRegenerate}
-          disabled={busy || local}
-          title={local ? "Save the post to generate a summary" : undefined}
+          disabled={local}
+          loading={busy}
+          loadingLabel="summarizing…"
+          title={local ? "Save the post before generating a summary" : undefined}
         >
-          {busy ? "summarizing…" : local ? "unsaved" : summary ? "regenerate" : "generate"}
+          {local ? "save first" : summary ? "regenerate" : "generate"}
         </Button>
       }
     >
@@ -60,20 +62,20 @@ export function AgentSummary({
         <Markdown text={summary} />
       ) : (
         <p className="text-sm text-muted">
-          No summary yet. Generate one to catch up on this thread instantly.
+          No summary yet. Generate one to catch up on key decisions and open questions.
         </p>
       )}
 
       {error && (
-        <p className="mt-2 rounded-md bg-red-500/10 px-2 py-1.5 text-xs text-red-300">
+        <p role="alert" className="ui-error mt-2">
           {error}
         </p>
       )}
 
       {(model || updatedAt) && !error && (
         <p className="mt-2.5 text-label text-muted">
-          {model === "seed/baked" ? "demo summary" : `model: ${model}`}
-          {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
+          {model === "seed/baked" ? "Demo summary" : `Model: ${model}`}
+          {updatedAt ? `, updated ${timeAgo(updatedAt)}` : ""}
         </p>
       )}
     </AccentPanel>

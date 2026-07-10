@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { AVATAR_PALETTE } from "./avatarPalette";
+import { DEFAULT_ORG_NAME, DEFAULT_ORG_SLUG } from "./authUsers";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -19,12 +20,28 @@ export const run = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Wipe existing data so the seed is idempotent.
-    for (const table of ["postReads", "replies", "posts", "users"] as const) {
+    for (const table of [
+      "aiGenerationSettings",
+      "agentTasks",
+      "postReads",
+      "replies",
+      "posts",
+      "spaceMemberships",
+      "spaces",
+      "users",
+      "orgs",
+    ] as const) {
       const rows = await ctx.db.query(table).collect();
       await Promise.all(rows.map((r) => ctx.db.delete(r._id)));
     }
 
     const now = Date.now();
+
+    const orgId = await ctx.db.insert("orgs", {
+      name: DEFAULT_ORG_NAME,
+      slug: DEFAULT_ORG_SLUG,
+      createdAt: now,
+    });
 
     const user = (
       name: string,
@@ -32,12 +49,13 @@ export const run = internalMutation({
       initials: string,
       avatarColor: string,
       isAgent = false,
-    ) => ({ name, title, initials, avatarColor, isAgent });
+      role: "admin" | "member" = "member",
+    ) => ({ name, title, initials, avatarColor, isAgent, role });
 
     // Humans use the warm palette; AI agents get the cooler entries so they
     // read as "bot" teammates without breaking the page's color story.
     const userDefs = [
-      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0]),
+      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0], false, "admin"),
       user("Diego Ramos", "Staff Engineer", "DR", AVATAR_PALETTE[8]),
       user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1]),
       user("Tom Becker", "Design Lead", "TB", AVATAR_PALETTE[2]),
@@ -50,8 +68,61 @@ export const run = internalMutation({
     ];
     const u: Record<string, Id<"users">> = {};
     for (const d of userDefs) {
-      const id = await ctx.db.insert("users", d);
+      const id = await ctx.db.insert("users", { orgId, ...d });
       u[d.initials] = id;
+    }
+
+    const spaceDefs = [
+      {
+        key: "nw_acme_platform",
+        name: "northwind × acme — platform integration",
+        slug: "northwind-acme-platform-integration",
+        description:
+          "Launch planning, API contracts, and rollout decisions for the shared platform integration.",
+        createdAgo: 24 * 12 * HOUR,
+        members: ["MC", "DR", "PN", "TB"],
+      },
+      {
+        key: "nw_globex_support",
+        name: "northwind × globex — vendor support",
+        slug: "northwind-globex-vendor-support",
+        description:
+          "Operational support lane for incidents, renewals, and account coordination.",
+        createdAgo: 24 * 8 * HOUR,
+        members: ["MC", "AK", "LW", "Cu"],
+      },
+      {
+        key: "initech_nw_security",
+        name: "initech × northwind — security review",
+        slug: "initech-northwind-security-review",
+        description:
+          "Security review thread for evidence exchange, access scoping, and launch gating.",
+        createdAgo: 30 * HOUR,
+        members: ["DR", "LW", "Cx", "Cl"],
+      },
+    ] as const;
+
+    const spaceIds: Record<(typeof spaceDefs)[number]["key"], Id<"spaces">> =
+      {} as Record<(typeof spaceDefs)[number]["key"], Id<"spaces">>;
+
+    for (const space of spaceDefs) {
+      const spaceId = await ctx.db.insert("spaces", {
+        orgId,
+        name: space.name,
+        slug: space.slug,
+        description: space.description,
+        createdAt: now - space.createdAgo,
+      });
+      spaceIds[space.key] = spaceId;
+
+      for (const member of space.members) {
+        await ctx.db.insert("spaceMemberships", {
+          orgId,
+          spaceId,
+          userId: u[member],
+          createdAt: now - space.createdAgo + 1000,
+        });
+      }
     }
 
     type ReplyDef = {
@@ -64,6 +135,7 @@ export const run = internalMutation({
       author: string;
       title: string;
       space: string;
+      spaceKey?: keyof typeof spaceIds;
       priority: "urgent" | "high" | "normal";
       pinned?: boolean;
       createdAgo: number; // ms before now
@@ -73,6 +145,89 @@ export const run = internalMutation({
     };
 
     const posts: PostDef[] = [
+      {
+        author: "PN",
+        title: "API contract question: account mapping edge cases",
+        space: "northwind × acme — platform integration",
+        spaceKey: "nw_acme_platform",
+        priority: "high",
+        createdAgo: 2 * HOUR,
+        body: "We found three customers where the external account id maps to multiple billing entities. Can Northwind confirm whether the canonical id should be workspace-level or contract-level before we freeze the import job?",
+        summary:
+          "**TL;DR**\nAcme needs a decision on whether the canonical external account id should resolve at the workspace or contract level before the import job is frozen.\n\n**Open questions**\n- Which identifier becomes the single source of truth for the shared import path?\n\n**Action items**\n- Northwind to confirm the canonical account mapping model in-thread.",
+        replies: [
+          {
+            who: "DR",
+            at: 35 * 60 * 1000,
+            body: "Current assumption on our side is workspace-level, but contracts inherit differently in enterprise tenants. I'll pull the three edge cases and confirm which shape survives downstream reconciliation.",
+          },
+          {
+            who: "PN",
+            at: 80 * 60 * 1000,
+            body: "Perfect. Once that's settled we'll freeze the import job and note the fallback for any split-contract tenants in the launch doc.",
+            parent: 0,
+          },
+        ],
+      },
+      {
+        author: "MC",
+        title: "Integration timeline after staging dry run",
+        space: "northwind × acme — platform integration",
+        spaceKey: "nw_acme_platform",
+        priority: "normal",
+        createdAgo: 6 * HOUR,
+        body: "Staging dry run is green except for webhook replay ordering. Proposed plan: patch idempotency today, run a second dry run tomorrow morning, and keep the production cutover window on Thursday.",
+        replies: [
+          {
+            who: "TB",
+            at: 45 * 60 * 1000,
+            body: "No design blockers on the launch checklist. If the second dry run is green, we can publish the customer-facing migration note immediately after the Thursday cutover.",
+          },
+        ],
+      },
+      {
+        author: "LW",
+        title: "Incident coordination: delayed export batch",
+        space: "northwind × globex — vendor support",
+        spaceKey: "nw_globex_support",
+        priority: "urgent",
+        createdAgo: 90 * 60 * 1000,
+        body: "The 02:00 UTC export batch missed its delivery window. We isolated it to a queue worker restart and are backfilling now. Please hold downstream reconciliation until we post the final checksum.",
+        summary:
+          "**TL;DR**\nA delayed export batch was traced to a queue worker restart. Backfill is in progress; downstream reconciliation should wait for the final checksum.\n\n**Action items**\n- Lukas to post the checksum when replay completes.\n- Globex-side reconciliation stays paused until then.",
+        replies: [
+          {
+            who: "Cu",
+            at: 20 * 60 * 1000,
+            body: "Replay worker is stable now. I added a guard so a rolling restart won't mark the batch complete until the final chunk flushes to storage.",
+          },
+        ],
+      },
+      {
+        author: "AK",
+        title: "Renewal data request for Q3 capacity planning",
+        space: "northwind × globex — vendor support",
+        spaceKey: "nw_globex_support",
+        priority: "normal",
+        createdAgo: 28 * HOUR,
+        body: "We need updated seat forecasts by region before the renewal model locks. Please post final assumptions here so the decision trail stays searchable.",
+      },
+      {
+        author: "Cx",
+        title: "Security evidence checklist before review kickoff",
+        space: "initech × northwind — security review",
+        spaceKey: "initech_nw_security",
+        priority: "high",
+        createdAgo: 20 * HOUR,
+        body: "Before the first review call, let's keep the evidence checklist in one thread: latest pen test summary, SSO configuration notes, access review owner, and retention defaults. Once those are attached, we can turn the meeting into a short sign-off instead of a discovery call.",
+        replies: [
+          {
+            who: "Cl",
+            at: 70 * 60 * 1000,
+            body: "I can assemble the checklist into a single security packet after the documents land. That gives the reviewer a concise package instead of four separate links.",
+          },
+        ],
+      },
       {
         author: "MC",
         title: "Decision: We're moving the mobile app to a monthly release train",
@@ -321,10 +476,12 @@ export const run = internalMutation({
         : createdAt;
 
       const postId = await ctx.db.insert("posts", {
+        orgId,
         authorId: u[p.author],
         title: p.title,
         body: p.body,
         space: p.space,
+        spaceId: p.spaceKey ? spaceIds[p.spaceKey] : undefined,
         priority: p.priority,
         pinned: p.pinned ?? false,
         createdAt,
@@ -339,6 +496,7 @@ export const run = internalMutation({
       const replyIds: Id<"replies">[] = [];
       for (const r of replyDefs) {
         const id = await ctx.db.insert("replies", {
+          orgId,
           postId,
           parentId: r.parent !== undefined ? replyIds[r.parent] : undefined,
           authorId: u[r.who],
@@ -350,7 +508,9 @@ export const run = internalMutation({
     }
 
     return {
+      orgs: 1,
       users: userDefs.length,
+      spaces: spaceDefs.length,
       posts: posts.length,
       message: "Seeded Postwork demo data.",
     };

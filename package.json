@@ -17,15 +17,17 @@
     "@ai-sdk/gateway": "4.0.0-beta.112",
     "@ai-sdk/openai": "^4.0.0-beta.77",
     "@ai-sdk/openai-compatible": "3.0.0-beta.58",
+    "@clerk/clerk-react": "^5.61.3",
+    "@convex-dev/rate-limiter": "^0.3.2",
     "@fontsource-variable/inter": "^5.2.8",
     "@plausible-analytics/tracker": "^0.4.5",
-    "@shoojs/react": "^0.2.2",
     "@tanstack/react-router": "^1.170.16",
     "ai": "7.0.0-beta.184",
     "convex": "^1.41.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "shiki": "^4.2.0"
+    "shiki": "^4.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",

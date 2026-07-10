@@ -1,119 +1,51 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useSpaces } from "../lib/spaces";
-import { Button } from "../components/Button";
-import { OrgSquare } from "../components/OrgSquare";
+import { EmptyState } from "../components/EmptyState";
 import { PageHeader } from "../components/PageHeader";
+import { timeAgo } from "../lib/format";
+import { useSpacesList } from "../lib/spaces";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
-function parseHandles(value: string) {
-  return value
-    .split(/[\s,]+/)
-    .map((handle) => handle.trim().replace(/^@/, "").toLowerCase())
-    .filter(Boolean);
-}
-
 export function SpacesPage() {
-  useDocumentTitle("spaces · postwork");
-  const {
-    spaces,
-    invitesForMyOrg,
-    membershipsForSpace,
-    createSpace,
-    acceptInvite,
-    declineInvite,
-  } = useSpaces();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [handles, setHandles] = useState("");
-
-  const submit = () => {
-    if (!name.trim()) return;
-    createSpace({
-      name: name.trim(),
-      description: description.trim() || undefined,
-      inviteHandles: parseHandles(handles),
-    });
-    setName("");
-    setDescription("");
-    setHandles("");
-  };
+  useDocumentTitle("Spaces · postwork");
+  const spaces = useSpacesList().slice().sort((a, b) => b.latestActivityAt - a.latestActivityAt);
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <PageHeader
-        backTo="/"
+        backTo="/app"
         backLabel="feed"
-        title="spaces"
-        description="shared cross-company rooms where your org and external teams can keep launch plans, incidents, and decisions in one feed."
-        action={
-          <Link to="/orgs" className="text-sm text-accent-soft transition hover:text-fg">
-            linked orgs →
-          </Link>
-        }
+        title="Spaces"
+        description="Browse posts grouped by team or area of work."
       />
 
-      {invitesForMyOrg.length > 0 && (
-        <section className="mb-5 rounded-lg border border-accent/30 bg-accent/10 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-accent-soft">pending invites</h2>
-          <div className="space-y-2">
-            {invitesForMyOrg.map(({ space, fromOrg }) => (
-              <div key={space.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface p-3">
-                <div>
-                  <div className="text-sm font-medium text-fg">{space.name}</div>
-                  <div className="text-xs text-muted">from {fromOrg.name}</div>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => acceptInvite(space.id)}>
-                    accept
-                  </Button>
-                  <button onClick={() => declineInvite(space.id)} className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition hover:text-fg">
-                    decline
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="mb-5 rounded-lg border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-fg">create shared space</h2>
-        <div className="grid gap-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="space name" className="w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
-          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="optional description" className="w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
-          <div className="flex flex-wrap gap-2">
-            <input value={handles} onChange={(e) => setHandles(e.target.value)} placeholder="invite org by @handle" className="min-w-0 flex-1 rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none focus:border-accent/50" />
-            <Button onClick={submit} disabled={!name.trim()}>
-              create space
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <div className="space-y-2.5">
-        {spaces.map((space) => {
-          const members = membershipsForSpace(space.id);
-          return (
-            <Link key={space.id} to="/spaces/$slug" params={{ slug: space.slug }} className="group block rounded-lg border border-border bg-surface p-4 transition hover:border-accent/40 hover:bg-surface-2">
-              <div className="flex items-start justify-between gap-4">
+      {spaces.length === 0 ? (
+        <EmptyState>No spaces are available yet.</EmptyState>
+      ) : (
+        <div className="space-y-3">
+          {spaces.map((space) => (
+            <Link
+              key={space._id}
+              to="/app/spaces/$slug"
+              params={{ slug: space.slug }}
+              className="group block rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent/40 hover:bg-surface-2"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <h3 className="text-title font-semibold text-fg">{space.name}</h3>
-                  {space.description && <p className="mt-1 line-clamp-2 text-sm text-muted">{space.description}</p>}
+                  <h2 className="text-title font-semibold text-fg">{space.name}</h2>
+                  {space.description ? (
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{space.description}</p>
+                  ) : null}
                 </div>
-                <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                  {members.map(({ org, status }) => (
-                    <div key={org.id} className="flex items-center gap-1" title={`${org.name}: ${status}`}>
-                      <OrgSquare org={org} />
-                      {status !== "active" && <span className="text-label text-muted">{status}</span>}
-                    </div>
-                  ))}
+                <div className="flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-right">
+                  <div>{space.memberCount} members</div>
+                  <div className="sm:mt-1">{space.postCount} posts</div>
                 </div>
               </div>
+              <div className="mt-3 text-xs text-muted">Active {timeAgo(space.latestActivityAt)}</div>
             </Link>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

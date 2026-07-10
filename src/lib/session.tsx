@@ -3,33 +3,42 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { useQuery } from "convex/react";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Doc, Id } from "../../convex/_generated/dataModel";
+import type { FunctionReturnType } from "convex/server";
+import type { Id } from "../../convex/_generated/dataModel";
+import { isDemo } from "./demoMode";
+
+type SessionUser = FunctionReturnType<typeof api.users.list>[number];
 
 type SessionValue = {
-  users: Doc<"users">[];
-  currentUser: Doc<"users"> | undefined;
+  users: SessionUser[];
+  currentUser: SessionUser | undefined;
   currentUserId: Id<"users"> | undefined;
   setCurrentUserId: (id: Id<"users">) => void;
 };
 
 const SessionContext = createContext<SessionValue | null>(null);
 
-// The current user lives in memory only — it resets to the default on refresh,
-// so a visitor's "view as teammate" choice never persists against the shared
-// demo deployment.
 export function SessionProvider({ children }: { children: ReactNode }) {
+  if (isDemo) {
+    return <DemoSessionProvider>{children}</DemoSessionProvider>;
+  }
+
+  return <ProductSessionProvider>{children}</ProductSessionProvider>;
+}
+
+function DemoSessionProvider({ children }: { children: ReactNode }) {
   const users = useQuery(api.users.list);
   const [currentUserId, setCurrentUserIdState] = useState<
     Id<"users"> | undefined
   >();
 
-  // Default to the first human once the list loads (agents stay switchable but
-  // aren't the default view).
   useEffect(() => {
     if (!users || users.length === 0) return;
     const valid = currentUserId && users.some((u) => u._id === currentUserId);
@@ -39,17 +48,97 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [users, currentUserId]);
 
-  const setCurrentUserId = (id: Id<"users">) => setCurrentUserIdState(id);
-
   const value = useMemo<SessionValue>(() => {
     const currentUser = users?.find((u) => u._id === currentUserId);
     return {
       users: users ?? [],
       currentUser,
       currentUserId: currentUser?._id,
-      setCurrentUserId,
+      setCurrentUserId: setCurrentUserIdState,
     };
   }, [users, currentUserId]);
+
+  return (
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  );
+}
+
+function ProductSessionProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const users = useQuery(api.users.list);
+  const viewer = useQuery(api.users.viewer);
+  const ensureViewer = useMutation(api.users.ensureViewer);
+  const syncViewerProfile = useMutation(api.users.syncViewerProfile);
+  const ensureRequested = useRef(false);
+  const syncedProfileName = useRef<string | null>(null);
+  const syncedProviderAvatarUrl = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      ensureRequested.current = false;
+      syncedProfileName.current = null;
+      syncedProviderAvatarUrl.current = null;
+      return;
+    }
+    if (viewer !== null || ensureRequested.current) return;
+    ensureRequested.current = true;
+    void ensureViewer().catch((error) => {
+      ensureRequested.current = false;
+      console.error("Failed to ensure viewer", error);
+    });
+  }, [ensureViewer, isLoaded, isSignedIn, viewer]);
+
+  const authDisplayName = useMemo(() => {
+    const email = user?.primaryEmailAddress?.emailAddress;
+    return (
+      user?.fullName?.trim() ||
+      user?.username?.trim() ||
+      (email ? email.split("@")[0] : undefined)
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !viewer) return;
+
+    const shouldSyncName =
+      !!authDisplayName &&
+      (viewer.name === "member" || viewer.initials === "ME") &&
+      syncedProfileName.current !== authDisplayName;
+    const providerAvatarUrl = user?.imageUrl;
+    const shouldSyncProviderAvatar =
+      !!providerAvatarUrl &&
+      viewer.providerAvatarUrl !== providerAvatarUrl &&
+      syncedProviderAvatarUrl.current !== providerAvatarUrl;
+
+    if (!shouldSyncName && !shouldSyncProviderAvatar) return;
+
+    const profilePatch: { name?: string; providerAvatarUrl?: string } = {};
+    if (shouldSyncName) profilePatch.name = authDisplayName;
+    if (shouldSyncProviderAvatar) {
+      profilePatch.providerAvatarUrl = providerAvatarUrl;
+    }
+
+    if (shouldSyncName) syncedProfileName.current = authDisplayName;
+    if (shouldSyncProviderAvatar) {
+      syncedProviderAvatarUrl.current = providerAvatarUrl;
+    }
+    void syncViewerProfile(profilePatch).catch((error) => {
+      if (shouldSyncName) syncedProfileName.current = null;
+      if (shouldSyncProviderAvatar) syncedProviderAvatarUrl.current = null;
+      console.error("Failed to sync viewer profile", error);
+    });
+  }, [authDisplayName, isLoaded, isSignedIn, syncViewerProfile, user, viewer]);
+
+  const value = useMemo<SessionValue>(() => {
+    const currentUser = viewer ?? undefined;
+    return {
+      users: users ?? (viewer ? [viewer] : []),
+      currentUser,
+      currentUserId: currentUser?._id,
+      setCurrentUserId: () => {},
+    };
+  }, [users, viewer]);
 
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

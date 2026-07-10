@@ -12,8 +12,8 @@ import {
   type FlashExperiment,
 } from "../flashExperiments/registry";
 import { useActiveExperiment } from "../flashExperiments/active";
-import { signIn, useAuth } from "../shoo";
 import { ExperimentDiscussion } from "../flashExperiments/ExperimentDiscussion";
+import { isDemo } from "../lib/demoMode";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 const SLOT_LABELS: Partial<Record<ExperimentSlot, string>> = {
@@ -34,7 +34,7 @@ const categoryMeta: Record<
 > = {
   community: {
     label: "community",
-    blurb: "suggested from outside the team — with credit to whoever asked.",
+    blurb: "Suggestions from outside the team, with credit to the requester.",
   },
   testing: {
     label: "testing",
@@ -53,7 +53,7 @@ type VoteState = {
 };
 
 // Shipped experiments graduate out of the lab list into a compact "implemented"
-// archive row: no votes, no open discussion, no slot chips — just a title, an
+// archive row: no votes, no open discussion, and no slot chips. It keeps a title, an
 // implemented badge, and a link to still preview them.
 const activeExperiments = flashExperiments.filter(
   (experiment) => experiment.status !== "shipped",
@@ -73,7 +73,6 @@ export function FlashExperimentsPage() {
   });
   const countsBySlug = new Map(counts?.map((c) => [c.slug, c]));
   const setVote = useMutation(api.flashExperiments.setVote);
-  const { isLoading, isAuthenticated } = useAuth();
   const { setSlug } = useActiveExperiment();
 
   // The lab list is "outside" any experiment — clear an active preview on entry.
@@ -82,11 +81,7 @@ export function FlashExperimentsPage() {
   }, [setSlug]);
 
   const handleVote = async (slug: string, next: "up" | "down") => {
-    if (isLoading) return;
-    if (!isAuthenticated) {
-      void signIn();
-      return;
-    }
+    if (isDemo) return;
     const current = votesBySlug.get(slug)?.viewerVote;
     const value = current === next ? null : next;
     try {
@@ -98,7 +93,6 @@ export function FlashExperimentsPage() {
         err.data !== null &&
         (err.data as { code?: string }).code === "UNAUTHENTICATED"
       ) {
-        void signIn();
         return;
       }
       console.error(err);
@@ -107,42 +101,36 @@ export function FlashExperimentsPage() {
 
   return (
     // Deliberately set apart from the rest of the app: a "lab" zone with a
-    // blueprint grid, dashed accent edges, and all-mono chrome so you always
-    // know you've stepped out of the normal product surface.
-    <div className="-mx-4 -my-6 min-h-[calc(100vh-3.25rem)] bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center]">
+    // blueprint grid, dashed accent edges, and mono chrome labels so you always
+    // know you've stepped out of the normal product surface. UI text stays Inter;
+    // mono is scoped to labels, codes, and chips per docs/design.md.
+    <div className="min-h-screen bg-bg px-4 py-6 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
-          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
-            flow lab · work in progress
+            flow lab, work in progress
           </div>
-          <h1 className="mt-2 text-xl font-semibold lowercase text-fg">
-            flash experiments
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted">
-            sandboxed single-change previews, grouped by where they came from.
-            open one to use it as if it shipped; vote here to make review
-            pressure visible. nothing here is production behavior.
+          <h1 className="mt-2 text-xl font-semibold text-fg">Flash experiments</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+            Review isolated interface changes before they become part of the app.
+            Open an experiment to try it, then vote or add a reply.
           </p>
         </header>
 
         {/* The full "ink" redesign is too broad for the single-slot preview
             system, so it lives as its own usable surface. Feature it here. */}
         <Link
-          to="/redesign"
+          to="/app"
           className="group relative block overflow-hidden rounded-lg border border-accent/40 bg-surface/90 p-5 backdrop-blur transition hover:border-accent/70"
         >
-          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
-            full redesign · usable app
+            current app design
           </div>
-          <h2 className="mt-2 text-lg font-semibold lowercase text-fg">
-            the ink redesign
-          </h2>
-          <p className="mt-2 max-w-2xl font-sans text-sm text-muted">
-            a true gray-black surface with the magenta accent popping again:
-            hero titles, a 65-char reading column, one quiet metadata line, and
-            our own collapsible sidebar. open it as the real app, not a preview.
+          <h2 className="mt-2 text-lg font-semibold text-fg">Open Postwork</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+            Return to the current app without an experiment active.
           </p>
           <span className="mt-3 inline-block text-xs text-accent-soft transition group-hover:translate-x-0.5">
             open redesign →
@@ -176,8 +164,8 @@ export function FlashExperimentsPage() {
                     experiment={experiment}
                     vote={votesBySlug.get(experiment.slug)}
                     replyCount={countsBySlug.get(experiment.slug)?.replyCount ?? 0}
-                    isLoading={isLoading}
-                    isAuthenticated={isAuthenticated}
+                    isLoading={false}
+                    isAuthenticated={!isDemo}
                     onVote={handleVote}
                   />
                 ))}
@@ -196,8 +184,7 @@ export function FlashExperimentsPage() {
                 </span>
               </h2>
               <p className="text-right text-label text-muted">
-                community suggestions that shipped — now part of the default
-                app.
+                Community suggestions that are now part of the app.
               </p>
             </div>
             <div className="grid gap-1.5">
@@ -231,17 +218,17 @@ function ExperimentCard({
   return (
     <div className="group rounded-lg border border-dashed border-border bg-surface/90 backdrop-blur transition hover:border-accent/50">
       <Link
-        to="/flash-experiments/$slug"
+        to="/app/flash-experiments/$slug"
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-label font-medium text-muted">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 font-mono text-label font-medium text-muted">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >
             {experiment.status}
           </span>
-          <span className="text-faint">·</span>
+          <span className="sr-only">Slots:</span>
           {Object.keys(experiment.appSlots).map((slot) => (
             <span
               key={slot}
@@ -254,39 +241,39 @@ function ExperimentCard({
         <h3 className="text-base font-semibold lowercase text-fg">
           {experiment.title}
         </h3>
-        <p className="mt-1 font-sans text-sm text-muted">
+        <p className="mt-1 text-sm text-muted">
           {experiment.summary}
         </p>
-
-        {suggestion ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-label">
-            <span className="text-muted">suggested by</span>
-            <span className="text-fg">{suggestion.name}</span>
-            <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
-              {suggestion.handle}
-            </span>
-            {suggestion.link && (
-              <a
-                href={suggestion.link}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-accent-soft underline-offset-2 transition hover:underline"
-              >
-                view suggestion →
-              </a>
-            )}
-          </div>
-        ) : (
+        {suggestion ? null : (
           <p className="mt-3 text-label text-muted">
             requested by {experiment.requestedBy}
           </p>
         )}
       </Link>
 
+      {suggestion ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-label">
+          <span className="text-muted">suggested by</span>
+          <span className="text-fg">{suggestion.name}</span>
+          <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 font-mono text-accent-soft">
+            {suggestion.handle}
+          </span>
+          {suggestion.link && (
+            <a
+              href={suggestion.link}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent-soft underline-offset-2 transition hover:underline"
+            >
+              view suggestion →
+            </a>
+          )}
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between gap-3 border-t border-dashed border-border px-4 py-2.5">
         <Link
-          to="/flash-experiments/$slug"
+          to="/app/flash-experiments/$slug"
           params={{ slug: experiment.slug }}
           className="text-xs text-accent-soft transition group-hover:translate-x-0.5"
         >
@@ -295,7 +282,8 @@ function ExperimentCard({
         <div className="flex items-center gap-1.5 text-xs">
           <VoteButton
             active={vote?.viewerVote === "up"}
-            disabled={isLoading}
+            ariaLabel="Vote for this experiment"
+            disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
             }
@@ -305,7 +293,8 @@ function ExperimentCard({
           </VoteButton>
           <VoteButton
             active={vote?.viewerVote === "down"}
-            disabled={isLoading}
+            ariaLabel="Vote against this experiment"
+            disabled={isLoading || !isAuthenticated}
             title={
               !isLoading && !isAuthenticated ? "sign in to vote" : undefined
             }
@@ -333,19 +322,24 @@ function VoteButton({
   children,
   disabled,
   title,
+  ariaLabel,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   disabled?: boolean;
   title?: string;
+  ariaLabel: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`rounded-md border px-2 py-1 tabular-nums transition disabled:cursor-not-allowed disabled:opacity-60 ${
+      type="button"
+      aria-label={ariaLabel}
+      aria-pressed={active}
+      className={`min-h-11 rounded-md border px-3 py-2 tabular-nums transition-colors disabled:cursor-not-allowed disabled:border-border disabled:text-muted/70 ${
         active
           ? "border-accent/50 bg-accent/15 text-accent-soft"
           : "border-border text-muted hover:border-accent/40 hover:text-fg"
@@ -377,7 +371,7 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
   const { suggestion } = experiment;
   return (
     <Link
-      to="/flash-experiments/$slug"
+      to="/app/flash-experiments/$slug"
       params={{ slug: experiment.slug }}
       title={experiment.summary}
       className="group flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-surface/70 px-3 py-2 transition hover:border-accent/40 hover:bg-surface"
