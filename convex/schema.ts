@@ -23,6 +23,11 @@ export const agentTaskStatus = v.union(
   v.literal("cancelled"),
 );
 
+export const aiGenerationKind = v.union(
+  v.literal("postSummary"),
+  v.literal("agentTask"),
+);
+
 export default defineSchema({
   orgs: defineTable({
     name: v.string(),
@@ -163,6 +168,18 @@ export default defineSchema({
     .index("by_org_id_and_post_id", ["orgId", "postId"])
     .index("by_org_id_and_agent_id_and_created_at", ["orgId", "agentId", "createdAt"])
     .index("by_org_id_and_created_at", ["orgId", "createdAt"]),
+
+  // Org-level AI model choices. These are intentionally just model IDs; API
+  // keys stay in Convex env vars. A setting row pins one generation path to an
+  // OpenRouter model, while absence falls back to the deployment env provider.
+  aiGenerationSettings: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    kind: aiGenerationKind,
+    modelId: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    updatedById: v.id("users"),
+  }).index("by_org_id_and_kind", ["orgId", "kind"]),
 
   // Image attachments (Phase 3.4). Product mode only — the demo overlay can't
   // hold files. An attachment belongs to a post (replyId = undefined) or to a

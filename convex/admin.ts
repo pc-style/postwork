@@ -12,6 +12,12 @@ import { isDemo } from "./lib/demo";
 import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
 import { logInfo } from "./lib/observability";
 import { parse, profileTitleSchema } from "./lib/validation";
+import { aiGenerationKind } from "./schema";
+import {
+  DEFAULT_OPENROUTER_MODEL,
+  normalizeModelId,
+  type AiGenerationKind,
+} from "./lib/aiModels";
 
 /**
  * Admin control plane — users, invites, access requests, audit history.
@@ -148,6 +154,108 @@ export const listUsers = query({
       .withIndex("by_org_id_and_role", (q) => q.eq("orgId", admin.orgId))
       .collect();
     return users.map((u) => publicUser(u));
+  },
+});
+
+const AI_GENERATION_KINDS: readonly AiGenerationKind[] = [
+  "postSummary",
+  "agentTask",
+];
+
+export const aiModelSettings = query({
+  args: {},
+  handler: async (ctx) => {
+    const admin = await requireAdminForRead(ctx);
+    const settings = await ctx.db
+      .query("aiGenerationSettings")
+      .withIndex("by_org_id_and_kind", (q) => q.eq("orgId", admin.orgId))
+      .collect();
+    const byKind = new Map(settings.map((setting) => [setting.kind, setting]));
+    const updaterIds = [...new Set(settings.map((setting) => setting.updatedById))];
+    const updaterNames = new Map<string, string>();
+    for (const updaterId of updaterIds) {
+      const user = await ctx.db.get(updaterId);
+      updaterNames.set(updaterId, user?.name ?? "unknown");
+    }
+
+    return {
+      openRouterConfigured: !!process.env.OPENROUTER_API_KEY,
+      defaultOpenRouterModel: process.env.OPENROUTER_MODEL ?? DEFAULT_OPENROUTER_MODEL,
+      settings: AI_GENERATION_KINDS.map((kind) => {
+        const setting = byKind.get(kind);
+        return {
+          kind,
+          modelId: setting?.modelId ?? null,
+          effectiveModelId:
+            setting?.modelId ?? process.env.OPENROUTER_MODEL ?? DEFAULT_OPENROUTER_MODEL,
+          updatedAt: setting?.updatedAt ?? null,
+          updatedByName: setting
+            ? (updaterNames.get(setting.updatedById) ?? "unknown")
+            : null,
+        };
+      }),
+    };
+  },
+});
+
+export const setAiModelSetting = mutation({
+  args: { kind: aiGenerationKind, modelId: v.string() },
+  handler: async (ctx, args) => {
+    const admin = await requireAdminForWrite(ctx);
+    const modelId = normalizeModelId(args.modelId);
+    const existing = await ctx.db
+      .query("aiGenerationSettings")
+      .withIndex("by_org_id_and_kind", (q) =>
+        q.eq("orgId", admin.orgId).eq("kind", args.kind),
+      )
+      .first();
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        modelId,
+        updatedAt: now,
+        updatedById: admin._id,
+      });
+    } else {
+      await ctx.db.insert("aiGenerationSettings", {
+        orgId: admin.orgId,
+        kind: args.kind,
+        modelId,
+        createdAt: now,
+        updatedAt: now,
+        updatedById: admin._id,
+      });
+    }
+    await logAudit(ctx, {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "aiModelSetting.updated",
+      targetType: "aiGenerationSetting",
+      targetId: args.kind,
+      metadata: { modelId },
+    });
+    return modelId;
+  },
+});
+
+export const resetAiModelSetting = mutation({
+  args: { kind: aiGenerationKind },
+  handler: async (ctx, args) => {
+    const admin = await requireAdminForWrite(ctx);
+    const existing = await ctx.db
+      .query("aiGenerationSettings")
+      .withIndex("by_org_id_and_kind", (q) =>
+        q.eq("orgId", admin.orgId).eq("kind", args.kind),
+      )
+      .collect();
+    await Promise.all(existing.map((setting) => ctx.db.delete(setting._id)));
+    await logAudit(ctx, {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "aiModelSetting.reset",
+      targetType: "aiGenerationSetting",
+      targetId: args.kind,
+    });
   },
 });
 

@@ -81,10 +81,14 @@ bunx convex env set AI_GATEWAY_MODEL openai/gpt-5.4-mini
 ```bash
 bunx convex env set AI_PROVIDER openrouter
 bunx convex env set OPENROUTER_API_KEY <your-key>
-# optional, defaults to openai/gpt-5.4-mini:
-bunx convex env set OPENROUTER_MODEL openai/gpt-5.4-mini
+# optional, defaults to OpenRouter's free router:
+bunx convex env set OPENROUTER_MODEL openrouter/free
 # optional: bunx convex env set OPENROUTER_BASE_URL https://openrouter.ai/api/v1
 ```
+
+Admins can also pin a different OpenRouter model per generation path at
+`/admin/models`. The picker only lists free OpenRouter presets, and it accepts a
+custom model id for aliases or newly released free models.
 
 **Pioneer (OpenAI-compatible, for fine-tuned Pioneer models):**
 
@@ -139,7 +143,7 @@ bunx convex env set --prod AI_GATEWAY_MODEL  openai/gpt-5.4-mini
 # …or OpenRouter
 bunx convex env set --prod AI_PROVIDER openrouter
 bunx convex env set --prod OPENROUTER_API_KEY <your-key>
-bunx convex env set --prod OPENROUTER_MODEL  openai/gpt-5.4-mini   # optional
+bunx convex env set --prod OPENROUTER_MODEL  openrouter/free   # optional
 ```
 
 ### 4. Deploy on Vercel

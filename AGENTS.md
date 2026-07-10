@@ -83,7 +83,7 @@ so a green build covers both layers.
 - `AI_PROVIDER=gateway`: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g.
   `openai/gpt-5.4-mini`). Uses `@ai-sdk/gateway`.
 - `AI_PROVIDER=openrouter`: `OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL`
-  (default `openai/gpt-5.4-mini`) and `OPENROUTER_BASE_URL` (default
+  (default `openrouter/free`) and `OPENROUTER_BASE_URL` (default
   `https://openrouter.ai/api/v1`). Uses `@ai-sdk/openai-compatible`.
 - `AI_PROVIDER=pioneer`: `PIONEER_API_KEY`, `PIONEER_MODEL`, optional
   `PIONEER_BASE_URL` (default `https://api.pioneer.ai/v1`, auth via `X-API-Key`

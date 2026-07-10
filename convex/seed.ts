@@ -21,6 +21,7 @@ export const run = internalMutation({
   handler: async (ctx) => {
     // Wipe existing data so the seed is idempotent.
     for (const table of [
+      "aiGenerationSettings",
       "agentTasks",
       "postReads",
       "replies",

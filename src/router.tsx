@@ -20,6 +20,7 @@ import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
 import { AdminLayout } from "./routes/admin/AdminShell";
 import { AdminOverviewPage } from "./routes/admin/AdminOverviewPage";
 import { AdminUsersPage } from "./routes/admin/AdminUsersPage";
+import { AdminModelsPage } from "./routes/admin/AdminModelsPage";
 import { AdminInvitesPage } from "./routes/admin/AdminInvitesPage";
 import { AdminAccessRequestsPage } from "./routes/admin/AdminAccessRequestsPage";
 import { AdminAuditLogPage } from "./routes/admin/AdminAuditLogPage";
@@ -163,6 +164,12 @@ const adminUsersRoute = createRoute({
 export type AdminUsersFilter = "members" | "agents" | "deactivated";
 export type AdminUsersSearch = { filter?: AdminUsersFilter };
 
+const adminModelsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/models",
+  component: AdminModelsPage,
+});
+
 const adminInvitesRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/invites",
@@ -263,6 +270,7 @@ const routeTree = rootRoute.addChildren([
   adminLayoutRoute.addChildren([
     adminOverviewRoute,
     adminUsersRoute,
+    adminModelsRoute,
     adminInvitesRoute,
     adminAccessRequestsRoute,
     adminAuditLogRoute,

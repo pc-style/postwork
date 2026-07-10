@@ -5,9 +5,29 @@ import { generateText, type LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGateway } from "@ai-sdk/gateway";
+import { aiGenerationKind } from "./schema";
+import { getDefaultOrgId } from "./authUsers";
 import { isDemo } from "./lib/demo";
 import { rateLimiter } from "./lib/rateLimit";
 import { logWarn } from "./lib/observability";
+import {
+  DEFAULT_GATEWAY_MODEL,
+  DEFAULT_OPENAI_MODEL,
+  DEFAULT_OPENROUTER_BASE_URL,
+  DEFAULT_OPENROUTER_MODEL,
+  normalizeModelId,
+} from "./lib/aiModels";
+
+type ResolveModelOptions = {
+  openRouterModelId?: string | null;
+};
+
+type OpenRouterModel = {
+  id: string;
+  name?: string;
+  context_length?: number;
+  pricing?: Record<string, string | undefined>;
+};
 
 /**
  * Resolve a language model from environment variables.
@@ -15,18 +35,25 @@ import { logWarn } from "./lib/observability";
  *   AI_PROVIDER = "openai" | "gateway" | "openrouter" | "pioneer"   (default: "openai")
  *
  * OpenAI (direct, https://platform.openai.com):
- *   OPENAI_API_KEY, OPENAI_MODEL  (default "gpt-5.4-mini")
+ *   OPENAI_API_KEY, OPENAI_MODEL  (default DEFAULT_OPENAI_MODEL)
  *
  * Vercel AI Gateway (routes to OpenAI & others):
- *   AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL  (e.g. "openai/gpt-5.4-mini")
+ *   AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL  (default DEFAULT_GATEWAY_MODEL)
  *
  * OpenRouter (OpenAI-compatible, https://openrouter.ai):
- *   OPENROUTER_API_KEY, OPENROUTER_MODEL  (default "openai/gpt-5.4-mini"), OPENROUTER_BASE_URL?
+ *   OPENROUTER_API_KEY, OPENROUTER_MODEL  (default DEFAULT_OPENROUTER_MODEL), OPENROUTER_BASE_URL?
  *
  * Pioneer (OpenAI-compatible, https://docs.pioneer.ai):
  *   PIONEER_API_KEY, PIONEER_MODEL, PIONEER_BASE_URL?
  */
-export function resolveModel(): { model: LanguageModel; modelId: string } {
+export function resolveModel(
+  options: ResolveModelOptions = {},
+): { model: LanguageModel; modelId: string } {
+  if (options.openRouterModelId) {
+    const modelId = normalizeModelId(options.openRouterModelId);
+    return resolveOpenRouterModel(modelId);
+  }
+
   const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
 
   if (provider === "gateway") {
@@ -36,24 +63,13 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
         code: "NO_AI_KEY",
         message: "AI_GATEWAY_API_KEY is not set",
       });
-    const modelId = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-5.4-mini";
+    const modelId = process.env.AI_GATEWAY_MODEL ?? DEFAULT_GATEWAY_MODEL;
     return { model: createGateway({ apiKey })(modelId), modelId };
   }
 
   if (provider === "openrouter") {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey)
-      throw new ConvexError({
-        code: "NO_AI_KEY",
-        message: "OPENROUTER_API_KEY is not set",
-      });
-    const modelId = process.env.OPENROUTER_MODEL ?? "openai/gpt-5.4-mini";
-    const openrouter = createOpenAICompatible({
-      name: "openrouter",
-      baseURL: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
-      apiKey,
-    });
-    return { model: openrouter.chatModel(modelId), modelId };
+    const modelId = process.env.OPENROUTER_MODEL ?? DEFAULT_OPENROUTER_MODEL;
+    return resolveOpenRouterModel(modelId);
   }
 
   if (provider === "pioneer") {
@@ -86,8 +102,23 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
       code: "NO_AI_KEY",
       message: "OPENAI_API_KEY is not set",
     });
-  const modelId = process.env.OPENAI_MODEL ?? "gpt-5.4-mini";
+  const modelId = process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
   return { model: createOpenAI({ apiKey })(modelId), modelId };
+}
+
+function resolveOpenRouterModel(modelId: string): { model: LanguageModel; modelId: string } {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey)
+    throw new ConvexError({
+      code: "NO_AI_KEY",
+      message: "OPENROUTER_API_KEY is not set",
+    });
+  const openrouter = createOpenAICompatible({
+    name: "openrouter",
+    baseURL: process.env.OPENROUTER_BASE_URL ?? DEFAULT_OPENROUTER_BASE_URL,
+    apiKey,
+  });
+  return { model: openrouter.chatModel(modelId), modelId };
 }
 
 /**
@@ -95,7 +126,8 @@ export function resolveModel(): { model: LanguageModel; modelId: string } {
  * Lets actions short-circuit into a friendly "disabled for the demo" result
  * instead of surfacing a Server Error to the client.
  */
-export function aiConfigured(): boolean {
+export function aiConfigured(options: ResolveModelOptions = {}): boolean {
+  if (options.openRouterModelId) return !!process.env.OPENROUTER_API_KEY;
   const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
   if (provider === "gateway") return !!process.env.AI_GATEWAY_API_KEY;
   if (provider === "openrouter") return !!process.env.OPENROUTER_API_KEY;
@@ -103,6 +135,81 @@ export function aiConfigured(): boolean {
     return !!process.env.PIONEER_API_KEY && !!process.env.PIONEER_MODEL;
   return !!process.env.OPENAI_API_KEY;
 }
+
+export const getGenerationModelSetting = internalQuery({
+  args: {
+    orgId: v.optional(v.id("orgs")),
+    kind: aiGenerationKind,
+  },
+  handler: async (ctx, args): Promise<string | null> => {
+    const orgId = args.orgId ?? (await getDefaultOrgId(ctx));
+    const setting = await ctx.db
+      .query("aiGenerationSettings")
+      .withIndex("by_org_id_and_kind", (q) =>
+        q.eq("orgId", orgId).eq("kind", args.kind),
+      )
+      .first();
+    return setting?.modelId ?? null;
+  },
+});
+
+function priceIsZero(value: string | undefined): boolean {
+  if (value === undefined) return true;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed === 0;
+}
+
+function isFreeOpenRouterModel(model: OpenRouterModel): boolean {
+  if (model.id === DEFAULT_OPENROUTER_MODEL || model.id.endsWith(":free")) {
+    return true;
+  }
+  const pricing = model.pricing;
+  if (!pricing) return false;
+  return [
+    pricing.prompt,
+    pricing.completion,
+    pricing.request,
+    pricing.image,
+    pricing.web_search,
+    pricing.internal_reasoning,
+    pricing.input_cache_read,
+    pricing.input_cache_write,
+  ].every(priceIsZero);
+}
+
+export const listOpenRouterFreeModels = action({
+  args: {},
+  handler: async (): Promise<
+    { id: string; name: string; contextLength?: number }[]
+  > => {
+    const response = await fetch(
+      `${DEFAULT_OPENROUTER_BASE_URL}/models?output_modalities=text&sort=pricing-low-to-high`,
+    );
+    if (!response.ok) {
+      throw new ConvexError({
+        code: "OPENROUTER_MODELS_ERROR",
+        message: "Could not load OpenRouter models. Try again.",
+      });
+    }
+    const payload = (await response.json()) as { data?: OpenRouterModel[] };
+    const models = payload.data ?? [];
+    const free = models
+      .filter(isFreeOpenRouterModel)
+      .map((model) => ({
+        id: model.id,
+        name: model.name ?? model.id,
+        contextLength: model.context_length,
+      }));
+
+    const byId = new Map<string, { id: string; name: string; contextLength?: number }>();
+    byId.set(DEFAULT_OPENROUTER_MODEL, {
+      id: DEFAULT_OPENROUTER_MODEL,
+      name: "OpenRouter free router",
+    });
+    for (const model of free) byId.set(model.id, model);
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
 
 export const getContext = internalQuery({
   args: { postId: v.id("posts") },
@@ -174,7 +281,11 @@ export const summarizePost = action({
         : ["(no replies yet)"]),
     ].join("\n");
 
-    const { model, modelId } = resolveModel();
+    const openRouterModelId = await ctx.runQuery(internal.ai.getGenerationModelSetting, {
+      orgId: accessiblePost.orgId,
+      kind: "postSummary",
+    });
+    const { model, modelId } = resolveModel({ openRouterModelId });
     let text: string;
     try {
       const result = await generateText({

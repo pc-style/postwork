@@ -7,6 +7,7 @@ import { RequireAdmin } from "../gates";
 const ADMIN_NAV = [
   { label: "overview", to: "/admin" as const, exact: true },
   { label: "users", to: "/admin/users" as const, exact: false },
+  { label: "models", to: "/admin/models" as const, exact: false },
   { label: "invites", to: "/admin/invites" as const, exact: false },
   { label: "access requests", to: "/admin/access-requests" as const, exact: false },
   { label: "audit log", to: "/admin/audit-log" as const, exact: false },

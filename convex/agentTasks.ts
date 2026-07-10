@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
+import type { ActionCtx } from "./_generated/server";
 import { aiConfigured, resolveModel } from "./ai";
 import {
   canAccessPost,
@@ -22,15 +23,25 @@ type AgentResult = {
 };
 
 async function generateAgentResult(args: {
+  ctx: ActionCtx;
+  orgId?: Id<"orgs">;
   agentName: string;
   prompt: string;
   contextText: string;
 }): Promise<AgentResult> {
+  const openRouterModelId = await args.ctx.runQuery(
+    internal.ai.getGenerationModelSetting,
+    {
+      orgId: args.orgId,
+      kind: "agentTask",
+    },
+  );
+
   // Demo fallback: when no AI provider is configured on the deployment, the
   // action returns a disabled signal instead of throwing — so the client shows
   // a calm "AI is disabled for the demo" state and the Convex backend never
   // logs a Server Error.
-  if (!aiConfigured()) {
+  if (!aiConfigured({ openRouterModelId })) {
     return {
       result: "AI is disabled for the time of the demo.",
       model: "disabled",
@@ -42,7 +53,7 @@ async function generateAgentResult(args: {
   // cap length so it can't carry injected multi-line instructions.
   const agentName =
     args.agentName.replace(/\s+/g, " ").trim().slice(0, 60) || "an agent";
-  const { model, modelId } = resolveModel();
+  const { model, modelId } = resolveModel({ openRouterModelId });
   const { text } = await generateText({
     model,
     system: `You are ${agentName}, an AI coding agent dispatched by a teammate to investigate a discussion thread and report back concise findings. You operate in the same control plane as the team. Read the thread context, then answer the request. Be concrete and brief. Use markdown: '**Findings**' (bullets) and '**Recommendation**' (1-2 sentences). If you'd need to inspect code you can't see, say what you'd check.`,
@@ -164,7 +175,8 @@ export const create = mutation({
 
 export const runAgent = action({
   args: { agentName: v.string(), prompt: v.string(), contextText: v.string() },
-  handler: async (_ctx, args): Promise<AgentResult> => generateAgentResult(args),
+  handler: async (ctx, args): Promise<AgentResult> =>
+    generateAgentResult({ ctx, ...args }),
 });
 
 export const getRunnableTask = internalQuery({
@@ -270,6 +282,8 @@ export const runSimulated = internalAction({
 
     try {
       const res = await generateAgentResult({
+        ctx,
+        orgId: runnable.task.orgId,
         agentName: runnable.agentName,
         prompt: runnable.task.prompt,
         contextText: runnable.contextText,

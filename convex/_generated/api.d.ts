@@ -17,6 +17,7 @@ import type * as authUsers from "../authUsers.js";
 import type * as avatarPalette from "../avatarPalette.js";
 import type * as discussions from "../discussions.js";
 import type * as flashExperiments from "../flashExperiments.js";
+import type * as lib_aiModels from "../lib/aiModels.js";
 import type * as lib_demo from "../lib/demo.js";
 import type * as lib_inviteTargets from "../lib/inviteTargets.js";
 import type * as lib_observability from "../lib/observability.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   avatarPalette: typeof avatarPalette;
   discussions: typeof discussions;
   flashExperiments: typeof flashExperiments;
+  "lib/aiModels": typeof lib_aiModels;
   "lib/demo": typeof lib_demo;
   "lib/inviteTargets": typeof lib_inviteTargets;
   "lib/observability": typeof lib_observability;
