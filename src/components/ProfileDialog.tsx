@@ -14,6 +14,16 @@ type AvatarAction =
 
 type AvatarDraft = "unchanged" | "upload" | "remove" | "provider";
 
+type NotificationDraft = {
+  outboundEnabled: boolean;
+  immediateUrgentEnabled: boolean;
+  digestEnabled: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  quietHoursTimeZone: string;
+};
+
 export function ProfileDialog(props: {
   mode: "onboarding" | "edit";
   open: boolean;
@@ -27,7 +37,7 @@ export function ProfileDialog(props: {
       description={
         props.mode === "onboarding"
           ? "Add the details teammates will see across Postwork."
-          : "Update your name, initials, or profile image."
+          : "Update your profile and notification preferences."
       }
       dismissible={props.mode === "edit"}
       onClose={props.onClose}
@@ -48,6 +58,13 @@ function ProfileDialogBody({
   const completeProfile = useMutation(api.users.completeProfile);
   const updateProfile = useMutation(api.users.updateProfile);
   const generateAvatarUploadUrl = useMutation(api.users.generateAvatarUploadUrl);
+  const notificationPreferences = useQuery(
+    api.notificationPreferences.current,
+    mode === "edit" ? {} : "skip",
+  );
+  const updateNotificationPreferences = useMutation(
+    api.notificationPreferences.update,
+  );
 
   const user = me?.user ?? null;
   const initialName = user?.name ?? "";
@@ -63,6 +80,8 @@ function ProfileDialogBody({
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationDraft, setNotificationDraft] =
+    useState<NotificationDraft | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,6 +90,23 @@ function ProfileDialogBody({
     setTitle(initialTitle);
     setInitialsOverridden(false);
   }, [initialInitials, initialName, initialTitle]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !notificationPreferences || notificationDraft) return;
+    const browserTimeZone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    setNotificationDraft({
+      outboundEnabled: notificationPreferences.outboundEnabled,
+      immediateUrgentEnabled: notificationPreferences.immediateUrgentEnabled,
+      digestEnabled: notificationPreferences.digestEnabled,
+      quietHoursEnabled: notificationPreferences.quietHoursEnabled,
+      quietHoursStart: notificationPreferences.quietHoursStart,
+      quietHoursEnd: notificationPreferences.quietHoursEnd,
+      quietHoursTimeZone: notificationPreferences.isDefault
+        ? browserTimeZone
+        : notificationPreferences.quietHoursTimeZone,
+    });
+  }, [mode, notificationDraft, notificationPreferences]);
 
   useEffect(() => {
     return () => {
@@ -135,6 +171,14 @@ function ProfileDialogBody({
     const trimmedName = name.trim();
     const normalizedInitials = normalizeInitials(initials || trimmedName);
     if (!trimmedName || !normalizedInitials || isSaving) return;
+    if (
+      mode === "edit" &&
+      notificationDraft?.quietHoursEnabled &&
+      notificationDraft.quietHoursStart === notificationDraft.quietHoursEnd
+    ) {
+      setError("Choose different start and end times for quiet hours.");
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
@@ -146,6 +190,10 @@ function ProfileDialogBody({
           avatar: avatarAction,
         });
       } else {
+        if (!notificationDraft) {
+          throw new Error("Notification preferences are still loading.");
+        }
+        await updateNotificationPreferences(notificationDraft);
         await updateProfile({
           name: trimmedName,
           initials: normalizedInitials,
@@ -154,7 +202,7 @@ function ProfileDialogBody({
         onClose();
       }
     } catch {
-      setError("We couldn't save your profile. Review the fields and try again.");
+      setError("We couldn't save your settings. Review the fields and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -251,6 +299,113 @@ function ProfileDialogBody({
         </FormField>
       ) : null}
 
+      {mode === "edit" ? (
+        <fieldset
+          className="space-y-3 border-t border-border pt-4"
+          disabled={!notificationDraft || isSaving}
+        >
+          <legend className="text-sm font-medium text-fg">notifications</legend>
+          <p className="text-xs leading-5 text-muted">
+            In-app unread state always stays on. Outbound delivery is off by default.
+          </p>
+
+          {notificationDraft ? (
+            <>
+              <PreferenceCheckbox
+                checked={notificationDraft.outboundEnabled}
+                onChange={(outboundEnabled) =>
+                  setNotificationDraft((draft) =>
+                    draft ? { ...draft, outboundEnabled } : draft,
+                  )
+                }
+                label="outbound notifications"
+                help="Allow notifications outside the app when a delivery provider is connected."
+              />
+
+              <div
+                className={`space-y-3 border-l border-border pl-4 ${
+                  notificationDraft.outboundEnabled ? "" : "opacity-60"
+                }`}
+              >
+                <PreferenceCheckbox
+                  checked={notificationDraft.immediateUrgentEnabled}
+                  onChange={(immediateUrgentEnabled) =>
+                    setNotificationDraft((draft) =>
+                      draft ? { ...draft, immediateUrgentEnabled } : draft,
+                    )
+                  }
+                  disabled={!notificationDraft.outboundEnabled}
+                  label="send urgent posts immediately"
+                  help="Only urgent unread posts qualify; high and normal never interrupt."
+                />
+                <PreferenceCheckbox
+                  checked={notificationDraft.digestEnabled}
+                  onChange={(digestEnabled) =>
+                    setNotificationDraft((draft) =>
+                      draft ? { ...draft, digestEnabled } : draft,
+                    )
+                  }
+                  disabled={!notificationDraft.outboundEnabled}
+                  label="include a digest"
+                  help="Bundle high and normal posts, plus urgent posts held back by your settings."
+                />
+                <PreferenceCheckbox
+                  checked={notificationDraft.quietHoursEnabled}
+                  onChange={(quietHoursEnabled) =>
+                    setNotificationDraft((draft) =>
+                      draft ? { ...draft, quietHoursEnabled } : draft,
+                    )
+                  }
+                  disabled={!notificationDraft.outboundEnabled}
+                  label="quiet hours"
+                  help="Never send an immediate notification during this window."
+                />
+
+                {notificationDraft.quietHoursEnabled ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Starts">
+                      <input
+                        type="time"
+                        value={notificationDraft.quietHoursStart}
+                        onChange={(event) =>
+                          setNotificationDraft((draft) =>
+                            draft
+                              ? { ...draft, quietHoursStart: event.target.value }
+                              : draft,
+                          )
+                        }
+                        disabled={!notificationDraft.outboundEnabled}
+                        className="ui-field"
+                      />
+                    </FormField>
+                    <FormField label="Ends">
+                      <input
+                        type="time"
+                        value={notificationDraft.quietHoursEnd}
+                        onChange={(event) =>
+                          setNotificationDraft((draft) =>
+                            draft
+                              ? { ...draft, quietHoursEnd: event.target.value }
+                              : draft,
+                          )
+                        }
+                        disabled={!notificationDraft.outboundEnabled}
+                        className="ui-field"
+                      />
+                    </FormField>
+                    <p className="col-span-2 text-xs leading-5 text-muted">
+                      Times use {notificationDraft.quietHoursTimeZone}.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted">loading notification preferences…</p>
+          )}
+        </fieldset>
+      ) : null}
+
       {error ? <p role="alert" className="ui-error">{error}</p> : null}
 
       <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
@@ -261,15 +416,49 @@ function ProfileDialogBody({
         ) : null}
         <Button
           type="submit"
-          disabled={!name.trim() || isUploading}
+          disabled={
+            !name.trim() ||
+            isUploading ||
+            (mode === "edit" && !notificationDraft)
+          }
           loading={isSaving}
           loadingLabel="saving…"
           className="w-full sm:w-auto"
         >
-          save profile
+          {mode === "edit" ? "save settings" : "save profile"}
         </Button>
       </div>
     </form>
+  );
+}
+
+function PreferenceCheckbox({
+  checked,
+  onChange,
+  label,
+  help,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  help: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 text-sm text-fg has-disabled:cursor-not-allowed">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        disabled={disabled}
+        className="mt-0.5 size-4 shrink-0 accent-accent"
+      />
+      <span>
+        <span className="block font-medium">{label}</span>
+        <span className="mt-0.5 block text-xs leading-5 text-muted">{help}</span>
+      </span>
+    </label>
   );
 }
 

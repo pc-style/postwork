@@ -146,6 +146,22 @@ export default defineSchema({
     lastReadAt: v.number(),
   }).index("by_org_id_and_user_id_and_post_id", ["orgId", "userId", "postId"]),
 
+  // Stable, org-scoped outbound notification choices. In-app postReads remain
+  // the canonical unread state; this row only controls projections of it.
+  notificationPreferences: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    outboundEnabled: v.boolean(),
+    immediateUrgentEnabled: v.boolean(),
+    digestEnabled: v.boolean(),
+    quietHoursEnabled: v.boolean(),
+    quietHoursStart: v.string(),
+    quietHoursEnd: v.string(),
+    quietHoursTimeZone: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_org_id_and_user_id", ["orgId", "userId"]),
+
   // Durable record of agent work requested from a post/reply. The task row is
   // machine state (status, links, errors); human-readable milestones/results
   // are still written back as normal replies by the agent user.
