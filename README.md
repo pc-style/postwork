@@ -1,74 +1,99 @@
 # Postwork
 
-A post-based team communication app — the spiritual successor to Facebook
-Workplace, built on Theo's thesis that **structured posts beat Slack-style chat**
-for organizational communication.
+Postwork is an experimental, post-based team communication prototype. Posts—not
+channels—are the top-level unit: each is a durable thread with nested replies,
+activity bumping, search, unread and priority state, plus an AI catch-up slot.
 
-Posts (not channels) are the top-level unit. Each post is a durable thread with
-nested replies, activity bumping, priority + unread states, full-text search,
-and an **agent-summary slot** so a returning teammate can catch up in seconds.
+It intentionally supports two modes from one codebase:
 
-> [!WARNING]
-> **This is a demo, not a production app.** There is **no authentication** — the
-> header has an in-app "user switcher" that lets anyone act as any seeded
-> teammate, and every visitor sees the same shared data. There is no access
-> control, no rate limiting, no moderation, and no privacy boundary. All people,
-> posts, and metrics are fictional seed data. Do not put real or sensitive
-> information into a deployed instance.
+- **Public demo mode** is a seeded, no-auth product walkthrough. Visitor writes
+  stay in the browser session and disappear on refresh.
+- **Product mode** is the authenticated Convex app: Clerk sign-in,
+  invite activation, profile onboarding, organization-scoped reads/writes,
+  moderation, admin controls, image uploads, and durable agent tasks.
+
+This remains a flow-design prototype, not a production-ready service. Treat the
+public demo as fictional seed data only.
+
+## What exists today
+
+- Posts, nested replies, activity-bumped feeds, full-text search, per-user
+  unread state, priority, spaces, and profile walls.
+- Product-mode Clerk authentication, invite-gated activation, profile setup,
+  role-aware admin access, org-scoped access checks, rate limits, input
+  validation, cursor pagination, image attachments, and moderation actions.
+- AI post summaries through OpenAI, Vercel AI Gateway, OpenRouter, or Pioneer.
+  Admins can choose OpenRouter model IDs per summary or agent-task path.
+- Persisted `agentTasks` with first-class agent users. The current runner is an
+  internal simulated AI workflow that writes its result back as an agent reply;
+  it is not yet an external coding-agent or inbound-integration connector.
+
+For the authoritative implementation tracker, see
+[`docs/plan/demo-to-product-progress.md`](docs/plan/demo-to-product-progress.md).
+For the prioritized remaining work, see [`docs/next.md`](docs/next.md).
 
 ## Stack
 
-- **Bun** — tooling / package manager
-- **Vite + React 19 + TypeScript** — app loop
-- **TanStack Router** — routing (`/` feed, `/posts/$id` detail)
-- **Convex** — realtime database + serverless functions
-- **AI SDK v7** (`ai@beta`) — agent summaries, with a pluggable provider
+- **Bun** for all tooling
+- **Vite + React 19 + TypeScript**
+- **TanStack Router**
+- **Convex** for realtime data and serverless functions
+- **Clerk** for product-mode authentication
+- **AI SDK v7** for summaries and agent tasks
 
-## Run it
+## Run locally
 
-The repo ships pre-wired to a **local Convex deployment** with seed data, so it
-works immediately:
+The repository is configured for a local anonymous Convex deployment. Start the
+public demo experience with:
 
 ```bash
 bun install
-bun run dev            # runs Convex + Vite together
+bun run dev
 ```
 
-Open http://localhost:5173. Use the UserSwitcher at the bottom of the left
-sidebar to **switch teammates** and watch unread/priority states change per user.
+Open http://localhost:5173. Demo mode is the default when `VITE_DEMO` is unset;
+the UserSwitcher at the bottom of the sidebar changes seeded personas.
 
-If the database is empty, seed it:
+If the local database is empty, reseed it:
 
 ```bash
 bun run seed
 ```
 
-### Switch to your Convex Cloud account
+To exercise the product build, provide the required product environment values
+(including Clerk) and build with demo mode off:
 
 ```bash
-bunx convex dev --configure   # pick your team + project (cloud)
-bun run seed                  # reseed the cloud deployment
-bun run dev
+VITE_DEMO=false bun run build
 ```
 
-## Agent summaries (live AI)
+Useful checks:
 
-Every post has a baked demo summary so the feature is visible out of the box.
-The **Generate / Regenerate** button calls a real model via the AI SDK. Pick a
-provider with Convex environment variables.
+```bash
+bun run build
+bun run typecheck
+bun run codegen
+```
 
-**OpenAI directly (default — recommended for OpenAI models):**
+`bun run codegen` needs a configured Convex deployment. Use `bunx convex dev
+--configure` to point the local checkout at Convex Cloud; do not run two
+`convex dev` processes against the same anonymous local deployment.
+
+## AI configuration
+
+Seed posts include baked summaries, so the demo remains useful without an API
+key. In a Convex deployment, configure one provider for live summary generation
+and simulated agent-task execution.
+
+**OpenAI (default):**
 
 ```bash
 bunx convex env set OPENAI_API_KEY sk-...
-# optional, defaults to gpt-5.4-mini:
+# optional; defaults to gpt-5.4-mini
 bunx convex env set OPENAI_MODEL gpt-5.4-mini
 ```
 
-That's it — `AI_PROVIDER` defaults to `openai`. Any chat model works
-(`gpt-5.4-mini`, `gpt-5.4`, `gpt-5.5`, `gpt-5.4-nano`, …).
-
-**Vercel AI Gateway (one key, routes to OpenAI + others, adds observability):**
+**Vercel AI Gateway:**
 
 ```bash
 bunx convex env set AI_PROVIDER gateway
@@ -76,137 +101,78 @@ bunx convex env set AI_GATEWAY_API_KEY <your-key>
 bunx convex env set AI_GATEWAY_MODEL openai/gpt-5.4-mini
 ```
 
-**OpenRouter (one key for OpenRouter's model catalog):**
+**OpenRouter:**
 
 ```bash
 bunx convex env set AI_PROVIDER openrouter
 bunx convex env set OPENROUTER_API_KEY <your-key>
-# optional, defaults to OpenRouter's free router:
+# optional; defaults to openrouter/free
 bunx convex env set OPENROUTER_MODEL openrouter/free
-# optional: bunx convex env set OPENROUTER_BASE_URL https://openrouter.ai/api/v1
 ```
 
-Admins can also pin a different OpenRouter model per generation path at
-`/admin/models`. The picker only lists free OpenRouter presets, and it accepts a
-custom model id for aliases or newly released free models.
-
-**Pioneer (OpenAI-compatible, for fine-tuned Pioneer models):**
+**Pioneer:**
 
 ```bash
 bunx convex env set AI_PROVIDER pioneer
 bunx convex env set PIONEER_API_KEY <your-key>
-bunx convex env set PIONEER_MODEL <your-training-job-id>
-# optional: bunx convex env set PIONEER_BASE_URL https://api.pioneer.ai/v1
+bunx convex env set PIONEER_MODEL <your-model-id>
 ```
 
-Without a key, the button surfaces a friendly "configure a provider" message and
-the baked summaries remain.
+The `/admin/models` control plane can override the OpenRouter model ID for a
+generation path. API keys always stay in Convex environment variables.
 
-## Deploy a demo (Vercel + Convex Cloud)
+## Deploy
 
-The backend runs on **Convex Cloud**; the frontend is a static **Vite** build on
-**Vercel**. The Vercel build command deploys the Convex functions first, then
-builds the frontend with `VITE_CONVEX_URL` injected automatically.
-
-> Reminder: this deploys the **public, no-auth demo** described at the top of this
-> file. Anyone with the URL can read and write everything. Use throwaway data.
-
-### 1. Link the project to Convex Cloud (one time, local)
+The Vite frontend deploys to Vercel and the backend deploys to Convex Cloud.
+Use separate deployments and frontend environments for the public demo and the
+authenticated product so their data never mix.
 
 ```bash
-bun install
-bunx convex dev --configure        # log in, pick a team, create a project
+bunx convex dev --configure
+# configure Vercel with CONVEX_DEPLOY_KEY and VITE_PLAUSIBLE_DOMAIN
+# build command: bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'
 ```
 
-Leave it running or stop it with Ctrl-C once it says the deployment is ready.
-
-### 2. Get a production deploy key
-
-In the Convex dashboard: your project → **Settings → Deploy keys →
-Generate Production Deploy Key**. Copy it (starts with `prod:`).
-
-### 3. (Optional) Enable live AI summaries on production
-
-Baked demo summaries work without this. For live Generate/Regenerate, set the
-provider vars on the **production** deployment:
-
-```bash
-# OpenAI directly (default provider)
-bunx convex env set --prod OPENAI_API_KEY sk-...
-bunx convex env set --prod OPENAI_MODEL  gpt-5.4-mini   # optional
-
-# …or Vercel AI Gateway
-bunx convex env set --prod AI_PROVIDER gateway
-bunx convex env set --prod AI_GATEWAY_API_KEY <your-key>
-bunx convex env set --prod AI_GATEWAY_MODEL  openai/gpt-5.4-mini
-
-# …or OpenRouter
-bunx convex env set --prod AI_PROVIDER openrouter
-bunx convex env set --prod OPENROUTER_API_KEY <your-key>
-bunx convex env set --prod OPENROUTER_MODEL  openrouter/free   # optional
-```
-
-### 4. Deploy on Vercel
-
-Push the repo to GitHub and import it at vercel.com (or run `bunx vercel`). Set:
-
-| Setting | Value |
-| --- | --- |
-| Framework preset | **Vite** |
-| Install command | `bun install` |
-| Build command | `bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'` |
-| Output directory | `dist` |
-| Environment variable | `CONVEX_DEPLOY_KEY` = the `prod:` key from step 2 |
-| Environment variable | `VITE_PLAUSIBLE_DOMAIN` = `postwork.pcstyle.dev` |
-
-Deploy. Do **not** set `VITE_CONVEX_URL` yourself — `convex deploy --cmd` sets it
-during the build to point at your production deployment.
-
-Plausible's NPM verifier expects the Vite build to include the same domain you
-registered in Plausible. For this Vercel demo, that domain is
-`postwork.pcstyle.dev`. Add that custom domain under Vercel Project → Domains,
-redeploy after setting `VITE_PLAUSIBLE_DOMAIN`, then verify the Plausible NPM
-installation against `postwork.pcstyle.dev`.
-
-### 5. Seed the production data (one time)
+For a demo deployment, set `DEMO=true` on Convex and `VITE_DEMO=true` in the
+frontend build. For product, leave both unset/false and supply the Clerk
+environment values. Seed only the demo deployment:
 
 ```bash
 bunx convex run --prod seed:run
 ```
 
-Open the Vercel URL. To wipe and reseed at any time, re-run step 5 (it is
-idempotent). To take the demo down, delete the Vercel project and the Convex
-project.
-
-## Why posts beat chat (what the seed data shows)
-
-- **Durable decisions** — the release-train decision is one findable post, not a
-  scrolled-past chat message.
-- **Threaded context** — nested replies keep sub-discussions attached to the topic.
-- **Async hand-offs** — roadmap review and incident post-mortem happen in threads,
-  no meeting required.
-- **Catch up fast** — agent summaries + unread/priority states triage the feed.
-- **Search** — full-text search over titles and bodies finds past decisions instantly.
-
 ## Project layout
 
-```
+```text
 convex/
-  auth.config.ts       Convex auth provider config
-  schema.ts            users · posts · replies · postReads · flashExperimentVotes · agentTasks · orgs · spaces · spaceMemberships
-  posts.ts             feed (activity-bumped) · search · get
-  replies.ts           listForPost · create, with nested replies + activity bump
-  discussions.ts       getThread · listCounts · ensureThread · addMessage
-  spaces.ts            list · membershipsForSpace · feedForSpace
-  users.ts             list · updateProfile
-  ai.ts                summarizePost action (provider switch: openai | gateway | pioneer)
-  agentTasks.ts        runAgent action for post/space agent replies
-  flashExperiments.ts  listVotes · setVote
-  authUsers.ts         identity-to-user helpers
-  avatarPalette.ts     seeded avatar color helpers
-  seed.ts              narrative demo data + baked summaries
+  schema.ts            org-scoped data model, invites, admin audit, AI settings
+  authUsers.ts         Clerk identity, activation, and access helpers
+  posts.ts             feed, search, counts, and post mutations
+  replies.ts           nested replies and server-side agent replies
+  spaces.ts            spaces, memberships, and space feeds
+  agentTasks.ts        persisted task lifecycle and internal AI runner
+  ai.ts                summary action and provider/model resolution
+  admin.ts             users, invites, access requests, audit, model settings
+  access.ts            public invite validation and activation
+  attachments.ts       product-mode Convex storage attachments
+  seed.ts              demo org, people, narrative posts, and baked summaries
 src/
-  routes/              AgentsPage · FeedPage · FlashExperimentPage · FlashExperimentsPage · LinkedOrgsPage · PostPage · RootLayout · SpacePage · SpacesPage · WallPage
-  components/          AccentPanel · AgentSummary · AgentTag · AgentTasksPanel · AppShell · Avatar · Button · Chip · CodeBlock · Composer · Dialog · EmptyState · LoadingState · Markdown · NewPostDialog · OrgSquare · PageHeader · PostCard · PostForm · PostMetaChips · QuickPostBar · ReplyTree · RichText · SendAgentButton · StatusChip · UserRoleTag · UserSwitcher · WallPostDialog
-  lib/                 agentMentions · agentTasks · codeFence · convexClient · format · providers · replyTree · session · shiki · spaces · store · types · useDocumentTitle · usePopoverDismiss
+  router.tsx           public, app, admin, and legacy redirect routes
+  routes/              landing, app, spaces, agents, join, admin, redesign shells
+  components/          posts, replies, profiles, moderation, dialogs, app chrome
+  lib/                 demo/product mode, sessions, writes, attachments, providers
+docs/
+  next.md              authoritative prioritized next work
+  plan/                live execution tracker and historical planning records
+  organizations.md     active multi-organization gap list
+  archive/             completed or superseded historical material
 ```
+
+## Product direction
+
+The current priority is a trustworthy catch-up loop: make summaries visibly
+stale after replies, build per-user catch-up, then add priority-aware outbound
+delivery. External agent and inbound integration connectors come after that
+loop is proven. Multi-organization creation and routing remain a separate
+future milestone; [`docs/organizations.md`](docs/organizations.md) records its
+specific gaps.

@@ -1,57 +1,80 @@
-# demo-to-product — execution progress tracker
+# Demo-to-product — execution tracker
 
-Orchestration: Amp delegates all coding to `codex exec` subagents (models:
-gpt-5.4-mini / gpt-5.4 / gpt-5.5). Amp writes no code itself; it only updates
-this tracker and verifies builds.
-
-Plan: `docs/plan/demo-to-product.md` (v2, decisions locked 2026-07-06).
-
-Resume instructions: find the first task below not marked `done`, re-read the
-plan section for it, and dispatch it to `codex exec` with build verification
-(`bun run build`).
+This is the implementation tracker for the checked-out `beta` branch as of
+2026-07-10. For prioritized remaining work, use
+[`../next.md`](../next.md). The original decision record is
+[`demo-to-product.md`](demo-to-product.md); its initial audit is historical,
+not a statement of current implementation.
 
 ## Status legend
-- [ ] pending
-- [~] in progress (dispatched to codex, not yet verified)
-- [x] done (codex finished + `bun run build` green, verified by Amp)
+
+- [x] implemented in the repository
+- [ ] not yet implemented
+- [~] partially implemented or requires deployed/manual verification
 
 ## Phase 0 — consolidation
-- [x] 0.1 Demo-mode switch: `src/lib/demoMode.ts` + `convex/lib/demo.ts`, `VITE_DEMO`/`DEMO`, default current behavior to demo=true
-- [x] 0.2 Spaces become real (verified: schema pushed to cloud dev deployment `pc-style:better-slack:dev`, real codegen ran via `convex dev --once`, seed ran: 3 spaces/14 posts/9 users, build green)
-- [x] 0.3 Consolidate composers (PostForm is the shared post composer for feed/space/wall/quick-bar; ComposerShell shared with replies; build green, verified)
-- [x] 0.4 Prune: flash lab demo-only (router + nav gated on isDemo); LinkedOrgsPage + OrgSquare deleted; 2 dead experiments deleted; walls untouched. Both `bun run build` and `VITE_DEMO=false bun run build` green.
-- [x] 0.5 Phase 0 exit check: codex review passed all criteria (SpacesPage-as-directory is by design; SpacePage renders real posts via PostCard). Overlay remains the only UI write path.
 
-## Phase 1 — auth + real write path
-- [x] 1.1 Clerk auth: replace shoo.dev customJwt (`convex/auth.config.ts`), remove `@shoojs/react`, add `@clerk/clerk-react` + `convex/react-clerk`; keep `convex/authUsers.ts`; demo mode skips ClerkProvider. Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
-- [x] 1.2 Write-path split: `store.tsx` → thin interface with `ConvexWrites` / `OverlayWrites` selected by demo mode. Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
-- [x] 1.3 User lifecycle: signup → users doc, profile editing, admin role. Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
-- [x] 1.4 Access control in every query/mutation. Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
+- [x] 0.1 Demo-mode switch: `src/lib/demoMode.ts` + `convex/lib/demo.ts`;
+  `VITE_DEMO`/`DEMO` default to the public demo.
+- [x] 0.2 Durable spaces and memberships, with one seeded org and org-scoped
+  queries.
+- [x] 0.3 Shared composer vocabulary for post, reply, wall, and space flows.
+- [x] 0.4 Flash lab is demo-only; the LinkedOrgs mock and obsolete experiments
+  were removed. Walls remain a product surface.
+
+## Phase 1 — auth and real write path
+
+- [x] 1.1 Clerk product authentication; demo skips Clerk and retains the
+  seeded-persona switcher.
+- [x] 1.2 Product writes use Convex; demo writes remain session overlay only.
+- [x] 1.3 User lifecycle includes profile editing and admin role support.
+- [x] 1.4 Product queries and mutations enforce authenticated, org-scoped
+  access.
+- [x] 1.5 Invite-gated activation and blocking profile onboarding. The design
+  plan is retained as completed history in `invite-gated-signup.md`; full
+  Clerk/browser QA remains a deployed manual check.
 
 ## Phase 2 — multi-tenancy groundwork
-- [x] 2.1 `orgs` table + optional transition `orgId` columns/indexes on posts, spaces, users(membership), postReads (build green; codegen unavailable in this environment)
-- [x] 2.2 Seed creates one demo org; all queries scoped by orgId (build green; codegen unavailable in this environment)
+
+- [x] 2.1 `orgs` plus org-prefixed indexes and transition `orgId` columns.
+- [x] 2.2 One default seeded org and org-scoped query paths.
+- [ ] 2.3 Multi-org creation, resolution, membership, routing, and required
+  `orgId` migration. See `../organizations.md`.
 
 ## Phase 3 — product hardening
-- [x] 3.1 Rate limiting (`convex/lib/rateLimit.ts` + `convex/convex.config.ts` registers `@convex-dev/rate-limiter`; per-user limits on createPost/createReply/summarize/updateProfile/uploadAttachment)
-- [x] 3.2 Input limits/validation via shared zod schemas (`convex/lib/validation.ts` — `LIMITS` + `postTitleSchema`/`postBodySchema`/`replyBodySchema`/`profile*Schema`/`attachmentInputSchema`, parsed in every mutation)
-- [x] 3.3 Pagination for feed + replies (`posts.feedPaginated`/`replies.listForPostPaginated`/`posts.counts` + frontend `usePaginatedQuery` in `useFeed`/`useReplies` with load-more; demo keeps bounded query)
-- [x] 3.4 Image attachments (Convex storage), product mode only (`convex/attachments.ts` generateUploadUrl/listForPost/remove; `src/lib/attachments.ts` + `AttachmentPicker.tsx`; wired into Composer/PostForm/ReplyTree/RedesignPostPage; hidden in demo)
-- [x] 3.5 Moderation/admin ops (backend `posts.edit`/`posts.remove`, `replies.edit`/`replies.remove`, `users.deactivate`/`users.reactivate`; frontend `PostModeration.tsx` + post edit form on RedesignPostPage, reply edit/delete in ReplyTree, deactivate/reactivate + deactivated badge in ProductProfileCard rendered in RedesignShell sidebar; demo-gated)
-- [x] 3.6 Observability (`convex/lib/observability.ts` logInfo in all mutations/actions + `src/components/ErrorBoundary.tsx` wrapped in providers). Verified by Amp: `bun run build` and `VITE_DEMO=false bun run build` green.
 
-## Phase 4 — agents loop
-- [ ] 4.1 Persist agentTasks table + /agents page from Convex
-- [ ] 4.2 Summary staleness + optional cron refresh
-- [ ] 4.3 Agent identities as users, server-side replies
-- [ ] 4.4 Per-user catch-up digest
+- [x] 3.1 Per-user rate limiting for mutation and AI paths.
+- [x] 3.2 Shared input limits and Zod validation.
+- [x] 3.3 Cursor pagination for feed and replies.
+- [x] 3.4 Product-mode image attachments through Convex storage.
+- [x] 3.5 Moderation/admin operations: edit/delete, deactivate/reactivate,
+  invites, access requests, and audit history.
+- [~] 3.6 Structured Convex `logInfo` coverage and a React `ErrorBoundary`.
+  External error reporting is still missing.
+- [ ] 3.7 Priority-aware outbound email or web-push digest delivery. In-app
+  unread is present, but no outbound delivery exists.
+
+## Phase 4 — agent catch-up loop
+
+- [x] 4.1 Persisted `agentTasks` and `/app/agents` reads from Convex.
+- [ ] 4.2 Summary staleness after replies, with an optional scheduled refresh.
+- [x] 4.3 First-class `isAgent` users and server-created result replies.
+  The runner is an internal simulated AI workflow, not an external coding-agent
+  connector.
+- [ ] 4.4 Per-user catch-up digest.
+- [ ] 4.5 Real external/inbound agent and integration connectors, after the
+  catch-up loop is proven.
 
 ## Phase 5 — demo-mode productization
-- [ ] 5.1 Demo banner
-- [ ] 5.2 Reseed cadence
-- [ ] 5.3 Feature flags / lab affordance
-- [ ] 5.4 README rewrite
 
-## Log
-- (start) tracker created; nothing dispatched yet.
-- Phase 3 complete: 3.1 rate limiting, 3.2 zod validation, 3.3 cursor pagination, 3.4 image attachments, 3.5 moderation/admin (post+reply edit/delete, user deactivate/reactivate), 3.6 observability (backend logInfo + frontend ErrorBoundary). Both `bun run build` and `VITE_DEMO=false bun run build` green.
+- [ ] 5.1 Quiet public-demo banner.
+- [ ] 5.2 Defined reseed cadence and current seed narrative.
+- [ ] 5.3 Feature-flag and lab policy beyond the existing demo-only flash lab.
+- [x] 5.4 README and live-doc synchronization.
+
+## Verification
+
+- [x] `bun run build` passed before this documentation cleanup.
+- [x] `VITE_DEMO=false bun run build` passed before this documentation cleanup.
+- [~] Repeat both builds after any implementation change; deployed
+  Clerk/browser/accessibility coverage is not yet recorded here.

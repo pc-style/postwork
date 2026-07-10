@@ -1,4 +1,15 @@
-# Invite-gated sign-up + profile setup
+# Invite-gated sign-up + profile setup — completed implementation record
+
+> **Status: implemented on `beta` (commit `e992804`).** This document preserves
+> the decisions and work plan that led to the shipped invite activation and
+> profile onboarding flow. It is historical planning material, not the current
+> source of truth for file-by-file behavior. The live tracker is
+> [`demo-to-product-progress.md`](demo-to-product-progress.md).
+>
+> The implementation includes invite redemption/activation, access requests,
+> targeted invite matching, blocking profile setup, avatar handling, and
+> admin-managed job titles. Manual Clerk and deployed-browser QA from the
+> original checklist has not been recorded as complete.
 
 Goal: you cannot use postwork without redeeming an invite. After activation you
 complete your profile in a blocking modal (name + avatar + job title). Title is

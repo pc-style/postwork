@@ -1,5 +1,12 @@
 # Postwork: demo → product plan
 
+> **Historical planning baseline.** The audit and phase descriptions below were
+> written before the corresponding implementation work landed. Preserve the
+> locked product decisions, but do not use this file to infer current status:
+> [`demo-to-product-progress.md`](demo-to-product-progress.md) is the live
+> execution tracker and [`../next.md`](../next.md) is the authoritative
+> prioritized next-work list.
+
 status: v2 — decisions locked (2026-07-06). All open questions answered; see
 Decisions at the bottom.
 

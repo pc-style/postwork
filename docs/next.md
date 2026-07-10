@@ -1,43 +1,77 @@
-# Next
+# Next work
 
-Postwork now has the core demo loop in place: a centered reading shell, routable feed filters, quick post creation, post detail with nested replies, spaces, walls, flash experiments, and AI summary/task surfaces. The next work should reduce prototype split-brain and make the deployed demo easier to evaluate.
+This is the authoritative, prioritized next-work list. It describes the
+checked-out implementation as of 2026-07-10; the execution record lives in
+[`plan/demo-to-product-progress.md`](plan/demo-to-product-progress.md).
 
-## 1. make spaces use real post threads
+Postwork is still an experimental flow-design prototype. Prefer validating the
+core async communication flow over adding production breadth.
 
-**Why it matters:** `convex/schema.ts` and `convex/spaces.ts` already model spaces, memberships, visibility, and space feeds, but the frontend still renders shared-space content from `src/lib/spaces.tsx` as session-only cards in `src/routes/SpacePage.tsx`. Those cards do not open durable `/posts/$postId` threads, so spaces feel like a parallel mock product.
+## 1. Complete the catch-up loop
 
-**Done looks like:** creating or viewing a space post uses the same post detail, replies, unread, priority, search, and agent-summary mechanics as the main feed; visibility is legible; space feeds reuse post-card/thread primitives instead of inert local articles.
+Make a post summary visibly stale when replies advance `lastActivityAt` beyond
+`summaryUpdatedAt`. Explain what context the summary covers and decide whether
+an opt-in Convex cron refresh is useful after the manual path is clear.
 
-**Main files / areas:** `convex/schema.ts`, `convex/posts.ts`, `convex/spaces.ts`, `src/lib/spaces.tsx`, `src/routes/SpacePage.tsx`, `src/routes/SpacesPage.tsx`, `src/components/PostCard.tsx`, `src/routes/PostPage.tsx`.
+Then add the per-user catch-up digest: unread posts and priorities composed
+with summaries into one focused return-to-work view. This is the product thesis,
+not a generic notification feed.
 
-## 2. consolidate composer surfaces
+Relevant areas: `convex/ai.ts`, `convex/posts.ts`, `convex/replies.ts`,
+`src/components/AgentSummary.tsx`, the product app routes, and a new digest
+surface as needed.
 
-**Why it matters:** the app has multiple creation paths with slightly different behavior: `QuickPostBar`, `NewPostDialog`, `WallPostDialog`, reply `Composer`, and the space-local composer. That makes the prototype harder to reason about and easier to regress.
+## 2. Deliver priority-aware notifications
 
-**Done looks like:** one composer vocabulary covers posts, replies, wall notes, and space posts where appropriate; validation, disabled states, priority controls, submit shortcuts, and navigation after creation are consistent.
+Keep in-app unread as the baseline, then add outbound email or web-push
+delivery that respects priority and avoids notification noise. Decide delivery
+semantics and unsubscribe/preferences before choosing a provider.
 
-**Main files / areas:** `src/components/QuickPostBar.tsx`, `src/components/NewPostDialog.tsx`, `src/components/WallPostDialog.tsx`, `src/components/Composer.tsx`, `src/routes/SpacePage.tsx`, `src/lib/store.tsx`.
+Relevant areas: read state, priorities, product-mode user preferences, and a
+new delivery integration.
 
-## 3. harden the AI catch-up loop
+## 3. Make the public demo intentional
 
-**Why it matters:** agent summaries and dispatched agent tasks are the clearest differentiator from chat, but they are still split between post summary regeneration, in-memory task state, and local reply injection.
+Add a quiet demo banner, define a reseed cadence, and establish a real
+feature-flag/lab policy. The flash-experiments route is already demo-only; the
+remaining work is communicating the sandbox and keeping in-progress work out
+of the product experience.
 
-**Done looks like:** stale summaries are obvious after new replies; summary copy explains included context; agent-task results are easy to find from the post and `/agents`; failed/no-key states remain calm; transcripts include enough nested reply context to be useful.
+Relevant areas: `src/lib/demoMode.ts`, app chrome, seed/deploy notes, and the
+flash-experiment route.
 
-**Main files / areas:** `src/components/AgentSummary.tsx`, `src/components/AgentTasksPanel.tsx`, `src/components/ReplyTree.tsx`, `src/components/SendAgentButton.tsx`, `src/lib/agentTasks.tsx`, `convex/ai.ts`, `convex/agentTasks.ts`.
+## 4. Validate the deployed product experience
 
-## 4. prune or graduate flash experiments
+Add external error reporting in addition to the existing structured Convex logs
+and React `ErrorBoundary`. Run deployed browser and accessibility QA across the
+demo and Clerk-gated product flows, including invite activation, onboarding,
+keyboard/focus paths, narrow layouts, and failure states.
 
-**Why it matters:** the lab still contains shipped, deprecated, and active ideas. That is useful while designing, but the demo should not make evaluators wonder which shell/composer is canonical.
+Relevant areas: deployment configuration, `src/components/ErrorBoundary.tsx`,
+auth gates, admin/invite routes, and the public app routes.
 
-**Done looks like:** shipped experiments are clearly historical or removed from the active lab; deprecated experiments either explain their lesson briefly or move to archive; the default app shell remains the canonical experience.
+## 5. Add external agent and integration connectors only after the loop works
 
-**Main files / areas:** `src/flashExperiments/*`, `src/routes/FlashExperimentsPage.tsx`, `src/components/AppShell.tsx`, `docs/archive/`.
+The existing task system is durable and produces server-created replies, but
+its runner is an internal simulated AI flow. Once catch-up is useful end to end,
+design explicit connectors for real coding agents and inbound sources such as
+GitHub or deploy events. Preserve the task lifecycle and agent-user audit trail
+rather than bypassing them with direct posts.
 
-## 5. run a deployed-demo polish pass
+Relevant areas: `convex/agentTasks.ts`, `convex/replies.ts`, agent task UI, and
+new connector boundaries.
 
-**Why it matters:** the product promise depends on immediate readability: quiet density, priority at a glance, and no rough prototype seams.
+## 6. Future milestone: true multi-organization product flow
 
-**Done looks like:** feed, post detail, new post, replies, agents, spaces, walls, and flash lab are checked at desktop and narrow widths; focus states and keyboard paths work; lowercase chrome and single-accent discipline hold; empty/loading/error states share the same voice; Vercel/Plausible/Convex deploy notes are current.
+The schema and access paths are org-scoped, but the app still resolves one
+hard-coded default org. Do not treat this as a small UI switcher task: it needs
+org creation, membership/resolution, routing, and an `orgId` migration from
+optional to required. The active gap list is
+[`organizations.md`](organizations.md).
 
-**Main files / areas:** `src/routes/*`, `src/components/*`, `src/index.css`, `README.md`, `docs/product.md`, `docs/design.md`.
+## Already resolved
+
+Spaces are durable post threads, composer surfaces are consolidated, flash-lab
+pruning is complete, and agent tasks are persisted. Do not reopen those as
+active cleanup work. README and live-doc synchronization were completed in this
+cleanup; keep them current when implementation changes.
