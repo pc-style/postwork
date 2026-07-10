@@ -4,7 +4,7 @@ import { useCounts } from "../lib/store";
 import { UserSwitcher } from "./UserSwitcher";
 import { NewPostDialog } from "./NewPostDialog";
 import { Button } from "./Button";
-import { isDemo } from "../lib/demoMode";
+import { demoPolicy } from "../lib/demoMode";
 import { ProductProfileCard } from "./ProductProfileCard";
 
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
@@ -65,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {item.label}
               </Link>
             ))}
-            {isDemo && DEMO_ROUTE_NAV.map((item) => (
+            {demoPolicy.flashExperimentsLab && DEMO_ROUTE_NAV.map((item) => (
               <Link
                 key={item.label}
                 to={item.to}
@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             + new post
           </Button>
 
-          {isDemo && (
+          {demoPolicy.userSwitcher && (
             <div className="mt-auto">
               <UserSwitcher />
             </div>
@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               close at hand.
             </div>
 
-            {!isDemo && <ProductProfileCard />}
+            {!demoPolicy.userSwitcher && <ProductProfileCard />}
           </div>
         </aside>
       </div>

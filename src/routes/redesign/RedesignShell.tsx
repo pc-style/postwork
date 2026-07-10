@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
+import { DemoBanner } from "../../components/DemoBanner";
 import { ProductProfileCard } from "../../components/ProductProfileCard";
 import { QuickPostBar } from "../../components/QuickPostBar";
 import { Sheet } from "../../components/Sheet";
 import { UserSwitcher } from "../../components/UserSwitcher";
-import { isDemo } from "../../lib/demoMode";
+import { demoPolicy } from "../../lib/demoMode";
 import { useSession } from "../../lib/session";
 import { useCounts } from "../../lib/store";
 
@@ -18,7 +19,10 @@ export function RedesignShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="theme-ink min-h-screen w-full bg-bg text-fg">
-      <MobileHeader onOpen={() => setMobileNavOpen(true)} />
+      <div className="sticky top-0 z-40 bg-bg">
+        {demoPolicy.publicDemoBanner ? <DemoBanner /> : null}
+        <MobileHeader onOpen={() => setMobileNavOpen(true)} />
+      </div>
       <div className="flex min-h-screen w-full">
         <Sidebar />
         <main className={`min-w-0 flex-1 ${showComposerDock ? "pb-20" : ""}`}>
@@ -56,10 +60,15 @@ const NAV = [
   { label: "agents", to: "/app/agents" as const, exact: false },
 ] as const;
 
+const SIDEBAR_TOP = demoPolicy.publicDemoBanner ? "md:top-8" : "md:top-0";
+const SIDEBAR_HEIGHT = demoPolicy.publicDemoBanner
+  ? "md:h-[calc(100vh-2rem)]"
+  : "md:h-screen";
+
 function MobileHeader({ onOpen }: { onOpen: () => void }) {
   const counts = useCounts();
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 backdrop-blur md:hidden">
+    <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 backdrop-blur md:hidden">
       <Link to="/app" className="text-base font-semibold tracking-tight">
         post<span className="text-accent-soft">work</span>
       </Link>
@@ -76,7 +85,7 @@ function MobileHeader({ onOpen }: { onOpen: () => void }) {
 
 function Sidebar() {
   return (
-    <aside className="sticky top-0 hidden h-screen w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border py-6 md:flex">
+    <aside className={`sticky ${SIDEBAR_TOP} hidden h-screen ${SIDEBAR_HEIGHT} w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border py-6 md:flex`}>
       <div className="px-5">
         <Link to="/app" className="text-base font-semibold tracking-tight">
           post<span className="text-accent-soft">work</span>
@@ -85,7 +94,7 @@ function Sidebar() {
       <Queue />
       <NavLinks />
       <div className="mt-auto max-h-[48vh] space-y-3 overflow-y-auto px-4 pb-2">
-        {isDemo ? <UserSwitcher /> : <ProductProfileCard />}
+        {demoPolicy.userSwitcher ? <UserSwitcher /> : <ProductProfileCard />}
       </div>
     </aside>
   );
@@ -118,7 +127,7 @@ function NavLinks({ onSelect }: { onSelect?: () => void }) {
           {item.label}
         </Link>
       ))}
-      {isDemo ? (
+      {demoPolicy.flashExperimentsLab ? (
         <Link
           to="/app/flash-experiments"
           activeProps={{ className: "bg-surface text-accent-soft", "aria-current": "page" }}
@@ -149,7 +158,7 @@ function MobileNavigation({ onSelect }: { onSelect: () => void }) {
         <Queue />
       </div>
       <div className="mt-auto pt-6">
-        {isDemo ? <UserSwitcher /> : <ProductProfileCard />}
+        {demoPolicy.userSwitcher ? <UserSwitcher /> : <ProductProfileCard />}
       </div>
     </div>
   );

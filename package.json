@@ -8,6 +8,8 @@
     "dev:web": "vite",
     "dev:convex": "convex dev",
     "build": "tsc -b && vite build",
+    "test": "bun test",
+    "test:demo": "bun test tests/demoMode.test.ts",
     "preview": "vite preview",
     "codegen": "convex codegen",
     "seed": "convex run seed:run",
