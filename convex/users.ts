@@ -1,5 +1,5 @@
-import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { ConvexError, v, type Infer } from "convex/values";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import {
   applyAvatarAction,
@@ -19,6 +19,7 @@ import {
   profileInitialsSchema,
 } from "./lib/validation";
 import { logInfo } from "./lib/observability";
+import { preferenceArgs, savePreferences } from "./notificationPreferences";
 
 export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
 
@@ -27,6 +28,12 @@ const avatarActionValidator = v.optional(v.union(
   v.object({ type: v.literal("remove") }),
   v.object({ type: v.literal("useProvider") }),
 ));
+
+type ProfileUpdateArgs = {
+  name: string;
+  initials: string;
+  avatar?: Infer<typeof avatarActionValidator>;
+};
 
 export function publicUser(user: Doc<"users">): PublicUser;
 export function publicUser(user: Doc<"users"> | null): PublicUser | null;
@@ -191,26 +198,44 @@ export const updateProfile = mutation({
   },
   handler: async (ctx, args) => {
     const user = await ensureViewerUser(ctx);
-
-    // Rate limit (Phase 3.1).
-    await rateLimiter.limit(ctx, "updateProfile", {
-      key: user._id,
-      throws: true,
-    });
-
-    // Input validation (Phase 3.2).
-    const name = parse(profileNameSchema, args.name, "name");
-    const initials = parse(profileInitialsSchema, args.initials, "initials");
-    const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
-
-    await ctx.db.patch(user._id, {
-      name,
-      initials: initials.toUpperCase(),
-      ...avatarPatch,
-    });
-    logInfo("user.profileUpdated", { userId: user._id });
+    await updateProfileFields(ctx, user, args);
   },
 });
+
+export const updateProfileAndNotifications = mutation({
+  args: {
+    name: v.string(),
+    initials: v.string(),
+    avatar: avatarActionValidator,
+    notificationPreferences: v.object(preferenceArgs),
+  },
+  handler: async (ctx, args) => {
+    const user = await ensureActiveViewerUser(ctx);
+    await updateProfileFields(ctx, user, args);
+    await savePreferences(ctx, user, args.notificationPreferences);
+  },
+});
+
+async function updateProfileFields(
+  ctx: MutationCtx,
+  user: Doc<"users">,
+  args: ProfileUpdateArgs,
+): Promise<void> {
+  await rateLimiter.limit(ctx, "updateProfile", {
+    key: user._id,
+    throws: true,
+  });
+
+  const name = parse(profileNameSchema, args.name, "name");
+  const initials = parse(profileInitialsSchema, args.initials, "initials");
+  const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
+  await ctx.db.patch(user._id, {
+    name,
+    initials: initials.toUpperCase(),
+    ...avatarPatch,
+  });
+  logInfo("user.profileUpdated", { userId: user._id });
+}
 
 export const setRole = mutation({
   args: {
