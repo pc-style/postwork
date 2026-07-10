@@ -149,11 +149,11 @@ function ReplyNode({
             </div>
 
             {!editing ? (
-              <div className="mt-1 flex min-h-9 flex-wrap items-center gap-1">
+              <div className="mt-1 flex min-h-11 flex-wrap items-center gap-1 sm:min-h-9">
                 <Button
                   variant="quiet"
                   size="sm"
-                  className="min-h-9 px-1.5 text-xs"
+                  className="min-h-11 px-1.5 text-xs sm:min-h-9"
                   onClick={() => setReplying((value) => !value)}
                   aria-expanded={replying}
                 >
@@ -163,7 +163,7 @@ function ReplyNode({
                   <Button
                     variant="quiet"
                     size="sm"
-                    className="min-h-9 px-1.5 text-xs"
+                    className="min-h-11 px-1.5 text-xs sm:min-h-9"
                     onClick={() => {
                       setEditBody(node.body);
                       setError(null);

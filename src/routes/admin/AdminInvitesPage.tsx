@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
+import { Button } from "../../components/Button";
 import { Sheet, SheetField } from "../../components/Sheet";
 import { Skeleton } from "../../components/Skeleton";
 import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
@@ -52,7 +53,7 @@ export function AdminInvitesPage() {
       setTargetError(
         err instanceof Error && err.message.includes("valid")
           ? "enter a github handle or email."
-          : "couldn't mint that invite.",
+          : "couldn't create the invite. check your connection and try again.",
       );
     } finally {
       setCreating(false);
@@ -65,7 +66,7 @@ export function AdminInvitesPage() {
       description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person. they activate automatically on sign-in."
       actions={
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
             <input
               value={target}
               onChange={(e) => {
@@ -76,16 +77,15 @@ export function AdminInvitesPage() {
                 if (e.key === "Enter" && !creating) void mint();
               }}
               placeholder="@github-handle or email (optional)"
-              className="min-h-11 w-full max-w-56 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              className="min-h-11 w-full min-w-0 max-w-56 flex-1 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
             />
-            <button
-              type="button"
+            <Button
               onClick={() => void mint()}
-              disabled={creating}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96] disabled:opacity-40"
+              loading={creating}
+              loadingLabel="minting…"
             >
-              {creating ? "minting…" : target.trim() ? "invite" : "new invite"}
-            </button>
+              {target.trim() ? "invite" : "new invite"}
+            </Button>
           </div>
           {targetError && (
             <p className="text-xs text-urgent">{targetError}</p>

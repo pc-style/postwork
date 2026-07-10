@@ -52,7 +52,7 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
                   <Link
                     to="/app/posts/$postId"
                     params={{ postId: task.postId }}
-                    className="inline-flex min-h-9 items-center text-label text-accent-soft transition-colors hover:text-fg"
+                    className="inline-flex min-h-11 items-center text-label text-accent-soft transition-colors hover:text-fg sm:min-h-9"
                     onMouseEnter={() => prefetchPost(task.postId)}
                     onFocus={() => prefetchPost(task.postId)}
                     onTouchStart={() => prefetchPost(task.postId)}

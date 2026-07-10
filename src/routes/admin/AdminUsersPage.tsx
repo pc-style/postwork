@@ -6,6 +6,7 @@ import type { FunctionReturnType } from "convex/server";
 import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
 import { Avatar } from "../../components/Avatar";
+import { Button } from "../../components/Button";
 import { Sheet, SheetField } from "../../components/Sheet";
 import { Skeleton } from "../../components/Skeleton";
 import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
@@ -46,13 +47,13 @@ export function AdminUsersPage() {
       title="users"
       description="every member and agent in the org. open view details for moderation actions."
     >
-      <div className="mb-4 flex items-center gap-1.5">
+      <div className="mb-4 flex flex-wrap items-center gap-1.5">
         {FILTERS.map(({ label, value }) => (
           <Link
             key={label}
             to="/admin/users"
             search={value ? { filter: value } : {}}
-            className={`rounded-md border px-2.5 py-1 text-xs lowercase transition-colors ${
+            className={`inline-flex min-h-11 items-center rounded-md border px-2.5 py-1 text-xs lowercase transition-colors sm:min-h-9 ${
               filter === value
                 ? "border-accent/40 bg-surface text-fg"
                 : "border-border text-muted hover:text-fg"
@@ -78,9 +79,9 @@ export function AdminUsersPage() {
               label: "user",
               primary: true,
               render: (user) => (
-                <div className="flex items-center gap-2.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-2.5">
                   <Avatar user={user} size={24} />
-                  <span className="text-fg">{user.name}</span>
+                  <span className="min-w-0 break-words text-fg">{user.name}</span>
                   {user.isAgent && <StatusPill tone="muted">agent</StatusPill>}
                 </div>
               ),
@@ -136,10 +137,14 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
     setError(null);
   }, [user._id, user.title]);
 
-  const run = (action: () => Promise<unknown>) => {
+  const run = (action: () => Promise<unknown>, operation: string) => {
     setError(null);
     void action().catch((e) =>
-      setError(e instanceof Error ? e.message : "that didn't work."),
+      setError(
+        e instanceof Error
+          ? e.message
+          : `couldn't ${operation}. check your connection and try again.`,
+      ),
     );
   };
 
@@ -152,27 +157,41 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
         <div className="flex flex-wrap items-center gap-2">
           {user.role === "admin" ? (
             <ActionButton
-              onClick={() => run(() => setRole({ userId: user._id, role: "member" }))}
+              onClick={() =>
+                run(
+                  () => setRole({ userId: user._id, role: "member" }),
+                  "change the role",
+                )
+              }
             >
               demote to member
             </ActionButton>
           ) : (
             <ActionButton
-              onClick={() => run(() => setRole({ userId: user._id, role: "admin" }))}
+              onClick={() =>
+                run(
+                  () => setRole({ userId: user._id, role: "admin" }),
+                  "change the role",
+                )
+              }
             >
               make admin
             </ActionButton>
           )}
           {user.deactivatedAt ? (
             <ActionButton
-              onClick={() => run(() => reactivate({ userId: user._id }))}
+              onClick={() =>
+                run(() => reactivate({ userId: user._id }), "reactivate this user")
+              }
             >
               reactivate
             </ActionButton>
           ) : (
             <ActionButton
               danger
-              onClick={() => run(() => deactivate({ userId: user._id }))}
+              onClick={() =>
+                run(() => deactivate({ userId: user._id }), "deactivate this user")
+              }
             >
               deactivate
             </ActionButton>
@@ -200,8 +219,9 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
             </p>
             <ActionButton
               onClick={() =>
-                run(() =>
-                  setTitle({ userId: user._id, title: title.trim() }),
+                run(
+                  () => setTitle({ userId: user._id, title: title.trim() }),
+                  "save the job title",
                 )
               }
             >
@@ -229,23 +249,26 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
 export function ActionButton({
   onClick,
   danger = false,
+  loading = false,
+  disabled = false,
   children,
 }: {
   onClick: () => void;
   danger?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant={danger ? "danger" : "secondary"}
+      size="sm"
+      loading={loading}
+      disabled={disabled}
       onClick={onClick}
-      className={`rounded-md border px-3 py-1.5 text-xs transition-colors active:scale-[0.96] ${
-        danger
-          ? "border-urgent/40 text-urgent hover:bg-urgent/10"
-          : "border-border text-muted hover:text-fg"
-      }`}
+      className="min-h-11 sm:min-h-9"
     >
       {children}
-    </button>
+    </Button>
   );
 }

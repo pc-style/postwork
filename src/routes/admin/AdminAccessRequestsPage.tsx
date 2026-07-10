@@ -86,10 +86,14 @@ function RequestSheet({
   const deny = useMutation(api.admin.denyAccessRequest);
   const [error, setError] = useState<string | null>(null);
 
-  const run = (action: () => Promise<unknown>) => {
+  const run = (action: () => Promise<unknown>, operation: string) => {
     setError(null);
     void action().catch((e) =>
-      setError(e instanceof Error ? e.message : "that didn't work."),
+      setError(
+        e instanceof Error
+          ? e.message
+          : `couldn't ${operation}. check your connection and try again.`,
+      ),
     );
   };
 
@@ -102,13 +106,17 @@ function RequestSheet({
         request.status === "pending" ? (
           <div className="flex flex-wrap items-center gap-2">
             <ActionButton
-              onClick={() => run(() => approve({ requestId: request._id }))}
+              onClick={() =>
+                run(() => approve({ requestId: request._id }), "approve this request")
+              }
             >
               approve + mint invite
             </ActionButton>
             <ActionButton
               danger
-              onClick={() => run(() => deny({ requestId: request._id }))}
+              onClick={() =>
+                run(() => deny({ requestId: request._id }), "deny this request")
+              }
             >
               deny
             </ActionButton>

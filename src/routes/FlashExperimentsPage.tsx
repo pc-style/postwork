@@ -101,17 +101,18 @@ export function FlashExperimentsPage() {
 
   return (
     // Deliberately set apart from the rest of the app: a "lab" zone with a
-    // blueprint grid, dashed accent edges, and all-mono chrome so you always
-    // know you've stepped out of the normal product surface.
-    <div className="min-h-screen bg-bg px-4 py-6 font-mono [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center] sm:px-6 lg:px-8">
+    // blueprint grid, dashed accent edges, and mono chrome labels so you always
+    // know you've stepped out of the normal product surface. UI text stays Inter;
+    // mono is scoped to labels, codes, and chips per docs/design.md.
+    <div className="min-h-screen bg-bg px-4 py-6 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
-          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab, work in progress
           </div>
           <h1 className="mt-2 text-xl font-semibold text-fg">Flash experiments</h1>
-          <p className="mt-2 max-w-2xl font-sans text-sm leading-6 text-muted">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Review isolated interface changes before they become part of the app.
             Open an experiment to try it, then vote or add a reply.
           </p>
@@ -123,12 +124,12 @@ export function FlashExperimentsPage() {
           to="/app"
           className="group relative block overflow-hidden rounded-lg border border-accent/40 bg-surface/90 p-5 backdrop-blur transition hover:border-accent/70"
         >
-          <div className="flex items-center gap-2 text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             current app design
           </div>
           <h2 className="mt-2 text-lg font-semibold text-fg">Open Postwork</h2>
-          <p className="mt-2 max-w-2xl font-sans text-sm leading-6 text-muted">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Return to the current app without an experiment active.
           </p>
           <span className="mt-3 inline-block text-xs text-accent-soft transition group-hover:translate-x-0.5">
@@ -221,7 +222,7 @@ function ExperimentCard({
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-label font-medium text-muted">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 font-mono text-label font-medium text-muted">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >
@@ -240,7 +241,7 @@ function ExperimentCard({
         <h3 className="text-base font-semibold lowercase text-fg">
           {experiment.title}
         </h3>
-        <p className="mt-1 font-sans text-sm text-muted">
+        <p className="mt-1 text-sm text-muted">
           {experiment.summary}
         </p>
         {suggestion ? null : (
@@ -254,7 +255,7 @@ function ExperimentCard({
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-label">
           <span className="text-muted">suggested by</span>
           <span className="text-fg">{suggestion.name}</span>
-          <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-accent-soft">
+          <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 font-mono text-accent-soft">
             {suggestion.handle}
           </span>
           {suggestion.link && (
