@@ -94,7 +94,8 @@ function Sidebar() {
       <Queue />
       <NavLinks />
       <div className="mt-auto max-h-[48vh] space-y-3 overflow-y-auto px-4 pb-2">
-        {demoPolicy.userSwitcher ? <UserSwitcher /> : <ProductProfileCard />}
+        {demoPolicy.userSwitcher && <UserSwitcher />}
+        {demoPolicy.productAuth && <ProductProfileCard />}
       </div>
     </aside>
   );
@@ -158,7 +159,8 @@ function MobileNavigation({ onSelect }: { onSelect: () => void }) {
         <Queue />
       </div>
       <div className="mt-auto pt-6">
-        {demoPolicy.userSwitcher ? <UserSwitcher /> : <ProductProfileCard />}
+        {demoPolicy.userSwitcher && <UserSwitcher />}
+        {demoPolicy.productAuth && <ProductProfileCard />}
       </div>
     </div>
   );

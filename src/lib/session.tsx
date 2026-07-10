@@ -12,7 +12,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import type { Id } from "../../convex/_generated/dataModel";
-import { isDemo } from "./demoMode";
+import { demoPolicy } from "./demoMode";
 
 type SessionUser = FunctionReturnType<typeof api.users.list>[number];
 
@@ -26,7 +26,7 @@ type SessionValue = {
 const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  if (isDemo) {
+  if (demoPolicy.sessionOverlay) {
     return <DemoSessionProvider>{children}</DemoSessionProvider>;
   }
 

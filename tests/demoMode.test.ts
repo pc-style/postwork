@@ -16,6 +16,9 @@ describe("demo mode policy", () => {
 
     expect(policy.publicDemoBanner).toBe(true);
     expect(policy.flashExperimentsLab).toBe(true);
+    expect(policy.userSwitcher).toBe(true);
+    expect(policy.sessionOverlay).toBe(true);
+    expect(policy.productAuth).toBe(false);
     expect(DEMO_BANNER_MESSAGE).toBe(
       "public demo — data resets, pick a teammate",
     );
@@ -27,6 +30,7 @@ describe("demo mode policy", () => {
     expect(policy.publicDemoBanner).toBe(false);
     expect(policy.flashExperimentsLab).toBe(false);
     expect(policy.userSwitcher).toBe(false);
+    expect(policy.sessionOverlay).toBe(false);
     expect(policy.productAuth).toBe(true);
   });
 

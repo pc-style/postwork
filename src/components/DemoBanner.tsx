@@ -1,10 +1,8 @@
-import { DEMO_BANNER_MESSAGE, demoPolicy } from "../lib/demoMode";
+import { DEMO_BANNER_MESSAGE } from "../lib/demoMode";
 
 export const DEMO_BANNER_LABEL = "public demo notice";
 
 export function DemoBanner() {
-  if (!demoPolicy.publicDemoBanner) return null;
-
   return (
     <aside
       aria-label={DEMO_BANNER_LABEL}

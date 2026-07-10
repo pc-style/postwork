@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               close at hand.
             </div>
 
-            {!demoPolicy.userSwitcher && <ProductProfileCard />}
+            {demoPolicy.productAuth && <ProductProfileCard />}
           </div>
         </aside>
       </div>

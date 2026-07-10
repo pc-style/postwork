@@ -4,9 +4,9 @@ import { ConvexProvider } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { convex } from "./convexClient";
 import {
+  demoPolicy,
   getOptionalViteEnv,
   getRequiredProductViteEnv,
-  isDemo,
 } from "./demoMode";
 import { SessionProvider } from "./session";
 import { StoreProvider } from "./store";
@@ -57,7 +57,7 @@ export const clerkAppearance = {
 // ExperimentProvider keeps experiment hooks safe even when demo mode disables
 // the lab routes.
 export function AppProviders({ children }: { children: ReactNode }) {
-  if (isDemo) {
+  if (!demoPolicy.productAuth) {
     return (
       <ErrorBoundary>
         <ConvexProvider client={convex}>
