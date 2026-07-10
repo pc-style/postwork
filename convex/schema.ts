@@ -15,6 +15,14 @@ export const priority = v.union(
   v.literal("normal"),
 );
 
+export const agentTaskStatus = v.union(
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("done"),
+  v.literal("failed"),
+  v.literal("cancelled"),
+);
+
 export default defineSchema({
   orgs: defineTable({
     name: v.string(),
@@ -132,6 +140,29 @@ export default defineSchema({
     postId: v.id("posts"),
     lastReadAt: v.number(),
   }).index("by_org_id_and_user_id_and_post_id", ["orgId", "userId", "postId"]),
+
+  // Durable record of agent work requested from a post/reply. The task row is
+  // machine state (status, links, errors); human-readable milestones/results
+  // are still written back as normal replies by the agent user.
+  agentTasks: defineTable({
+    orgId: v.optional(v.id("orgs")),
+    postId: v.id("posts"),
+    sourceReplyId: v.optional(v.id("replies")),
+    agentId: v.id("users"),
+    requestedById: v.id("users"),
+    status: agentTaskStatus,
+    prompt: v.string(),
+    result: v.optional(v.string()),
+    model: v.optional(v.string()),
+    error: v.optional(v.string()),
+    resultReplyId: v.optional(v.id("replies")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_org_id_and_post_id", ["orgId", "postId"])
+    .index("by_org_id_and_agent_id_and_created_at", ["orgId", "agentId", "createdAt"])
+    .index("by_org_id_and_created_at", ["orgId", "createdAt"]),
 
   // Image attachments (Phase 3.4). Product mode only — the demo overlay can't
   // hold files. An attachment belongs to a post (replyId = undefined) or to a

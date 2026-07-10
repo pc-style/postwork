@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AgentSummary } from "../../components/AgentSummary";
+import { AgentTasksPanel } from "../../components/AgentTasksPanel";
 import { AgentTag } from "../../components/AgentTag";
 import { AttachmentGallery } from "../../components/AttachmentPicker";
 import { Button } from "../../components/Button";
@@ -109,6 +110,10 @@ export function RedesignPostPage() {
           model={post.summaryModel}
           updatedAt={post.summaryUpdatedAt}
         />
+      </div>
+
+      <div className="mb-8">
+        <AgentTasksPanel postId={post._id} />
       </div>
 
       <section aria-labelledby="replies-heading">

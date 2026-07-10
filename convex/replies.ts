@@ -1,7 +1,8 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import {
   canAccessPost,
   ensureActiveViewerUser,
@@ -24,6 +25,39 @@ import { logInfo } from "./lib/observability";
 export type EnrichedReply = Doc<"replies"> & {
   author: PublicUser | null;
 };
+
+async function insertReplyAndBumpPost(
+  ctx: MutationCtx,
+  args: {
+    orgId: Id<"orgs"> | undefined;
+    post: Doc<"posts">;
+    authorId: Id<"users">;
+    body: string;
+    parentId?: Id<"replies">;
+  },
+): Promise<Id<"replies">> {
+  const now = Date.now();
+  const replyId = await ctx.db.insert("replies", {
+    orgId: args.orgId,
+    postId: args.post._id,
+    parentId: args.parentId,
+    authorId: args.authorId,
+    body: args.body,
+    createdAt: now,
+  });
+
+  const participantIds = args.post.participantIds.includes(args.authorId)
+    ? args.post.participantIds
+    : [...args.post.participantIds, args.authorId];
+
+  await ctx.db.patch(args.post._id, {
+    lastActivityAt: now,
+    replyCount: args.post.replyCount + 1,
+    participantIds,
+  });
+
+  return replyId;
+}
 
 /** Flat, time-ordered list of replies. The client assembles the nesting tree. */
 export const listForPost = query({
@@ -136,15 +170,14 @@ export const create = mutation({
       }
     }
 
-    const now = Date.now();
-    const replyId = await ctx.db.insert("replies", {
+    const replyId = await insertReplyAndBumpPost(ctx, {
       orgId: viewer.orgId,
-      postId: args.postId,
+      post,
       parentId: args.parentId,
       authorId: viewer._id,
       body,
-      createdAt: now,
     });
+    const now = Date.now();
 
     // Persist attachment records (Phase 3.4).
     if (args.attachments) {
@@ -166,17 +199,6 @@ export const create = mutation({
       }
     }
 
-    const participantIds = post.participantIds.includes(viewer._id)
-      ? post.participantIds
-      : [...post.participantIds, viewer._id];
-
-    // Bump the post to the top of the feed.
-    await ctx.db.patch(args.postId, {
-      lastActivityAt: now,
-      replyCount: post.replyCount + 1,
-      participantIds,
-    });
-
     // The replier has implicitly read everything up to now.
     const existing = await ctx.db
       .query("postReads")
@@ -194,6 +216,44 @@ export const create = mutation({
       });
 
     logInfo("reply.created", { replyId, postId: args.postId, authorId: viewer._id });
+    return replyId;
+  },
+});
+
+export const createAsAgent = internalMutation({
+  args: {
+    postId: v.id("posts"),
+    body: v.string(),
+    authorId: v.id("users"),
+    parentId: v.optional(v.id("replies")),
+  },
+  handler: async (ctx, args) => {
+    const author = await ctx.db.get(args.authorId);
+    if (!author?.isAgent) notFound("Agent not found.");
+
+    const post = await ctx.db.get(args.postId);
+    if (!post || post.orgId !== author.orgId) notFound("Post not found.");
+
+    if (args.parentId) {
+      const parent = await ctx.db.get(args.parentId);
+      if (!parent || parent.orgId !== author.orgId || parent.postId !== args.postId) {
+        notFound("Parent reply not found.");
+      }
+    }
+
+    const body = parse(replyBodySchema, args.body, "body");
+    const replyId = await insertReplyAndBumpPost(ctx, {
+      orgId: author.orgId,
+      post,
+      parentId: args.parentId,
+      authorId: args.authorId,
+      body,
+    });
+    logInfo("reply.agentCreated", {
+      replyId,
+      postId: args.postId,
+      authorId: args.authorId,
+    });
     return replyId;
   },
 });

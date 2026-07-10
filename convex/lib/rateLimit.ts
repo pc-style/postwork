@@ -22,6 +22,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   createReply: { kind: "token bucket", rate: 30, period: MINUTE, capacity: 10 },
   // AI summaries hit an external paid API — 5/min, no burst.
   summarize: { kind: "fixed window", rate: 5, period: MINUTE },
+  // Agent dispatches can trigger external model/provider work.
+  agentTask: { kind: "fixed window", rate: 10, period: MINUTE },
   // Profile edits — 10/min is plenty for a settings page.
   updateProfile: { kind: "fixed window", rate: 10, period: MINUTE },
   // Image uploads — 20/min per user.
