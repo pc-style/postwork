@@ -11,11 +11,13 @@ export function AgentSummary({
   summary,
   model,
   updatedAt,
+  isStale,
 }: {
   postId: Id<"posts">;
   summary?: string;
   model?: string;
   updatedAt?: number;
+  isStale: boolean;
 }) {
   const store = useStore();
   const [busy, setBusy] = useState(false);
@@ -31,8 +33,8 @@ export function AgentSummary({
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(
-        /API_KEY|not set/i.test(msg)
-          ? "OpenRouter isn't connected yet. Add OPENROUTER_API_KEY to the Convex environment to generate live summaries."
+        /NO_AI_KEY|API_KEY|not set|AI_PROVIDER/i.test(msg)
+          ? "AI summaries aren't configured for this deployment. Set AI_PROVIDER and its matching API key in the Convex environment, then try again."
           : msg,
       );
     } finally {
@@ -58,11 +60,15 @@ export function AgentSummary({
         </Button>
       }
     >
-      {summary ? (
-        <Markdown text={summary} />
-      ) : (
+      {summary ? <Markdown text={summary} /> : (
         <p className="text-sm text-muted">
           No summary yet. Generate one to catch up on key decisions and open questions.
+        </p>
+      )}
+
+      {summary && isStale && (
+        <p className="mt-2.5 text-label text-muted">
+          New replies arrived after this summary. Regenerate to include them.
         </p>
       )}
 
@@ -74,8 +80,9 @@ export function AgentSummary({
 
       {(model || updatedAt) && !error && (
         <p className="mt-2.5 text-label text-muted">
-          {model === "seed/baked" ? "Demo summary" : `Model: ${model}`}
-          {updatedAt ? `, updated ${timeAgo(updatedAt)}` : ""}
+          {model ? (model === "seed/baked" ? "Demo summary" : `Model: ${model}`) : null}
+          {model && updatedAt ? ", " : ""}
+          {updatedAt ? `covers activity through ${timeAgo(updatedAt)}` : ""}
         </p>
       )}
     </AccentPanel>
