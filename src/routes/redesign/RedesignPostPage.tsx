@@ -103,7 +103,7 @@ export function RedesignPostPage() {
         </div>
       ) : null}
 
-      <div className="my-8">
+      <div className="mt-8 border-t border-border pt-5">
         <AgentSummary
           postId={post._id}
           summary={post.summary}
@@ -112,11 +112,11 @@ export function RedesignPostPage() {
         />
       </div>
 
-      <div className="mb-8">
+      <div className="mt-4">
         <AgentTasksPanel postId={post._id} />
       </div>
 
-      <section aria-labelledby="replies-heading">
+      <section aria-labelledby="replies-heading" className="mt-10">
         <h2 id="replies-heading" className="mb-2 text-sm font-semibold text-fg">
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
@@ -137,11 +137,11 @@ export function RedesignPostPage() {
             load more replies
           </Button>
         ) : null}
+        <div className="mt-7 border-t border-border pt-5">
+          <h2 className="mb-3 text-sm font-semibold text-fg">add a reply</h2>
+          <Composer postId={post._id} placeholder="Add a reply." />
+        </div>
       </section>
-
-      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-border bg-bg px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <Composer postId={post._id} placeholder="Add a reply." />
-      </div>
     </article>
   );
 }

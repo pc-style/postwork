@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "codegen": "convex codegen",
     "seed": "convex run seed:run",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "linear:pull": "bun run scripts/linear-pull.mjs",
+    "linear:pull:json": "bun run scripts/linear-pull.mjs --json"
   },
   "dependencies": {
     "@ai-sdk/gateway": "4.0.0-beta.112",

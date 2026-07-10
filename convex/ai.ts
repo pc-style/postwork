@@ -36,16 +36,16 @@ type OpenRouterModel = {
 /**
  * Resolve a language model from environment variables.
  *
- *   AI_PROVIDER = "openai" | "gateway" | "openrouter" | "pioneer"   (default: "openai")
+ *   AI_PROVIDER = "openrouter" | "openai" | "gateway" | "pioneer"   (default: "openrouter")
+ *
+ * OpenRouter (OpenAI-compatible, https://openrouter.ai):
+ *   OPENROUTER_API_KEY, OPENROUTER_MODEL  (default DEFAULT_OPENROUTER_MODEL), OPENROUTER_BASE_URL?
  *
  * OpenAI (direct, https://platform.openai.com):
  *   OPENAI_API_KEY, OPENAI_MODEL  (default DEFAULT_OPENAI_MODEL)
  *
  * Vercel AI Gateway (routes to OpenAI & others):
  *   AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL  (default DEFAULT_GATEWAY_MODEL)
- *
- * OpenRouter (OpenAI-compatible, https://openrouter.ai):
- *   OPENROUTER_API_KEY, OPENROUTER_MODEL  (default DEFAULT_OPENROUTER_MODEL), OPENROUTER_BASE_URL?
  *
  * Pioneer (OpenAI-compatible, https://docs.pioneer.ai):
  *   PIONEER_API_KEY, PIONEER_MODEL, PIONEER_BASE_URL?
@@ -58,7 +58,7 @@ export function resolveModel(
     return resolveOpenRouterModel(modelId);
   }
 
-  const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
+  const provider = (process.env.AI_PROVIDER ?? "openrouter").toLowerCase();
 
   if (provider === "gateway") {
     const apiKey = process.env.AI_GATEWAY_API_KEY;
@@ -99,7 +99,14 @@ export function resolveModel(
     return { model: pioneer.chatModel(modelId), modelId };
   }
 
-  // Default: OpenAI directly.
+  if (provider !== "openai") {
+    throw new ConvexError({
+      code: "INVALID_AI_PROVIDER",
+      message: "AI_PROVIDER must be openrouter, openai, gateway, or pioneer.",
+    });
+  }
+
+  // Direct OpenAI is available when explicitly selected.
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey)
     throw new ConvexError({
@@ -132,12 +139,13 @@ function resolveOpenRouterModel(modelId: string): { model: LanguageModel; modelI
  */
 export function aiConfigured(options: ResolveModelOptions = {}): boolean {
   if (options.openRouterModelId) return !!process.env.OPENROUTER_API_KEY;
-  const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
+  const provider = (process.env.AI_PROVIDER ?? "openrouter").toLowerCase();
   if (provider === "gateway") return !!process.env.AI_GATEWAY_API_KEY;
   if (provider === "openrouter") return !!process.env.OPENROUTER_API_KEY;
   if (provider === "pioneer")
     return !!process.env.PIONEER_API_KEY && !!process.env.PIONEER_MODEL;
-  return !!process.env.OPENAI_API_KEY;
+  if (provider === "openai") return !!process.env.OPENAI_API_KEY;
+  return false;
 }
 
 export const getGenerationModelSetting = internalQuery({

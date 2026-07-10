@@ -1,4 +1,10 @@
-import { useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 import { timeAgo } from "../lib/format";
@@ -17,6 +23,12 @@ import { SendAgentButton } from "./SendAgentButton";
 import { UserRoleTag } from "./UserRoleTag";
 
 type Node = ReplyTreeNode<EnrichedReply>;
+
+function hasUnreadDescendant(node: Node): boolean {
+  return node.children.some(
+    (child) => child.unread || hasUnreadDescendant(child),
+  );
+}
 
 function subthreadText(node: Node) {
   const lines: string[] = [];
@@ -49,6 +61,10 @@ function ReplyNode({
   const [editBody, setEditBody] = useState(node.body);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const childRepliesId = useId();
+  const subtreeHasUnread = hasUnreadDescendant(node);
+  const [childrenExpanded, setChildrenExpanded] = useState(subtreeHasUnread);
+  const previousSubtreeHasUnread = useRef(subtreeHasUnread);
   const replyAttachments = attachments.filter(
     (attachment) => attachment.replyId === node._id,
   );
@@ -85,6 +101,16 @@ function ReplyNode({
       : depth < 4
         ? "ml-2 border-l border-border pl-2 sm:ml-4 sm:pl-4"
         : "border-l border-border pl-2 sm:pl-4";
+
+  useEffect(() => {
+    if (subtreeHasUnread && !previousSubtreeHasUnread.current) {
+      setChildrenExpanded(true);
+    }
+    previousSubtreeHasUnread.current = subtreeHasUnread;
+  }, [subtreeHasUnread]);
+
+  const childReplyLabel =
+    node.children.length === 1 ? "1 reply" : `${node.children.length} replies`;
 
   return (
     <div className={indentation}>
@@ -159,6 +185,20 @@ function ReplyNode({
                 >
                   {replying ? "cancel" : "reply"}
                 </Button>
+                {node.children.length > 0 ? (
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    className="min-h-11 px-1.5 text-xs sm:min-h-9"
+                    onClick={() => setChildrenExpanded((value) => !value)}
+                    aria-controls={childRepliesId}
+                    aria-expanded={childrenExpanded}
+                  >
+                    {childrenExpanded
+                      ? `hide ${childReplyLabel}`
+                      : `show ${childReplyLabel}`}
+                  </Button>
+                ) : null}
                 {canEdit ? (
                   <Button
                     variant="quiet"
@@ -207,16 +247,25 @@ function ReplyNode({
         ) : null}
       </article>
 
-      {node.children.map((child) => (
-        <ReplyNode
-          key={child._id}
-          node={child}
-          postId={postId}
-          depth={depth + 1}
-          attachments={attachments}
-          fallbackFocusRef={fallbackFocusRef}
-        />
-      ))}
+      {node.children.length > 0 ? (
+        <div
+          id={childRepliesId}
+          role="group"
+          aria-label={`Replies to ${node.author?.name ?? "this reply"}`}
+          hidden={!childrenExpanded}
+        >
+          {node.children.map((child) => (
+            <ReplyNode
+              key={child._id}
+              node={child}
+              postId={postId}
+              depth={depth + 1}
+              attachments={attachments}
+              fallbackFocusRef={fallbackFocusRef}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

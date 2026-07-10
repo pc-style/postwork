@@ -2,14 +2,14 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   canAccessPost,
   ensureActiveViewerUser,
   forbidden,
-  getViewerFromAuth,
   notFound,
   requireSpaceMember,
+  resolveViewerForRead,
   getDefaultOrgId,
 } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
@@ -24,7 +24,38 @@ import { logInfo } from "./lib/observability";
 
 export type EnrichedReply = Doc<"replies"> & {
   author: PublicUser | null;
+  unread: boolean;
+  // The parent post's per-viewer read watermark. The client combines this with
+  // demo-only session reads so collapsed branches can reliably surface new work.
+  lastReadAt: number;
 };
+
+async function enrichReplies(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+  replies: Doc<"replies">[],
+  viewerId: Id<"users"> | undefined,
+): Promise<EnrichedReply[]> {
+  let lastReadAt = 0;
+  if (viewerId) {
+    const read = await ctx.db
+      .query("postReads")
+      .withIndex("by_org_id_and_user_id_and_post_id", (q) =>
+        q.eq("orgId", post.orgId).eq("userId", viewerId).eq("postId", post._id),
+      )
+      .unique();
+    lastReadAt = read?.lastReadAt ?? 0;
+  }
+
+  return await Promise.all(
+    replies.map(async (reply) => ({
+      ...reply,
+      author: publicUser(await ctx.db.get(reply.authorId)),
+      unread: reply.createdAt > lastReadAt,
+      lastReadAt,
+    })),
+  );
+}
 
 async function insertReplyAndBumpPost(
   ctx: MutationCtx,
@@ -61,10 +92,12 @@ async function insertReplyAndBumpPost(
 
 /** Flat, time-ordered list of replies. The client assembles the nesting tree. */
 export const listForPost = query({
-  args: { postId: v.id("posts") },
+  args: {
+    postId: v.id("posts"),
+    viewerId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args): Promise<EnrichedReply[]> => {
-    const authViewer = await getViewerFromAuth(ctx);
-    const viewer = authViewer?.status === "pending" ? null : authViewer;
+    const viewer = await resolveViewerForRead(ctx, args.viewerId);
     const post = await ctx.db.get(args.postId);
     if (!post) return [];
     if (!(await canAccessPost(ctx, post, viewer?._id))) {
@@ -79,12 +112,7 @@ export const listForPost = query({
       .order("asc")
       .collect();
 
-    return await Promise.all(
-      replies.map(async (r) => ({
-        ...r,
-        author: publicUser(await ctx.db.get(r.authorId)),
-      })),
-    );
+    return await enrichReplies(ctx, post, replies, viewer?._id);
   },
 });
 
@@ -96,11 +124,11 @@ export const listForPost = query({
 export const listForPostPaginated = query({
   args: {
     postId: v.id("posts"),
+    viewerId: v.optional(v.id("users")),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const authViewer = await getViewerFromAuth(ctx);
-    const viewer = authViewer?.status === "pending" ? null : authViewer;
+    const viewer = await resolveViewerForRead(ctx, args.viewerId);
     const post = await ctx.db.get(args.postId);
     if (!post || !(await canAccessPost(ctx, post, viewer?._id))) {
       return { page: [], isDone: true, continueCursor: "" };
@@ -114,12 +142,7 @@ export const listForPostPaginated = query({
       .order("asc")
       .paginate(args.paginationOpts);
 
-    const page = await Promise.all(
-      result.page.map(async (r) => ({
-        ...r,
-        author: publicUser(await ctx.db.get(r.authorId)),
-      })),
-    );
+    const page = await enrichReplies(ctx, post, result.page, viewer?._id);
     return { ...result, page };
   },
 });

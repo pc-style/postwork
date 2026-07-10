@@ -85,12 +85,14 @@ Seed posts include baked summaries, so the demo remains useful without an API
 key. In a Convex deployment, configure one provider for live summary generation
 and simulated agent-task execution.
 
-**OpenAI (default):**
+**OpenRouter (default):**
 
 ```bash
-bunx convex env set OPENAI_API_KEY sk-...
-# optional; defaults to gpt-5.4-mini
-bunx convex env set OPENAI_MODEL gpt-5.4-mini
+bunx convex env set AI_PROVIDER openrouter
+# Paste the key only when Convex prompts, so it never enters shell history.
+pbpaste | bunx convex env set OPENROUTER_API_KEY
+# optional; defaults to openrouter/free
+bunx convex env set OPENROUTER_MODEL openrouter/free
 ```
 
 **Vercel AI Gateway:**
@@ -101,13 +103,13 @@ bunx convex env set AI_GATEWAY_API_KEY <your-key>
 bunx convex env set AI_GATEWAY_MODEL openai/gpt-5.4-mini
 ```
 
-**OpenRouter:**
+**OpenAI:**
 
 ```bash
-bunx convex env set AI_PROVIDER openrouter
-bunx convex env set OPENROUTER_API_KEY <your-key>
-# optional; defaults to openrouter/free
-bunx convex env set OPENROUTER_MODEL openrouter/free
+bunx convex env set AI_PROVIDER openai
+bunx convex env set OPENAI_API_KEY sk-...
+# optional; defaults to gpt-5.4-mini
+bunx convex env set OPENAI_MODEL gpt-5.4-mini
 ```
 
 **Pioneer:**

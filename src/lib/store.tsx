@@ -70,6 +70,7 @@ type OverlayState = {
   posts: SessionPost[];
   replies: Record<string, SessionReply[]>;
   applyOverlay: (p: EnrichedPost) => EnrichedPost;
+  applyReplyOverlay: (r: EnrichedReply) => EnrichedReply;
   enrichSessionPost: (sp: SessionPost) => EnrichedPost;
   enrichSessionReply: (r: SessionReply) => EnrichedReply;
 };
@@ -214,12 +215,29 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     [postBumps, summaries, effReadAt, userById, resolveParticipants],
   );
 
+  const applyReplyOverlay = useCallback(
+    (reply: EnrichedReply): EnrichedReply => {
+      const lastReadAt = effReadAt(reply.postId, reply.lastReadAt);
+      return {
+        ...reply,
+        unread: reply.createdAt > lastReadAt,
+        lastReadAt,
+      };
+    },
+    [effReadAt],
+  );
+
   const enrichSessionReply = useCallback(
-    (r: SessionReply): EnrichedReply => ({
-      ...r,
-      author: userById.get(r.authorId) ?? null,
-    }),
-    [userById],
+    (r: SessionReply): EnrichedReply => {
+      const lastReadAt = effReadAt(r.postId, 0);
+      return {
+        ...r,
+        author: userById.get(r.authorId) ?? null,
+        unread: r.createdAt > lastReadAt,
+        lastReadAt,
+      };
+    },
+    [effReadAt, userById],
   );
 
   // ---- session-only mutations --------------------------------------------
@@ -474,10 +492,18 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       posts,
       replies,
       applyOverlay,
+      applyReplyOverlay,
       enrichSessionPost,
       enrichSessionReply,
     }),
-    [posts, replies, applyOverlay, enrichSessionPost, enrichSessionReply],
+    [
+      posts,
+      replies,
+      applyOverlay,
+      applyReplyOverlay,
+      enrichSessionPost,
+      enrichSessionReply,
+    ],
   );
 
   const value: StoreValue = useMemo(
@@ -530,6 +556,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
       posts: [],
       replies: {},
       applyOverlay: (post) => post,
+      applyReplyOverlay: (reply) => reply,
       enrichSessionPost: (post) => ({
         ...post,
         author: null,
@@ -540,6 +567,8 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
       enrichSessionReply: (reply) => ({
         ...reply,
         author: null,
+        unread: false,
+        lastReadAt: 0,
       }),
     }),
     [],
@@ -905,12 +934,12 @@ function useRepliesDemo(postId: Id<"posts">): RepliesResult {
   const local = isLocalId(postId);
   const backend = useQuery(
     api.replies.listForPost,
-    local ? "skip" : { postId },
+    local ? "skip" : { postId, viewerId: store.currentUserId },
   );
 
-  const { replies, enrichSessionReply } = store.overlay;
+  const { replies, applyReplyOverlay, enrichSessionReply } = store.overlay;
   const session = (replies[postId] ?? []).map(enrichSessionReply);
-  const merged = [...(backend ?? []), ...session].sort(
+  const merged = [...(backend ?? []).map(applyReplyOverlay), ...session].sort(
     (a, b) => a.createdAt - b.createdAt,
   );
   return { replies: merged, status: "Exhausted", loadMore: null };
