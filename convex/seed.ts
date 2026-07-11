@@ -147,6 +147,16 @@ export const run = internalMutation({
     const posts: PostDef[] = [
       {
         author: "PN",
+        title: "Catch-up checkpoint: decisions needed before Thursday cutover",
+        space: "Product",
+        priority: "normal",
+        createdAgo: 4 * HOUR,
+        body: "A short return-to-work checkpoint: account mapping still needs a decision, the export replay needs its final checksum, and the security packet is waiting on evidence owners. The linked source posts remain canonical; this is the orientation layer for anyone coming back online.",
+        summary:
+          "**TL;DR**\nThree threads need attention before Thursday: decide account mapping, confirm the export checksum, and assign the remaining security evidence owners.",
+      },
+      {
+        author: "PN",
         title: "API contract question: account mapping edge cases",
         space: "northwind × acme — platform integration",
         spaceKey: "nw_acme_platform",
