@@ -197,7 +197,7 @@ export default defineSchema({
     updatedById: v.id("users"),
   }).index("by_org_id_and_kind", ["orgId", "kind"]),
 
-  // Image attachments (Phase 3.4). Product mode only — the demo overlay can't
+  // Image and video attachments. Product mode only — the demo overlay can't
   // hold files. An attachment belongs to a post (replyId = undefined) or to a
   // specific reply (replyId set). postId is always set for org-scoping and to
   // fetch all attachments in a thread in one query.
@@ -208,9 +208,12 @@ export default defineSchema({
     storageId: v.id("_storage"),
     filename: v.string(),
     contentType: v.string(),
+    // Optional for compatibility with existing image rows. All new writes set it.
+    mediaKind: v.optional(v.union(v.literal("image"), v.literal("video"))),
     size: v.number(),
     width: v.optional(v.number()),
     height: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
     uploadedBy: v.id("users"),
     createdAt: v.number(),
   })

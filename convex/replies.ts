@@ -21,6 +21,7 @@ import {
   LIMITS,
 } from "./lib/validation";
 import { logInfo } from "./lib/observability";
+import { validateStoredAttachment } from "./lib/attachmentStorage";
 
 export type EnrichedReply = Doc<"replies"> & {
   author: PublicUser | null;
@@ -155,12 +156,14 @@ export const create = mutation({
     attachments: v.optional(
       v.array(
         v.object({
-          storageId: v.string(),
+          storageId: v.id("_storage"),
           filename: v.string(),
           contentType: v.string(),
+          mediaKind: v.union(v.literal("image"), v.literal("video")),
           size: v.number(),
           width: v.optional(v.number()),
           height: v.optional(v.number()),
+          durationMs: v.optional(v.number()),
         }),
       ),
     ),
@@ -182,7 +185,7 @@ export const create = mutation({
       throw new ConvexError({
         code: "INVALID_INPUT" as const,
         field: "attachments",
-        message: `Maximum ${LIMITS.ATTACHMENT_MAX_PER_POST} images per reply.`,
+        message: `Maximum ${LIMITS.ATTACHMENT_MAX_PER_POST} media attachments per reply.`,
       });
     }
 
@@ -205,17 +208,20 @@ export const create = mutation({
     // Persist attachment records (Phase 3.4).
     if (args.attachments) {
       for (const att of args.attachments) {
-        const validated = parse(attachmentInputSchema, att, "attachment");
+        const parsed = parse(attachmentInputSchema, att, "attachment");
+        const validated = await validateStoredAttachment(ctx, parsed);
         await ctx.db.insert("postAttachments", {
           orgId: viewer.orgId,
           postId: args.postId,
           replyId,
-          storageId: validated.storageId as Id<"_storage">,
+          storageId: validated.storageId,
           filename: validated.filename,
           contentType: validated.contentType,
+          mediaKind: validated.mediaKind,
           size: validated.size,
           width: validated.width,
           height: validated.height,
+          durationMs: validated.durationMs,
           uploadedBy: viewer._id,
           createdAt: now,
         });

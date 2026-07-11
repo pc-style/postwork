@@ -3,47 +3,65 @@ import {
   useAttachmentUpload,
   ATTACHMENT_ALLOWED_TYPES,
 } from "../lib/attachments";
-import type { AttachmentInput, AttachmentWithUrl } from "../lib/types";
+import {
+  getMediaKind,
+  MEDIA_MAX_PER_MESSAGE,
+  type MediaKind,
+} from "../lib/media";
+import type { AttachmentInput } from "../lib/types";
 import { Button } from "./Button";
 
 /**
- * Image attachment picker + gallery components (Phase 3.4).
+ * Media attachment picker for post and reply composers.
  *
  * Product mode only — `useAttachmentPicker().canUpload` is false in demo,
  * so the upload button is hidden and the gallery stays empty.
  */
 
-export type PendingImage = {
+export type PendingMedia = {
   key: string;
   previewUrl: string;
   filename: string;
+  mediaKind: MediaKind | null;
   uploading: boolean;
   error?: string;
   input?: AttachmentInput;
 };
 
 /**
- * Manages pending image uploads. Files are uploaded to Convex storage
+ * Manages pending media uploads. Files are uploaded to Convex storage
  * immediately on selection; `getReadyAttachments()` returns the validated
  * `AttachmentInput[]` to pass into `store.createPost` / `store.createReply`.
  */
 export function useAttachmentPicker() {
   const { upload, canUpload } = useAttachmentUpload();
-  const [pending, setPending] = useState<PendingImage[]>([]);
+  const [pending, setPending] = useState<PendingMedia[]>([]);
+  const [limitError, setLimitError] = useState<string | null>(null);
   const counter = useRef(0);
 
   const addFiles = useCallback(
     async (files: FileList | File[]) => {
-      const images = Array.from(files).filter((f) =>
-        f.type.startsWith("image/"),
+      const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
+      const selected = Array.from(files);
+      const accepted = selected.slice(0, available);
+      setLimitError(
+        selected.length > available
+          ? `Maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
+          : null,
       );
-      for (const file of images) {
+      for (const file of accepted) {
         counter.current += 1;
         const key = `att-${counter.current}`;
         const previewUrl = URL.createObjectURL(file);
         setPending((prev) => [
           ...prev,
-          { key, previewUrl, filename: file.name, uploading: true },
+          {
+            key,
+            previewUrl,
+            filename: file.name,
+            mediaKind: getMediaKind(file.type),
+            uploading: true,
+          },
         ]);
         try {
           const input = await upload(file);
@@ -67,10 +85,11 @@ export function useAttachmentPicker() {
         }
       }
     },
-    [upload],
+    [pending.length, upload],
   );
 
   const removeAttachment = useCallback((key: string) => {
+    setLimitError(null);
     setPending((prev) => {
       const entry = prev.find((p) => p.key === key);
       if (entry) URL.revokeObjectURL(entry.previewUrl);
@@ -82,7 +101,7 @@ export function useAttachmentPicker() {
     (): AttachmentInput[] =>
       pending
         .filter(
-          (p): p is PendingImage & { input: AttachmentInput } =>
+          (p): p is PendingMedia & { input: AttachmentInput } =>
             !!p.input && !p.error,
         )
         .map((p) => p.input),
@@ -94,10 +113,12 @@ export function useAttachmentPicker() {
       for (const p of prev) URL.revokeObjectURL(p.previewUrl);
       return [];
     });
+    setLimitError(null);
   }, []);
 
   const hasUploading = pending.some((p) => p.uploading);
-  const hasAttachmentErrors = pending.some((p) => !!p.error);
+  const attachmentError = limitError ?? pending.find((p) => p.error)?.error ?? null;
+  const hasAttachmentErrors = attachmentError !== null;
 
   return {
     pending,
@@ -108,6 +129,7 @@ export function useAttachmentPicker() {
     canUpload,
     hasUploading,
     hasAttachmentErrors,
+    attachmentError,
   };
 }
 
@@ -125,7 +147,7 @@ export function AttachmentButton({
         type="file"
         accept={ATTACHMENT_ALLOWED_TYPES.join(",")}
         multiple
-        aria-label="Choose image attachments"
+        aria-label="Choose image or video attachments"
         className="hidden"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) onFiles(e.target.files);
@@ -137,7 +159,7 @@ export function AttachmentButton({
         size="sm"
         onClick={() => ref.current?.click()}
       >
-        add images
+        add media
       </Button>
     </>
   );
@@ -148,7 +170,7 @@ export function AttachmentThumbnails({
   pending,
   onRemove,
 }: {
-  pending: PendingImage[];
+  pending: PendingMedia[];
   onRemove: (key: string) => void;
 }) {
   if (pending.length === 0) return null;
@@ -159,11 +181,26 @@ export function AttachmentThumbnails({
           key={p.key}
           className="relative size-20 overflow-hidden rounded-md border border-border bg-surface"
         >
-          <img
-            src={p.previewUrl}
-            alt={p.filename}
-            className="size-full object-cover"
-          />
+          {p.mediaKind === "video" ? (
+            <video
+              src={p.previewUrl}
+              aria-label={p.filename}
+              muted
+              playsInline
+              preload="metadata"
+              className="size-full object-cover"
+            />
+          ) : p.mediaKind === "image" ? (
+            <img
+              src={p.previewUrl}
+              alt={p.filename}
+              className="size-full object-cover"
+            />
+          ) : (
+            <div className="flex size-full items-center justify-center p-2 text-center text-[10px] text-muted">
+              unsupported file
+            </div>
+          )}
           {p.uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-xs text-muted">
               Uploading…
@@ -186,37 +223,6 @@ export function AttachmentThumbnails({
           </button>
         </div>
       ))}
-    </div>
-  );
-}
-
-/** Gallery of uploaded attachments (post-level or reply-level). */
-export function AttachmentGallery({
-  attachments,
-}: {
-  attachments: AttachmentWithUrl[];
-}) {
-  if (attachments.length === 0) return null;
-  return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {attachments.map((att) =>
-        att.url ? (
-          <a
-            key={att._id}
-            href={att.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block max-w-full overflow-hidden rounded-md border border-border transition hover:border-accent/40"
-          >
-            <img
-              src={att.url}
-              alt={att.filename}
-              className="max-h-48 max-w-full object-cover"
-              loading="lazy"
-            />
-          </a>
-        ) : null,
-      )}
     </div>
   );
 }

@@ -8,9 +8,10 @@ import {
 } from "./authUsers";
 import { rateLimiter } from "./lib/rateLimit";
 import { logInfo } from "./lib/observability";
+import { attachmentMediaKind, type AttachmentMediaKind } from "./lib/validation";
 
 /**
- * Image attachments via Convex file storage (Phase 3.4).
+ * Image and video attachments via Convex file storage.
  *
  * Flow:
  *   1. Client calls `generateUploadUrl` → gets a one-time upload URL.
@@ -43,9 +44,11 @@ export type AttachmentWithUrl = {
   replyId: Id<"replies"> | undefined;
   filename: string;
   contentType: string;
+  mediaKind: AttachmentMediaKind;
   size: number;
   width: number | undefined;
   height: number | undefined;
+  durationMs: number | undefined;
   uploadedBy: Id<"users">;
   createdAt: number;
   url: string | null;
@@ -78,9 +81,11 @@ export const listForPost = query({
         replyId: att.replyId,
         filename: att.filename,
         contentType: att.contentType,
+        mediaKind: att.mediaKind ?? attachmentMediaKind(att.contentType) ?? "image",
         size: att.size,
         width: att.width,
         height: att.height,
+        durationMs: att.durationMs,
         uploadedBy: att.uploadedBy,
         createdAt: att.createdAt,
         url: await ctx.storage.getUrl(att.storageId),

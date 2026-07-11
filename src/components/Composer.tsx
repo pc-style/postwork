@@ -49,6 +49,7 @@ export function Composer({
     canUpload,
     hasUploading,
     hasAttachmentErrors,
+    attachmentError,
   } = useAttachmentPicker();
 
   const mentioned = parseAgentMentions(body);
@@ -126,8 +127,8 @@ export function Composer({
           textareaClassName="ui-field min-h-24 resize-y"
           onPaste={(event) => {
             if (!canUpload) return;
-            const files = Array.from(event.clipboardData.files).filter((file) =>
-              file.type.startsWith("image/"),
+            const files = Array.from(event.clipboardData.files).filter(
+              (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
             );
             if (files.length > 0) {
               event.preventDefault();
@@ -149,9 +150,9 @@ export function Composer({
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
               <span aria-live="polite">
                 {hasUploading
-                  ? "Uploading images…"
+                  ? "Optimizing and uploading media…"
                   : hasAttachmentErrors
-                    ? "An image failed to upload. Remove it and try again."
+                    ? (attachmentError ?? "A media attachment failed to upload.")
                     : mentioned.length > 0
                       ? `Asking ${mentioned.map((handle) => AGENT_HANDLES[handle]).join(", ")}`
                       : "Cmd or Ctrl + Enter to reply. Mention @cursor to ask an agent."}

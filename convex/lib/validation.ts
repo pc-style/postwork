@@ -24,15 +24,35 @@ export const LIMITS = {
   PROFILE_TITLE_MAX: 80,
   PROFILE_INITIALS_MAX: 4,
   SEARCH_TERM_MAX: 200,
-  ATTACHMENT_MAX_BYTES: 10 * 1024 * 1024, // 10 MB per image
+  ATTACHMENT_MAX_IMAGE_BYTES: 10 * 1024 * 1024,
+  ATTACHMENT_MAX_VIDEO_BYTES: 50 * 1024 * 1024,
   ATTACHMENT_MAX_PER_POST: 8,
   ATTACHMENT_ALLOWED_TYPES: [
     "image/png",
     "image/jpeg",
     "image/gif",
     "image/webp",
+    "video/mp4",
+    "video/webm",
   ],
 } as const;
+
+export type AttachmentMediaKind = "image" | "video";
+
+export function attachmentMediaKind(contentType: string): AttachmentMediaKind | null {
+  if ((LIMITS.ATTACHMENT_ALLOWED_TYPES as readonly string[]).includes(contentType)) {
+    return contentType.startsWith("video/") ? "video" : "image";
+  }
+  return null;
+}
+
+export function attachmentMaxBytes(contentType: string): number | null {
+  const kind = attachmentMediaKind(contentType);
+  if (!kind) return null;
+  return kind === "video"
+    ? LIMITS.ATTACHMENT_MAX_VIDEO_BYTES
+    : LIMITS.ATTACHMENT_MAX_IMAGE_BYTES;
+}
 
 export const postTitleSchema = z
   .string()
@@ -76,17 +96,41 @@ export const searchTermSchema = z
 
 /** Attachment metadata validated before storing a post attachment record. */
 export const attachmentInputSchema = z.object({
-  storageId: z.string(),
-  filename: z.string().max(200),
+  storageId: z.string().min(1),
+  filename: z.string().min(1).max(200),
   contentType: z.enum([
     "image/png",
     "image/jpeg",
     "image/gif",
     "image/webp",
+    "video/mp4",
+    "video/webm",
   ]),
-  size: z.number().positive().max(LIMITS.ATTACHMENT_MAX_BYTES),
+  mediaKind: z.enum(["image", "video"]),
+  size: z.number().positive(),
   width: z.number().positive().optional(),
   height: z.number().positive().optional(),
+  durationMs: z.number().positive().optional(),
+}).superRefine((attachment, ctx) => {
+  const expectedKind = attachmentMediaKind(attachment.contentType);
+  if (attachment.mediaKind !== expectedKind) {
+    ctx.addIssue({ code: "custom", message: "Media kind does not match its content type." });
+  }
+  const maxBytes = attachmentMaxBytes(attachment.contentType);
+  if (maxBytes !== null && attachment.size > maxBytes) {
+    ctx.addIssue({
+      code: "too_big",
+      maximum: maxBytes,
+      origin: "number",
+      inclusive: true,
+      message: attachment.mediaKind === "video"
+        ? "Videos must be 50 MB or smaller."
+        : "Images must be 10 MB or smaller.",
+    });
+  }
+  if (attachment.mediaKind === "image" && attachment.durationMs !== undefined) {
+    ctx.addIssue({ code: "custom", message: "Images cannot include a duration." });
+  }
 });
 
 /**

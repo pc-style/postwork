@@ -1,4 +1,4 @@
-import type { FunctionReturnType } from "convex/server";
+import type { FunctionArgs, FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import { PRIORITIES } from "./format";
 
@@ -9,15 +9,10 @@ export type EnrichedReply = FunctionReturnType<
 
 export type Priority = (typeof PRIORITIES)[number];
 
-/** Metadata for an image attachment passed into post/reply create mutations. */
-export type AttachmentInput = {
-  storageId: string;
-  filename: string;
-  contentType: string;
-  size: number;
-  width?: number;
-  height?: number;
-};
+/** Metadata passed into the post attachment mutation, derived from its API. */
+export type AttachmentInput = NonNullable<
+  FunctionArgs<typeof api.posts.create>["attachments"]
+>[number];
 
 /** Attachment record with a live storage URL, from `api.attachments.listForPost`. */
 export type AttachmentWithUrl = FunctionReturnType<
