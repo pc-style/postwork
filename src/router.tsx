@@ -12,6 +12,7 @@ import { WallPage } from "./routes/WallPage";
 import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
 import { FlashExperimentPage } from "./routes/FlashExperimentPage";
 import { LandingPage } from "./routes/LandingPage";
+import { ChangelogPage } from "./routes/ChangelogPage";
 import { JoinPage } from "./routes/JoinPage";
 import { RequireAuth } from "./routes/gates";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
@@ -59,6 +60,12 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: LandingPage,
+});
+
+const changelogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/changelog",
+  component: ChangelogPage,
 });
 
 const joinRoute = createRoute({
@@ -264,6 +271,7 @@ const legacyFeedRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  changelogRoute,
   joinRoute,
   appLayoutRoute.addChildren([
     appFeedRoute,

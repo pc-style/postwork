@@ -24,16 +24,24 @@ function ProductLanding() {
 function LandingContent({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="mx-auto max-w-3xl px-6 pt-20 pb-24 md:pt-28">
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-6">
         <span className="text-base font-semibold tracking-tight">
           post<span className="text-accent">work</span>
         </span>
-        <Link
-          to="/app"
-          className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-fg"
-        >
-          {signedIn ? "open app" : "sign in"}
-        </Link>
+        <nav aria-label="Public navigation" className="flex items-center gap-5">
+          <Link
+            to="/changelog"
+            className="text-xs text-muted transition-colors hover:text-fg"
+          >
+            changelog
+          </Link>
+          <Link
+            to="/app"
+            className="border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:border-muted hover:text-fg"
+          >
+            {signedIn ? "open app" : "sign in"}
+          </Link>
+        </nav>
       </header>
 
       <main className="mt-20 md:mt-28">
@@ -49,7 +57,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <div className="mt-10 flex items-center gap-4">
           <Link
             to="/app"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96]"
+            className="bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96]"
           >
             {signedIn ? "open app" : "get in"}
           </Link>
@@ -90,11 +98,16 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         </section>
       </main>
 
-      <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-xs text-faint">
+      <footer className="mt-24 flex items-center justify-between gap-6 border-t border-border pt-6 text-xs text-faint">
         <span>postwork</span>
-        <Link to="/app" className="hover:text-muted">
-          {signedIn ? "open app →" : "sign in →"}
-        </Link>
+        <div className="flex items-center gap-5">
+          <Link to="/changelog" className="hover:text-muted">
+            changelog
+          </Link>
+          <Link to="/app" className="hover:text-muted">
+            {signedIn ? "open app →" : "sign in →"}
+          </Link>
+        </div>
       </footer>
     </div>
   );
