@@ -39,6 +39,21 @@ describe("catchUpSummaryPreview", () => {
     expect(catchUpSummaryPreview("**TL;DR:** Decision made.\n**Action items**\n- Ship it")).toBe("Decision made.");
   });
 
+  test("stops before same-line section content", () => {
+    expect(catchUpSummaryPreview("**TL;DR** Decision made.\n**Action items**: Ship it")).toBe(
+      "Decision made.",
+    );
+  });
+
+  test("recognizes every summary section emitted by the prompt", () => {
+    expect(catchUpSummaryPreview("**TL;DR** Decision made.\n**Decisions**: Keep beta")).toBe(
+      "Decision made.",
+    );
+    expect(
+      catchUpSummaryPreview("**TL;DR** Decision made.\n**Open questions**: Who owns rollout?"),
+    ).toBe("Decision made.");
+  });
+
   test("stops at a later bold section heading after a blank line", () => {
     expect(catchUpSummaryPreview("**TL;DR**\nDecision made.\n\n**Action items**\n- Ship it")).toBe("Decision made.");
   });

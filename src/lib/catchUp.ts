@@ -28,7 +28,9 @@ export function catchUpEmptyState(digest: CatchUpDigest): {
 export function catchUpSummaryPreview(text: string): string {
   return text
     .replace(/^\s*\*\*\s*TL;DR\s*:?\s*\*\*\s*:?\s*/i, "")
-    .split(/\n\s*\*\*[^*\n]+\*\*:?\s*(?=\n|$)/)[0]
+    .split(
+      /\n\s*\*\*\s*(?:Decisions|Open questions|Action items)\s*\*\*:?[^\n]*/i,
+    )[0]
     .replace(/\*\*/g, "")
     .trim();
 }
