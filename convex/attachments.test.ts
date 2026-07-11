@@ -6,7 +6,7 @@ import { describe, expect, test } from "vitest";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { validateStoredAttachment } from "./lib/attachmentStorage";
+import { assertStorageUnattached, validateStoredAttachment } from "./lib/attachmentStorage";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -23,7 +23,10 @@ const attachment = {
   size: 12,
 };
 
-function attachmentContext(ticketStorageId: Id<"_storage"> | undefined) {
+function attachmentContext(
+  ticketStorageId: Id<"_storage"> | undefined,
+  existingAttachment = false,
+) {
   let ticketExists = true;
   const ctx = {
     db: {
@@ -40,7 +43,7 @@ function attachmentContext(ticketStorageId: Id<"_storage"> | undefined) {
         get: async () => ({ contentType: "image/png", size: 12 }),
       },
       query: () => ({
-        withIndex: () => ({ unique: async () => null }),
+        withIndex: () => ({ unique: async () => (existingAttachment ? { _id: "attachment-1" } : null) }),
       }),
       delete: async () => {
         ticketExists = false;
@@ -90,6 +93,12 @@ describe("attachment upload tickets", () => {
     await expect(
       validateStoredAttachment(ctx, ownerId, undefined, { ...attachment, storageId: mismatchedStorageId }),
     ).rejects.toBeInstanceOf(ConvexError);
+  });
+
+  test("refuses to bind storage already referenced by an attachment", async () => {
+    const ctx = attachmentContext(undefined, true);
+
+    await expect(assertStorageUnattached(ctx, storageId)).rejects.toBeInstanceOf(ConvexError);
   });
 
   test("consumes a claimed ticket exactly once", async () => {

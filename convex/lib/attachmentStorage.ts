@@ -9,6 +9,20 @@ import type { z } from "zod";
 
 type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
+/** Reject storage already owned by a durable post or reply attachment. */
+export async function assertStorageUnattached(
+  ctx: MutationCtx,
+  storageId: Id<"_storage">,
+) {
+  const existingAttachment = await ctx.db
+    .query("postAttachments")
+    .withIndex("by_storage_id", (q) => q.eq("storageId", storageId))
+    .unique();
+  if (existingAttachment) {
+    throwInvalid("This uploaded media has already been attached.");
+  }
+}
+
 export async function validateStoredAttachment(
   ctx: MutationCtx,
   ownerId: Id<"users">,
@@ -29,13 +43,7 @@ export async function validateStoredAttachment(
   }
   const stored = await ctx.db.system.get(storageId);
   if (!stored) throwInvalid("The uploaded media could not be found.");
-  const existingAttachment = await ctx.db
-    .query("postAttachments")
-    .withIndex("by_storage_id", (q) => q.eq("storageId", storageId))
-    .unique();
-  if (existingAttachment) {
-    throwInvalid("This uploaded media has already been attached.");
-  }
+  await assertStorageUnattached(ctx, storageId);
   if (stored.contentType !== attachment.contentType) {
     throwInvalid("The uploaded media type does not match its metadata.");
   }

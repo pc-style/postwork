@@ -11,6 +11,7 @@ import {
 import { rateLimiter } from "./lib/rateLimit";
 import { logInfo } from "./lib/observability";
 import { attachmentMediaKind, type AttachmentMediaKind } from "./lib/validation";
+import { assertStorageUnattached } from "./lib/attachmentStorage";
 
 export const ATTACHMENT_UPLOAD_TICKET_TTL_MS = 15 * 60 * 1000;
 const UPLOAD_TICKET_CLEANUP_BATCH_SIZE = 100;
@@ -78,6 +79,10 @@ export const claimUploadedStorage = mutation({
     ) {
       throwUploadUnavailable();
     }
+
+    // A fresh ticket must never claim a blob already referenced by a durable
+    // attachment: expiry cleanup would otherwise delete that in-use file.
+    await assertStorageUnattached(ctx, args.storageId);
 
     if (ticket.storageId) {
       if (ticket.storageId !== args.storageId) {
