@@ -7,6 +7,7 @@ import {
 } from "../lib/agentMentions";
 import { useAgentTasks } from "../lib/agentTasks";
 import { insertCodeFence } from "../lib/codeFence";
+import { insertContentUrl } from "../lib/insertContentUrl";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
 import {
@@ -17,6 +18,7 @@ import {
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
+import { GifPicker } from "./GifPicker";
 
 export function Composer({
   postId,
@@ -66,6 +68,21 @@ export function Composer({
       if (!node) return;
       node.focus();
       node.setSelectionRange(next.selectionStart, next.selectionEnd);
+    });
+  };
+
+  const onGif = (url: string) => {
+    const element = textareaRef.current;
+    const next = insertContentUrl(
+      body,
+      element?.selectionStart ?? body.length,
+      element?.selectionEnd ?? body.length,
+      url,
+    );
+    setBody(next.value);
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(next.cursor, next.cursor);
     });
   };
 
@@ -149,6 +166,7 @@ export function Composer({
                 add code block
               </Button>
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
+              <GifPicker onSelect={onGif} />
               <span aria-live="polite">
                 {hasUploading
                   ? "Optimizing and uploading media…"

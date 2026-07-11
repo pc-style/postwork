@@ -2,11 +2,13 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
   type RefObject,
 } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { PRIORITIES, SPACES, priorityStyles } from "../lib/format";
+import { insertContentUrl } from "../lib/insertContentUrl";
 import { useSpacesList } from "../lib/spaces";
 import type { AttachmentInput } from "../lib/types";
 import {
@@ -17,6 +19,7 @@ import {
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
 import { FormField } from "./FormField";
+import { GifPicker } from "./GifPicker";
 import { SelectionGroup } from "./SelectionGroup";
 
 type Priority = (typeof PRIORITIES)[number];
@@ -116,6 +119,8 @@ export function PostForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [titleTouched, setTitleTouched] = useState(false);
   const [bodyTouched, setBodyTouched] = useState(false);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const bodyRef = textareaRef ?? internalTextareaRef;
   const {
     pending,
     addFiles,
@@ -185,6 +190,22 @@ export function PostForm({
     clearAttachments();
   };
 
+  const onGif = (url: string) => {
+    const element = bodyRef.current;
+    const next = insertContentUrl(
+      body,
+      element?.selectionStart ?? body.length,
+      element?.selectionEnd ?? body.length,
+      url,
+    );
+    setBody(next.value);
+    setFormError(null);
+    requestAnimationFrame(() => {
+      bodyRef.current?.focus();
+      bodyRef.current?.setSelectionRange(next.cursor, next.cursor);
+    });
+  };
+
   const submit = async () => {
     setTitleTouched(true);
     setBodyTouched(true);
@@ -235,7 +256,7 @@ export function PostForm({
           setBody(value);
           setFormError(null);
         }}
-        textareaRef={textareaRef}
+        textareaRef={bodyRef}
         bodyLabel="Post"
         bodyHelp={bodyHelp}
         bodyError={bodyTouched && bodyMissing ? "Add the post content." : undefined}
@@ -286,6 +307,7 @@ export function PostForm({
             {extraFields}
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
+              <GifPicker onSelect={onGif} />
               {hasUploading ? <span className="text-xs text-accent-soft">Optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
                 <span className="ui-error">{attachmentError ?? "A media attachment failed to upload."}</span>

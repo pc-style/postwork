@@ -19,6 +19,7 @@ import { Button } from "./Button";
 import { Composer } from "./Composer";
 import { FormField } from "./FormField";
 import { RichText } from "./RichText";
+import { RichEmbedList } from "./RichEmbedList";
 import { SendAgentButton } from "./SendAgentButton";
 import { UserRoleTag } from "./UserRoleTag";
 
@@ -169,6 +170,7 @@ function ReplyNode({
               ) : (
                 <>
                   <RichText text={node.body} className="prose-post text-sm text-fg" />
+                  <RichEmbedList text={node.body} />
                   <AttachmentGallery attachments={replyAttachments} />
                 </>
               )}
