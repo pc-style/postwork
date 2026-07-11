@@ -18,6 +18,7 @@ import { priorityStyles, timeAgo } from "../../lib/format";
 import { usePost, useReplies, useStore } from "../../lib/store";
 import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
+import { useDeferredFlag } from "../../lib/useDeferredFlag";
 
 export function RedesignPostPage() {
   const { postId: postIdParam } = useParams({ strict: false });
@@ -27,6 +28,7 @@ export function RedesignPostPage() {
   const repliesResult = useReplies(postId);
   const attachments = useAttachments(postId);
   const [editing, setEditing] = useState(false);
+  const showSkeleton = useDeferredFlag(150);
 
   useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
 
@@ -38,6 +40,7 @@ export function RedesignPostPage() {
   }, [postId, post?.lastActivityAt]);
 
   if (post === undefined) {
+    if (!showSkeleton) return null;
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <LoadingState label="Loading post" preset="post" />
@@ -124,7 +127,9 @@ export function RedesignPostPage() {
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
         {repliesResult.status === "LoadingFirstPage" ? (
-          <LoadingState label="Loading replies" preset="feed" count={3} />
+          showSkeleton ? (
+            <LoadingState label="Loading replies" preset="feed" count={3} />
+          ) : null
         ) : (
           <ReplyTree replies={repliesResult.replies} postId={post._id} attachments={attachments} />
         )}

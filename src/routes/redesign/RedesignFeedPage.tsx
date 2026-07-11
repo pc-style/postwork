@@ -2,7 +2,7 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { LoadingState } from "../../components/LoadingState";
-import { ToggleButton } from "../../components/SelectionGroup";
+import type { ReactNode } from "react";
 import { PRIORITIES, SPACES, priorityStyles, timeAgo } from "../../lib/format";
 import {
   useFeed,
@@ -12,6 +12,7 @@ import {
 } from "../../lib/store";
 import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
+import { useDeferredFlag } from "../../lib/useDeferredFlag";
 import type { FeedSearch } from "../../router";
 
 export function RedesignFeedPage() {
@@ -41,20 +42,18 @@ export function RedesignFeedPage() {
   const posts = searching ? searchResults : feed?.posts;
   const canLoadMore = !searching && feed?.status === "CanLoadMore";
   const loadingMore = !searching && feed?.status === "LoadingMore";
+  const showSkeleton = useDeferredFlag(150);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
       <div className="relative">
         <label htmlFor="feed-search" className="sr-only">Search posts</label>
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">
-          /
-        </span>
         <input
           id="feed-search"
           value={term}
           onChange={(event) => setSearch({ q: event.target.value || undefined })}
           placeholder="Search by title, text, or teammate"
-          className="ui-field pl-8 pr-20"
+          className="ui-field pr-20"
         />
         {searching ? (
           <button
@@ -68,50 +67,45 @@ export function RedesignFeedPage() {
       </div>
 
       {!searching ? (
-        <div className="my-5 grid gap-3 border-b border-border pb-5">
-          <div className="flex flex-wrap gap-2" aria-label="Space filters">
-            <ToggleButton
-              pressed={!space}
-              onPressedChange={() => setSearch({ space: undefined })}
-            >
+        <div className="my-5 grid gap-2 border-b border-border pb-5 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Space filters">
+            <FilterText pressed={!space} onClick={() => setSearch({ space: undefined })}>
               all spaces
-            </ToggleButton>
+            </FilterText>
             {SPACES.map((item) => (
-              <ToggleButton
+              <FilterText
                 key={item}
                 pressed={space === item}
-                onPressedChange={() => setSearch({ space: item })}
+                onClick={() => setSearch({ space: item })}
               >
                 {item}
-              </ToggleButton>
+              </FilterText>
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-2" aria-label="Feed filters">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Feed filters">
             {PRIORITIES.map((item) => (
-              <ToggleButton
+              <FilterText
                 key={item}
                 pressed={priority === item}
-                onPressedChange={(pressed) =>
-                  setSearch({ priority: pressed ? item : undefined })
-                }
+                onClick={() => setSearch({ priority: priority === item ? undefined : item })}
               >
                 {item}
-              </ToggleButton>
+              </FilterText>
             ))}
-            <ToggleButton
+            <FilterText
               pressed={onlyUnread}
-              onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}
+              onClick={() => setSearch({ unread: !onlyUnread || undefined })}
             >
               unread
-            </ToggleButton>
-            <Button
-              variant="quiet"
-              size="sm"
-              className="ml-auto min-h-11"
+            </FilterText>
+            <span className="ml-auto" />
+            <button
+              type="button"
               onClick={() => store.markAllRead()}
+              className="inline-flex min-h-11 items-center text-sm lowercase text-muted transition-colors hover:text-fg sm:min-h-9"
             >
               mark all read
-            </Button>
+            </button>
           </div>
         </div>
       ) : (
@@ -123,7 +117,9 @@ export function RedesignFeedPage() {
       )}
 
       {posts === undefined ? (
-        <LoadingState label={searching ? "Searching posts" : "Loading posts"} preset="feed" count={5} />
+        showSkeleton ? (
+          <LoadingState label={searching ? "Searching posts" : "Loading posts"} preset="feed" count={5} />
+        ) : null
       ) : posts.length === 0 && !canLoadMore ? (
         <EmptyState>
           {searching
@@ -209,5 +205,30 @@ function FeedRow({ post }: { post: EnrichedPost }) {
         ) : null}
       </p>
     </Link>
+  );
+}
+
+function FilterText({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={`inline-flex min-h-11 items-center lowercase transition-colors sm:min-h-9 ${
+        pressed
+          ? "font-medium text-fg"
+          : "text-muted hover:text-fg"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
