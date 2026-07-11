@@ -17,6 +17,7 @@ import { RequireAuth } from "./routes/gates";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
 import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
+import { CatchUpPage } from "./routes/redesign/CatchUpPage";
 import { AdminLayout } from "./routes/admin/AdminShell";
 import { AdminOverviewPage } from "./routes/admin/AdminOverviewPage";
 import { AdminUsersPage } from "./routes/admin/AdminUsersPage";
@@ -94,6 +95,12 @@ const appPostRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/posts/$postId",
   component: RedesignPostPage,
+});
+
+const appCatchUpRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/catch-up",
+  component: CatchUpPage,
 });
 
 const appAgentsRoute = createRoute({
@@ -260,6 +267,7 @@ const routeTree = rootRoute.addChildren([
   joinRoute,
   appLayoutRoute.addChildren([
     appFeedRoute,
+    appCatchUpRoute,
     appPostRoute,
     appAgentsRoute,
     appSpacesRoute,

@@ -15,6 +15,7 @@ export function RedesignShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const showComposerDock =
     !pathname.startsWith("/app/posts/") &&
+    !pathname.startsWith("/app/catch-up") &&
     !pathname.startsWith("/app/flash-experiments");
 
   return (
@@ -50,6 +51,7 @@ export function RedesignLayout() {
 
 const NAV = [
   { label: "home", to: "/app" as const, search: {} as const, exact: true },
+  { label: "catch up", to: "/app/catch-up" as const, exact: false },
   {
     label: "priority",
     to: "/app" as const,
