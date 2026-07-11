@@ -61,6 +61,7 @@ export default defineSchema({
     // cannot write; their existing content stays.
     deactivatedAt: v.optional(v.number()),
   })
+    .index("by_token_identifier", ["tokenIdentifier"])
     .index("by_org_id_and_token_identifier", ["orgId", "tokenIdentifier"])
     .index("by_org_id_and_subject", ["orgId", "subject"])
     .index("by_org_id_and_role", ["orgId", "role"]),

@@ -146,14 +146,21 @@ export async function findUserForIdentity(
   identity: AuthIdentity,
   orgId?: Id<"orgs">,
 ): Promise<Doc<"users"> | null> {
-  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
+  // tokenIdentifier includes the issuer and subject and is the canonical,
+  // globally stable identity key. Resolve it without guessing an org so an
+  // authenticated member can be found in whichever org owns their user row.
   const byToken = await ctx.db
     .query("users")
-    .withIndex("by_org_id_and_token_identifier", (q) =>
-      q.eq("orgId", resolvedOrgId).eq("tokenIdentifier", identity.tokenIdentifier),
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
     )
-    .first();
-  if (byToken) return byToken;
+    .unique();
+  if (byToken && (orgId === undefined || byToken.orgId === orgId)) return byToken;
+  if (byToken) return null;
+
+  // Legacy subject-only rows predate tokenIdentifier. Keep that migration path
+  // explicitly org-scoped; subject alone is not safe as a global identity key.
+  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
 
   const bySubject = await ctx.db
     .query("users")
@@ -230,8 +237,10 @@ export async function ensureViewerUser(
     unauthenticated(options?.unauthenticatedMessage ?? "Sign in to continue.");
   }
 
-  const orgId = await ensureDefaultOrg(ctx);
-  const existing = await findUserForIdentity(ctx, identity, orgId);
+  // Resolve the canonical token globally before selecting an organization.
+  // Existing identities keep the org that owns their user row; the default org
+  // is only a creation target for identities that do not exist yet.
+  const existing = await findUserForIdentity(ctx, identity);
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
@@ -264,7 +273,10 @@ export async function ensureViewerUser(
     }
     if (!existing.avatarColor) patch.avatarColor = colorFor(identity.tokenIdentifier);
     if (!existing.role) {
-      patch.role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
+      patch.role =
+        existing.orgId && (await countAdmins(ctx, existing.orgId)) === 0
+          ? "admin"
+          : "member";
     }
 
     if (Object.keys(patch).length > 0) {
@@ -275,6 +287,7 @@ export async function ensureViewerUser(
     return existing;
   }
 
+  const orgId = await ensureDefaultOrg(ctx);
   const role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
   const avatarColor = colorFor(identity.tokenIdentifier);
   const userId = await ctx.db.insert("users", {
@@ -333,11 +346,12 @@ export async function isSpaceMember(
   spaceId: Id<"spaces">,
   userId: Id<"users">,
 ): Promise<boolean> {
-  const orgId = await getDefaultOrgId(ctx);
+  const viewer = await ctx.db.get(userId);
+  if (!viewer?.orgId) return false;
   const membership = await ctx.db
     .query("spaceMemberships")
     .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
-      q.eq("orgId", orgId).eq("spaceId", spaceId).eq("userId", userId),
+      q.eq("orgId", viewer.orgId).eq("spaceId", spaceId).eq("userId", userId),
     )
     .unique();
   return membership !== null;

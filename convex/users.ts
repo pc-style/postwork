@@ -53,11 +53,12 @@ export const list = query({
     // The org directory is members-only. Demo mode has no auth (the client
     // switcher picks a persona), so it stays open there; product mode requires
     // an activated viewer — pending/signed-out users get nothing.
+    let viewer: Doc<"users"> | null = null;
     if (!isDemo()) {
-      const viewer = await getViewerFromAuth(ctx);
+      viewer = await getViewerFromAuth(ctx);
       if (!viewer || viewer.status === "pending") return [];
     }
-    const orgId = await getDefaultOrgId(ctx);
+    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
     const users = await ctx.db
       .query("users")
       .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))

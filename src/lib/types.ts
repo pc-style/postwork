@@ -6,6 +6,8 @@ export type EnrichedPost = FunctionReturnType<typeof api.posts.feed>[number];
 export type EnrichedReply = FunctionReturnType<
   typeof api.replies.listForPost
 >[number];
+export type CatchUpDigest = FunctionReturnType<typeof api.posts.catchUpDigest>;
+export type CatchUpItem = CatchUpDigest["items"][number];
 
 export type Priority = (typeof PRIORITIES)[number];
 
