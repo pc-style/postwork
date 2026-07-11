@@ -27,8 +27,26 @@ describe("groupCatchUpItems", () => {
 });
 
 describe("catchUpSummaryPreview", () => {
-  test("keeps the tldr and removes later summary sections", () => {
+  test("accepts a tldr heading without a colon", () => {
+    expect(catchUpSummaryPreview("**TL;DR**\nDecision made.")).toBe("Decision made.");
+  });
+
+  test("accepts a tldr heading with a colon and surrounding whitespace", () => {
+    expect(catchUpSummaryPreview("  ** TL;DR: **  Decision made.")).toBe("Decision made.");
+  });
+
+  test("stops at an immediate later bold section heading", () => {
+    expect(catchUpSummaryPreview("**TL;DR:** Decision made.\n**Action items**\n- Ship it")).toBe("Decision made.");
+  });
+
+  test("stops at a later bold section heading after a blank line", () => {
     expect(catchUpSummaryPreview("**TL;DR**\nDecision made.\n\n**Action items**\n- Ship it")).toBe("Decision made.");
+  });
+
+  test("keeps a plain summary and removes only bold markup", () => {
+    expect(catchUpSummaryPreview("Decision **made** with the launch still on track.")).toBe(
+      "Decision made with the launch still on track.",
+    );
   });
 });
 
