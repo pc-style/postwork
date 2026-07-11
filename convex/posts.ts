@@ -33,6 +33,16 @@ import {
   type CatchUpDigest,
 } from "./catchUpComposer";
 
+const CATCH_UP_SCAN_LIMIT = 200;
+
+type CatchUpDigestResult = CatchUpDigest<EnrichedPost> & {
+  scan: {
+    scannedPosts: number;
+    maxPosts: number;
+    complete: boolean;
+  };
+};
+
 export type EnrichedPost = Doc<"posts"> & {
   author: PublicUser | null;
   participants: PublicUser[];
@@ -80,7 +90,7 @@ async function enrich(
  */
 export const catchUpDigest = query({
   args: {},
-  handler: async (ctx): Promise<CatchUpDigest<EnrichedPost>> => {
+  handler: async (ctx): Promise<CatchUpDigestResult> => {
     const viewer = await getViewerFromAuth(ctx);
     if (!viewer) unauthenticated("Sign in to view your catch-up digest.");
     if (viewer.status === "pending" || viewer.deactivatedAt) {
@@ -98,7 +108,7 @@ export const catchUpDigest = query({
         q.eq("orgId", viewer.orgId),
       )
       .order("desc")
-      .take(200);
+      .take(CATCH_UP_SCAN_LIMIT);
 
     const allowed: Doc<"posts">[] = [];
     for (const post of posts) {
@@ -109,7 +119,7 @@ export const catchUpDigest = query({
       allowed.map((post) => enrich(ctx, post, viewer._id)),
     );
 
-    return composeCatchUpDigest(
+    const digest = composeCatchUpDigest(
       enriched.map((post) => ({
         post,
         postId: post._id,
@@ -124,6 +134,16 @@ export const catchUpDigest = query({
       })),
       DEFAULT_CATCH_UP_LIMIT,
     );
+    return {
+      ...digest,
+      scan: {
+        scannedPosts: posts.length,
+        maxPosts: CATCH_UP_SCAN_LIMIT,
+        // Exactly hitting the cap is conservatively reported as incomplete:
+        // another matching row may exist outside the bounded window.
+        complete: posts.length < CATCH_UP_SCAN_LIMIT,
+      },
+    };
   },
 });
 
@@ -132,7 +152,9 @@ export async function listPostsBySpaceId(
   spaceId: Id<"spaces">,
   viewerId: Id<"users"> | undefined,
 ): Promise<EnrichedPost[]> {
-  const orgId = await getDefaultOrgId(ctx);
+  const space = await ctx.db.get(spaceId);
+  if (!space?.orgId) return [];
+  const orgId = space.orgId;
   const posts = await ctx.db
     .query("posts")
     .withIndex("by_org_id_and_space_id_and_last_activity_at", (q) =>

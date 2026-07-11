@@ -29,8 +29,8 @@ export type CatchUpItem<TPost> = {
 
 export type CatchUpDigest<TPost> = {
   items: CatchUpItem<TPost>[];
-  totalEligible: number;
-  omittedCount: number;
+  eligibleInWindow: number;
+  omittedEligibleInWindow: number;
 };
 
 const PRIORITY_ORDER: Record<CatchUpPriority, number> = {
@@ -59,8 +59,8 @@ export function composeCatchUpDigest<TPost>(
       post: candidate.post,
       summary: projectSummary(candidate),
     })),
-    totalEligible: eligible.length,
-    omittedCount: Math.max(0, eligible.length - boundedLimit),
+    eligibleInWindow: eligible.length,
+    omittedEligibleInWindow: Math.max(0, eligible.length - boundedLimit),
   };
 }
 

@@ -46,7 +46,10 @@ describe("composeCatchUpDigest", () => {
       "high-old",
       "normal",
     ]);
-    expect(digest).toMatchObject({ totalEligible: 6, omittedCount: 0 });
+    expect(digest).toMatchObject({
+      eligibleInWindow: 6,
+      omittedEligibleInWindow: 0,
+    });
   });
 
   test("retains stale and missing summaries with explicit status and bounds output", () => {
@@ -63,6 +66,9 @@ describe("composeCatchUpDigest", () => {
       "missing",
       "stale",
     ]);
-    expect(digest).toMatchObject({ totalEligible: 3, omittedCount: 1 });
+    expect(digest).toMatchObject({
+      eligibleInWindow: 3,
+      omittedEligibleInWindow: 1,
+    });
   });
 });

@@ -146,14 +146,21 @@ export async function findUserForIdentity(
   identity: AuthIdentity,
   orgId?: Id<"orgs">,
 ): Promise<Doc<"users"> | null> {
-  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
+  // tokenIdentifier includes the issuer and subject and is the canonical,
+  // globally stable identity key. Resolve it without guessing an org so an
+  // authenticated member can be found in whichever org owns their user row.
   const byToken = await ctx.db
     .query("users")
-    .withIndex("by_org_id_and_token_identifier", (q) =>
-      q.eq("orgId", resolvedOrgId).eq("tokenIdentifier", identity.tokenIdentifier),
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
     )
-    .first();
-  if (byToken) return byToken;
+    .unique();
+  if (byToken && (orgId === undefined || byToken.orgId === orgId)) return byToken;
+  if (byToken) return null;
+
+  // Legacy subject-only rows predate tokenIdentifier. Keep that migration path
+  // explicitly org-scoped; subject alone is not safe as a global identity key.
+  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
 
   const bySubject = await ctx.db
     .query("users")
@@ -333,11 +340,12 @@ export async function isSpaceMember(
   spaceId: Id<"spaces">,
   userId: Id<"users">,
 ): Promise<boolean> {
-  const orgId = await getDefaultOrgId(ctx);
+  const viewer = await ctx.db.get(userId);
+  if (!viewer?.orgId) return false;
   const membership = await ctx.db
     .query("spaceMemberships")
     .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
-      q.eq("orgId", orgId).eq("spaceId", spaceId).eq("userId", userId),
+      q.eq("orgId", viewer.orgId).eq("spaceId", spaceId).eq("userId", userId),
     )
     .unique();
   return membership !== null;

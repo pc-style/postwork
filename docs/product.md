@@ -84,10 +84,11 @@ activity feed and not an outbound-notification queue.
   activity comes first; post creation time breaks equal-activity ties, then the
   stable post ID breaks any remaining tie. The same data therefore produces the
   same order.
-- Recency affects order, not eligibility. The backend considers a bounded window
-  of the 200 most recently active org posts and returns at most 25 eligible
-  items, with `totalEligible` and `omittedCount` so the surface can be honest
-  about truncation.
+- Recency affects order within a bounded scan. The backend considers at most the
+  200 most recently active org posts and returns at most 25 eligible items.
+  `eligibleInWindow` and `omittedEligibleInWindow` describe only that scanned
+  window. `scan.complete` is false whenever the query hits its 200-post cap, so
+  callers never mistake the window's counts for a complete org-wide total.
 - Summary quality never hides an unread post. Every item declares its summary as
   `fresh`, `stale`, or `missing`; stale means activity advanced beyond the stored
   summary timestamp. Missing and stale items remain in their normal priority and
