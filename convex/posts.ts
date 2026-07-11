@@ -10,7 +10,9 @@ import {
   notFound,
   requireSpaceMember,
   resolveViewerForRead,
+  getViewerFromAuth,
   getDefaultOrgId,
+  unauthenticated,
 } from "./authUsers";
 import { priority } from "./schema";
 import { publicUser, type PublicUser } from "./users";
@@ -25,6 +27,11 @@ import {
 import { logInfo } from "./lib/observability";
 import { isSummaryStale } from "./lib/summaryStaleness";
 import { validateStoredAttachment } from "./lib/attachmentStorage";
+import {
+  composeCatchUpDigest,
+  DEFAULT_CATCH_UP_LIMIT,
+  type CatchUpDigest,
+} from "./catchUpComposer";
 
 export type EnrichedPost = Doc<"posts"> & {
   author: PublicUser | null;
@@ -65,6 +72,60 @@ async function enrich(
 
   return { ...post, author, participants, unread, isStale, lastReadAt };
 }
+
+/**
+ * Viewer-specific return-to-work digest. Unlike the demo-capable feed, this
+ * endpoint always requires an active authenticated member and never accepts a
+ * caller-selected viewer or organization.
+ */
+export const catchUpDigest = query({
+  args: {},
+  handler: async (ctx): Promise<CatchUpDigest<EnrichedPost>> => {
+    const viewer = await getViewerFromAuth(ctx);
+    if (!viewer) unauthenticated("Sign in to view your catch-up digest.");
+    if (viewer.status === "pending" || viewer.deactivatedAt) {
+      forbidden("Your account cannot access the catch-up digest.");
+    }
+    if (!viewer.orgId) {
+      forbidden("Your account is not assigned to an organization.");
+    }
+
+    // The digest is intentionally a bounded view of recent team activity. The
+    // composer reports any eligible items omitted from its smaller UI payload.
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_org_id_and_last_activity_at", (q) =>
+        q.eq("orgId", viewer.orgId),
+      )
+      .order("desc")
+      .take(200);
+
+    const allowed: Doc<"posts">[] = [];
+    for (const post of posts) {
+      if (await canAccessPost(ctx, post, viewer._id)) allowed.push(post);
+    }
+
+    const enriched = await Promise.all(
+      allowed.map((post) => enrich(ctx, post, viewer._id)),
+    );
+
+    return composeCatchUpDigest(
+      enriched.map((post) => ({
+        post,
+        postId: post._id,
+        priority: post.priority,
+        unread: post.unread,
+        createdAt: post.createdAt,
+        lastActivityAt: post.lastActivityAt,
+        summary: post.summary,
+        summaryModel: post.summaryModel,
+        summaryUpdatedAt: post.summaryUpdatedAt,
+        isStale: post.isStale,
+      })),
+      DEFAULT_CATCH_UP_LIMIT,
+    );
+  },
+});
 
 export async function listPostsBySpaceId(
   ctx: QueryCtx,
