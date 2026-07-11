@@ -6,7 +6,6 @@ import {
   decideMediaFile,
   formatMediaSize,
   getMediaKind,
-  MEDIA_ALLOWED_TYPES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_IMAGE_DIMENSION,
   UNSUPPORTED_MEDIA_MESSAGE,
@@ -14,8 +13,6 @@ import {
 } from "./media";
 import { isLocalId } from "./store";
 import type { AttachmentInput, AttachmentWithUrl } from "./types";
-
-export const ATTACHMENT_ALLOWED_TYPES = MEDIA_ALLOWED_TYPES;
 
 type MediaMetadata = {
   width?: number;
@@ -112,18 +109,21 @@ export function useAttachmentUpload() {
 
   const upload = async (originalFile: File): Promise<AttachmentInput> => {
     if (originalFile.size === 0) throw new Error("Media files cannot be empty.");
-    const initialKind = getMediaKind(originalFile.type);
+    const contentType = originalFile.type || "application/octet-stream";
+    const initialKind = getMediaKind(contentType);
     if (!initialKind) {
       throw new Error(UNSUPPORTED_MEDIA_MESSAGE);
     }
     const preliminaryDecision = decideMediaFile({
-      contentType: originalFile.type,
+      contentType,
       size: originalFile.size,
     });
     if (!preliminaryDecision.accepted) throw new Error(preliminaryDecision.reason);
-    const initialMetadata = await loadMediaMetadata(originalFile, initialKind);
+    const initialMetadata = initialKind === "file"
+      ? {}
+      : await loadMediaMetadata(originalFile, initialKind);
     const initialDecision = decideMediaFile({
-      contentType: originalFile.type,
+      contentType,
       size: originalFile.size,
       ...initialMetadata,
     });
@@ -140,7 +140,7 @@ export function useAttachmentUpload() {
       }
     }
     const finalDecision = decideMediaFile({
-      contentType: optimized.file.type,
+      contentType,
       size: optimized.file.size,
       ...optimized.metadata,
     });
@@ -151,7 +151,7 @@ export function useAttachmentUpload() {
     const { postUrl, uploadToken } = await generateUploadUrl({});
     const response = await fetch(postUrl, {
       method: "POST",
-      headers: { "Content-Type": optimized.file.type },
+      headers: { "Content-Type": contentType },
       body: optimized.file,
     });
     if (!response.ok) throw new Error("Upload failed. Try again.");
@@ -163,7 +163,7 @@ export function useAttachmentUpload() {
       storageId: payload.storageId,
       uploadToken,
       filename: originalFile.name,
-      contentType: optimized.file.type,
+      contentType,
       mediaKind: finalDecision.kind,
       size: optimized.file.size,
       width: optimized.metadata.width,

@@ -12,24 +12,38 @@ export const MEDIA_ALLOWED_TYPES = [
 ] as const;
 
 export type MediaContentType = (typeof MEDIA_ALLOWED_TYPES)[number];
-export type MediaKind = "image" | "video";
+export type MediaKind = "image" | "video" | "file";
 
 export const MEDIA_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MEDIA_MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MEDIA_MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MEDIA_MAX_PER_MESSAGE = 8;
-export const UNSUPPORTED_MEDIA_MESSAGE = "Choose a PNG, JPEG, GIF, WebP, MP4, or WebM file.";
+export const UNSUPPORTED_MEDIA_MESSAGE =
+  "Choose an image up to 10 MB, a video up to 50 MB, or a file up to 25 MB.";
 
 export function getMediaKind(contentType: string): MediaKind | null {
-  if (!(MEDIA_ALLOWED_TYPES as readonly string[]).includes(contentType)) return null;
+  if (!contentType.trim()) return null;
+  if (!(MEDIA_ALLOWED_TYPES as readonly string[]).includes(contentType)) return "file";
   return contentType.startsWith("video/") ? "video" : "image";
 }
 
 export function mediaMaxBytes(contentType: string): number | null {
   const kind = getMediaKind(contentType);
   if (!kind) return null;
-  return kind === "video" ? MEDIA_MAX_VIDEO_BYTES : MEDIA_MAX_IMAGE_BYTES;
+  if (kind === "video") return MEDIA_MAX_VIDEO_BYTES;
+  return kind === "image" ? MEDIA_MAX_IMAGE_BYTES : MEDIA_MAX_FILE_BYTES;
 }
 
 export function formatMediaSize(bytes: number): string {
   return `${bytes / (1024 * 1024)} MB`;
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+
+  const kilobytes = bytes / 1024;
+  if (kilobytes < 1024) return `${kilobytes.toFixed(1).replace(/\.0$/, "")} KB`;
+
+  const megabytes = kilobytes / 1024;
+  return `${megabytes.toFixed(1).replace(/\.0$/, "")} MB`;
 }

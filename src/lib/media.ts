@@ -1,7 +1,9 @@
 import {
+  formatFileSize,
   formatMediaSize,
   getMediaKind,
   MEDIA_ALLOWED_TYPES,
+  MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_PER_MESSAGE,
   MEDIA_MAX_VIDEO_BYTES,
@@ -11,9 +13,11 @@ import {
 } from "../../convex/lib/mediaPolicy";
 
 export {
+  formatFileSize,
   formatMediaSize,
   getMediaKind,
   MEDIA_ALLOWED_TYPES,
+  MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_PER_MESSAGE,
   MEDIA_MAX_VIDEO_BYTES,
@@ -44,7 +48,8 @@ export function decideMediaFile(input: {
   if (input.size === 0) {
     return { accepted: false, reason: "Media files cannot be empty." };
   }
-  const kind = getMediaKind(input.contentType);
+  const contentType = input.contentType || "application/octet-stream";
+  const kind = getMediaKind(contentType);
   if (!kind) {
     return {
       accepted: false,
@@ -52,14 +57,23 @@ export function decideMediaFile(input: {
     };
   }
 
-  const maxBytes = kind === "image" ? MEDIA_MAX_IMAGE_BYTES : MEDIA_MAX_VIDEO_BYTES;
+  const maxBytes = kind === "image"
+    ? MEDIA_MAX_IMAGE_BYTES
+    : kind === "video"
+      ? MEDIA_MAX_VIDEO_BYTES
+      : MEDIA_MAX_FILE_BYTES;
+  if (kind === "file") {
+    return input.size <= maxBytes
+      ? { accepted: true, kind, optimize: false, maxBytes }
+      : { accepted: false, reason: `Files must be ${formatMediaSize(maxBytes)} or smaller.` };
+  }
   if (kind === "video") {
     return input.size <= maxBytes
       ? { accepted: true, kind, optimize: false, maxBytes }
       : { accepted: false, reason: `Videos must be ${formatMediaSize(maxBytes)} or smaller.` };
   }
 
-  const safeToOptimize = SAFE_OPTIMIZATION_TYPES.has(input.contentType);
+  const safeToOptimize = SAFE_OPTIMIZATION_TYPES.has(contentType);
   if (input.size > maxBytes && !safeToOptimize) {
     return {
       accepted: false,

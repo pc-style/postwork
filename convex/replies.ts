@@ -160,7 +160,7 @@ export const create = mutation({
           uploadToken: v.id("attachmentUploadTickets"),
           filename: v.string(),
           contentType: v.string(),
-          mediaKind: v.union(v.literal("image"), v.literal("video")),
+          mediaKind: v.union(v.literal("image"), v.literal("video"), v.literal("file")),
           size: v.number(),
           width: v.optional(v.number()),
           height: v.optional(v.number()),

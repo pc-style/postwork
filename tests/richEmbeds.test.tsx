@@ -26,6 +26,26 @@ describe("rich embed URL parsing", () => {
   });
 });
 
+describe("direct video-file URLs", () => {
+  test.each([
+    ["https://bucket.example.com/clips/demo.mp4", "video/mp4"],
+    ["https://cdn.example.com/screen.WEBM", "video/webm"],
+  ])("previews %s as a native video", (source, contentType) => {
+    const preview = buildRichPreview(source);
+    expect(preview?.kind).toBe("video");
+    if (preview?.kind === "video") {
+      expect(preview.contentType).toBe(contentType);
+      expect(preview.sourceUrl).toBe(new URL(source).toString());
+    }
+  });
+
+  test("insecure or non-video URLs stay plain links", () => {
+    expect(buildRichPreview("http://bucket.example.com/demo.mp4")?.kind).toBe("link");
+    expect(buildRichPreview("https://bucket.example.com/demo.mov")?.kind).toBe("link");
+    expect(buildRichPreview("https://bucket.example.com/page?file=demo.mp4")?.kind).toBe("link");
+  });
+});
+
 describe("trusted provider normalization", () => {
   test.each([
     ["https://youtu.be/dQw4w9WgXcQ?t=10", "youtube", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"],
@@ -69,8 +89,8 @@ describe("trusted provider normalization", () => {
     expect(isTrustedGifUrl(url)).toBe(expected);
   });
 
-  test("falls back to a link for a non-image Giphy resource", () => {
-    expect(buildRichPreview("https://media0.giphy.com/media/one/giphy.mp4")?.kind).toBe("link");
+  test("previews a Giphy MP4 as a native video", () => {
+    expect(buildRichPreview("https://media0.giphy.com/media/one/giphy.mp4")?.kind).toBe("video");
   });
 });
 

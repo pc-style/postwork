@@ -22,6 +22,12 @@ export type RichPreview =
       title: string;
     }
   | {
+      kind: "video";
+      sourceUrl: string;
+      contentType: "video/mp4" | "video/webm";
+      title: string;
+    }
+  | {
       kind: "link";
       sourceUrl: string;
       hostname: string;
@@ -200,11 +206,35 @@ export function isTrustedGifUrl(value: string): boolean {
   return trustedHost && /\.(?:gif|webp|png)$/i.test(url.pathname);
 }
 
+/**
+ * Direct video-file URLs (for example a video dropped on a storage bucket)
+ * play inline with a native player instead of rendering as a plain link.
+ * HTTPS only, so embedded players never introduce mixed content.
+ */
+export function matchDirectVideoUrl(
+  value: string,
+): { sourceUrl: string; contentType: "video/mp4" | "video/webm" } | null {
+  const url = trustedUrl(value);
+  if (!url || url.protocol !== "https:") return null;
+  const pathname = url.pathname.toLowerCase();
+  if (pathname.endsWith(".mp4")) {
+    return { sourceUrl: url.toString(), contentType: "video/mp4" };
+  }
+  if (pathname.endsWith(".webm")) {
+    return { sourceUrl: url.toString(), contentType: "video/webm" };
+  }
+  return null;
+}
+
 export function buildRichPreview(value: string): RichPreview | null {
   const embed = matchTrustedEmbed(value);
   if (embed) return embed;
   if (isTrustedGifUrl(value)) {
     return { kind: "image", sourceUrl: new URL(value).toString(), title: "GIF" };
+  }
+  const directVideo = matchDirectVideoUrl(value);
+  if (directVideo) {
+    return { kind: "video", ...directVideo, title: "Video" };
   }
   const url = trustedUrl(value);
   if (!url) return null;

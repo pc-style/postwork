@@ -1,8 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  useAttachmentUpload,
-  ATTACHMENT_ALLOWED_TYPES,
-} from "../lib/attachments";
+import { useAttachmentUpload } from "../lib/attachments";
 import {
   getMediaKind,
   MEDIA_MAX_PER_MESSAGE,
@@ -44,7 +41,9 @@ export function useAttachmentPicker() {
   const addFiles = useCallback(
     async (files: FileList | File[]) => {
       const selected = Array.from(files);
-      const supported = selected.filter((file) => getMediaKind(file.type) !== null);
+      const supported = selected.filter(
+        (file) => getMediaKind(file.type || "application/octet-stream") !== null,
+      );
       const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
       const accepted = supported.slice(0, available);
       setLimitError(
@@ -60,14 +59,15 @@ export function useAttachmentPicker() {
       for (const file of accepted) {
         counter.current += 1;
         const key = `att-${counter.current}`;
-        const previewUrl = URL.createObjectURL(file);
+        const mediaKind = getMediaKind(file.type || "application/octet-stream");
+        const previewUrl = mediaKind === "file" ? "" : URL.createObjectURL(file);
         setPending((prev) => [
           ...prev,
           {
             key,
             previewUrl,
             filename: file.name,
-            mediaKind: getMediaKind(file.type),
+            mediaKind,
             uploading: true,
           },
         ]);
@@ -100,7 +100,7 @@ export function useAttachmentPicker() {
     setLimitError(null);
     setPending((prev) => {
       const entry = prev.find((p) => p.key === key);
-      if (entry) URL.revokeObjectURL(entry.previewUrl);
+      if (entry?.previewUrl) URL.revokeObjectURL(entry.previewUrl);
       return prev.filter((p) => p.key !== key);
     });
   }, []);
@@ -118,7 +118,7 @@ export function useAttachmentPicker() {
 
   const clear = useCallback(() => {
     setPending((prev) => {
-      for (const p of prev) URL.revokeObjectURL(p.previewUrl);
+      for (const p of prev) if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
       return [];
     });
     setLimitError(null);
@@ -156,9 +156,8 @@ export function AttachmentButton({
       <input
         ref={ref}
         type="file"
-        accept={ATTACHMENT_ALLOWED_TYPES.join(",")}
         multiple
-        aria-label="Choose image or video attachments"
+        aria-label="Choose file attachments"
         className="hidden"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) onFiles(e.target.files);
@@ -208,8 +207,11 @@ export function AttachmentThumbnails({
               className="size-full object-cover"
             />
           ) : (
-            <div className="flex size-full items-center justify-center p-2 text-center text-[10px] text-muted">
-              unsupported file
+            <div className="flex size-full flex-col items-center justify-center gap-1 p-2 text-muted">
+              <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
+                <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+              <span className="max-w-full truncate text-[10px]">{p.filename}</span>
             </div>
           )}
           {p.uploading && (
