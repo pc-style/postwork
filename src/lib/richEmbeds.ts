@@ -37,7 +37,7 @@ const FIGMA_KEY = /^[A-Za-z0-9]{8,128}$/;
 
 function withoutCode(text: string): string {
   return text
-    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/```[\s\S]*?(?:```|$)/g, " ")
     .replace(/`[^`\n]*`/g, " ");
 }
 
@@ -196,7 +196,8 @@ export function isTrustedGifUrl(value: string): boolean {
   const url = trustedUrl(value);
   if (!url || url.protocol !== "https:") return false;
   const host = url.hostname.toLowerCase();
-  return /^media\d*\.giphy\.com$/.test(host) || host === "i.giphy.com";
+  const trustedHost = /^media\d*\.giphy\.com$/.test(host) || host === "i.giphy.com";
+  return trustedHost && /\.(?:gif|webp|png)$/i.test(url.pathname);
 }
 
 export function buildRichPreview(value: string): RichPreview | null {

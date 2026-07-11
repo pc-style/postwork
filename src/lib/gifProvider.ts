@@ -64,7 +64,13 @@ export function createGiphyProvider(apiKey: string | undefined, fetcher: Fetcher
 
       const response = await fetcher(url, { signal });
       if (!response.ok) throw new Error("GIF search is unavailable right now.");
-      return parseGiphyResponse(await response.json());
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new Error("GIF search is unavailable right now.");
+      }
+      return parseGiphyResponse(body);
     },
   };
 }

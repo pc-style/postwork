@@ -3,6 +3,7 @@ import { MAX_RICH_PREVIEWS_PER_BODY, RichEmbedList } from "../src/components/Ric
 import {
   buildRichPreview,
   extractUrls,
+  isTrustedGifUrl,
   matchTrustedEmbed,
 } from "../src/lib/richEmbeds";
 
@@ -18,6 +19,10 @@ describe("rich embed URL parsing", () => {
     expect(extractUrls("`https://inline.test`\n```txt\nhttps://block.test\n```\nhttps://kept.test")).toEqual([
       "https://kept.test/",
     ]);
+  });
+
+  test("ignores URLs in an unfinished code fence through end of input", () => {
+    expect(extractUrls("Before\n```txt\nhttps://block.test\nhttps://still-code.test")).toEqual([]);
   });
 });
 
@@ -52,6 +57,20 @@ describe("trusted provider normalization", () => {
 
   test("keeps non-allowlisted URLs as links", () => {
     expect(buildRichPreview("https://example.com/article?id=7")?.kind).toBe("link");
+  });
+
+  test.each([
+    ["https://media0.giphy.com/media/one/giphy.gif", true],
+    ["https://i.giphy.com/one.webp", true],
+    ["https://media0.giphy.com/media/one/giphy.mp4", false],
+    ["https://media0.giphy.com/media/one/metadata.json", false],
+    ["https://media0.giphy.com/media/one/", false],
+  ])("accepts only image resources from trusted Giphy hosts: %s", (url, expected) => {
+    expect(isTrustedGifUrl(url)).toBe(expected);
+  });
+
+  test("falls back to a link for a non-image Giphy resource", () => {
+    expect(buildRichPreview("https://media0.giphy.com/media/one/giphy.mp4")?.kind).toBe("link");
   });
 });
 

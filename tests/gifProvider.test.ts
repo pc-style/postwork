@@ -45,4 +45,9 @@ describe("Giphy provider", () => {
     const provider = createGiphyProvider("test-key", async () => new Response("secret", { status: 500 }));
     await expect(provider.search("hello")).rejects.toThrow("unavailable");
   });
+
+  test("surfaces malformed successful responses as a friendly provider failure", async () => {
+    const provider = createGiphyProvider("test-key", async () => new Response("not JSON"));
+    await expect(provider.search("hello")).rejects.toThrow("GIF search is unavailable right now.");
+  });
 });
