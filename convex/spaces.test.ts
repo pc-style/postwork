@@ -40,6 +40,66 @@ async function setup(role: Role) {
 }
 
 describe("space creation", () => {
+  test("keeps a canonical identity in its existing non-default organization", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = "https://issuer.example|acme-member";
+    const { defaultOrgId, orgId, userId } = await t.run(async (ctx) => {
+      const defaultOrgId = await ctx.db.insert("orgs", {
+        name: "Postwork Demo",
+        slug: "postwork-demo",
+        createdAt: 1,
+      });
+      const orgId = await ctx.db.insert("orgs", {
+        name: "Acme",
+        slug: "acme",
+        createdAt: 2,
+      });
+      const userId = await ctx.db.insert("users", {
+        orgId,
+        name: "Acme Member",
+        title: "Teammate",
+        avatarColor: "#8c1862",
+        initials: "AM",
+        role: "member",
+        status: "active",
+        tokenIdentifier,
+        subject: "acme-member",
+      });
+      return { defaultOrgId, orgId, userId };
+    });
+    const authed = t.withIdentity({
+      tokenIdentifier,
+      subject: "acme-member",
+      issuer: "https://issuer.example",
+    });
+
+    const created = await authed.mutation(api.spaces.create, {
+      name: "Acme Planning",
+    });
+
+    const state = await t.run(async (ctx) => ({
+      users: await ctx.db
+        .query("users")
+        .withIndex("by_token_identifier", (q) =>
+          q.eq("tokenIdentifier", tokenIdentifier),
+        )
+        .collect(),
+      space: await ctx.db.get(created.spaceId),
+      membership: await ctx.db
+        .query("spaceMemberships")
+        .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
+          q.eq("orgId", orgId).eq("spaceId", created.spaceId).eq("userId", userId),
+        )
+        .unique(),
+    }));
+
+    expect(state.users).toHaveLength(1);
+    expect(state.users[0]).toMatchObject({ _id: userId, orgId });
+    expect(state.users[0].orgId).not.toBe(defaultOrgId);
+    expect(state.space).toMatchObject({ orgId, createdBy: userId });
+    expect(state.membership).toMatchObject({ orgId, userId });
+  });
+
   test("limits members to one space and adds the creator as a member", async () => {
     const { t, authed, orgId, userId } = await setup("member");
 

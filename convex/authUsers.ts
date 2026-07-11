@@ -237,8 +237,10 @@ export async function ensureViewerUser(
     unauthenticated(options?.unauthenticatedMessage ?? "Sign in to continue.");
   }
 
-  const orgId = await ensureDefaultOrg(ctx);
-  const existing = await findUserForIdentity(ctx, identity, orgId);
+  // Resolve the canonical token globally before selecting an organization.
+  // Existing identities keep the org that owns their user row; the default org
+  // is only a creation target for identities that do not exist yet.
+  const existing = await findUserForIdentity(ctx, identity);
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
@@ -271,7 +273,10 @@ export async function ensureViewerUser(
     }
     if (!existing.avatarColor) patch.avatarColor = colorFor(identity.tokenIdentifier);
     if (!existing.role) {
-      patch.role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
+      patch.role =
+        existing.orgId && (await countAdmins(ctx, existing.orgId)) === 0
+          ? "admin"
+          : "member";
     }
 
     if (Object.keys(patch).length > 0) {
@@ -282,6 +287,7 @@ export async function ensureViewerUser(
     return existing;
   }
 
+  const orgId = await ensureDefaultOrg(ctx);
   const role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
   const avatarColor = colorFor(identity.tokenIdentifier);
   const userId = await ctx.db.insert("users", {
