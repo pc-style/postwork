@@ -14,4 +14,11 @@ describe("insertContentUrl", () => {
       "before\nhttps://example.com/gif\nafter",
     );
   });
+
+  test("leaves a continuation line after an end-of-draft insertion", () => {
+    expect(insertContentUrl("draft", 5, 5, "https://media.giphy.com/media/abc/giphy.gif")).toEqual({
+      value: "draft\nhttps://media.giphy.com/media/abc/giphy.gif\n",
+      cursor: 50,
+    });
+  });
 });

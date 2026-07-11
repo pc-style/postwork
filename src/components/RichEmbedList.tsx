@@ -1,6 +1,7 @@
 import { buildRichPreview, extractUrls } from "../lib/richEmbeds";
 
 const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
+export const MAX_RICH_PREVIEWS_PER_BODY = 3;
 
 export function RichEmbedList({ text }: { text: string }) {
   const previews = [...new Map(
@@ -8,7 +9,7 @@ export function RichEmbedList({ text }: { text: string }) {
       .map(buildRichPreview)
       .filter((preview) => preview !== null)
       .map((preview) => [preview.sourceUrl, preview]),
-  ).values()];
+  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY);
 
   if (previews.length === 0) return null;
 

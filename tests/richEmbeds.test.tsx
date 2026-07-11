@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
-import { RichEmbedList } from "../src/components/RichEmbedList";
+import { MAX_RICH_PREVIEWS_PER_BODY, RichEmbedList } from "../src/components/RichEmbedList";
 import {
   buildRichPreview,
   extractUrls,
@@ -58,17 +57,33 @@ describe("trusted provider normalization", () => {
 
 describe("rich embed rendering", () => {
   test("renders trusted iframes with security and accessibility constraints", () => {
-    const html = renderToStaticMarkup(<RichEmbedList text="https://youtu.be/dQw4w9WgXcQ" />);
-    expect(html).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");
-    expect(html).toContain('title="YouTube video"');
-    expect(html).toContain('loading="lazy"');
-    expect(html).toContain('referrerPolicy="strict-origin-when-cross-origin"');
-    expect(html).toContain('sandbox="allow-scripts allow-same-origin allow-presentation"');
+    const list = RichEmbedList({ text: "https://youtu.be/dQw4w9WgXcQ" });
+    const iframe = list?.props.children[0].props.children;
+    expect(iframe.props.src).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    expect(iframe.props.title).toBe("YouTube video");
+    expect(iframe.props.loading).toBe("lazy");
+    expect(iframe.props.referrerPolicy).toBe("strict-origin-when-cross-origin");
+    expect(iframe.props.sandbox).toBe("allow-scripts allow-same-origin allow-presentation");
   });
 
   test("never renders an iframe for an untrusted host", () => {
-    const html = renderToStaticMarkup(<RichEmbedList text="https://example.com/embed/video" />);
-    expect(html).not.toContain("<iframe");
-    expect(html).toContain('rel="noopener noreferrer"');
+    const list = RichEmbedList({ text: "https://example.com/embed/video" });
+    const link = list?.props.children[0];
+    expect(link.type).toBe("a");
+    expect(link.props.rel).toBe("noopener noreferrer");
+  });
+
+  test("caps rendered previews per body", () => {
+    const list = RichEmbedList({
+      text: [
+        "https://youtu.be/dQw4w9WgXcQ",
+        "https://youtu.be/9bZkp7q19f0",
+        "https://youtu.be/3JZ_D3ELwOQ",
+        "https://youtu.be/kJQP7kiw5Fk",
+      ].join("\n"),
+    });
+
+    expect(list?.props.children).toHaveLength(MAX_RICH_PREVIEWS_PER_BODY);
+    expect(list?.props.children.at(-1).props.children.props.src).not.toContain("kJQP7kiw5Fk");
   });
 });
