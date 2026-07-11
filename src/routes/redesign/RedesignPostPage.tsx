@@ -4,7 +4,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { AgentSummary } from "../../components/AgentSummary";
 import { AgentTasksPanel } from "../../components/AgentTasksPanel";
 import { AgentTag } from "../../components/AgentTag";
-import { AttachmentGallery } from "../../components/AttachmentPicker";
+import { AttachmentGallery } from "../../components/AttachmentGallery";
 import { Button } from "../../components/Button";
 import { Composer } from "../../components/Composer";
 import { ComposerShell } from "../../components/ComposerShell";

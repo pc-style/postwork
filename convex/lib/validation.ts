@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { ConvexError } from "convex/values";
+import {
+  formatMediaSize,
+  getMediaKind,
+  mediaMaxBytes,
+  MEDIA_ALLOWED_TYPES,
+  MEDIA_MAX_IMAGE_BYTES,
+  MEDIA_MAX_PER_MESSAGE,
+  MEDIA_MAX_VIDEO_BYTES,
+  type MediaKind,
+} from "./mediaPolicy";
 
 /**
  * Shared input validation (Phase 3.2).
@@ -24,15 +34,21 @@ export const LIMITS = {
   PROFILE_TITLE_MAX: 80,
   PROFILE_INITIALS_MAX: 4,
   SEARCH_TERM_MAX: 200,
-  ATTACHMENT_MAX_BYTES: 10 * 1024 * 1024, // 10 MB per image
-  ATTACHMENT_MAX_PER_POST: 8,
-  ATTACHMENT_ALLOWED_TYPES: [
-    "image/png",
-    "image/jpeg",
-    "image/gif",
-    "image/webp",
-  ],
+  ATTACHMENT_MAX_IMAGE_BYTES: MEDIA_MAX_IMAGE_BYTES,
+  ATTACHMENT_MAX_VIDEO_BYTES: MEDIA_MAX_VIDEO_BYTES,
+  ATTACHMENT_MAX_PER_POST: MEDIA_MAX_PER_MESSAGE,
+  ATTACHMENT_ALLOWED_TYPES: MEDIA_ALLOWED_TYPES,
 } as const;
+
+export type AttachmentMediaKind = MediaKind;
+
+export function attachmentMediaKind(contentType: string): AttachmentMediaKind | null {
+  return getMediaKind(contentType);
+}
+
+export function attachmentMaxBytes(contentType: string): number | null {
+  return mediaMaxBytes(contentType);
+}
 
 export const postTitleSchema = z
   .string()
@@ -76,17 +92,35 @@ export const searchTermSchema = z
 
 /** Attachment metadata validated before storing a post attachment record. */
 export const attachmentInputSchema = z.object({
-  storageId: z.string(),
-  filename: z.string().max(200),
-  contentType: z.enum([
-    "image/png",
-    "image/jpeg",
-    "image/gif",
-    "image/webp",
-  ]),
-  size: z.number().positive().max(LIMITS.ATTACHMENT_MAX_BYTES),
+  storageId: z.string().min(1),
+  uploadToken: z.string().min(1),
+  filename: z.string().min(1).max(200),
+  contentType: z.enum(MEDIA_ALLOWED_TYPES),
+  mediaKind: z.enum(["image", "video"]),
+  size: z.number().positive(),
   width: z.number().positive().optional(),
   height: z.number().positive().optional(),
+  durationMs: z.number().positive().optional(),
+}).superRefine((attachment, ctx) => {
+  const expectedKind = attachmentMediaKind(attachment.contentType);
+  if (attachment.mediaKind !== expectedKind) {
+    ctx.addIssue({ code: "custom", message: "Media kind does not match its content type." });
+  }
+  const maxBytes = attachmentMaxBytes(attachment.contentType);
+  if (maxBytes !== null && attachment.size > maxBytes) {
+    ctx.addIssue({
+      code: "too_big",
+      maximum: maxBytes,
+      origin: "number",
+      inclusive: true,
+      message: attachment.mediaKind === "video"
+        ? `Videos must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_VIDEO_BYTES)} or smaller.`
+        : `Images must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_IMAGE_BYTES)} or smaller.`,
+    });
+  }
+  if (attachment.mediaKind === "image" && attachment.durationMs !== undefined) {
+    ctx.addIssue({ code: "custom", message: "Images cannot include a duration." });
+  }
 });
 
 /**

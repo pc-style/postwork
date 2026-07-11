@@ -125,6 +125,8 @@ export function PostForm({
     canUpload,
     hasUploading,
     hasAttachmentErrors,
+    attachmentError,
+    attachmentWarning,
   } = useAttachmentPicker();
 
   const fallbackSpaces = useMemo<SpaceOption[]>(
@@ -243,8 +245,8 @@ export function PostForm({
         textareaClassName="ui-field min-h-32 resize-y"
         onPaste={(event) => {
           if (!canUpload) return;
-          const files = Array.from(event.clipboardData.files).filter((file) =>
-            file.type.startsWith("image/"),
+          const files = Array.from(event.clipboardData.files).filter(
+            (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
           );
           if (files.length > 0) {
             event.preventDefault();
@@ -284,9 +286,13 @@ export function PostForm({
             {extraFields}
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
-              {hasUploading ? <span className="text-xs text-accent-soft">Uploading images…</span> : null}
+              {hasUploading ? <span className="text-xs text-accent-soft">Optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
-                <span className="ui-error">An image failed to upload. Remove it and try again.</span>
+                <span className="ui-error">{attachmentError ?? "A media attachment failed to upload."}</span>
+              ) : null}
+              {attachmentWarning ? <span className="text-xs text-urgent">{attachmentWarning}</span> : null}
+              {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
+                <span className="text-xs text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
               ) : null}
             </div>
           </div>

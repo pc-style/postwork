@@ -79,3 +79,12 @@ surfaces (watch the muted-gray text especially), priority states distinguishable
 by more than hue alone (label + dot, not color only), and a
 `prefers-reduced-motion` path for any motion. Treat AA-level contrast and keyboard
 access as the working floor even though the project isn't chasing a badge.
+
+## Thread media
+
+Posts and replies can carry up to eight image or video attachments. PNG, JPEG,
+GIF, and WebP images are accepted up to 10 MB; MP4 and WebM video is accepted up
+to 50 MB and plays inline in the thread. JPEG and PNG sources up to 40 MB are
+resized or compressed in the browser when useful, with a 10 MB upload target.
+GIF and WebP files are uploaded unchanged so animation is never silently
+flattened, and video is not transcoded in the browser.

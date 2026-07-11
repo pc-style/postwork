@@ -13,7 +13,7 @@ import { useSession } from "../lib/session";
 import type { AttachmentWithUrl, EnrichedReply } from "../lib/types";
 import { AgentTag } from "./AgentTag";
 import { AnchoredConfirmation } from "./AnchoredConfirmation";
-import { AttachmentGallery } from "./AttachmentPicker";
+import { AttachmentGallery } from "./AttachmentGallery";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Composer } from "./Composer";

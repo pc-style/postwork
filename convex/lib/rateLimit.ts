@@ -26,7 +26,7 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   agentTask: { kind: "fixed window", rate: 10, period: MINUTE },
   // Profile edits — 10/min is plenty for a settings page.
   updateProfile: { kind: "fixed window", rate: 10, period: MINUTE },
-  // Image uploads — 20/min per user.
+  // Media uploads — 20/min per user.
   uploadAttachment: { kind: "token bucket", rate: 20, period: MINUTE, capacity: 5 },
 });
 
