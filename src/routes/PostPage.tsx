@@ -10,6 +10,7 @@ import { Composer } from "../components/Composer";
 import { timeAgo } from "../lib/format";
 import { AgentTag } from "../components/AgentTag";
 import { RichText } from "../components/RichText";
+import { RichEmbedList } from "../components/RichEmbedList";
 import { AgentTasksPanel } from "../components/AgentTasksPanel";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { PostMetaChips } from "../components/PostMetaChips";
@@ -76,6 +77,7 @@ export function PostPage() {
 
         <div className="mt-4">
           <RichText text={post.body} className="prose-post text-title text-fg" />
+          <RichEmbedList text={post.body} />
         </div>
 
         <div className="mt-5">

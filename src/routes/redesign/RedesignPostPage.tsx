@@ -12,6 +12,7 @@ import { LoadingState } from "../../components/LoadingState";
 import { PostModeration } from "../../components/PostModeration";
 import { ReplyTree } from "../../components/ReplyTree";
 import { RichText } from "../../components/RichText";
+import { RichEmbedList } from "../../components/RichEmbedList";
 import { useAttachments } from "../../lib/attachments";
 import { priorityStyles, timeAgo } from "../../lib/format";
 import { usePost, useReplies, useStore } from "../../lib/store";
@@ -99,6 +100,7 @@ export function RedesignPostPage() {
       {!editing ? (
         <div className="mt-7 max-w-[65ch]">
           <RichText text={post.body} className="prose-post text-[15px] text-fg/95" />
+          <RichEmbedList text={post.body} />
           <AttachmentGallery attachments={attachments.filter((attachment) => !attachment.replyId)} />
         </div>
       ) : null}
