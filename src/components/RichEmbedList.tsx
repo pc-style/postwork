@@ -40,7 +40,9 @@ export function RichEmbedList({ text }: { text: string }) {
               key={preview.sourceUrl}
               controls
               playsInline
-              preload="metadata"
+              // "none": direct video URLs point at arbitrary hosts, so no
+              // request leaves the viewer's browser until they press play.
+              preload="none"
               aria-label={preview.title}
               className="max-h-80 w-fit max-w-full rounded-md border border-border bg-black"
             >
