@@ -1,4 +1,5 @@
 import {
+  formatFileSize,
   formatMediaSize,
   getMediaKind,
   MEDIA_ALLOWED_TYPES,
@@ -12,6 +13,7 @@ import {
 } from "../../convex/lib/mediaPolicy";
 
 export {
+  formatFileSize,
   formatMediaSize,
   getMediaKind,
   MEDIA_ALLOWED_TYPES,

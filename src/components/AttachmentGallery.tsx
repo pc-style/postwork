@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AttachmentWithUrl } from "../lib/types";
-import { formatMediaSize } from "../lib/media";
+import { formatFileSize } from "../lib/media";
 
 export function AttachmentGallery({
   attachments,
@@ -65,7 +65,7 @@ export function AttachmentMedia({
           <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
         </svg>
         <span className="min-w-0 truncate">{attachment.filename}</span>
-        <span className="shrink-0 text-xs text-muted">{formatMediaSize(attachment.size)}</span>
+        <span className="shrink-0 text-xs text-muted">{formatFileSize(attachment.size)}</span>
       </a>
     );
   }

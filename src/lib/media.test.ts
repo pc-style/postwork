@@ -1,12 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import {
   decideMediaFile,
+  formatFileSize,
   MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_VIDEO_BYTES,
 } from "./media";
 
 describe("media upload decisions", () => {
+  test("formats file sizes for display", () => {
+    expect(formatFileSize(512)).toBe("512 B");
+    expect(formatFileSize(1024)).toBe("1 KB");
+    expect(formatFileSize(1.5 * 1024 * 1024)).toBe("1.5 MB");
+  });
+
   test("optimizes oversized still JPEG and PNG files", () => {
     expect(
       decideMediaFile({

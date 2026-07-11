@@ -37,3 +37,13 @@ export function mediaMaxBytes(contentType: string): number | null {
 export function formatMediaSize(bytes: number): string {
   return `${bytes / (1024 * 1024)} MB`;
 }
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+
+  const kilobytes = bytes / 1024;
+  if (kilobytes < 1024) return `${kilobytes.toFixed(1).replace(/\.0$/, "")} KB`;
+
+  const megabytes = kilobytes / 1024;
+  return `${megabytes.toFixed(1).replace(/\.0$/, "")} MB`;
+}
