@@ -6,6 +6,7 @@ import {
 import {
   getMediaKind,
   MEDIA_MAX_PER_MESSAGE,
+  UNSUPPORTED_MEDIA_MESSAGE,
   type MediaKind,
 } from "../lib/media";
 import type { AttachmentInput } from "../lib/types";
@@ -37,16 +38,23 @@ export function useAttachmentPicker() {
   const { upload, canUpload } = useAttachmentUpload();
   const [pending, setPending] = useState<PendingMedia[]>([]);
   const [limitError, setLimitError] = useState<string | null>(null);
+  const [selectionWarning, setSelectionWarning] = useState<string | null>(null);
   const counter = useRef(0);
 
   const addFiles = useCallback(
     async (files: FileList | File[]) => {
-      const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
       const selected = Array.from(files);
-      const accepted = selected.slice(0, available);
+      const supported = selected.filter((file) => getMediaKind(file.type) !== null);
+      const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
+      const accepted = supported.slice(0, available);
       setLimitError(
-        selected.length > available
+        supported.length > available
           ? `Maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
+          : null,
+      );
+      setSelectionWarning(
+        supported.length !== selected.length
+          ? `Unsupported files were not added. ${UNSUPPORTED_MEDIA_MESSAGE}`
           : null,
       );
       for (const file of accepted) {
@@ -114,10 +122,12 @@ export function useAttachmentPicker() {
       return [];
     });
     setLimitError(null);
+    setSelectionWarning(null);
   }, []);
 
   const hasUploading = pending.some((p) => p.uploading);
-  const attachmentError = limitError ?? pending.find((p) => p.error)?.error ?? null;
+  const attachmentError = pending.find((p) => p.error)?.error ?? null;
+  const attachmentWarning = limitError ?? selectionWarning;
   const hasAttachmentErrors = attachmentError !== null;
 
   return {
@@ -130,6 +140,7 @@ export function useAttachmentPicker() {
     hasUploading,
     hasAttachmentErrors,
     attachmentError,
+    attachmentWarning,
   };
 }
 

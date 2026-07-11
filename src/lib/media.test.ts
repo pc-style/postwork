@@ -57,6 +57,8 @@ describe("media upload decisions", () => {
     expect(
       decideMediaFile({ contentType: "video/quicktime", size: 1024 }),
     ).toMatchObject({ accepted: false });
+    expect(
+      decideMediaFile({ contentType: "image/png", size: 0 }),
+    ).toMatchObject({ accepted: false, reason: "Media files cannot be empty." });
   });
 });
-

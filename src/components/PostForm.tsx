@@ -126,6 +126,7 @@ export function PostForm({
     hasUploading,
     hasAttachmentErrors,
     attachmentError,
+    attachmentWarning,
   } = useAttachmentPicker();
 
   const fallbackSpaces = useMemo<SpaceOption[]>(
@@ -289,7 +290,8 @@ export function PostForm({
               {hasAttachmentErrors ? (
                 <span className="ui-error">{attachmentError ?? "A media attachment failed to upload."}</span>
               ) : null}
-              {!hasUploading && !hasAttachmentErrors ? (
+              {attachmentWarning ? <span className="text-xs text-urgent">{attachmentWarning}</span> : null}
+              {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
                 <span className="text-xs text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
               ) : null}
             </div>

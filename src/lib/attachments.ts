@@ -4,10 +4,12 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { isDemo } from "./demoMode";
 import {
   decideMediaFile,
+  formatMediaSize,
   getMediaKind,
   MEDIA_ALLOWED_TYPES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_IMAGE_DIMENSION,
+  UNSUPPORTED_MEDIA_MESSAGE,
   type MediaKind,
 } from "./media";
 import { isLocalId } from "./store";
@@ -108,13 +110,10 @@ export function useAttachmentUpload() {
   const generateUploadUrl = useMutation(api.attachments.generateUploadUrl);
 
   const upload = async (originalFile: File): Promise<AttachmentInput> => {
+    if (originalFile.size === 0) throw new Error("Media files cannot be empty.");
     const initialKind = getMediaKind(originalFile.type);
     if (!initialKind) {
-      const decision = decideMediaFile({
-        contentType: originalFile.type,
-        size: originalFile.size,
-      });
-      throw new Error(decision.accepted ? "Unsupported media file." : decision.reason);
+      throw new Error(UNSUPPORTED_MEDIA_MESSAGE);
     }
     const preliminaryDecision = decideMediaFile({
       contentType: originalFile.type,
@@ -145,10 +144,10 @@ export function useAttachmentUpload() {
       ...optimized.metadata,
     });
     if (!finalDecision.accepted || optimized.file.size > finalDecision.maxBytes) {
-      throw new Error("The optimized image is still larger than 10 MB.");
+      throw new Error(`The optimized image is still larger than ${formatMediaSize(MEDIA_MAX_IMAGE_BYTES)}.`);
     }
 
-    const postUrl = await generateUploadUrl({});
+    const { postUrl, uploadToken } = await generateUploadUrl({});
     const response = await fetch(postUrl, {
       method: "POST",
       headers: { "Content-Type": optimized.file.type },
@@ -160,6 +159,7 @@ export function useAttachmentUpload() {
 
     return {
       storageId: payload.storageId,
+      uploadToken,
       filename: originalFile.name,
       contentType: optimized.file.type,
       mediaKind: finalDecision.kind,

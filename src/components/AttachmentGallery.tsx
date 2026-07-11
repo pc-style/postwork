@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { AttachmentWithUrl } from "../lib/types";
 
 export function AttachmentGallery({
@@ -22,7 +23,17 @@ export function AttachmentMedia({
 }: {
   attachment: AttachmentWithUrl;
 }) {
+  const [failed, setFailed] = useState(false);
+
   if (!attachment.url) return null;
+
+  if (failed) {
+    return (
+      <div className="flex min-h-20 min-w-40 items-center rounded-md border border-border bg-surface px-3 text-xs text-muted">
+        media is no longer available
+      </div>
+    );
+  }
 
   if (attachment.mediaKind === "video") {
     return (
@@ -31,6 +42,7 @@ export function AttachmentMedia({
         playsInline
         preload="metadata"
         aria-label={attachment.filename}
+        onError={() => setFailed(true)}
         className="max-h-80 max-w-full rounded-md border border-border bg-black"
       >
         <source src={attachment.url} type={attachment.contentType} />
@@ -49,10 +61,10 @@ export function AttachmentMedia({
       <img
         src={attachment.url}
         alt={attachment.filename}
+        onError={() => setFailed(true)}
         className="max-h-48 max-w-full object-cover"
         loading="lazy"
       />
     </a>
   );
 }
-

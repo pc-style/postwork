@@ -306,6 +306,7 @@ export const create = mutation({
       v.array(
         v.object({
           storageId: v.id("_storage"),
+          uploadToken: v.id("attachmentUploadTickets"),
           filename: v.string(),
           contentType: v.string(),
           mediaKind: v.union(v.literal("image"), v.literal("video")),
@@ -362,7 +363,7 @@ export const create = mutation({
     if (args.attachments) {
       for (const att of args.attachments) {
         const parsed = parse(attachmentInputSchema, att, "attachment");
-        const validated = await validateStoredAttachment(ctx, parsed);
+        const validated = await validateStoredAttachment(ctx, viewer._id, orgId, parsed);
         await ctx.db.insert("postAttachments", {
           orgId,
           postId,
@@ -552,6 +553,7 @@ export const remove = mutation({
       )
       .take(100);
     for (const att of attachments) {
+      await ctx.storage.delete(att.storageId);
       await ctx.db.delete(att._id);
     }
 

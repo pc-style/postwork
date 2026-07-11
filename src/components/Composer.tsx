@@ -50,6 +50,7 @@ export function Composer({
     hasUploading,
     hasAttachmentErrors,
     attachmentError,
+    attachmentWarning,
   } = useAttachmentPicker();
 
   const mentioned = parseAgentMentions(body);
@@ -153,6 +154,8 @@ export function Composer({
                   ? "Optimizing and uploading media…"
                   : hasAttachmentErrors
                     ? (attachmentError ?? "A media attachment failed to upload.")
+                    : attachmentWarning
+                      ? attachmentWarning
                     : mentioned.length > 0
                       ? `Asking ${mentioned.map((handle) => AGENT_HANDLES[handle]).join(", ")}`
                       : "Cmd or Ctrl + Enter to reply. Mention @cursor to ask an agent."}

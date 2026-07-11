@@ -11,11 +11,25 @@ type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
 export async function validateStoredAttachment(
   ctx: MutationCtx,
+  ownerId: Id<"users">,
+  orgId: Id<"orgs"> | undefined,
   attachment: AttachmentInput,
 ): Promise<AttachmentInput & { storageId: Id<"_storage"> }> {
   const storageId = attachment.storageId as Id<"_storage">;
+  const uploadToken = attachment.uploadToken as Id<"attachmentUploadTickets">;
+  const ticket = await ctx.db.get(uploadToken);
+  if (!ticket || ticket.userId !== ownerId || ticket.orgId !== orgId || ticket.expiresAt < Date.now()) {
+    throwInvalid("This upload is no longer available. Upload the media again.");
+  }
   const stored = await ctx.db.system.get(storageId);
   if (!stored) throwInvalid("The uploaded media could not be found.");
+  const existingAttachment = await ctx.db
+    .query("postAttachments")
+    .withIndex("by_storage_id", (q) => q.eq("storageId", storageId))
+    .unique();
+  if (existingAttachment) {
+    throwInvalid("This uploaded media has already been attached.");
+  }
   if (stored.contentType !== attachment.contentType) {
     throwInvalid("The uploaded media type does not match its metadata.");
   }
@@ -26,6 +40,7 @@ export async function validateStoredAttachment(
   if (maxBytes === null || stored.size > maxBytes) {
     throwInvalid("The uploaded media exceeds its allowed size.");
   }
+  await ctx.db.delete(ticket._id);
   return { ...attachment, storageId };
 }
 
@@ -36,4 +51,3 @@ function throwInvalid(message: string): never {
     message,
   });
 }
-

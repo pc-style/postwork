@@ -3,6 +3,7 @@ import { attachmentInputSchema, LIMITS } from "./validation";
 
 const base = {
   storageId: "storage-id",
+  uploadToken: "upload-token",
   filename: "demo.mp4",
   contentType: "video/mp4" as const,
   mediaKind: "video" as const,
@@ -34,6 +35,18 @@ describe("attachment metadata validation", () => {
         contentType: "image/gif",
         mediaKind: "image",
         size: LIMITS.ATTACHMENT_MAX_IMAGE_BYTES + 1,
+      }).success,
+    ).toBe(false);
+  });
+
+  test("rejects an image with video duration metadata", () => {
+    expect(
+      attachmentInputSchema.safeParse({
+        ...base,
+        filename: "demo.png",
+        contentType: "image/png",
+        mediaKind: "image",
+        durationMs: 100,
       }).success,
     ).toBe(false);
   });

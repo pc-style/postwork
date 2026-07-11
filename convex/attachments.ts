@@ -14,10 +14,10 @@ import { attachmentMediaKind, type AttachmentMediaKind } from "./lib/validation"
  * Image and video attachments via Convex file storage.
  *
  * Flow:
- *   1. Client calls `generateUploadUrl` → gets a one-time upload URL.
+ *   1. Client calls `generateUploadUrl` → gets a one-time upload URL and an ownership ticket.
  *   2. Client uploads the image (POST the file blob to that URL).
  *   3. The upload response returns `{ storageId }`.
- *   4. Client passes the storageId + metadata in the `attachments` array to
+ *   4. Client passes the storageId + ownership ticket + metadata in the `attachments` array to
  *      `posts.create` / `replies.create`, which persist `postAttachments` rows.
  *   5. `listForPost` returns all attachments for a thread with signed URLs.
  *
@@ -34,7 +34,14 @@ export const generateUploadUrl = mutation({
       key: viewer._id,
       throws: true,
     });
-    return await ctx.storage.generateUploadUrl();
+    const now = Date.now();
+    const uploadToken = await ctx.db.insert("attachmentUploadTickets", {
+      orgId: viewer.orgId,
+      userId: viewer._id,
+      createdAt: now,
+      expiresAt: now + 15 * 60 * 1000,
+    });
+    return { postUrl: await ctx.storage.generateUploadUrl(), uploadToken };
   },
 });
 
