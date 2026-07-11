@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AttachmentWithUrl } from "../lib/types";
+import { formatMediaSize } from "../lib/media";
 
 export function AttachmentGallery({
   attachments,
@@ -48,6 +49,24 @@ export function AttachmentMedia({
         <source src={attachment.url} type={attachment.contentType} />
         <a href={attachment.url}>open {attachment.filename}</a>
       </video>
+    );
+  }
+
+  if (attachment.mediaKind === "file") {
+    return (
+      <a
+        href={attachment.url}
+        download={attachment.filename}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex max-w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm transition hover:border-accent/40"
+      >
+        <svg viewBox="0 0 24 24" fill="none" className="size-5 shrink-0 text-muted" aria-hidden="true">
+          <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
+        <span className="min-w-0 truncate">{attachment.filename}</span>
+        <span className="shrink-0 text-xs text-muted">{formatMediaSize(attachment.size)}</span>
+      </a>
     );
   }
 

@@ -34,6 +34,22 @@ export function RichEmbedList({ text }: { text: string }) {
           );
         }
 
+        if (preview.kind === "video") {
+          return (
+            <video
+              key={preview.sourceUrl}
+              controls
+              playsInline
+              preload="metadata"
+              aria-label={preview.title}
+              className="max-h-80 w-fit max-w-full rounded-md border border-border bg-black"
+            >
+              <source src={preview.sourceUrl} type={preview.contentType} />
+              <a href={preview.sourceUrl}>open video</a>
+            </video>
+          );
+        }
+
         if (preview.kind === "image") {
           return (
             <a

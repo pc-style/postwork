@@ -191,6 +191,11 @@ function FeedRow({ post }: { post: EnrichedPost }) {
         {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
         {post.title}
       </h2>
+      {post.body.trim() ? (
+        <p className="mt-1 line-clamp-2 text-sm text-muted">
+          {post.body.length > 240 ? `${post.body.slice(0, 240).trimEnd()}…` : post.body}
+        </p>
+      ) : null}
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
         <span>{post.space}</span>

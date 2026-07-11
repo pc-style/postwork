@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   decideMediaFile,
+  MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
   MEDIA_MAX_VIDEO_BYTES,
 } from "./media";
@@ -47,16 +48,37 @@ describe("media upload decisions", () => {
     });
   });
 
-  test("rejects over-limit animation and video plus unsupported types", () => {
+  test("accepts generic files unchanged and normalizes an empty content type", () => {
+    expect(decideMediaFile({ contentType: "application/pdf", size: 1024 })).toEqual({
+      accepted: true,
+      kind: "file",
+      optimize: false,
+      maxBytes: MEDIA_MAX_FILE_BYTES,
+    });
+    expect(decideMediaFile({ contentType: "", size: 1024 })).toMatchObject({
+      accepted: true,
+      kind: "file",
+      optimize: false,
+    });
+  });
+
+  test("rejects generic files over 25 MB", () => {
+    expect(
+      decideMediaFile({ contentType: "application/zip", size: MEDIA_MAX_FILE_BYTES + 1 }),
+    ).toMatchObject({ accepted: false });
+  });
+
+  test("rejects over-limit animation and video", () => {
     expect(
       decideMediaFile({ contentType: "image/gif", size: MEDIA_MAX_IMAGE_BYTES + 1 }),
     ).toMatchObject({ accepted: false });
     expect(
       decideMediaFile({ contentType: "video/webm", size: MEDIA_MAX_VIDEO_BYTES + 1 }),
     ).toMatchObject({ accepted: false });
-    expect(
-      decideMediaFile({ contentType: "video/quicktime", size: 1024 }),
-    ).toMatchObject({ accepted: false });
+    expect(decideMediaFile({ contentType: "video/quicktime", size: 1024 })).toMatchObject({
+      accepted: true,
+      kind: "file",
+    });
     expect(
       decideMediaFile({ contentType: "image/png", size: 0 }),
     ).toMatchObject({ accepted: false, reason: "Media files cannot be empty." });

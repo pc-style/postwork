@@ -402,7 +402,7 @@ function ProfileDialogBody({
 
       {error ? <p role="alert" className="ui-error">{error}</p> : null}
 
-      <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
+      <div className="sticky -bottom-5 -mx-4 flex flex-col-reverse gap-2 border-t border-border bg-surface px-4 py-4 sm:-mx-6 sm:flex-row sm:justify-end sm:px-6">
         {mode === "edit" ? (
           <Button variant="secondary" onClick={onClose} disabled={isSaving} className="w-full sm:w-auto">
             cancel
