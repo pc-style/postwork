@@ -59,6 +59,12 @@ type SessionPost = Omit<
 
 type SessionReply = Doc<"replies">;
 
+export type SessionSpace = Doc<"spaces"> & {
+  memberCount: number;
+  postCount: number;
+  latestActivityAt: number;
+};
+
 type PostBump = {
   lastActivityAt: number;
   replyCountDelta: number;
@@ -70,6 +76,7 @@ type SummaryEntry = { summary: string; model: string; updatedAt: number };
 type OverlayState = {
   posts: SessionPost[];
   replies: Record<string, SessionReply[]>;
+  spaces: SessionSpace[];
   applyOverlay: (p: EnrichedPost) => EnrichedPost;
   applyReplyOverlay: (r: EnrichedReply) => EnrichedReply;
   enrichSessionPost: (sp: SessionPost) => EnrichedPost;
@@ -98,6 +105,11 @@ type StoreValue = {
     wallOwnerId?: Id<"users">;
     attachments?: AttachmentInput[];
   }) => Promise<Id<"posts">>;
+  createSpace: (args: {
+    name: string;
+    description?: string;
+    existingSlugs?: string[];
+  }) => Promise<{ spaceId: Id<"spaces">; slug: string }>;
   summarize: (postId: Id<"posts">) => Promise<void>;
   // Moderation (Phase 3.5). Product mode calls the Convex mutations; the
   // demo overlay is read-only so these surface a friendly error.
@@ -126,6 +138,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
 
   const [posts, setPosts] = useState<SessionPost[]>([]);
   const [replies, setReplies] = useState<Record<string, SessionReply[]>>({});
+  const [spaces, setSpaces] = useState<SessionSpace[]>([]);
   const [postBumps, setPostBumps] = useState<Record<string, PostBump>>({});
   const [reads, setReads] = useState<Record<string, number>>({});
   const [readAllAt, setReadAllAt] = useState<Record<string, number>>({});
@@ -133,6 +146,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
 
   const postCounter = useRef(0);
   const replyCounter = useRef(0);
+  const spaceCounter = useRef(0);
 
   const userById = useMemo(() => {
     const m = new Map<string, Doc<"users">>();
@@ -367,6 +381,79 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     [currentUserId, userById],
   );
 
+  const createSpace = useCallback(
+    async (args: {
+      name: string;
+      description?: string;
+      existingSlugs?: string[];
+    }) => {
+      if (!currentUserId) throw new Error("No current user.");
+      const creator = userById.get(currentUserId);
+      if (!creator) throw new Error("Unknown creator.");
+
+      const limit = creator.role === "admin" ? null : creator.role === "tester" ? 3 : 1;
+      const createdCount = spaces.filter(
+        (space) => space.createdBy === currentUserId,
+      ).length;
+      if (limit !== null && createdCount >= limit) {
+        throw new Error(
+          `Your role can create up to ${limit} ${limit === 1 ? "space" : "spaces"}.`,
+        );
+      }
+
+      const name = args.name.trim();
+      const description = args.description?.trim() || undefined;
+      if (!name || name.length > 80) {
+        throw new Error("Space name must be between 1 and 80 characters.");
+      }
+      if (description && description.length > 240) {
+        throw new Error("Space description must be 240 characters or fewer.");
+      }
+
+      const slugBase =
+        name
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 64)
+          .replace(/-+$/g, "") || "space";
+      const usedSlugs = new Set([
+        ...(args.existingSlugs ?? []),
+        ...spaces.map((space) => space.slug),
+      ]);
+      let slug = slugBase;
+      let suffix = 2;
+      while (usedSlugs.has(slug)) {
+        slug = `${slugBase}-${suffix}`;
+        suffix += 1;
+      }
+
+      spaceCounter.current += 1;
+      const spaceId = makeLocalId("spaces", spaceCounter.current);
+      const now = Date.now();
+      setSpaces((current) => [
+        {
+          _id: spaceId,
+          _creationTime: now,
+          orgId: creator.orgId,
+          name,
+          slug,
+          description,
+          createdBy: currentUserId,
+          createdAt: now,
+          memberCount: 1,
+          postCount: 0,
+          latestActivityAt: now,
+        },
+        ...current,
+      ]);
+      return { spaceId, slug };
+    },
+    [currentUserId, spaces, userById],
+  );
+
   const summarizeAction = useAction(api.ai.summarizePost);
   const summarize = useCallback(
     async (postId: Id<"posts">) => {
@@ -496,6 +583,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       posts,
       replies,
+      spaces,
       applyOverlay,
       applyReplyOverlay,
       enrichSessionPost,
@@ -504,6 +592,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     [
       posts,
       replies,
+      spaces,
       applyOverlay,
       applyReplyOverlay,
       enrichSessionPost,
@@ -520,6 +609,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       markAllRead,
       createReply,
       createPost,
+      createSpace,
       summarize,
       editPost,
       deletePost,
@@ -533,6 +623,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       markAllRead,
       createReply,
       createPost,
+      createSpace,
       summarize,
       editPost,
       deletePost,
@@ -548,6 +639,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
   const { currentUserId } = useSession();
   const createPostMutation = useMutation(api.posts.create);
   const createReplyMutation = useMutation(api.replies.create);
+  const createSpaceMutation = useMutation(api.spaces.create);
   const markReadMutation = useMutation(api.posts.markRead);
   const markAllReadMutation = useMutation(api.posts.markAllRead);
   const summarizeAction = useAction(api.ai.regeneratePostSummary);
@@ -560,6 +652,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       posts: [],
       replies: {},
+      spaces: [],
       applyOverlay: (post) => post,
       applyReplyOverlay: (reply) => reply,
       enrichSessionPost: (post) => ({
@@ -636,6 +729,15 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
     [createPostMutation],
   );
 
+  const createSpace = useCallback(
+    async (args: { name: string; description?: string }) =>
+      await createSpaceMutation({
+        name: args.name,
+        description: args.description,
+      }),
+    [createSpaceMutation],
+  );
+
   const summarize = useCallback(
     async (postId: Id<"posts">) => {
       await summarizeAction({ postId });
@@ -684,6 +786,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
       markAllRead,
       createReply,
       createPost,
+      createSpace,
       summarize,
       editPost,
       deletePost,
@@ -697,6 +800,7 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
       markAllRead,
       createReply,
       createPost,
+      createSpace,
       summarize,
       editPost,
       deletePost,
@@ -833,7 +937,7 @@ export function useSpaceFeed(
   const store = useStore();
   const backend = useQuery(
     api.spaces.postsForSpace,
-    args
+    args && !isLocalId(args.spaceId)
       ? {
           spaceId: args.spaceId,
           viewerId: store.currentUserId,
@@ -842,9 +946,10 @@ export function useSpaceFeed(
   );
 
   if (!args) return undefined;
-  if (backend === undefined) return undefined;
+  if (backend === undefined && !isLocalId(args.spaceId)) return undefined;
+  const backendPosts = backend ?? [];
   if (store.mode === "product") {
-    return backend;
+    return backendPosts;
   }
 
   const { posts, applyOverlay, enrichSessionPost } = store.overlay;
@@ -858,7 +963,7 @@ export function useSpaceFeed(
     )
     .map(enrichSessionPost);
 
-  const merged = [...sessionMatched, ...backend.map(applyOverlay)];
+  const merged = [...sessionMatched, ...backendPosts.map(applyOverlay)];
   merged.sort(sortPosts);
   return merged;
 }

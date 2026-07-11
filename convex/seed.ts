@@ -49,7 +49,7 @@ export const run = internalMutation({
       initials: string,
       avatarColor: string,
       isAgent = false,
-      role: "admin" | "member" = "member",
+      role: "admin" | "tester" | "member" = "member",
     ) => ({ name, title, initials, avatarColor, isAgent, role });
 
     // Humans use the warm palette; AI agents get the cooler entries so they
@@ -57,7 +57,7 @@ export const run = internalMutation({
     const userDefs = [
       user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0], false, "admin"),
       user("Diego Ramos", "Staff Engineer", "DR", AVATAR_PALETTE[8]),
-      user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1]),
+      user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1], false, "tester"),
       user("Tom Becker", "Design Lead", "TB", AVATAR_PALETTE[2]),
       user("Aisha Khan", "Engineering Manager", "AK", AVATAR_PALETTE[3]),
       user("Lukas Wolf", "SRE", "LW", AVATAR_PALETTE[4]),

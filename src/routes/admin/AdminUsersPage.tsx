@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import type { AdminUsersFilter } from "../../router";
+import { demoPolicy } from "../../lib/demoMode";
 import { timeAgo } from "../../lib/format";
 import { Avatar } from "../../components/Avatar";
 import { Button } from "../../components/Button";
@@ -155,7 +156,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       onClose={onClose}
       footer={
         <div className="flex flex-wrap items-center gap-2">
-          {user.role === "admin" ? (
+          {!demoPolicy.sessionOverlay && user.role !== "member" ? (
             <ActionButton
               onClick={() =>
                 run(
@@ -164,9 +165,22 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
                 )
               }
             >
-              demote to member
+              make member
             </ActionButton>
-          ) : (
+          ) : null}
+          {!demoPolicy.sessionOverlay && user.role !== "tester" ? (
+            <ActionButton
+              onClick={() =>
+                run(
+                  () => setRole({ userId: user._id, role: "tester" }),
+                  "change the role",
+                )
+              }
+            >
+              make tester
+            </ActionButton>
+          ) : null}
+          {!demoPolicy.sessionOverlay && user.role !== "admin" ? (
             <ActionButton
               onClick={() =>
                 run(
@@ -177,7 +191,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
             >
               make admin
             </ActionButton>
-          )}
+          ) : null}
           {user.deactivatedAt ? (
             <ActionButton
               onClick={() =>

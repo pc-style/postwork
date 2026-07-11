@@ -240,7 +240,11 @@ async function updateProfileFields(
 export const setRole = mutation({
   args: {
     userId: v.id("users"),
-    role: v.union(v.literal("admin"), v.literal("member")),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("tester"),
+      v.literal("member"),
+    ),
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);

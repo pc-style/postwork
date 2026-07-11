@@ -41,7 +41,9 @@ export default defineSchema({
     title: v.string(),
     avatarColor: v.string(),
     initials: v.string(),
-    role: v.optional(v.union(v.literal("admin"), v.literal("member"))),
+    role: v.optional(
+      v.union(v.literal("admin"), v.literal("tester"), v.literal("member")),
+    ),
     status: v.optional(v.union(v.literal("pending"), v.literal("active"))),
     profileCompletedAt: v.optional(v.number()),
     avatarStorageId: v.optional(v.id("_storage")),
@@ -68,8 +70,11 @@ export default defineSchema({
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
+    createdBy: v.optional(v.id("users")),
     createdAt: v.number(),
-  }).index("by_org_id_and_slug", ["orgId", "slug"]),
+  })
+    .index("by_org_id_and_slug", ["orgId", "slug"])
+    .index("by_org_id_and_created_by", ["orgId", "createdBy"]),
 
   spaceMemberships: defineTable({
     orgId: v.optional(v.id("orgs")),
