@@ -18,7 +18,13 @@ export async function validateStoredAttachment(
   const storageId = attachment.storageId as Id<"_storage">;
   const uploadToken = attachment.uploadToken as Id<"attachmentUploadTickets">;
   const ticket = await ctx.db.get(uploadToken);
-  if (!ticket || ticket.userId !== ownerId || ticket.orgId !== orgId || ticket.expiresAt < Date.now()) {
+  if (
+    !ticket ||
+    ticket.userId !== ownerId ||
+    ticket.orgId !== orgId ||
+    ticket.expiresAt <= Date.now() ||
+    ticket.storageId !== storageId
+  ) {
     throwInvalid("This upload is no longer available. Upload the media again.");
   }
   const stored = await ctx.db.system.get(storageId);

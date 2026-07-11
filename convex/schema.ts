@@ -221,14 +221,18 @@ export default defineSchema({
     .index("by_org_id_and_reply_id", ["orgId", "replyId"])
     .index("by_storage_id", ["storageId"]),
 
-  // A generated attachment upload URL is bound to the authenticated member
-  // until the resulting storage ID is attached to a post or reply.
+  // A generated attachment upload URL is bound to the authenticated member.
+  // After the browser POST completes, its resulting storage ID is claimed here
+  // before it can be attached to a post or reply.
   attachmentUploadTickets: defineTable({
     orgId: v.optional(v.id("orgs")),
     userId: v.id("users"),
+    storageId: v.optional(v.id("_storage")),
     createdAt: v.number(),
     expiresAt: v.number(),
-  }),
+  })
+    .index("by_expires_at", ["expiresAt"])
+    .index("by_storage_id", ["storageId"]),
 
   // Access control plane (invite + approval onboarding).
   //

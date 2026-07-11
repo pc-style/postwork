@@ -108,6 +108,7 @@ async function optimizeStillImage(
 
 export function useAttachmentUpload() {
   const generateUploadUrl = useMutation(api.attachments.generateUploadUrl);
+  const claimUploadedStorage = useMutation(api.attachments.claimUploadedStorage);
 
   const upload = async (originalFile: File): Promise<AttachmentInput> => {
     if (originalFile.size === 0) throw new Error("Media files cannot be empty.");
@@ -156,6 +157,7 @@ export function useAttachmentUpload() {
     if (!response.ok) throw new Error("Upload failed. Try again.");
     const payload: unknown = await response.json();
     if (!isStorageUploadResponse(payload)) throw new Error("Upload returned an invalid response.");
+    await claimUploadedStorage({ uploadToken, storageId: payload.storageId });
 
     return {
       storageId: payload.storageId,
