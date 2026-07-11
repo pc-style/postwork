@@ -53,7 +53,7 @@ export function AttachmentMedia({
   }
 
   if (attachment.mediaKind === "file") {
-    return <FileDownloadChip attachment={attachment} onFail={() => setFailed(true)} />;
+    return <FileDownloadChip attachment={attachment} />;
   }
 
   return (
@@ -81,18 +81,16 @@ export function AttachmentMedia({
  * so a plain link could open uploaded HTML/SVG as active content; forcing the
  * bytes into an inert blob keeps the chip download-only.
  */
-function FileDownloadChip({
-  attachment,
-  onFail,
-}: {
-  attachment: AttachmentWithUrl;
-  onFail: () => void;
-}) {
+function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
   const [downloading, setDownloading] = useState(false);
+  // A failed fetch is transient (network, expired URL); the chip stays
+  // actionable so the reader can simply retry.
+  const [errored, setErrored] = useState(false);
 
   const download = async () => {
     if (!attachment.url || downloading) return;
     setDownloading(true);
+    setErrored(false);
     try {
       const response = await fetch(attachment.url);
       if (!response.ok) throw new Error("Download failed.");
@@ -109,7 +107,7 @@ function FileDownloadChip({
         URL.revokeObjectURL(blobUrl);
       }
     } catch {
-      onFail();
+      setErrored(true);
     } finally {
       setDownloading(false);
     }
@@ -126,8 +124,12 @@ function FileDownloadChip({
         <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
       <span className="min-w-0 truncate">{attachment.filename}</span>
-      <span className="shrink-0 text-xs text-muted">
-        {downloading ? "downloading…" : formatFileSize(attachment.size)}
+      <span className={`shrink-0 text-xs ${errored ? "text-urgent" : "text-muted"}`}>
+        {downloading
+          ? "downloading…"
+          : errored
+            ? "download failed — retry"
+            : formatFileSize(attachment.size)}
       </span>
     </button>
   );
