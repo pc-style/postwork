@@ -4,7 +4,7 @@ import { Component, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import { EmptyState } from "../../components/EmptyState";
 import { LoadingState } from "../../components/LoadingState";
-import { catchUpSummaryPreview, composeDemoCatchUp, groupCatchUpItems } from "../../lib/catchUp";
+import { catchUpEmptyState, catchUpSummaryPreview, composeDemoCatchUp, groupCatchUpItems } from "../../lib/catchUp";
 import { isDemo } from "../../lib/demoMode";
 import { priorityStyles, timeAgo } from "../../lib/format";
 import { useFeed } from "../../lib/store";
@@ -75,9 +75,10 @@ function CatchUpContents() {
       ) : digest.items.length === 0 ? (
         <div className="mt-6">
           <EmptyState>
-            <p className="font-medium text-fg">You’re all caught up.</p>
-            <p className="mt-1">New unread activity will appear here when it needs your attention.</p>
+            <p className="font-medium text-fg">{catchUpEmptyState(digest).title}</p>
+            <p className="mt-1">{catchUpEmptyState(digest).description}</p>
           </EmptyState>
+          <DigestScope digest={digest} />
         </div>
       ) : (
         <>

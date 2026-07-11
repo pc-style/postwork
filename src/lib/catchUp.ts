@@ -7,6 +7,24 @@ export type CatchUpGroup = {
   items: CatchUpItem[];
 };
 
+export const DEMO_CATCH_UP_SCAN_LIMIT = 200;
+export const DEMO_CATCH_UP_ITEM_LIMIT = 25;
+
+export function catchUpEmptyState(digest: CatchUpDigest): {
+  title: string;
+  description: string;
+} {
+  return digest.scan.complete
+    ? {
+        title: "You’re all caught up.",
+        description: "New unread activity will appear here when it needs your attention.",
+      }
+    : {
+        title: "No unread work found in this scan.",
+        description: "Older unread work may still exist outside the scanned window.",
+      };
+}
+
 export function catchUpSummaryPreview(text: string): string {
   return text
     .replace(/^\*\*TL;DR\*\*\s*/i, "")
@@ -23,15 +41,17 @@ export function groupCatchUpItems(items: CatchUpItem[]): CatchUpGroup[] {
 }
 
 export function composeDemoCatchUp(posts: EnrichedPost[]): CatchUpDigest {
-  const items = posts
-    .filter((post) => post.unread)
+  const eligible = posts.filter((post) => post.unread);
+  const items = eligible
     .sort(
       (a, b) =>
         CATCH_UP_PRIORITIES.indexOf(a.priority) -
           CATCH_UP_PRIORITIES.indexOf(b.priority) ||
-        b.lastActivityAt - a.lastActivityAt,
+        b.lastActivityAt - a.lastActivityAt ||
+        b.createdAt - a.createdAt ||
+        a._id.localeCompare(b._id),
     )
-    .slice(0, 25)
+    .slice(0, DEMO_CATCH_UP_ITEM_LIMIT)
     .map((post) => ({
       post,
       summary: post.summary?.trim()
@@ -46,8 +66,12 @@ export function composeDemoCatchUp(posts: EnrichedPost[]): CatchUpDigest {
 
   return {
     items,
-    eligibleInWindow: posts.filter((post) => post.unread).length,
-    omittedEligibleInWindow: Math.max(0, posts.filter((post) => post.unread).length - 25),
-    scan: { scannedPosts: posts.length, maxPosts: 200, complete: true },
+    eligibleInWindow: eligible.length,
+    omittedEligibleInWindow: Math.max(0, eligible.length - DEMO_CATCH_UP_ITEM_LIMIT),
+    scan: {
+      scannedPosts: Math.min(posts.length, DEMO_CATCH_UP_SCAN_LIMIT),
+      maxPosts: DEMO_CATCH_UP_SCAN_LIMIT,
+      complete: posts.length < DEMO_CATCH_UP_SCAN_LIMIT,
+    },
   };
 }
