@@ -72,8 +72,9 @@ Useful checks:
 
 ```bash
 bun run build
- bun run verify:builds
- bun run test:observability
+bun run test
+bun run verify:builds
+bun run test:observability
 bun run typecheck
 bun run codegen
 ```
