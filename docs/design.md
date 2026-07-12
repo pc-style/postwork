@@ -7,13 +7,13 @@ colors:
   near-black: "#0a0a0b"
   surface: "#121014"
   surface-2: "#18151a"
-  hairline: "#252327"
+  hairline: "#302d32"
   ink: "#e8e6e3"
-  muted: "#8a8782"
-  faint: "#4a4845"
-  urgent: "#ff6b6b"
-  high: "#d9a441"
-  normal: "#8a8782"
+  muted: "#a19d98"
+  faint: "#5c5956"
+  urgent: "#ff7b7b"
+  high: "#e1b452"
+  normal: "#a19d98"
 typography:
   display:
     fontFamily: "'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
@@ -169,22 +169,22 @@ of signal; everything else is a tonal neutral.
   from the canvas.
 - **Surface-2** (`#18151a`): The next tonal step up, used on hover and for inset
   affordances (agent tag, role badge, code).
-- **Hairline** (`#252327`): Borders and dividers. The structural grid of the UI;
+- **Hairline** (`#302d32`): Borders and dividers. The structural grid of the UI;
   flat layering leans on these instead of shadows.
 - **Ink** (`#e8e6e3`): Primary text and headings. Warm off-white, not pure white.
-- **Muted** (`#8a8782`): Secondary text — metadata, snippets, labels, timestamps.
+- **Muted** (`#a19d98`): Secondary text — metadata, snippets, labels, timestamps.
 - **Faint** (`#5c5956`): Decorative separators, disabled ornament, and low-emphasis
   surfaces only. Faint never carries instructions, required metadata, errors, or
-  disabled control labels. Meaningful secondary text uses Muted (`#a19d98`).
+  disabled control labels. Meaningful secondary text uses Muted.
 
 ### Tertiary (priority state colors)
 
 Warm, muted state colors — distinct from the page accent, never used as
 decoration.
 
-- **Urgent Coral** (`#ff6b6b`): The `Urgent` priority chip and dot.
-- **High Gold** (`#d9a441`): The `High` priority chip and dot.
-- **Normal Grey** (`#8a8782`): The `Normal` priority chip and dot (shares Muted).
+- **Urgent Coral** (`#ff7b7b`): The `Urgent` priority chip and dot.
+- **High Gold** (`#e1b452`): The `High` priority chip and dot.
+- **Normal Grey** (`#a19d98`): The `Normal` priority chip and dot (shares Muted).
 
 ### Identity colors (avatars & orgs)
 

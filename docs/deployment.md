@@ -38,6 +38,60 @@ No server-side Sentry integration is configured: Convex structured logging in
 `convex/lib/observability.ts` remains the backend source of truth, and this keeps
 the local anonymous Convex workflow credential-free.
 
+## Demo reseed policy
+
+The public demo uses a **manual reseed**, owned by the person deploying or
+preparing the demo. Run it before a planned demo, after seed content changes, or
+when public data no longer presents a useful walkthrough. Do not reseed on a
+fixed schedule: the operation intentionally replaces demo data, and the current
+traffic level does not justify surprising active visitors with an automatic
+reset. `PCS-227` retains a scheduled job as an optional fallback if manual
+ownership proves unreliable.
+
+The seed mutation is destructive and idempotent. It wipes application tables
+before rebuilding the demo organization, people, spaces, posts, replies,
+priorities, reads, tasks, and baked summaries. It must run only against the
+dedicated demo Convex deployment, never product.
+
+### Reseed runbook
+
+1. Confirm the current branch contains the intended narrative in
+   `convex/seed.ts`, then run `bun run build` locally.
+2. In the Convex dashboard, copy the deploy key for the **demo** deployment and
+   verify that its `DEMO` environment variable is `true`. Do not continue if the
+   deployment identity or mode is ambiguous.
+3. Export the demo deploy key only for this shell and run the seed:
+
+   ```bash
+   CONVEX_DEPLOY_KEY='<demo deploy key>' bunx convex run --prod seed:run
+   ```
+
+4. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
+   teammates, and verify the feed, one post with replies, priorities, and the
+   catch-up page. Confirm baked summaries render without an AI provider key.
+5. Record the reseed date and commit SHA in the deployment log or release notes.
+   If verification fails, fix or revert the seed change and rerun the same
+   idempotent command; there is no in-place rollback because demo data is
+   disposable by design.
+
+Local development remains `bun run seed`, which targets the deployment selected
+by `.env.local`. It is not a substitute for the explicit demo-production command
+above.
+
+## Summary refresh policy
+
+Post summaries remain manually generated or regenerated. A reply marks an
+existing summary stale, the UI explains that newer replies are missing, and the
+Generate/Regenerate action is already authenticated and rate-limited. Postwork
+will not add a Convex cron for automatic refresh yet: scheduled model calls
+would spend provider capacity without user intent, refresh threads nobody is
+reading, and make provider failures an operational background concern.
+
+Reconsider automatic refresh only when production usage shows stale summaries
+regularly blocking catch-up. At that point, prefer an opt-in per-organization
+setting with a bounded queue, idempotency, retry limits, and provider-budget
+controls rather than a global cron.
+
 ## Local verification
 
 ```bash
