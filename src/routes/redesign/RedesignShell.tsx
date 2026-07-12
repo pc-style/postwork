@@ -140,7 +140,7 @@ function NavLinks({ onSelect }: { onSelect?: () => void }) {
           experiments
         </Link>
       ) : null}
-      {currentUser?.role === "admin" ? (
+      {demoPolicy.productAuth && currentUser?.role === "admin" ? (
         <Link
           to="/admin"
           className="flex min-h-11 items-center rounded-md px-3 py-2 text-muted transition-colors hover:bg-surface hover:text-fg"
