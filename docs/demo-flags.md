@@ -12,6 +12,7 @@ typed policy rather than read environment values or invent a second flag.
 | seeded teammate switcher | on | off | `demoPolicy.userSwitcher` + app shell |
 | session overlay writes | on | off | `demoPolicy.sessionOverlay` + `src/lib/store.tsx` |
 | product authentication | off | on | `demoPolicy.productAuth` + route/provider gates |
+| admin control plane | off | on | `demoPolicy.productAuth` + admin route/navigation gates |
 
 `VITE_DEMO` defaults to demo mode when unset. `false`, `0`, and `off` select
 product mode. The backend has a separate `DEMO` environment value owned by

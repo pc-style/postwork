@@ -3,7 +3,7 @@ name: Postwork
 description: Posts, not channels — a calm, durable record of team decisions.
 colors:
   deep-wine: "#8c1862"
-  wine-glow: "#b53a82"
+  wine-glow: "#c64f98"
   near-black: "#0a0a0b"
   surface: "#121014"
   surface-2: "#18151a"
@@ -156,7 +156,7 @@ of signal; everything else is a tonal neutral.
 - **Deep Wine** (`#8c1862`): The one accent. Carries primary actions (`new
   post`, `invite org`), the brand mark, selection, and the agent-summary frame.
   Used on ≤10% of any screen — its rarity is the point.
-- **Wine Glow** (`#b53a82`): The softer, brighter sibling. Used for accent *text*
+- **Wine Glow** (`#c64f98`): The softer, brighter sibling. Used for accent *text*
   and links (`active 5d ago`, `ai summary`, unread dot, scope tags, the org-only
   lock), and for the primary button's hover state. Where Deep Wine fills, Wine
   Glow speaks.

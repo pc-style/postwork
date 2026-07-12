@@ -7,9 +7,8 @@ import { Button } from "../components/Button";
 import { FormField } from "../components/FormField";
 import { ProfileDialog } from "../components/ProfileDialog";
 import { Skeleton } from "../components/Skeleton";
-import { isDemo } from "../lib/demoMode";
+import { demoPolicy, isDemo } from "../lib/demoMode";
 import { clerkAppearance } from "../lib/providers";
-import { useSession } from "../lib/session";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   if (isDemo) return <>{children}</>;
@@ -307,11 +306,13 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 }
 
 function AdminGate({ children }: { children: ReactNode }) {
-  const { currentUser } = useSession();
-  const serverIsAdmin = useQuery(api.admin.viewerIsAdmin, isDemo ? "skip" : {});
-  const isAdmin = isDemo ? currentUser?.role === "admin" : serverIsAdmin;
+  const serverIsAdmin = useQuery(
+    api.admin.viewerIsAdmin,
+    demoPolicy.productAuth ? {} : "skip",
+  );
+  const isAdmin = demoPolicy.productAuth ? serverIsAdmin : false;
 
-  if (isAdmin === undefined || (isDemo && !currentUser)) {
+  if (isAdmin === undefined) {
     return <GateLoading label="Checking admin access" />;
   }
 
@@ -319,7 +320,11 @@ function AdminGate({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg px-6 text-center">
         <h1 className="text-lg font-semibold text-fg">Admin access required</h1>
-        <p className="max-w-sm text-sm text-muted">Ask an existing admin if you need access to this area.</p>
+        <p className="max-w-sm text-sm text-muted">
+          {demoPolicy.productAuth
+            ? "Ask an existing admin if you need access to this area."
+            : "Admin controls are available in product mode."}
+        </p>
         <Link to="/app" className="inline-flex min-h-11 items-center text-sm text-accent-soft hover:text-fg">
           <span aria-hidden="true" className="mr-1.5">←</span>
           back to the app

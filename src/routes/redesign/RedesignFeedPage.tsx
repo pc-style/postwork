@@ -46,6 +46,7 @@ export function RedesignFeedPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
+      <h1 className="sr-only">Feed</h1>
       <div className="relative">
         <label htmlFor="feed-search" className="sr-only">Search posts</label>
         <input
