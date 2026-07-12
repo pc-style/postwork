@@ -5,8 +5,8 @@ import type { MutationCtx } from "./_generated/server";
 import {
   canAccessSpace,
   ensureActiveViewerUser,
-  getDefaultOrgId,
-  resolveViewerForRead,
+  resolveReadScope,
+  requireOrgId,
 } from "./authUsers";
 import { listPostsBySpaceId } from "./posts";
 
@@ -52,9 +52,9 @@ function slugify(name: string) {
 export const creationStatus = query({
   args: { viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const viewer = (await resolveReadScope(ctx, args.viewerId)).viewer;
     if (!viewer || viewer.deactivatedAt || viewer.status === "pending") return null;
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
 
     const limit = creationLimit(viewer.role);
     if (limit === null) {
@@ -82,7 +82,7 @@ export const create = mutation({
     const viewer = await ensureActiveViewerUser(ctx, {
       unauthenticatedMessage: "Sign in to create a space.",
     });
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
     const name = args.name.trim();
     const description = args.description?.trim() || undefined;
 
@@ -150,8 +150,9 @@ export const create = mutation({
 export const list = query({
   args: { viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
     const spaces = await ctx.db
       .query("spaces")
       .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", orgId))
@@ -195,8 +196,9 @@ export const list = query({
 export const getBySlug = query({
   args: { slug: v.string(), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
     const space = await ctx.db
       .query("spaces")
       .withIndex("by_org_id_and_slug", (q) =>
@@ -223,8 +225,9 @@ export const getBySlug = query({
 export const membershipsForSpace = query({
   args: { spaceId: v.id("spaces"), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
     if (!(await canAccessSpace(ctx, args.spaceId, viewer?._id))) {
       return [];
     }
@@ -251,7 +254,7 @@ export const postsForSpace = query({
     viewerId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const viewer = (await resolveReadScope(ctx, args.viewerId)).viewer;
     if (!(await canAccessSpace(ctx, args.spaceId, viewer?._id))) {
       return [];
     }

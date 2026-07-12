@@ -18,8 +18,8 @@ async function setup() {
       createdAt: 1,
     });
     const foreignOrgId = await ctx.db.insert("orgs", {
-      name: "Foreign org",
-      slug: "foreign-org",
+      name: "Postwork",
+      slug: "postwork",
       createdAt: 1,
     });
     const viewerId = await ctx.db.insert("users", {

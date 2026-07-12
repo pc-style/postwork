@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
-import { ensureViewerUser, getDefaultOrgId } from "./authUsers";
+import { ensureViewerUser, getProductOrgId, unauthenticated } from "./authUsers";
 import { logAudit } from "./admin";
 import { logInfo } from "./lib/observability";
 import {
@@ -29,7 +29,7 @@ export const checkInvite = query({
   handler: async (ctx, args) => {
     const code = args.code.trim().toLowerCase();
     if (!code) return { valid: false as const };
-    const orgId = await getDefaultOrgId(ctx);
+    const orgId = await getProductOrgId(ctx);
     const invite = await ctx.db
       .query("invites")
       .withIndex("by_org_id_and_code", (q) => q.eq("orgId", orgId).eq("code", code))
@@ -129,7 +129,7 @@ export const claimTargetedInvite = mutation({
   },
 });
 
-/** Ask to join. Public; lands as a pending row in the admin panel. */
+/** Ask to join. Requires a Clerk identity, but not an activated membership. */
 export const requestAccess = mutation({
   args: {
     email: v.string(),
@@ -137,6 +137,8 @@ export const requestAccess = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) unauthenticated("Sign in to request access.");
     const email = args.email.trim().toLowerCase().slice(0, 200);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new ConvexError({
@@ -144,7 +146,7 @@ export const requestAccess = mutation({
         message: "Enter a valid email address.",
       });
     }
-    const orgId = await getDefaultOrgId(ctx);
+    const orgId = await getProductOrgId(ctx);
     const existing = await ctx.db
       .query("accessRequests")
       .withIndex("by_org_id_and_email", (q) => q.eq("orgId", orgId).eq("email", email))

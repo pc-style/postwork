@@ -2,36 +2,25 @@ import { ConvexError } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { AVATAR_PALETTE } from "./avatarPalette";
-import { isDemo } from "./lib/demo";
 
 type AuthCtx = MutationCtx | QueryCtx;
 
-export const DEFAULT_ORG_SLUG = "postwork-demo";
-export const DEFAULT_ORG_NAME = "Postwork Demo";
+export const DEMO_ORG_SLUG = "postwork-demo";
+export const DEMO_ORG_NAME = "Postwork Demo";
+export const PRODUCT_ORG_SLUG = "postwork";
+export const PRODUCT_ORG_NAME = "Postwork";
+// Seed compatibility only. Runtime code must choose demo or product explicitly.
+export const DEFAULT_ORG_SLUG = DEMO_ORG_SLUG;
+export const DEFAULT_ORG_NAME = DEMO_ORG_NAME;
 
-export async function getDefaultOrgId(ctx: AuthCtx): Promise<Id<"orgs">> {
-  const org = await ctx.db
-    .query("orgs")
-    .withIndex("by_slug", (q) => q.eq("slug", DEFAULT_ORG_SLUG))
-    .unique();
-  if (!org) {
-    notFound("Default organization not found. Run the seed or create it first.");
-  }
+async function getOrgIdBySlug(ctx: AuthCtx, slug: string, message: string) {
+  const org = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", slug)).unique();
+  if (!org) notFound(message);
   return org._id;
 }
 
-export async function ensureDefaultOrg(ctx: MutationCtx): Promise<Id<"orgs">> {
-  const existing = await ctx.db
-    .query("orgs")
-    .withIndex("by_slug", (q) => q.eq("slug", DEFAULT_ORG_SLUG))
-    .unique();
-  if (existing) return existing._id;
-  return await ctx.db.insert("orgs", {
-    name: DEFAULT_ORG_NAME,
-    slug: DEFAULT_ORG_SLUG,
-    createdAt: Date.now(),
-  });
-}
+export const getDemoOrgId = (ctx: AuthCtx) => getOrgIdBySlug(ctx, DEMO_ORG_SLUG, "Demo organization not found. Run the demo seed first.");
+export const getProductOrgId = (ctx: AuthCtx) => getOrgIdBySlug(ctx, PRODUCT_ORG_SLUG, "Product organization not found. Run migrations:ensureProductOrg first.");
 
 export type AuthIdentity = NonNullable<
   Awaited<ReturnType<AuthCtx["auth"]["getUserIdentity"]>>
@@ -160,7 +149,8 @@ export async function findUserForIdentity(
 
   // Legacy subject-only rows predate tokenIdentifier. Keep that migration path
   // explicitly org-scoped; subject alone is not safe as a global identity key.
-  const resolvedOrgId = orgId ?? (await getDefaultOrgId(ctx));
+  if (!orgId) return null;
+  const resolvedOrgId = orgId;
 
   const bySubject = await ctx.db
     .query("users")
@@ -206,26 +196,31 @@ export function notFound(message: string): never {
   });
 }
 
+export function requireOrgId(user: Pick<Doc<"users">, "orgId">): Id<"orgs"> {
+  if (!user.orgId) forbidden("Your account is missing organization ownership.");
+  return user.orgId;
+}
+
 export async function getViewerFromAuth(
   ctx: AuthCtx,
 ): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
-  return await findUserForIdentity(ctx, identity);
+  return await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
 }
 
-export async function resolveViewerForRead(
-  ctx: QueryCtx,
-  requestedViewerId: Id<"users"> | undefined,
-): Promise<Doc<"users"> | null> {
-  const viewer = await getViewerFromAuth(ctx);
-  if (viewer) return viewer.status === "pending" ? null : viewer;
+export type ReadScope = { orgId: Id<"orgs">; viewer: Doc<"users"> | null; authenticated: boolean };
 
-  if (!isDemo() || !requestedViewerId) {
-    return null;
+export async function resolveReadScope(ctx: QueryCtx, requestedViewerId?: Id<"users">): Promise<ReadScope> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (identity) {
+    const orgId = await getProductOrgId(ctx);
+    const viewer = await findUserForIdentity(ctx, identity, orgId);
+    return { orgId, viewer: viewer?.status === "active" && !viewer.deactivatedAt ? viewer : null, authenticated: true };
   }
-
-  return await ctx.db.get(requestedViewerId);
+  const orgId = await getDemoOrgId(ctx);
+  const requested = requestedViewerId ? await ctx.db.get(requestedViewerId) : null;
+  return { orgId, viewer: requested?.orgId === orgId ? requested : null, authenticated: false };
 }
 
 export async function ensureViewerUser(
@@ -240,7 +235,8 @@ export async function ensureViewerUser(
   // Resolve the canonical token globally before selecting an organization.
   // Existing identities keep the org that owns their user row; the default org
   // is only a creation target for identities that do not exist yet.
-  const existing = await findUserForIdentity(ctx, identity);
+  const orgId = await getProductOrgId(ctx);
+  const existing = await findUserForIdentity(ctx, identity, orgId);
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
@@ -287,8 +283,7 @@ export async function ensureViewerUser(
     return existing;
   }
 
-  const orgId = await ensureDefaultOrg(ctx);
-  const role = (await countAdmins(ctx, orgId)) === 0 ? "admin" : "member";
+  const role = "member";
   const avatarColor = colorFor(identity.tokenIdentifier);
   const userId = await ctx.db.insert("users", {
     orgId,
@@ -363,7 +358,9 @@ export async function canAccessSpace(
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
   const space = await ctx.db.get(spaceId);
-  if (!space || space.orgId !== (viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDefaultOrgId(ctx))) {
+  const viewer = viewerId ? await ctx.db.get(viewerId) : null;
+  const orgId = viewer?.orgId ?? await getDemoOrgId(ctx);
+  if (!space || space.orgId !== orgId) {
     return false;
   }
 
@@ -371,7 +368,7 @@ export async function canAccessSpace(
     return await isSpaceMember(ctx, spaceId, viewerId);
   }
 
-  return isDemo();
+  return orgId === await getDemoOrgId(ctx);
 }
 
 export async function canAccessPost(
@@ -379,12 +376,8 @@ export async function canAccessPost(
   post: Doc<"posts">,
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
-  const orgId = viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDefaultOrgId(ctx);
+  const orgId = viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDemoOrgId(ctx);
   if (post.orgId !== orgId) return false;
-
-  if (!viewerId && !isDemo()) {
-    return false;
-  }
 
   if (!post.spaceId) {
     return true;

@@ -5,10 +5,8 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
   getViewerFromAuth,
-  getDefaultOrgId,
 } from "./authUsers";
 import { publicUser } from "./users";
-import { isDemo } from "./lib/demo";
 import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
 import { logInfo } from "./lib/observability";
 import { parse, profileTitleSchema } from "./lib/validation";
@@ -32,22 +30,9 @@ import {
  * client value) admin surfaces act as the seeded admin. Product deployments
  * always require a real authenticated admin.
  */
-async function demoAdminFallback(
-  ctx: QueryCtx | MutationCtx,
-): Promise<Doc<"users"> | null> {
-  if (!isDemo()) return null;
-  const orgId = await getDefaultOrgId(ctx);
-  return await ctx.db
-    .query("users")
-    .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId).eq("role", "admin"))
-    .first();
-}
-
 async function requireAdminForRead(ctx: QueryCtx): Promise<Doc<"users">> {
   const viewer = await getViewerFromAuth(ctx);
   if (!viewer) {
-    const demoAdmin = await demoAdminFallback(ctx);
-    if (demoAdmin) return demoAdmin;
     throw new ConvexError({ code: "UNAUTHENTICATED", message: "Sign in first." });
   }
   // Admin implies an activated account — a pending user is never an admin.
@@ -58,11 +43,6 @@ async function requireAdminForRead(ctx: QueryCtx): Promise<Doc<"users">> {
 }
 
 async function requireAdminForWrite(ctx: MutationCtx): Promise<Doc<"users">> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    const demoAdmin = await demoAdminFallback(ctx);
-    if (demoAdmin) return demoAdmin;
-  }
   // ensureActiveViewerUser rejects pending (invite-not-redeemed) accounts, so
   // a pending first-user cannot mint themselves an invite via the admin API.
   const viewer = await ensureActiveViewerUser(ctx);

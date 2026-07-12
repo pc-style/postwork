@@ -3,9 +3,9 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
   forbidden,
-  getDefaultOrgId,
   getViewerFromAuth,
   unauthenticated,
+  requireOrgId,
 } from "./authUsers";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
@@ -37,7 +37,7 @@ export const current = query({
       );
     }
 
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
     const stored = await ctx.db
       .query("notificationPreferences")
       .withIndex("by_org_id_and_user_id", (q) =>
@@ -67,7 +67,7 @@ export async function savePreferences(
   viewer: Awaited<ReturnType<typeof ensureActiveViewerUser>>,
   args: NotificationPreferences,
 ) {
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
     const preferences = validatePreferences(args);
     const existing = await ctx.db
       .query("notificationPreferences")

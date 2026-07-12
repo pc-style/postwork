@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
-import { isDemo } from "./lib/demo";
 import type { OutboundDeliveryCandidate } from "./notificationComposer";
 
 const notificationItem = v.object({
@@ -30,7 +29,7 @@ const outboundCandidate = v.object({
 export const dispatch = internalAction({
   args: { candidates: v.array(outboundCandidate) },
   handler: async (_ctx, args) => {
-    return planProviderDispatch(args.candidates, isDemo());
+    return planProviderDispatch(args.candidates, process.env.DISABLE_NOTIFICATION_TRANSPORT === "true");
   },
 });
 

@@ -7,13 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { isDemo } from "./demoMode";
 import { useSession } from "./session";
-import { useStore } from "./store";
 
 export type AgentTask = FunctionReturnType<typeof api.agentTasks.list>[number];
 
@@ -44,8 +43,6 @@ export function AgentTasksProvider({ children }: { children: ReactNode }) {
 
 function DemoAgentTasksProvider({ children }: { children: ReactNode }) {
   const { currentUserId } = useSession();
-  const store = useStore();
-  const runAgent = useAction(api.agentTasks.runAgent);
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const counter = useRef(0);
 
@@ -83,47 +80,13 @@ function DemoAgentTasksProvider({ children }: { children: ReactNode }) {
       setTasks((prev) => [task, ...prev]);
       patchTask(id, { status: "running" });
 
-      try {
-        const res = await runAgent({
-          agentName: args.agentName,
-          prompt: args.prompt,
-          contextText: args.contextText,
-        });
-        if (res.disabled) {
-          // No AI provider configured for the demo — surface a calm notice
-          // instead of posting the fallback string as an agent reply.
-          patchTask(id, {
-            status: "failed",
-            completedAt: Date.now(),
-            error: res.result,
-            model: res.model,
-          });
-          return;
-        }
-        patchTask(id, {
-          status: "done",
-          result: res.result,
-          model: res.model,
-          completedAt: Date.now(),
-        });
-        await store.createReply({
-          postId: args.postId,
-          parentId: args.sourceReplyId,
-          authorId: args.agentId,
-          body: res.result,
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        patchTask(id, {
-          status: "failed",
-          completedAt: Date.now(),
-          error: /API_KEY|not set/i.test(msg)
-            ? "AI is disabled for the time of the demo."
-            : msg,
-        });
-      }
+      patchTask(id, {
+        status: "failed",
+        completedAt: Date.now(),
+        error: "Agent execution requires an authenticated product account.",
+      });
     },
-    [currentUserId, patchTask, runAgent, store],
+    [currentUserId, patchTask],
   );
 
   const tasksForPost = useCallback(

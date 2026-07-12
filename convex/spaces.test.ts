@@ -14,8 +14,8 @@ async function setup(role: Role) {
   const tokenIdentifier = `https://issuer.example|${role}`;
   const { orgId, userId } = await t.run(async (ctx) => {
     const orgId = await ctx.db.insert("orgs", {
-      name: "Postwork Demo",
-      slug: "postwork-demo",
+      name: "Postwork",
+      slug: "postwork",
       createdAt: 1,
     });
     const userId = await ctx.db.insert("users", {
@@ -50,8 +50,8 @@ describe("space creation", () => {
         createdAt: 1,
       });
       const orgId = await ctx.db.insert("orgs", {
-        name: "Acme",
-        slug: "acme",
+        name: "Postwork",
+        slug: "postwork",
         createdAt: 2,
       });
       const userId = await ctx.db.insert("users", {

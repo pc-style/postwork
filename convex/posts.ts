@@ -9,10 +9,10 @@ import {
   forbidden,
   notFound,
   requireSpaceMember,
-  resolveViewerForRead,
+  resolveReadScope,
   getViewerFromAuth,
-  getDefaultOrgId,
   unauthenticated,
+  requireOrgId,
 } from "./authUsers";
 import { priority } from "./schema";
 import { publicUser, type PublicUser } from "./users";
@@ -180,8 +180,9 @@ export const feed = query({
     onlyUnread: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
     // Bounded read: the feed only ever renders recent activity, and `enrich`
     // costs a postReads lookup per post per viewer — don't scan the table.
     const FEED_LIMIT = 200;
@@ -241,8 +242,9 @@ export const feedPaginated = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
 
     const result = await (args.space
       ? ctx.db
@@ -286,8 +288,9 @@ export const counts = query({
     space: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
 
     const posts = args.space
       ? await ctx.db
@@ -325,8 +328,9 @@ export const counts = query({
 export const search = query({
   args: { term: v.string(), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
+    const orgId = scope.orgId;
     const term = args.term.trim().slice(0, LIMITS.SEARCH_TERM_MAX);
     if (!term) return [];
 
@@ -367,9 +371,10 @@ export const search = query({
 export const get = query({
   args: { postId: v.id("posts"), viewerId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== (viewer?.orgId ?? (await getDefaultOrgId(ctx)))) return null;
+    if (!post || post.orgId !== scope.orgId) return null;
     if (!(await canAccessPost(ctx, post, viewer?._id))) {
       return null;
     }
@@ -403,7 +408,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
 
     // Rate limit (Phase 3.1).
     await rateLimiter.limit(ctx, "createPost", { key: viewer._id, throws: true });
@@ -476,7 +481,7 @@ export const markRead = mutation({
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== orgId) notFound("Post not found.");
     if (post.spaceId) {
@@ -491,7 +496,7 @@ export const markAllRead = mutation({
   args: {},
   handler: async (ctx) => {
     const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = requireOrgId(viewer);
     const now = Date.now();
     const posts = await ctx.db
       .query("posts")
@@ -603,7 +608,7 @@ export const remove = mutation({
       forbidden("Only the author or an admin can delete a post.");
     }
 
-    const orgId = post.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = viewer.orgId;
 
     // Delete all replies on this post.
     const replies = await ctx.db

@@ -21,8 +21,8 @@ describe("notification preferences API", () => {
     const tokenIdentifier = "https://issuer.example|member-1";
     const { orgId, userId } = await t.run(async (ctx) => {
       const orgId = await ctx.db.insert("orgs", {
-        name: "Acme",
-        slug: "postwork-demo",
+        name: "Postwork",
+        slug: "postwork",
         createdAt: 1,
       });
       const userId = await ctx.db.insert("users", {

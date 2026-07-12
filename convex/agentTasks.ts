@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { ConvexError, v } from "convex/values";
-import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
@@ -9,9 +9,8 @@ import {
   canAccessPost,
   ensureActiveViewerUser,
   forbidden,
-  getDefaultOrgId,
   notFound,
-  resolveViewerForRead,
+  resolveReadScope,
 } from "./authUsers";
 import { agentTaskStatus } from "./schema";
 import { rateLimiter } from "./lib/rateLimit";
@@ -24,7 +23,7 @@ type AgentResult = {
 
 async function generateAgentResult(args: {
   ctx: ActionCtx;
-  orgId?: Id<"orgs">;
+  orgId: Id<"orgs">;
   agentName: string;
   prompt: string;
   contextText: string;
@@ -85,9 +84,11 @@ function publicTask(task: Doc<"agentTasks">) {
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const viewer = await resolveViewerForRead(ctx, undefined);
+    const scope = await resolveReadScope(ctx);
+    if (scope.authenticated && !scope.viewer) return [];
+    const viewer = scope.viewer;
     if (!viewer) return [];
-    const orgId = viewer.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = viewer.orgId;
     const tasks = await ctx.db
       .query("agentTasks")
       .withIndex("by_org_id_and_created_at", (q) => q.eq("orgId", orgId))
@@ -100,9 +101,15 @@ export const list = query({
 export const forPost = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, undefined);
+    const scope = await resolveReadScope(ctx);
+    if (scope.authenticated && !scope.viewer) return [];
+    const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (!post || !(await canAccessPost(ctx, post, viewer?._id))) return [];
+    if (
+      !post ||
+      post.orgId !== scope.orgId ||
+      !(await canAccessPost(ctx, post, viewer?._id))
+    ) return [];
     const tasks = await ctx.db
       .query("agentTasks")
       .withIndex("by_org_id_and_post_id", (q) =>
@@ -171,12 +178,6 @@ export const create = mutation({
     await ctx.scheduler.runAfter(0, internal.agentTasks.runSimulated, { taskId });
     return taskId;
   },
-});
-
-export const runAgent = action({
-  args: { agentName: v.string(), prompt: v.string(), contextText: v.string() },
-  handler: async (ctx, args): Promise<AgentResult> =>
-    generateAgentResult({ ctx, ...args }),
 });
 
 export const getRunnableTask = internalQuery({
@@ -283,7 +284,7 @@ export const runSimulated = internalAction({
     try {
       const res = await generateAgentResult({
         ctx,
-        orgId: runnable.task.orgId,
+        orgId: runnable.task.orgId ?? (() => { throw new Error("Agent task missing orgId"); })(),
         agentName: runnable.agentName,
         prompt: runnable.task.prompt,
         contextText: runnable.contextText,

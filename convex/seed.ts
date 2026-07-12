@@ -1,7 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { AVATAR_PALETTE } from "./avatarPalette";
-import { DEFAULT_ORG_NAME, DEFAULT_ORG_SLUG } from "./authUsers";
+import { DEMO_ORG_NAME, DEMO_ORG_SLUG } from "./authUsers";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -19,8 +19,23 @@ const DAY = 24 * HOUR;
 export const run = internalMutation({
   args: {},
   handler: async (ctx) => {
-    // Wipe existing data so the seed is idempotent.
+    const existingDemoOrg = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", DEMO_ORG_SLUG)).unique();
+    const now = Date.now();
+    const orgId = existingDemoOrg?._id ?? await ctx.db.insert("orgs", {
+      name: DEMO_ORG_NAME,
+      slug: DEMO_ORG_SLUG,
+      createdAt: now,
+    });
+
+    // Reset only demo-owned rows. The order removes dependants before parents,
+    // and deliberately preserves the demo org document and every product row.
     for (const table of [
+      "auditLog",
+      "accessRequests",
+      "invites",
+      "attachmentUploadTickets",
+      "postAttachments",
+      "notificationPreferences",
       "aiGenerationSettings",
       "agentTasks",
       "postReads",
@@ -29,19 +44,13 @@ export const run = internalMutation({
       "spaceMemberships",
       "spaces",
       "users",
-      "orgs",
     ] as const) {
       const rows = await ctx.db.query(table).collect();
-      await Promise.all(rows.map((r) => ctx.db.delete(r._id)));
+      for (const row of rows) {
+        if (row.orgId !== orgId) continue;
+        await ctx.db.delete(row._id);
+      }
     }
-
-    const now = Date.now();
-
-    const orgId = await ctx.db.insert("orgs", {
-      name: DEFAULT_ORG_NAME,
-      slug: DEFAULT_ORG_SLUG,
-      createdAt: now,
-    });
 
     const user = (
       name: string,

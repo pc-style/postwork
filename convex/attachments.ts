@@ -6,7 +6,7 @@ import type { MutationCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
   canAccessPost,
-  getViewerFromAuth,
+  resolveReadScope,
 } from "./authUsers";
 import { rateLimiter } from "./lib/rateLimit";
 import { logInfo } from "./lib/observability";
@@ -163,10 +163,15 @@ export type AttachmentWithUrl = {
 export const listForPost = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<AttachmentWithUrl[]> => {
-    const authViewer = await getViewerFromAuth(ctx);
-    const viewer = authViewer?.status === "pending" ? null : authViewer;
+    const scope = await resolveReadScope(ctx);
+    if (scope.authenticated && !scope.viewer) return [];
+    const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (!post || !(await canAccessPost(ctx, post, viewer?._id))) {
+    if (
+      !post ||
+      post.orgId !== scope.orgId ||
+      !(await canAccessPost(ctx, post, viewer?._id))
+    ) {
       return [];
     }
 

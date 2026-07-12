@@ -51,3 +51,9 @@ So the schema supports orgs structurally; the product flow does not.
 
 No billing, no org-level settings/branding, no cross-org anything. First
 milestone is just: sign up → create org → invite people into *your* org.
+
+## Implemented shared-deployment topology
+
+The fixed tenant slugs are `postwork-demo` for anonymous read-only demo data and `postwork` (display name `Postwork`) for Clerk-authenticated product data. Both use the same schema and deployment; there are no parallel `demo_*` tables. Scope is selected from authentication on the backend, never from a global demo environment flag.
+
+Migration order is: ensure the product org, audit missing ownership and cross-org references, activate the specified first product admin only if no active product admin exists, then release product traffic. Demo reseeding preserves the demo org ID and deletes only demo-owned rows. Frontends share `VITE_CONVEX_URL`; demo sets demo UI mode, while product sets Clerk configuration and product UI mode. Convex deployment has one explicit backend release owner, separate from frontend Vercel builds.

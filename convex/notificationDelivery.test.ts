@@ -32,12 +32,12 @@ test("demo mode discards provider candidates server-side", () => {
   });
 });
 
-test("the internal delivery action is a no-op in the default demo environment", async () => {
+test("the internal delivery action remains a no-op until a provider is configured", async () => {
   const t = convexTest(schema, modules);
 
   await expect(
     t.action(internal.notificationDelivery.dispatch, { candidates }),
-  ).resolves.toEqual({ status: "skipped_demo", candidateCount: 0 });
+  ).resolves.toEqual({ status: "provider_not_configured", candidateCount: 1 });
 });
 
 test("product mode remains a no-op until a provider is configured", () => {

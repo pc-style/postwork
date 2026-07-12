@@ -9,8 +9,7 @@ import {
   forbidden,
   notFound,
   requireSpaceMember,
-  resolveViewerForRead,
-  getDefaultOrgId,
+  resolveReadScope,
 } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 import { rateLimiter } from "./lib/rateLimit";
@@ -98,9 +97,11 @@ export const listForPost = query({
     viewerId: v.optional(v.id("users")),
   },
   handler: async (ctx, args): Promise<EnrichedReply[]> => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    if (scope.authenticated && !scope.viewer) return [];
+    const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (!post) return [];
+    if (!post || post.orgId !== scope.orgId) return [];
     if (!(await canAccessPost(ctx, post, viewer?._id))) {
       return [];
     }
@@ -129,9 +130,17 @@ export const listForPostPaginated = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const viewer = await resolveViewerForRead(ctx, args.viewerId);
+    const scope = await resolveReadScope(ctx, args.viewerId);
+    if (scope.authenticated && !scope.viewer) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+    const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (!post || !(await canAccessPost(ctx, post, viewer?._id))) {
+    if (
+      !post ||
+      post.orgId !== scope.orgId ||
+      !(await canAccessPost(ctx, post, viewer?._id))
+    ) {
       return { page: [], isDone: true, continueCursor: "" };
     }
 
@@ -329,7 +338,7 @@ export const remove = mutation({
     }
 
     const postId = reply.postId;
-    const orgId = reply.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = viewer.orgId;
 
     // Recursively collect child reply ids (BFS).
     const toDelete: Id<"replies">[] = [args.replyId];

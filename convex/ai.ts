@@ -6,8 +6,6 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGateway } from "@ai-sdk/gateway";
 import { aiGenerationKind } from "./schema";
-import { getDefaultOrgId } from "./authUsers";
-import { isDemo } from "./lib/demo";
 import { rateLimiter } from "./lib/rateLimit";
 import { logWarn } from "./lib/observability";
 import {
@@ -150,11 +148,11 @@ export function aiConfigured(options: ResolveModelOptions = {}): boolean {
 
 export const getGenerationModelSetting = internalQuery({
   args: {
-    orgId: v.optional(v.id("orgs")),
+    orgId: v.id("orgs"),
     kind: aiGenerationKind,
   },
   handler: async (ctx, args): Promise<string | null> => {
-    const orgId = args.orgId ?? (await getDefaultOrgId(ctx));
+    const orgId = args.orgId;
     const setting = await ctx.db
       .query("aiGenerationSettings")
       .withIndex("by_org_id_and_kind", (q) =>
@@ -287,20 +285,17 @@ export const getContext = internalQuery({
 export const summarizePost = action({
   args: { postId: v.id("posts") },
   handler: async (ctx, args): Promise<{ summary: string; model: string }> => {
-    if (!isDemo()) {
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity) {
-        throw new ConvexError({
-          code: "UNAUTHENTICATED",
-          message: "Sign in to generate summaries.",
-        });
-      }
-      // Rate limit (Phase 3.1) — only in product mode where we have an identity.
-      await rateLimiter.limit(ctx, "summarize", {
-        key: identity.tokenIdentifier,
-        throws: true,
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new ConvexError({
+        code: "UNAUTHENTICATED",
+        message: "Sign in to generate summaries.",
       });
     }
+    await rateLimiter.limit(ctx, "summarize", {
+      key: identity.tokenIdentifier,
+      throws: true,
+    });
 
     const accessiblePost = await ctx.runQuery(api.posts.get, {
       postId: args.postId,
@@ -327,7 +322,7 @@ export const summarizePost = action({
     ].join("\n");
 
     const openRouterModelId = await ctx.runQuery(internal.ai.getGenerationModelSetting, {
-      orgId: accessiblePost.orgId,
+      orgId: accessiblePost.orgId ?? (() => { throw new Error("Post missing orgId"); })(),
       kind: "postSummary",
     });
     const { model, modelId } = resolveModel({ openRouterModelId });

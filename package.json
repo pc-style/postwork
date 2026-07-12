@@ -11,6 +11,7 @@
     "test": "bun test",
     "test:demo": "bun test tests/demoMode.test.ts",
     "verify:builds": "bun run scripts/verify-builds.mjs",
+    "validate:deploy-env": "bun run scripts/validate-deploy-env.mjs",
     "test:observability": "bun test src/lib/monitoring.test.ts",
     "preview": "vite preview",
     "codegen": "convex codegen",

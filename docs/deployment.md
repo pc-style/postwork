@@ -103,3 +103,11 @@ bun run verify:builds
 `verify:builds` runs the default demo build and an explicit
 `VITE_DEMO=false` product build. Neither command needs a Sentry DSN; absent
 monitoring credentials are an expected, supported local configuration.
+
+## Shared Convex deployment tenancy
+
+Both frontends use one Convex deployment and one schema. Anonymous demo traffic is fixed to the `postwork-demo` organization; Clerk-authenticated product traffic is fixed to `postwork` (`Postwork`). Backend authorization derives this scope from Convex auth and never from `DEMO` or a caller-provided organization.
+
+Bootstrap in order: deploy backend from the single designated backend release workflow, run `migrations:ensureProductOrg`, run `migrations:auditTenantOwnership`, then run `migrations:activateFirstProductAdmin` with the intended product user ID. Vercel builds only the frontend; it must not deploy Convex.
+
+Set the demo frontend to `VITE_CONVEX_URL=<shared deployment URL>` with demo UI mode enabled. Set the product frontend to the same `VITE_CONVEX_URL`, plus its Clerk publishable key and product UI mode. Convex owns Clerk issuer/auth configuration and provider secrets. Only the backend release workflow owns `CONVEX_DEPLOY_KEY`.

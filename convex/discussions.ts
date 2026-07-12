@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { ensureActiveViewerUser, getDefaultOrgId } from "./authUsers";
+import { ensureActiveViewerUser, resolveReadScope } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 
 /**
@@ -25,7 +25,9 @@ async function ensureThreadDoc(
   title: string,
   viewerId: Id<"users">,
 ): Promise<Id<"posts">> {
-  const orgId = await getDefaultOrgId(ctx);
+  const viewer = await ctx.db.get(viewerId);
+  if (!viewer?.orgId) throw new ConvexError({ code: "FORBIDDEN", message: "Product identity required." });
+  const orgId = viewer.orgId;
   const existing = await ctx.db
     .query("posts")
     .withIndex("by_org_id_and_experiment_slug", (q) =>
@@ -66,7 +68,8 @@ export type DiscussionThread = {
 export const getThread = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }): Promise<DiscussionThread> => {
-    const orgId = await getDefaultOrgId(ctx);
+    const { orgId, viewer, authenticated } = await resolveReadScope(ctx);
+    if (authenticated && !viewer) return { post: null, replies: [] };
     const post = await ctx.db
       .query("posts")
       .withIndex("by_org_id_and_experiment_slug", (q) =>
@@ -98,9 +101,10 @@ export const getThread = query({
 export const listCounts = query({
   args: { slugs: v.array(v.string()) },
   handler: async (ctx, { slugs }) => {
+    const { orgId, viewer, authenticated } = await resolveReadScope(ctx);
+    if (authenticated && !viewer) return slugs.map((slug) => ({ slug, replyCount: 0, exists: false }));
     return await Promise.all(
       slugs.map(async (slug) => {
-        const orgId = await getDefaultOrgId(ctx);
         const post = await ctx.db
           .query("posts")
           .withIndex("by_org_id_and_experiment_slug", (q) =>

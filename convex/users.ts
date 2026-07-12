@@ -7,10 +7,9 @@ import {
   ensureActiveViewerUser,
   ensureViewerUser,
   findUserForIdentity,
-  getDefaultOrgId,
-  getViewerFromAuth,
+  getProductOrgId,
+  resolveReadScope,
 } from "./authUsers";
-import { isDemo } from "./lib/demo";
 import { rateLimiter } from "./lib/rateLimit";
 import {
   parse,
@@ -53,12 +52,9 @@ export const list = query({
     // The org directory is members-only. Demo mode has no auth (the client
     // switcher picks a persona), so it stays open there; product mode requires
     // an activated viewer — pending/signed-out users get nothing.
-    let viewer: Doc<"users"> | null = null;
-    if (!isDemo()) {
-      viewer = await getViewerFromAuth(ctx);
-      if (!viewer || viewer.status === "pending") return [];
-    }
-    const orgId = viewer?.orgId ?? (await getDefaultOrgId(ctx));
+    const scope = await resolveReadScope(ctx);
+    if (scope.authenticated && !scope.viewer) return [];
+    const orgId = scope.orgId;
     const users = await ctx.db
       .query("users")
       .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))
@@ -72,7 +68,7 @@ export const viewer = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    const user = await findUserForIdentity(ctx, identity);
+    const user = await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
     return publicUser(user);
   },
 });
@@ -82,7 +78,7 @@ export const me = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    const user = await findUserForIdentity(ctx, identity);
+    const user = await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
     if (!user) {
       return {
         user: null,
