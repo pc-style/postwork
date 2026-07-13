@@ -147,9 +147,10 @@ samp {
   border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
 }
 
-.ui-field:focus {
+.ui-field:focus-visible {
   border-color: var(--color-accent-soft);
-  outline: none;
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: 2px;
 }
 
 .ui-field[aria-invalid="true"] {

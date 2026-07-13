@@ -94,7 +94,7 @@ export function GifPicker({
                   ))}
                 </div>
               ) : null}
-              <p className="mt-2 text-[11px] text-faint">Powered by Giphy</p>
+              <p className="mt-2 text-[11px] text-muted">Powered by Giphy</p>
             </>
           )}
         </div>
