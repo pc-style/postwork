@@ -43,6 +43,41 @@ const changes: readonly Change[] = [
     title: "faster posts and smarter summaries",
     note: "posts prefetch before you open them and old ai summaries get marked stale.",
   },
+  {
+    date: "10 July 2026",
+    title: "agents got real work to do",
+    note: "agent tasks, model settings, OpenRouter support, and priority-aware notifications landed.",
+  },
+  {
+    date: "9 July 2026",
+    title: "signup became invite only",
+    note: "new teammates now need an invite and finish their profile before entering the app.",
+  },
+  {
+    date: "8 July 2026",
+    title: "the prototype became a product",
+    note: "auth, profiles, invites, admin tools, moderation, and the public landing page came together.",
+  },
+  {
+    date: "4 July 2026",
+    title: "the ink redesign landed",
+    note: "the app moved to the warmer, quieter interface it still uses today.",
+  },
+  {
+    date: "3 July 2026",
+    title: "the demo stopped trusting everyone",
+    note: "public mutations were locked down, organization visibility was fixed, and the ui got a full cleanup.",
+  },
+  {
+    date: "29 June 2026",
+    title: "product experiments went live",
+    note: "the lab added persistent variants, voting, comparisons, and open discussion threads.",
+  },
+  {
+    date: "24 June 2026",
+    title: "first serious build",
+    note: "posts, nested replies, search, unread state, priorities, summaries, and agent activity worked end to end.",
+  },
 ];
 
 export function ChangelogPage() {
