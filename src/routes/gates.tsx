@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { SignIn, useAuth } from "@clerk/clerk-react";
+import { SignIn, useAuth, useClerk } from "@clerk/clerk-react";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "../components/Button";
@@ -41,6 +41,7 @@ function GateLoading({ label }: { label: string }) {
 }
 
 function ActivationScreen() {
+  const { signOut } = useClerk();
   const convexClient = useConvex();
   const redeemInvite = useMutation(api.access.redeemInvite);
   const claimTargetedInvite = useMutation(api.access.claimTargetedInvite);
@@ -132,6 +133,12 @@ function ActivationScreen() {
         </div>
         <div className="mt-6 border-t border-border pt-5">
           <AccessOnboarding />
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <p className="text-xs text-muted">signed in with the wrong account?</p>
+          <Button variant="quiet" size="sm" onClick={() => void signOut()}>
+            sign out
+          </Button>
         </div>
       </div>
     </AuthFrame>
