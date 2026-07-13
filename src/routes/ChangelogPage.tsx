@@ -9,6 +9,21 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "13 July 2026",
+    title: "notifications leave the app now",
+    note: "important posts can reach teammates by email, with retries when delivery fails.",
+  },
+  {
+    date: "13 July 2026",
+    title: "invites and dialogs stopped fighting you",
+    note: "account switching, keyboard focus, and the mobile demo switcher now behave properly.",
+  },
+  {
+    date: "12 July 2026",
+    title: "demo data stays in the demo",
+    note: "organizations now isolate their own posts, spaces, people, and notifications.",
+  },
+  {
     date: "11 July 2026",
     title: "catch up without digging through the feed",
     note: "new catch-up page sorts unread posts by priority and recent activity.",
