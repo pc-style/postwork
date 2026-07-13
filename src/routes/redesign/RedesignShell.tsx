@@ -95,7 +95,9 @@ function Sidebar() {
       </div>
       <Queue />
       <NavLinks />
-      <div className="mt-auto max-h-[48vh] space-y-3 overflow-y-auto px-4 pb-2">
+      <div
+        className={`mt-auto max-h-[48vh] space-y-3 px-4 pb-2 ${demoPolicy.userSwitcher ? "overflow-visible" : "overflow-y-auto"}`}
+      >
         {demoPolicy.userSwitcher && <UserSwitcher />}
         {demoPolicy.productAuth && <ProductProfileCard />}
       </div>
