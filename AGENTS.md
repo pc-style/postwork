@@ -95,12 +95,12 @@ friendly "configure a provider" message instead of crashing.
 
 ## Design Context
 
-Strategic design context lives in `docs/product.md` (register, users, brand
-personality, anti-references, design principles). Visual system is documented in
-`docs/design.md`. These are maintained by the `impeccable` design skill
-(`.agents/skills/impeccable/`); run `$impeccable` for the command menu, or e.g.
-`$impeccable critique <surface>` / `$impeccable polish <component>`. The concrete
-visual rules below remain the quick reference.
+Read `docs/product.md` when shaping product flows, users, or interaction
+principles. Read `docs/business-plan.md` when working on positioning, pricing,
+market strategy, or go-to-market decisions. Read `docs/brand.md` when writing
+public copy or making brand identity decisions. Read `docs/design.md` before
+changing product UI or the visual system. The concrete visual rules below remain
+the quick reference.
 
 ## Design conventions (style is derived from pcstyle.dev)
 
