@@ -9,8 +9,10 @@ import { ProfileDialog } from "../components/ProfileDialog";
 import { Skeleton } from "../components/Skeleton";
 import { demoPolicy, isDemo } from "../lib/demoMode";
 import {
+  activateInvite,
   signOutFromActivation,
   type ActivationSignOutState,
+  type InviteActivationState,
 } from "../lib/activationSignOut";
 import { clerkAppearance } from "../lib/providers";
 
@@ -50,11 +52,11 @@ function ActivationScreen() {
   const redeemInvite = useMutation(api.access.redeemInvite);
   const claimTargetedInvite = useMutation(api.access.claimTargetedInvite);
   const [invite, setInvite] = useState("");
-  const [state, setState] = useState<
-    "idle" | "checking" | "invalid" | "redeeming" | "error"
-  >("idle");
+  const [state, setState] = useState<InviteActivationState>("idle");
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
   const signOutGuard = useRef(false);
+  const signOutCancellationGuard = useRef(false);
+  const activationGuard = useRef(false);
   const [signOutState, setSignOutState] = useState<ActivationSignOutState>("idle");
 
   useEffect(() => {
@@ -79,22 +81,19 @@ function ActivationScreen() {
   const normalizedInvite = inviteCodeFromInput(invite);
 
   const activate = async () => {
-    if (!normalizedInvite || signOutGuard.current) return;
-    setState("checking");
-    try {
-      const result = await convexClient.query(api.access.checkInvite, {
-        code: normalizedInvite,
-      });
-      if (!result.valid) {
-        setState("invalid");
-        return;
-      }
-      setState("redeeming");
-      await redeemInvite({ code: normalizedInvite });
-      window.localStorage.removeItem("postwork.inviteCode");
-    } catch {
-      setState("error");
-    }
+    await activateInvite({
+      code: normalizedInvite,
+      signOutGuard,
+      signOutCancellationGuard,
+      activationGuard,
+      checkInvite: async (code) => {
+        const result = await convexClient.query(api.access.checkInvite, { code });
+        return result.valid;
+      },
+      redeemInvite: (code) => redeemInvite({ code }),
+      setState,
+      onActivated: () => window.localStorage.removeItem("postwork.inviteCode"),
+    });
   };
 
   if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
@@ -104,7 +103,12 @@ function ActivationScreen() {
   }
 
   const handleSignOut = async () => {
-    await signOutFromActivation(signOut, signOutGuard, setSignOutState);
+    await signOutFromActivation(
+      signOut,
+      signOutGuard,
+      setSignOutState,
+      signOutCancellationGuard,
+    );
   };
 
   return (
