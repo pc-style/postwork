@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { trapDialogFocus } from "../lib/dialogFocus";
 import { Button } from "./Button";
 
 export function Sheet({
@@ -29,7 +30,7 @@ export function Sheet({
   const subtitleId = useId();
 
   useEffect(() => {
-    triggerRef.current =
+    triggerRef.current ??=
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     ref.current?.showModal();
     requestAnimationFrame(() =>
@@ -37,7 +38,7 @@ export function Sheet({
     );
     return () => {
       const target = triggerRef.current;
-      requestAnimationFrame(() => target?.isConnected && target.focus());
+      window.setTimeout(() => target?.isConnected && target.focus(), 0);
     };
   }, [initialFocusRef]);
 
@@ -51,6 +52,7 @@ export function Sheet({
         event.preventDefault();
         onClose();
       }}
+      onKeyDown={trapDialogFocus}
       onClick={(event) => {
         if (event.target === ref.current) onClose();
       }}

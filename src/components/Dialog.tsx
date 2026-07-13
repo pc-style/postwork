@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { trapDialogFocus } from "../lib/dialogFocus";
 import { Button } from "./Button";
 
 export function Dialog({
@@ -30,7 +31,7 @@ export function Dialog({
   const descriptionId = useId();
 
   useEffect(() => {
-    triggerRef.current =
+    triggerRef.current ??=
       returnFocusRef?.current ??
       (document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -41,7 +42,7 @@ export function Dialog({
 
     return () => {
       const target = returnFocusRef?.current ?? triggerRef.current;
-      requestAnimationFrame(() => target?.isConnected && target.focus());
+      window.setTimeout(() => target?.isConnected && target.focus(), 0);
     };
   }, [initialFocusRef, returnFocusRef]);
 
@@ -55,6 +56,7 @@ export function Dialog({
         event.preventDefault();
         if (dismissible) onClose();
       }}
+      onKeyDown={trapDialogFocus}
       onClick={(event) => {
         if (dismissible && event.target === ref.current) onClose();
       }}
