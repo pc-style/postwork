@@ -15,12 +15,14 @@ describe("invite activation", () => {
     const signOutGuard = { current: false };
     const signOutCancellationGuard = { current: false };
     const activationGuard = { current: false };
+    const redemptionLock = { current: null };
 
     const activation = activateInvite({
       code: "pw-test",
       signOutGuard,
       signOutCancellationGuard,
       activationGuard,
+      redemptionLock,
       checkInvite: () => new Promise<boolean>((resolve) => {
         finishValidation = resolve;
       }),
@@ -28,7 +30,7 @@ describe("invite activation", () => {
         redeemCalls += 1;
       },
       setState: () => {},
-      onActivated: () => {
+      onRedeemed: () => {
         activatedCalls += 1;
       },
     });
@@ -58,12 +60,14 @@ describe("invite activation", () => {
     const signOutGuard = { current: false };
     const signOutCancellationGuard = { current: false };
     const activationGuard = { current: false };
+    const redemptionLock = { current: null };
 
     const activation = activateInvite({
       code: "pw-test",
       signOutGuard,
       signOutCancellationGuard,
       activationGuard,
+      redemptionLock,
       checkInvite: () => new Promise<boolean>((resolve) => {
         finishValidation = resolve;
       }),
@@ -71,7 +75,7 @@ describe("invite activation", () => {
         redeemCalls += 1;
       },
       setState: () => {},
-      onActivated: () => {},
+      onRedeemed: () => {},
     });
 
     await signOutFromActivation(
@@ -94,12 +98,13 @@ describe("invite activation", () => {
       signOutGuard,
       signOutCancellationGuard,
       activationGuard,
+      redemptionLock,
       checkInvite: async () => true,
       redeemInvite: async () => {
         redeemCalls += 1;
       },
       setState: () => {},
-      onActivated: () => {},
+      onRedeemed: () => {},
     });
     expect(redeemCalls).toBe(1);
   });
@@ -114,6 +119,7 @@ describe("invite activation", () => {
       signOutGuard,
       signOutCancellationGuard,
       activationGuard: { current: false },
+      redemptionLock: { current: null },
       checkInvite: async () => true,
       redeemInvite: async () => {
         redeemCalls += 1;
@@ -121,7 +127,7 @@ describe("invite activation", () => {
       setState: (state) => {
         if (state === "redeeming") signOutCancellationGuard.current = true;
       },
-      onActivated: () => {},
+      onRedeemed: () => {},
     });
 
     expect(redeemCalls).toBe(0);
@@ -134,11 +140,13 @@ describe("invite activation", () => {
     const signOutGuard = { current: false };
     const signOutCancellationGuard = { current: false };
     const activationGuard = { current: false };
+    const redemptionLock = { current: null };
     const options = {
       code: "pw-test",
       signOutGuard,
       signOutCancellationGuard,
       activationGuard,
+      redemptionLock,
       checkInvite: () => {
         validationCalls += 1;
         return new Promise<boolean>((resolve) => {
@@ -149,7 +157,7 @@ describe("invite activation", () => {
         redeemCalls += 1;
       },
       setState: (_state: InviteActivationState) => {},
-      onActivated: () => {},
+      onRedeemed: () => {},
     };
 
     const first = activateInvite(options);
@@ -161,33 +169,109 @@ describe("invite activation", () => {
     expect(redeemCalls).toBe(1);
   });
 
-  test("does not finish activation when sign-out begins during redemption", async () => {
+  test("defers sign-out until in-flight redemption succeeds", async () => {
     let finishRedemption: (() => void) | undefined;
+    let markRedemptionStarted: (() => void) | undefined;
+    const redemptionStarted = new Promise<void>((resolve) => {
+      markRedemptionStarted = resolve;
+    });
     let activatedCalls = 0;
+    let signOutCalls = 0;
     const signOutGuard = { current: false };
     const signOutCancellationGuard = { current: false };
+    const activationGuard = { current: false };
+    const redemptionLock = { current: null };
+    const signOutStates: ActivationSignOutState[] = [];
 
     const activation = activateInvite({
       code: "pw-test",
       signOutGuard,
       signOutCancellationGuard,
-      activationGuard: { current: false },
+      activationGuard,
+      redemptionLock,
       checkInvite: async () => true,
       redeemInvite: () => new Promise<void>((resolve) => {
         finishRedemption = resolve;
+        markRedemptionStarted?.();
       }),
       setState: () => {},
-      onActivated: () => {
+      onRedeemed: () => {
         activatedCalls += 1;
       },
     });
 
+    await redemptionStarted;
+    const signOut = signOutFromActivation(
+      async () => {
+        signOutCalls += 1;
+      },
+      signOutGuard,
+      (state) => signOutStates.push(state),
+      signOutCancellationGuard,
+      redemptionLock,
+    );
     await Promise.resolve();
-    signOutCancellationGuard.current = true;
-    finishRedemption?.();
-    await activation;
 
-    expect(activatedCalls).toBe(0);
+    expect(signOutCalls).toBe(0);
+    expect(signOutStates).toEqual(["waitingForRedemption"]);
+
+    finishRedemption?.();
+    await Promise.all([activation, signOut]);
+
+    expect(activatedCalls).toBe(1);
+    expect(signOutCalls).toBe(1);
+    expect(signOutStates).toEqual(["waitingForRedemption", "signingOut"]);
+    expect(redemptionLock.current).toBeNull();
+  });
+
+  test("recovers when deferred redemption and sign-out both fail", async () => {
+    let failRedemption: ((error: Error) => void) | undefined;
+    let markRedemptionStarted: (() => void) | undefined;
+    const redemptionStarted = new Promise<void>((resolve) => {
+      markRedemptionStarted = resolve;
+    });
+    const signOutGuard = { current: false };
+    const signOutCancellationGuard = { current: false };
+    const activationGuard = { current: false };
+    const redemptionLock = { current: null };
+    const activationStates: InviteActivationState[] = [];
+    const signOutStates: ActivationSignOutState[] = [];
+
+    const activation = activateInvite({
+      code: "pw-test",
+      signOutGuard,
+      signOutCancellationGuard,
+      activationGuard,
+      redemptionLock,
+      checkInvite: async () => true,
+      redeemInvite: () => new Promise<void>((_resolve, reject) => {
+        failRedemption = reject;
+        markRedemptionStarted?.();
+      }),
+      setState: (state) => activationStates.push(state),
+      onRedeemed: () => {},
+    });
+
+    await redemptionStarted;
+    const signOut = signOutFromActivation(
+      () => Promise.reject(new Error("sign-out unavailable")),
+      signOutGuard,
+      (state) => signOutStates.push(state),
+      signOutCancellationGuard,
+      redemptionLock,
+    );
+    failRedemption?.(new Error("redemption unavailable"));
+    await Promise.all([activation, signOut]);
+
+    expect(activationStates.at(-1)).toBe("error");
+    expect(signOutStates).toEqual([
+      "waitingForRedemption",
+      "signingOut",
+      "error",
+    ]);
+    expect(activationGuard.current).toBe(false);
+    expect(signOutGuard.current).toBe(false);
+    expect(redemptionLock.current).toBeNull();
   });
 
   test.each([
@@ -202,12 +286,13 @@ describe("invite activation", () => {
       signOutGuard: { current: false },
       signOutCancellationGuard: { current: false },
       activationGuard,
+      redemptionLock: { current: null },
       checkInvite,
       redeemInvite: phase === "redemption"
         ? () => Promise.reject(new Error("redemption unavailable"))
         : async () => {},
       setState: (state) => states.push(state),
-      onActivated: () => {},
+      onRedeemed: () => {},
     });
 
     expect(activationGuard.current).toBe(false);

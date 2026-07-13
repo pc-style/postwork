@@ -1,4 +1,8 @@
-export type ActivationSignOutState = "idle" | "signingOut" | "error";
+export type ActivationSignOutState =
+  | "idle"
+  | "waitingForRedemption"
+  | "signingOut"
+  | "error";
 export type InviteActivationState =
   | "idle"
   | "checking"
@@ -8,16 +12,18 @@ export type InviteActivationState =
 
 type SignOutGuard = { current: boolean };
 type ActivationGuard = { current: boolean };
+type RedemptionLock = { current: Promise<unknown> | null };
 
 type InviteActivationOptions = {
   code: string;
   signOutGuard: SignOutGuard;
   signOutCancellationGuard: SignOutGuard;
   activationGuard: ActivationGuard;
+  redemptionLock: RedemptionLock;
   checkInvite: (code: string) => Promise<boolean>;
   redeemInvite: (code: string) => Promise<unknown>;
   setState: (state: InviteActivationState) => void;
-  onActivated: () => void;
+  onRedeemed: () => void;
 };
 
 export async function activateInvite({
@@ -25,10 +31,11 @@ export async function activateInvite({
   signOutGuard,
   signOutCancellationGuard,
   activationGuard,
+  redemptionLock,
   checkInvite,
   redeemInvite,
   setState,
-  onActivated,
+  onRedeemed,
 }: InviteActivationOptions) {
   if (!code || signOutGuard.current || activationGuard.current) return;
 
@@ -53,16 +60,22 @@ export async function activateInvite({
       activationGuard.current = false;
       return;
     }
-    await redeemInvite(code);
-    if (signOutGuard.current || signOutCancellationGuard.current) {
+    const redemption = Promise.resolve().then(() => redeemInvite(code));
+    redemptionLock.current = redemption;
+    try {
+      await redemption;
+    } finally {
+      if (redemptionLock.current === redemption) redemptionLock.current = null;
+    }
+    const signOutQueued = signOutGuard.current || signOutCancellationGuard.current;
+    onRedeemed();
+    if (signOutQueued) {
       activationGuard.current = false;
       return;
     }
-
-    onActivated();
   } catch {
     activationGuard.current = false;
-    if (!signOutGuard.current && !signOutCancellationGuard.current) {
+    if (!signOutCancellationGuard.current) {
       setState("error");
     }
   }
@@ -73,11 +86,22 @@ export async function signOutFromActivation(
   guard: SignOutGuard,
   setState: (state: ActivationSignOutState) => void,
   activationCancellationGuard?: SignOutGuard,
+  redemptionLock?: RedemptionLock,
 ) {
   if (guard.current) return;
 
   guard.current = true;
-  if (activationCancellationGuard) activationCancellationGuard.current = true;
+  const activeRedemption = redemptionLock?.current;
+  if (activeRedemption) {
+    setState("waitingForRedemption");
+    try {
+      await activeRedemption;
+    } catch {
+      // Redemption failure is reported by the activation coordinator.
+    }
+  } else if (activationCancellationGuard) {
+    activationCancellationGuard.current = true;
+  }
   setState("signingOut");
 
   try {

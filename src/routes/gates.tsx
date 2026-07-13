@@ -57,6 +57,7 @@ function ActivationScreen() {
   const signOutGuard = useRef(false);
   const signOutCancellationGuard = useRef(false);
   const activationGuard = useRef(false);
+  const redemptionLock = useRef<Promise<unknown> | null>(null);
   const [signOutState, setSignOutState] = useState<ActivationSignOutState>("idle");
 
   useEffect(() => {
@@ -86,30 +87,26 @@ function ActivationScreen() {
       signOutGuard,
       signOutCancellationGuard,
       activationGuard,
+      redemptionLock,
       checkInvite: async (code) => {
         const result = await convexClient.query(api.access.checkInvite, { code });
         return result.valid;
       },
       redeemInvite: (code) => redeemInvite({ code }),
       setState,
-      onActivated: () => window.localStorage.removeItem("postwork.inviteCode"),
+      onRedeemed: () => window.localStorage.removeItem("postwork.inviteCode"),
     });
   };
 
   if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
 
+  if (signOutState === "waitingForRedemption") {
+    return <GateLoading label="Finishing activation" />;
+  }
+
   if (signOutState === "signingOut") {
     return <GateLoading label="Signing out" />;
   }
-
-  const handleSignOut = async () => {
-    await signOutFromActivation(
-      signOut,
-      signOutGuard,
-      setSignOutState,
-      signOutCancellationGuard,
-    );
-  };
 
   return (
     <AuthFrame
@@ -160,7 +157,17 @@ function ActivationScreen() {
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <p className="text-xs text-muted">signed in with the wrong account?</p>
-          <Button variant="quiet" size="sm" onClick={() => void handleSignOut()}>
+          <Button
+            variant="quiet"
+            size="sm"
+            onClick={() => void signOutFromActivation(
+              signOut,
+              signOutGuard,
+              setSignOutState,
+              signOutCancellationGuard,
+              redemptionLock,
+            )}
+          >
             sign out
           </Button>
         </div>
