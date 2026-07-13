@@ -38,6 +38,9 @@ type Env = {
   readonly PIONEER_API_KEY: string | undefined;
   readonly PIONEER_BASE_URL: string | undefined;
   readonly PIONEER_MODEL: string | undefined;
+  readonly POSTWORK_APP_URL: string | undefined;
+  readonly RESEND_API_KEY: string | undefined;
+  readonly RESEND_FROM_EMAIL: string | undefined;
 };
 
 /**
