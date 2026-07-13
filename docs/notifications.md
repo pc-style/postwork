@@ -48,21 +48,57 @@ Quiet hours use the user's stored IANA time zone and support windows that cross
 midnight. Boundary behavior is start-inclusive and end-exclusive: for
 22:00-08:00, 22:00 is quiet and 08:00 is not.
 
+## Provider choice
+
+The first outbound transport is email through Resend. Email fits Postwork's
+asynchronous catch-up model without browser permission or push-subscription
+state, and the provider can be called directly from a Convex action over HTTP.
+No provider SDK is required.
+
+Each provider request carries a stable `Idempotency-Key`. Postwork stores one
+delivery row per provider key before sending, then records successful, retryable,
+or permanent outcomes. A sent row is never sent again. In-flight claims use a
+one-minute lease so concurrent actions cannot call the provider together.
+
+Resend retains idempotency keys for 24 hours. Postwork allows retries for 23
+hours from the first attempt, which leaves a one-hour safety margin for clock
+and scheduling delay. Once that window expires, Postwork permanently blocks the
+key because an earlier ambiguous request may have succeeded. Every retry inside
+the window reuses the original key.
+
+Network errors, request timeouts, HTTP 408, rate limits, provider 5xx responses,
+and Resend's `concurrent_idempotent_requests` conflict are retryable. The
+`invalid_idempotent_request` conflict and every other 409 response are permanent.
+Provider requests are aborted after 10 seconds and return a structured
+`request_timeout` failure. Logs exclude recipient addresses and message bodies.
+
 ## Provider boundary and demo safety
 
 The notification composer is transport-neutral. It produces delivery candidates
 but does not send them. A separate server-only delivery boundary is the only
 place a future email, web-push, or other provider adapter may be called.
 
-That boundary is deliberately a no-op in this foundation:
+That boundary applies these deployment gates before any provider call:
 
 - when `DEMO` is enabled (including the safe default when it is unset), it
   returns `skipped_demo` and exposes no candidates to a provider adapter;
-- in product mode it returns `provider_not_configured` until a transport is
-  explicitly implemented.
+- in product mode it returns `provider_not_configured` and names missing
+  configuration until every required Resend variable is set;
+- before sending, it rejects read items, oversized candidates, repeated kinds,
+  and any non-urgent item in an immediate candidate.
 
-No provider SDK, address collection, VAPID key, push subscription, cron, or
-scheduler is part of this foundation. A later transport integration must retain
-the demo guard, re-check unread state immediately before composition, schedule
-digests explicitly, and add delivery/idempotency records before performing
-external side effects.
+The caller must still compose from freshly checked unread state and preferences.
+Delivery never changes read state. Product deployments require these Convex env
+variables:
+
+- `DEMO=false`
+- `RESEND_API_KEY`, using a sending-only key when possible
+- `RESEND_FROM_EMAIL`, using an address on the verified Resend domain
+- `POSTWORK_APP_URL`, an absolute HTTP or HTTPS origin used for post and profile
+  links. Paths, credentials, query strings, and fragments are rejected. Candidate
+  links that resolve outside this origin are replaced with the canonical post URL.
+
+Set them with `bunx convex env set NAME value`. The caller supplies the verified
+member email and a stable idempotency key; neither is accepted from a public
+client function. Digest scheduling and event triggers remain separate from the
+transport adapter so they cannot bypass composition or preference gates.

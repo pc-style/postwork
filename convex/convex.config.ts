@@ -27,6 +27,10 @@ const app = defineApp({
     CLERK_JWT_ISSUER_DOMAIN: v.optional(v.string()),
     // Demo mode flag (DEMO=true keeps the backend read-only for visitors).
     DEMO: v.optional(v.string()),
+    // Resend outbound email transport. Product mode requires all three.
+    RESEND_API_KEY: v.optional(v.string()),
+    RESEND_FROM_EMAIL: v.optional(v.string()),
+    POSTWORK_APP_URL: v.optional(v.string()),
   },
 });
 

@@ -40,7 +40,7 @@ export const auditTenantOwnership = internalQuery({
   handler: async (ctx) => {
     const missingOrg: string[] = [];
     const crossOrg: string[] = [];
-    for (const table of ["users", "spaces", "spaceMemberships", "posts", "replies", "postReads", "notificationPreferences", "agentTasks", "aiGenerationSettings", "postAttachments", "attachmentUploadTickets", "invites", "accessRequests", "auditLog"] as const) {
+    for (const table of ["users", "spaces", "spaceMemberships", "posts", "replies", "postReads", "notificationPreferences", "notificationDeliveries", "agentTasks", "aiGenerationSettings", "postAttachments", "attachmentUploadTickets", "invites", "accessRequests", "auditLog"] as const) {
       for (const row of await ctx.db.query(table).collect()) if (!row.orgId) missingOrg.push(`${table}:${row._id}`);
     }
     for (const row of await ctx.db.query("posts").collect()) {

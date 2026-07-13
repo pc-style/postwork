@@ -36,6 +36,7 @@ export const run = internalMutation({
       "attachmentUploadTickets",
       "postAttachments",
       "notificationPreferences",
+      "notificationDeliveries",
       "aiGenerationSettings",
       "agentTasks",
       "postReads",
