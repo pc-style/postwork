@@ -55,12 +55,22 @@ asynchronous catch-up model without browser permission or push-subscription
 state, and the provider can be called directly from a Convex action over HTTP.
 No provider SDK is required.
 
-Each provider request carries a stable `Idempotency-Key`. A retry must reuse the
-same base key and candidate kind, so a partial immediate-plus-digest attempt can
-be retried without sending the successful email twice. The delivery action
-returns provider message IDs on success and structured `retryable` failures on
-network errors, throttling, conflicts, and provider 5xx responses. It also emits
-structured Convex logs without recording recipient addresses or message bodies.
+Each provider request carries a stable `Idempotency-Key`. Postwork stores one
+delivery row per provider key before sending, then records successful, retryable,
+or permanent outcomes. A sent row is never sent again. In-flight claims use a
+one-minute lease so concurrent actions cannot call the provider together.
+
+Resend retains idempotency keys for 24 hours. Postwork allows retries for 23
+hours from the first attempt, which leaves a one-hour safety margin for clock
+and scheduling delay. Once that window expires, Postwork permanently blocks the
+key because an earlier ambiguous request may have succeeded. Every retry inside
+the window reuses the original key.
+
+Network errors, request timeouts, HTTP 408, rate limits, provider 5xx responses,
+and Resend's `concurrent_idempotent_requests` conflict are retryable. The
+`invalid_idempotent_request` conflict and every other 409 response are permanent.
+Provider requests are aborted after 10 seconds and return a structured
+`request_timeout` failure. Logs exclude recipient addresses and message bodies.
 
 ## Provider boundary and demo safety
 
@@ -84,7 +94,9 @@ variables:
 - `DEMO=false`
 - `RESEND_API_KEY`, using a sending-only key when possible
 - `RESEND_FROM_EMAIL`, using an address on the verified Resend domain
-- `POSTWORK_APP_URL`, used for post and profile links
+- `POSTWORK_APP_URL`, an absolute HTTP or HTTPS origin used for post and profile
+  links. Paths, credentials, query strings, and fragments are rejected. Candidate
+  links that resolve outside this origin are replaced with the canonical post URL.
 
 Set them with `bunx convex env set NAME value`. The caller supplies the verified
 member email and a stable idempotency key; neither is accepted from a public

@@ -168,6 +168,29 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_org_id_and_user_id", ["orgId", "userId"]),
 
+  // Provider attempts are keyed without recipient PII. A sent row suppresses
+  // future sends, while retryable failures are bounded inside the provider's
+  // idempotency retention window.
+  notificationDeliveries: defineTable({
+    orgId: v.id("orgs"),
+    idempotencyKey: v.string(),
+    status: v.union(
+      v.literal("attempt_in_flight"),
+      v.literal("sent"),
+      v.literal("retryable_failure"),
+      v.literal("permanent_failure"),
+    ),
+    attemptId: v.optional(v.string()),
+    attemptCount: v.number(),
+    firstAttemptAt: v.number(),
+    lastAttemptAt: v.number(),
+    retryDeadlineAt: v.number(),
+    providerMessageId: v.optional(v.string()),
+    sentAt: v.optional(v.number()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  }).index("by_org_id_and_idempotency_key", ["orgId", "idempotencyKey"]),
+
   // Durable record of agent work requested from a post/reply. The task row is
   // machine state (status, links, errors); human-readable milestones/results
   // are still written back as normal replies by the agent user.
