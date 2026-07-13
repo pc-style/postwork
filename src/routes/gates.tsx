@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SignIn, useAuth, useClerk } from "@clerk/clerk-react";
 import { useConvex, useMutation, useQuery } from "convex/react";
@@ -8,6 +8,10 @@ import { FormField } from "../components/FormField";
 import { ProfileDialog } from "../components/ProfileDialog";
 import { Skeleton } from "../components/Skeleton";
 import { demoPolicy, isDemo } from "../lib/demoMode";
+import {
+  signOutFromActivation,
+  type ActivationSignOutState,
+} from "../lib/activationSignOut";
 import { clerkAppearance } from "../lib/providers";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -50,6 +54,8 @@ function ActivationScreen() {
     "idle" | "checking" | "invalid" | "redeeming" | "error"
   >("idle");
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
+  const signOutGuard = useRef(false);
+  const [signOutState, setSignOutState] = useState<ActivationSignOutState>("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +79,7 @@ function ActivationScreen() {
   const normalizedInvite = inviteCodeFromInput(invite);
 
   const activate = async () => {
-    if (!normalizedInvite) return;
+    if (!normalizedInvite || signOutGuard.current) return;
     setState("checking");
     try {
       const result = await convexClient.query(api.access.checkInvite, {
@@ -93,12 +99,25 @@ function ActivationScreen() {
 
   if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
 
+  if (signOutState === "signingOut") {
+    return <GateLoading label="Signing out" />;
+  }
+
+  const handleSignOut = async () => {
+    await signOutFromActivation(signOut, signOutGuard, setSignOutState);
+  };
+
   return (
     <AuthFrame
       title="Activate your invite"
       description="Enter the code an admin sent you. You will finish your profile after activation."
     >
       <div className="rounded-lg border border-border bg-surface-2 p-4 sm:p-5">
+        {signOutState === "error" ? (
+          <p role="alert" className="ui-error mb-3">
+            Couldn't sign out. Try again.
+          </p>
+        ) : null}
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <FormField
             label="Invite code"
@@ -119,11 +138,12 @@ function ActivationScreen() {
               }}
               placeholder="Example: pw-1234"
               className="ui-field font-mono"
+              disabled={signOutGuard.current}
             />
           </FormField>
           <Button
             onClick={() => void activate()}
-            disabled={!normalizedInvite}
+            disabled={!normalizedInvite || signOutGuard.current}
             loading={state === "checking" || state === "redeeming"}
             loadingLabel="activating…"
             className="w-full sm:w-auto"
@@ -136,7 +156,7 @@ function ActivationScreen() {
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <p className="text-xs text-muted">signed in with the wrong account?</p>
-          <Button variant="quiet" size="sm" onClick={() => void signOut()}>
+          <Button variant="quiet" size="sm" onClick={() => void handleSignOut()}>
             sign out
           </Button>
         </div>
