@@ -16,6 +16,7 @@ import type * as attachments from "../attachments.js";
 import type * as authUsers from "../authUsers.js";
 import type * as avatarPalette from "../avatarPalette.js";
 import type * as catchUpComposer from "../catchUpComposer.js";
+import type * as connectors from "../connectors.js";
 import type * as crons from "../crons.js";
 import type * as discussions from "../discussions.js";
 import type * as flashExperiments from "../flashExperiments.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   authUsers: typeof authUsers;
   avatarPalette: typeof avatarPalette;
   catchUpComposer: typeof catchUpComposer;
+  connectors: typeof connectors;
   crons: typeof crons;
   discussions: typeof discussions;
   flashExperiments: typeof flashExperiments;

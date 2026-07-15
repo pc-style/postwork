@@ -52,14 +52,13 @@ auth gates, admin/invite routes, and the public app routes.
 
 ## 5. Add external agent and integration connectors only after the loop works
 
-The existing task system is durable and produces server-created replies, but
-its runner is an internal simulated AI flow. Once catch-up is useful end to end,
-design explicit connectors for real coding agents and inbound sources such as
-GitHub or deploy events. Preserve the task lifecycle and agent-user audit trail
-rather than bypassing them with direct posts.
+The shared connector boundary now covers org-scoped principals, auth,
+idempotency, audit, task claiming, and agent-authored result replies. The runner
+is still an internal simulated AI flow. Add real coding-agent and inbound source
+adapters such as GitHub or deploy events without bypassing that boundary.
 
 Relevant areas: `convex/agentTasks.ts`, `convex/replies.ts`, agent task UI, and
-new connector boundaries.
+`convex/connectors.ts`, `convex/http.ts`, and provider-specific adapters.
 
 ## 6. Future milestone: true multi-organization product flow
 

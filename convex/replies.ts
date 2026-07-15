@@ -57,7 +57,7 @@ async function enrichReplies(
   );
 }
 
-async function insertReplyAndBumpPost(
+export async function insertReplyAndBumpPost(
   ctx: MutationCtx,
   args: {
     orgId: Id<"orgs"> | undefined;
@@ -88,6 +88,37 @@ async function insertReplyAndBumpPost(
   });
 
   return replyId;
+}
+
+export async function insertAgentReply(
+  ctx: MutationCtx,
+  args: {
+    postId: Id<"posts">;
+    body: string;
+    authorId: Id<"users">;
+    parentId?: Id<"replies">;
+  },
+): Promise<Id<"replies">> {
+  const author = await ctx.db.get(args.authorId);
+  if (!author?.isAgent || !author.orgId) notFound("Agent not found.");
+
+  const post = await ctx.db.get(args.postId);
+  if (!post || post.orgId !== author.orgId) notFound("Post not found.");
+
+  if (args.parentId) {
+    const parent = await ctx.db.get(args.parentId);
+    if (!parent || parent.orgId !== author.orgId || parent.postId !== args.postId) {
+      notFound("Parent reply not found.");
+    }
+  }
+
+  return await insertReplyAndBumpPost(ctx, {
+    orgId: author.orgId,
+    post,
+    parentId: args.parentId,
+    authorId: args.authorId,
+    body: parse(replyBodySchema, args.body, "body"),
+  });
 }
 
 /** Flat, time-ordered list of replies. The client assembles the nesting tree. */
@@ -267,27 +298,7 @@ export const createAsAgent = internalMutation({
     parentId: v.optional(v.id("replies")),
   },
   handler: async (ctx, args) => {
-    const author = await ctx.db.get(args.authorId);
-    if (!author?.isAgent) notFound("Agent not found.");
-
-    const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== author.orgId) notFound("Post not found.");
-
-    if (args.parentId) {
-      const parent = await ctx.db.get(args.parentId);
-      if (!parent || parent.orgId !== author.orgId || parent.postId !== args.postId) {
-        notFound("Parent reply not found.");
-      }
-    }
-
-    const body = parse(replyBodySchema, args.body, "body");
-    const replyId = await insertReplyAndBumpPost(ctx, {
-      orgId: author.orgId,
-      post,
-      parentId: args.parentId,
-      authorId: args.authorId,
-      body,
-    });
+    const replyId = await insertAgentReply(ctx, args);
     logInfo("reply.agentCreated", {
       replyId,
       postId: args.postId,
