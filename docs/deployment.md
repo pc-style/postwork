@@ -90,27 +90,35 @@ the target, because that deployment also serves product traffic.
 
 1. Confirm the current branch contains the intended narrative in
    `convex/seed.ts`, then run `bun run build` locally.
-2. Confirm the target is the designated shared Convex deployment. Export its
-   backend deploy key only for this shell, then run the ownership audit:
+2. Confirm the target is the designated shared Convex deployment. Run the audit
+   and seed in one temporary subshell so both commands use the same production
+   deploy key and the key is removed when either command fails or the shell is
+   interrupted:
 
    ```bash
-   export CONVEX_DEPLOY_KEY='<backend deploy key>'
-   bunx convex run --prod migrations:auditTenantOwnership
+   (
+     set -e
+     trap 'unset CONVEX_DEPLOY_KEY' EXIT
+     trap 'exit 129' HUP
+     trap 'exit 130' INT
+     trap 'exit 143' TERM
+
+     export CONVEX_DEPLOY_KEY='<production backend deploy key>'
+     bunx convex run --prod migrations:auditTenantOwnership
+
+     printf 'Audit reports ok: true? Type yes to seed: '
+     read -r audit_ok
+     [ "$audit_ok" = 'yes' ] || exit 1
+
+     bunx convex run --prod seed:run
+   )
    ```
 
-   Do not continue unless the audit reports `ok`.
-3. Without changing shells or deploy keys, run the seed against the audited
-   deployment, then remove the key from the shell:
-
-   ```bash
-   bunx convex run --prod seed:run
-   unset CONVEX_DEPLOY_KEY
-   ```
-
-4. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
+   Do not type `yes` or run the seed unless the audit reports `ok: true`.
+3. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
    teammates, and verify the feed, one post with replies, priorities, and the
    catch-up page. Confirm baked summaries render without an AI provider key.
-5. Record the reseed date and commit SHA in the deployment log or release notes.
+4. Record the reseed date and commit SHA in the deployment log or release notes.
    If verification fails, fix or revert the seed change and rerun the same
    idempotent command; there is no in-place rollback because demo data is
    disposable by design.
