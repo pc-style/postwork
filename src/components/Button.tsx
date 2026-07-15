@@ -49,12 +49,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) {
     const sizeClass =
       variant === "icon" ? "size-11 shrink-0 p-0" : SIZE_CLASSES[size];
+    const radiusClass = variant === "primary" ? "rounded-lg" : "rounded-md";
 
     return (
       <button
         ref={ref}
         type="button"
-        className={`relative inline-flex items-center justify-center gap-2 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
+        className={`relative inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${radiusClass} ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}

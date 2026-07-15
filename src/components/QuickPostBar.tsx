@@ -14,7 +14,7 @@ export function QuickPostBar() {
             ref={triggerRef}
             size="lg"
             onClick={() => setOpen(true)}
-            className="min-w-36 shadow-[0_10px_32px_rgba(0,0,0,0.55)]"
+            className="min-w-36"
             aria-haspopup="dialog"
             aria-expanded={open}
           >

@@ -18,7 +18,7 @@ export function AccentPanel({
           <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
             {chipLabel}
           </span>
-          <span className="text-xs font-semibold tracking-wide text-accent-soft lowercase">
+          <span className="text-xs font-semibold tracking-normal text-accent-soft lowercase">
             {title}
           </span>
         </div>

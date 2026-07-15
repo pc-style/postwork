@@ -78,7 +78,7 @@ export function RedesignPostPage() {
       {editing ? (
         <PostEditForm post={post} onDone={() => setEditing(false)} />
       ) : (
-        <h1 className="text-2xl font-bold leading-tight tracking-tight text-fg sm:text-3xl">
+        <h1 className="text-xl font-semibold leading-tight tracking-tight text-fg">
           {post.title}
         </h1>
       )}
