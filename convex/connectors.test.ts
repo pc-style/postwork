@@ -414,6 +414,8 @@ describe("inbound connector boundary", () => {
       slug: "github",
       capability: "inboundEvents",
       authStrategy: "providerSignature",
+      secretHash: "github-secret-hash",
+      encryptedSecret: "v1.test.encrypted",
     });
 
     const first = await state.t.mutation(internal.connectors.recordInboundEvent, {

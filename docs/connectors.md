@@ -40,3 +40,15 @@ and records a payload-free audit entry.
 GitHub and deploy adapters can build routing after that reservation, but they
 must create a normal post or agent task attributed to the mapped agent. Raw
 webhook payloads and direct unaudited replies stay outside this boundary.
+
+GitHub sends webhooks to `POST /api/connectors/github?connector=<connector-id>`.
+Provisioning returns the webhook secret once; the connector stores only its
+digest and an AES-GCM encrypted copy used for HMAC verification. Deployments
+must set `CONNECTOR_SECRET_ENCRYPTION_KEY` to a 32-byte hexadecimal key and keep
+it separate from Convex data.
+
+The adapter accepts issue open, reopen, and close events; pull request open,
+reopen, ready-for-review, and close events; and unsuccessful completed workflow
+runs. Issue and pull request events create an Engineering post. An unsuccessful
+workflow run creates an anchor post and queues the mapped agent to investigate.
+Other event and action combinations are rejected before a receipt is reserved.

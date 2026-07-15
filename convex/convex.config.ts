@@ -31,6 +31,8 @@ const app = defineApp({
     RESEND_API_KEY: v.optional(v.string()),
     RESEND_FROM_EMAIL: v.optional(v.string()),
     POSTWORK_APP_URL: v.optional(v.string()),
+    // 32-byte hex key used to encrypt provider webhook secrets at rest.
+    CONNECTOR_SECRET_ENCRYPTION_KEY: v.optional(v.string()),
   },
 });
 

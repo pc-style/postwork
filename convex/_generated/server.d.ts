@@ -29,6 +29,7 @@ type Env = {
   readonly AI_GATEWAY_MODEL: string | undefined;
   readonly AI_PROVIDER: string | undefined;
   readonly CLERK_JWT_ISSUER_DOMAIN: string | undefined;
+  readonly CONNECTOR_SECRET_ENCRYPTION_KEY: string | undefined;
   readonly DEMO: string | undefined;
   readonly OPENAI_API_KEY: string | undefined;
   readonly OPENAI_MODEL: string | undefined;

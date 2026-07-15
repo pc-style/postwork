@@ -239,6 +239,7 @@ export default defineSchema({
     agentId: v.id("users"),
     credentialId: v.optional(v.string()),
     secretHash: v.optional(v.string()),
+    encryptedSecret: v.optional(v.string()),
     createdById: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -255,6 +256,8 @@ export default defineSchema({
     connectorId: v.id("connectors"),
     externalEventId: v.string(),
     eventType: v.string(),
+    postId: v.optional(v.id("posts")),
+    agentTaskId: v.optional(v.id("agentTasks")),
     receivedAt: v.number(),
   })
     .index("by_connector_id_and_external_event_id", ["connectorId", "externalEventId"])
