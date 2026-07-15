@@ -135,7 +135,7 @@ function CatchUpRow({ item }: { item: CatchUpItem }) {
 
 function SummaryState({ status }: { status: CatchUpItem["summary"]["status"] }) {
   const copy = status === "fresh" ? "summary current" : status === "stale" ? "new activity since summary" : "summary missing";
-  const color = status === "fresh" ? "text-accent-soft" : status === "stale" ? "text-high" : "text-muted";
+  const color = status === "stale" ? "text-accent-soft" : "text-muted";
   return <span className={`shrink-0 text-xs ${color}`}>{copy}</span>;
 }
 
