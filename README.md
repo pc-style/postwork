@@ -138,7 +138,8 @@ its own backend, and each backend release workflow owns only its matching
 ```bash
 bunx convex dev --configure
 # deploy each Convex backend from its matching release workflow
-# configure each Vercel project with its own VITE_CONVEX_URL and mode values
+# configure both Vercel projects with DEMO_CONVEX_URL and PRODUCT_CONVEX_URL
+# set each project's VITE_CONVEX_URL to its matching endpoint and mode
 # build command: bun run validate:deploy-env && bun run build
 ```
 
@@ -147,6 +148,10 @@ Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
 deployment and `DEMO=false` on product. Product also requires
 `CLERK_JWT_ISSUER_DOMAIN` and owns its notification configuration. Seed and
 reseed operations are destructive and may target only the demo deployment.
+`DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL` are public endpoint references, not
+secrets, and both must be configured in both Vercel projects so the build rejects
+a missing, shared, or swapped Convex target.
+
 Follow the guarded runbook in [`docs/deployment.md`](docs/deployment.md).
 
 See [`docs/deployment.md`](docs/deployment.md) for the complete Vercel demo and

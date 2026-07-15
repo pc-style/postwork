@@ -11,7 +11,9 @@ Vercel uses the committed build command:
 bun run validate:deploy-env && bun run build
 ```
 
-Each Vercel project injects its matching backend URL as `VITE_CONVEX_URL`.
+Each Vercel project injects its matching backend URL as `VITE_CONVEX_URL`. Both
+projects also receive `DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL`, which are public
+endpoint references used only to reject a missing, shared, or swapped target.
 Vercel builds only the frontend and must not own `CONVEX_DEPLOY_KEY` or deploy
 Convex. Separate demo and product backend release workflows each own only their
 matching deploy key, deployment, environment, and migrations.
@@ -26,7 +28,9 @@ Configure each value in the matching Vercel project and environment.
 | Variable | Public demo (`postwork.pcstyle.dev`) | Product | Notes |
 | --- | --- | --- | --- |
 | `VITE_DEMO` | `true` | `false` | Required explicitly so the build and frontend agree about their mode. |
-| `VITE_CONVEX_URL` | Demo Convex deployment URL | Product Convex deployment URL | Required by `validate:deploy-env`. These values must differ. For local development, `bunx convex dev` writes the selected deployment URL to `.env.local`. |
+| `DEMO_CONVEX_URL` | Demo Convex deployment URL | Demo Convex deployment URL | Required public endpoint reference. This is not a secret. |
+| `PRODUCT_CONVEX_URL` | Product Convex deployment URL | Product Convex deployment URL | Required public endpoint reference. This is not a secret and must differ from `DEMO_CONVEX_URL`. |
+| `VITE_CONVEX_URL` | Demo Convex deployment URL | Product Convex deployment URL | Must exactly match the expected URL for `VITE_DEMO`. For local development, `bunx convex dev` writes the selected deployment URL to `.env.local`. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | **unset** | Clerk publishable key | Required by `validate:deploy-env` when `VITE_DEMO=false`. This is a browser-visible key. |
 | `VITE_PLAUSIBLE_DOMAIN` | `postwork.pcstyle.dev` | **unset** | The client also checks demo mode and the actual hostname before initializing Plausible. Product analytics policy is intentionally unset. |
 | `VITE_GIPHY_API_KEY` | Optional browser key | Optional browser key | Enables GIF search. Keep it restricted to the intended origins. |
@@ -217,6 +221,6 @@ bun run test:observability
 bun run verify:builds
 ```
 
-`verify:builds` runs the default demo build and an explicit
-`VITE_DEMO=false` product build. Neither command needs a Sentry DSN; absent
+`verify:builds` validates and runs explicit demo and product builds against
+distinct fixture deployment URLs. Neither command needs a Sentry DSN; absent
 monitoring credentials are an expected, supported local configuration.
