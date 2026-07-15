@@ -54,6 +54,58 @@ async function setup() {
 }
 
 describe("connector agent task boundary", () => {
+  test("schedules the simulator only for agents without a connected runner", async () => {
+    const state = await setup();
+    const unconnectedAgentId = await state.t.run(async (ctx) =>
+      ctx.db.insert("users", {
+        orgId: state.orgId,
+        name: "Demo Agent",
+        title: "Coding Agent",
+        avatarColor: "#5f6f8f",
+        initials: "DA",
+        role: "member",
+        status: "active",
+        isAgent: true,
+      })
+    );
+    const connected = await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "Connected Agent",
+      slug: "connected-agent",
+      capability: "agentTasks",
+      authStrategy: "bearer",
+      credentialId: "credential-fallback",
+      secretHash: "secret-fallback",
+    });
+
+    const demoTaskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: unconnectedAgentId,
+      prompt: "Use the simulator.",
+    });
+    const connectedTaskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: connected.agentId,
+      prompt: "Wait for the connector.",
+    });
+    const scheduled = await state.t.run(async (ctx) =>
+      ctx.db.system.query("_scheduled_functions").take(10)
+    );
+    const tasks = await state.t.run(async (ctx) => ({
+      demo: await ctx.db.get(demoTaskId),
+      connected: await ctx.db.get(connectedTaskId),
+    }));
+
+    expect(scheduled).toHaveLength(1);
+    expect(scheduled[0]?.name).toBe("agentTasks:runSimulated");
+    expect(scheduled[0]?.args).toEqual([{ taskId: demoTaskId }]);
+    expect(tasks.demo?.connectorId).toBeUndefined();
+    expect(tasks.connected).toMatchObject({
+      connectorId: connected.connectorId,
+      status: "queued",
+    });
+  });
+
   test("returns a bearer secret once and stores only its digest", async () => {
     const state = await setup();
     const provisioned = await state.authed.action(api.connectors.provision, {
