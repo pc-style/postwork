@@ -10,6 +10,7 @@ import {
   ensureActiveViewerUser,
   forbidden,
   notFound,
+  requireOrgId,
   resolveReadScope,
 } from "./authUsers";
 import { agentTaskStatus } from "./schema";
@@ -75,6 +76,9 @@ function publicTask(task: Doc<"agentTasks">) {
     model: task.model,
     error: task.error,
     resultReplyId: task.resultReplyId,
+    connectorId: task.connectorId,
+    externalRunId: task.externalRunId,
+    claimedAt: task.claimedAt,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
     completedAt: task.completedAt,
@@ -129,16 +133,17 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    const orgId = requireOrgId(viewer);
     await rateLimiter.limit(ctx, "agentTask", { key: viewer._id, throws: true });
 
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
+    if (!post || post.orgId !== orgId) notFound("Post not found.");
     if (!(await canAccessPost(ctx, post, viewer._id))) {
       forbidden("You do not have access to this post.");
     }
 
     const agent = await ctx.db.get(args.agentId);
-    if (!agent || agent.orgId !== viewer.orgId || !agent.isAgent) {
+    if (!agent || agent.orgId !== orgId || !agent.isAgent || agent.deactivatedAt) {
       notFound("Agent not found.");
     }
 
@@ -146,7 +151,7 @@ export const create = mutation({
       const sourceReply = await ctx.db.get(args.sourceReplyId);
       if (
         !sourceReply ||
-        sourceReply.orgId !== viewer.orgId ||
+        sourceReply.orgId !== orgId ||
         sourceReply.postId !== args.postId
       ) {
         notFound("Source reply not found.");
@@ -163,19 +168,40 @@ export const create = mutation({
     }
 
     const now = Date.now();
+    const connector = await ctx.db
+      .query("connectors")
+      .withIndex("by_org_id_and_agent_id_and_capability", (q) =>
+        q.eq("orgId", orgId).eq("agentId", args.agentId).eq("capability", "agentTasks"),
+      )
+      .order("desc")
+      .first();
+    const activeConnector = connector && !connector.revokedAt ? connector : null;
     const taskId = await ctx.db.insert("agentTasks", {
-      orgId: viewer.orgId,
+      orgId,
       postId: args.postId,
       sourceReplyId: args.sourceReplyId,
       agentId: args.agentId,
       requestedById: viewer._id,
       status: "queued",
       prompt,
+      connectorId: activeConnector?._id,
       createdAt: now,
       updatedAt: now,
     });
 
-    await ctx.scheduler.runAfter(0, internal.agentTasks.runSimulated, { taskId });
+    if (activeConnector) {
+      await ctx.db.insert("auditLog", {
+        orgId,
+        actorId: viewer._id,
+        action: "connector.agent_task.queued",
+        targetType: "agentTask",
+        targetId: taskId,
+        metadata: JSON.stringify({ connectorId: activeConnector._id }),
+        createdAt: now,
+      });
+    } else {
+      await ctx.scheduler.runAfter(0, internal.agentTasks.runSimulated, { taskId });
+    }
     return taskId;
   },
 });

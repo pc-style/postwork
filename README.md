@@ -25,8 +25,9 @@ public demo as fictional seed data only.
 - AI post summaries through OpenAI, Vercel AI Gateway, OpenRouter, or Pioneer.
   Admins can choose OpenRouter model IDs per summary or agent-task path.
 - Persisted `agentTasks` with first-class agent users. The current runner is an
-  internal simulated AI workflow that writes its result back as an agent reply;
-  it is not yet an external coding-agent or inbound-integration connector.
+  internal simulated AI workflow, while the connector boundary now defines
+  org-scoped auth, audit, task claiming, and atomic result replies. No real
+  coding-agent, GitHub, or deploy connector is wired yet.
 
 For the live roadmap and issue tracker, see the
 [Postwork project on Linear](https://linear.app/pcstyle-cc/project/postwork-e17b8653df70).
@@ -161,6 +162,8 @@ convex/
   replies.ts           nested replies and server-side agent replies
   spaces.ts            spaces, memberships, and space feeds
   agentTasks.ts        persisted task lifecycle and internal AI runner
+  connectors.ts        connector principals, auth, audit, and task handoff
+  http.ts              generic external agent-task claim/result boundary
   ai.ts                summary action and provider/model resolution
   admin.ts             users, invites, access requests, audit, model settings
   access.ts            public invite validation and activation
@@ -173,6 +176,7 @@ src/
   lib/                 demo/product mode, sessions, writes, attachments, providers
 docs/
   product.md           product register, users, brand personality
+  connectors.md        external agent and inbound adapter contract
   design.md            visual system (canonical design reference)
   archive/             historical planning docs (roadmap now on Linear)
 scripts/

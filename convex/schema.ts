@@ -23,6 +23,16 @@ export const agentTaskStatus = v.union(
   v.literal("cancelled"),
 );
 
+export const connectorCapability = v.union(
+  v.literal("agentTasks"),
+  v.literal("inboundEvents"),
+);
+
+export const connectorAuthStrategy = v.union(
+  v.literal("bearer"),
+  v.literal("providerSignature"),
+);
+
 export const aiGenerationKind = v.union(
   v.literal("postSummary"),
   v.literal("agentTask"),
@@ -206,6 +216,9 @@ export default defineSchema({
     model: v.optional(v.string()),
     error: v.optional(v.string()),
     resultReplyId: v.optional(v.id("replies")),
+    connectorId: v.optional(v.id("connectors")),
+    externalRunId: v.optional(v.string()),
+    claimedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     completedAt: v.optional(v.number()),
@@ -213,6 +226,39 @@ export default defineSchema({
     .index("by_org_id_and_post_id", ["orgId", "postId"])
     .index("by_org_id_and_agent_id_and_created_at", ["orgId", "agentId", "createdAt"])
     .index("by_org_id_and_created_at", ["orgId", "createdAt"]),
+
+  // A connector is an org-scoped external principal. Every connector maps to
+  // one first-class agent user so imported work and replies retain the same
+  // author and audit model as native Postwork activity.
+  connectors: defineTable({
+    orgId: v.id("orgs"),
+    name: v.string(),
+    slug: v.string(),
+    capability: connectorCapability,
+    authStrategy: connectorAuthStrategy,
+    agentId: v.id("users"),
+    credentialId: v.optional(v.string()),
+    secretHash: v.optional(v.string()),
+    createdById: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_credential_id", ["credentialId"])
+    .index("by_org_id_and_slug", ["orgId", "slug"])
+    .index("by_org_id_and_agent_id_and_capability", ["orgId", "agentId", "capability"]),
+
+  // Provider adapters reserve a delivery before routing it. This is the
+  // idempotency boundary for GitHub/deploy work without storing raw payloads.
+  connectorEvents: defineTable({
+    orgId: v.id("orgs"),
+    connectorId: v.id("connectors"),
+    externalEventId: v.string(),
+    eventType: v.string(),
+    receivedAt: v.number(),
+  })
+    .index("by_connector_id_and_external_event_id", ["connectorId", "externalEventId"])
+    .index("by_org_id_and_received_at", ["orgId", "receivedAt"]),
 
   // Org-level AI model choices. These are intentionally just model IDs; API
   // keys stay in Convex env vars. A setting row pins one generation path to an

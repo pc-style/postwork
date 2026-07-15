@@ -62,8 +62,8 @@ not a statement of current implementation.
   The runner is an internal simulated AI workflow, not an external coding-agent
   connector.
 - [ ] 4.4 Per-user catch-up digest.
-- [ ] 4.5 Real external/inbound agent and integration connectors, after the
-  catch-up loop is proven.
+- [~] 4.5 Connector auth, audit, idempotency, and task/result boundaries are in
+  place. Real coding-agent, GitHub, and deploy adapters remain open.
 
 ## Phase 5 — demo-mode productization
 

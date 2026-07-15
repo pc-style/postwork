@@ -40,7 +40,7 @@ export const auditTenantOwnership = internalQuery({
   handler: async (ctx) => {
     const missingOrg: string[] = [];
     const crossOrg: string[] = [];
-    for (const table of ["users", "spaces", "spaceMemberships", "posts", "replies", "postReads", "notificationPreferences", "notificationDeliveries", "agentTasks", "aiGenerationSettings", "postAttachments", "attachmentUploadTickets", "invites", "accessRequests", "auditLog"] as const) {
+    for (const table of ["users", "spaces", "spaceMemberships", "posts", "replies", "postReads", "notificationPreferences", "notificationDeliveries", "agentTasks", "connectors", "connectorEvents", "aiGenerationSettings", "postAttachments", "attachmentUploadTickets", "invites", "accessRequests", "auditLog"] as const) {
       for (const row of await ctx.db.query(table).collect()) if (!row.orgId) missingOrg.push(`${table}:${row._id}`);
     }
     for (const row of await ctx.db.query("posts").collect()) {
@@ -90,6 +90,22 @@ export const auditTenantOwnership = internalQuery({
       if (!post || post.orgId !== row.orgId) crossOrg.push(`agentTasks:${row._id}:postId`);
       if (!agent || agent.orgId !== row.orgId) crossOrg.push(`agentTasks:${row._id}:agentId`);
       if (!requester || requester.orgId !== row.orgId) crossOrg.push(`agentTasks:${row._id}:requestedById`);
+      if (row.connectorId) {
+        const connector = await ctx.db.get(row.connectorId);
+        if (!connector || connector.orgId !== row.orgId || connector.agentId !== row.agentId) crossOrg.push(`agentTasks:${row._id}:connectorId`);
+      }
+    }
+    for (const row of await ctx.db.query("connectors").collect()) {
+      const [agent, creator] = await Promise.all([
+        ctx.db.get(row.agentId),
+        ctx.db.get(row.createdById),
+      ]);
+      if (!agent?.isAgent || agent.orgId !== row.orgId) crossOrg.push(`connectors:${row._id}:agentId`);
+      if (!creator || creator.orgId !== row.orgId) crossOrg.push(`connectors:${row._id}:createdById`);
+    }
+    for (const row of await ctx.db.query("connectorEvents").collect()) {
+      const connector = await ctx.db.get(row.connectorId);
+      if (!connector || connector.orgId !== row.orgId) crossOrg.push(`connectorEvents:${row._id}:connectorId`);
     }
     return {
       ok: missingOrg.length === 0 && crossOrg.length === 0,

@@ -31,6 +31,8 @@ export const run = internalMutation({
     // and deliberately preserves the demo org document and every product row.
     for (const table of [
       "auditLog",
+      "connectorEvents",
+      "connectors",
       "accessRequests",
       "invites",
       "attachmentUploadTickets",
