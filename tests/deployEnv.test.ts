@@ -74,6 +74,7 @@ describe("deployment environment contract", () => {
 
   test.each([
     ["DEMO_CONVEX_URL", "http://postwork-demo.convex.cloud"],
+    ["DEMO_CONVEX_URL", "https://postwork-demo.convex.cloud:444"],
     ["PRODUCT_CONVEX_URL", "https://example.com"],
     ["VITE_CONVEX_URL", "not-a-url"],
   ])("rejects invalid deployment URL in %s", (name, value) => {

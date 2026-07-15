@@ -20,6 +20,7 @@ function requireConvexDeploymentUrl(name, value) {
   );
   if (
     url.protocol !== "https:" ||
+    url.port ||
     !isConvexHost ||
     url.username ||
     url.password ||

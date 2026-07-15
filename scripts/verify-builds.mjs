@@ -19,8 +19,13 @@ for (const build of buildModes) {
     PRODUCT_CONVEX_URL: "https://postwork-product.convex.cloud",
     VITE_DEMO: build.viteDemo,
     VITE_CONVEX_URL: build.viteConvexUrl,
-    VITE_CLERK_PUBLISHABLE_KEY: "pk_test_build_verification",
   };
+
+  if (build.viteDemo === "false") {
+    environment.VITE_CLERK_PUBLISHABLE_KEY = "pk_test_build_verification";
+  } else {
+    delete environment.VITE_CLERK_PUBLISHABLE_KEY;
+  }
 
   for (const command of [
     ["bun", "run", "validate:deploy-env"],
