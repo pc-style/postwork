@@ -31,6 +31,10 @@ const app = defineApp({
     RESEND_API_KEY: v.optional(v.string()),
     RESEND_FROM_EMAIL: v.optional(v.string()),
     POSTWORK_APP_URL: v.optional(v.string()),
+    // Versioned AES-GCM keyring for provider webhook secrets at rest.
+    CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID: v.optional(v.string()),
+    CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: v.optional(v.string()),
+    CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS: v.optional(v.string()),
   },
 });
 

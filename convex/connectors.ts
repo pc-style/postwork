@@ -2,8 +2,10 @@ import { ConvexError, v } from "convex/values";
 import {
   action,
   internalMutation,
+  internalQuery,
   mutation,
   query,
+  env,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -12,6 +14,12 @@ import { ensureActiveViewerUser, getViewerFromAuth, initialsFrom } from "./authU
 import { insertAgentReply } from "./replies";
 import { connectorAuthStrategy, connectorCapability } from "./schema";
 import { parse, replyBodySchema } from "./lib/validation";
+import {
+  connectorSecretKeyring,
+  decryptConnectorSecret,
+  encryptConnectorSecret,
+  sha256Hex,
+} from "./lib/connectorSecrets";
 
 const TOKEN_PREFIX = "pwc";
 
@@ -29,11 +37,7 @@ function randomHex(bytes: number): string {
 }
 
 export async function hashConnectorSecret(secret: string): Promise<string> {
-  const bytes = new TextEncoder().encode(secret);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (value) =>
-    value.toString(16).padStart(2, "0"),
-  ).join("");
+  return await sha256Hex(secret);
 }
 
 export function parseConnectorToken(
@@ -123,6 +127,7 @@ export const provision = action({
     connectorId: Id<"connectors">;
     agentId: Id<"users">;
     token: string | null;
+    secret: string | null;
   }> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) forbidden("Sign in first.");
@@ -134,8 +139,14 @@ export const provision = action({
     }
 
     const credentialId = args.authStrategy === "bearer" ? randomHex(8) : undefined;
-    const secret = args.authStrategy === "bearer" ? randomHex(32) : undefined;
+    const secret = randomHex(32);
     const secretHash = secret ? await hashConnectorSecret(secret) : undefined;
+    const encryptedSecret = args.authStrategy === "providerSignature"
+      ? await encryptConnectorSecret(
+          secret,
+          connectorSecretKeyring(env),
+        )
+      : undefined;
     const created: { connectorId: Id<"connectors">; agentId: Id<"users"> } =
       await ctx.runMutation(internal.connectors.provisionRecord, {
         adminTokenIdentifier: identity.tokenIdentifier,
@@ -145,10 +156,54 @@ export const provision = action({
         authStrategy: args.authStrategy,
         credentialId,
         secretHash,
+        encryptedSecret,
       });
     return {
       ...created,
-      token: credentialId && secret ? `${TOKEN_PREFIX}.${credentialId}.${secret}` : null,
+      token: credentialId ? `${TOKEN_PREFIX}.${credentialId}.${secret}` : null,
+      secret: args.authStrategy === "providerSignature" ? secret : null,
+    };
+  },
+});
+
+export const rewrapGithubSecret = action({
+  args: { connectorId: v.id("connectors") },
+  handler: async (ctx, args): Promise<{
+    connectorId: Id<"connectors">;
+    keyId: string;
+    rewrapped: boolean;
+  }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) forbidden("Sign in first.");
+    const material: { encryptedSecret: string } = await ctx.runQuery(
+      internal.connectors.getGithubSecretForRewrap,
+      {
+        adminTokenIdentifier: identity.tokenIdentifier,
+        connectorId: args.connectorId,
+      },
+    );
+    const keyring = connectorSecretKeyring(env);
+    const decrypted = await decryptConnectorSecret(material.encryptedSecret, keyring);
+    if (decrypted.keyId === keyring.activeKeyId) {
+      return {
+        connectorId: args.connectorId,
+        keyId: keyring.activeKeyId,
+        rewrapped: false,
+      };
+    }
+    const encryptedSecret = await encryptConnectorSecret(decrypted.secret, keyring);
+    await ctx.runMutation(internal.connectors.commitGithubSecretRewrap, {
+      adminTokenIdentifier: identity.tokenIdentifier,
+      connectorId: args.connectorId,
+      expectedEncryptedSecret: material.encryptedSecret,
+      encryptedSecret,
+      fromKeyId: decrypted.keyId,
+      toKeyId: keyring.activeKeyId,
+    });
+    return {
+      connectorId: args.connectorId,
+      keyId: keyring.activeKeyId,
+      rewrapped: true,
     };
   },
 });
@@ -162,6 +217,7 @@ export const provisionRecord = internalMutation({
     authStrategy: connectorAuthStrategy,
     credentialId: v.optional(v.string()),
     secretHash: v.optional(v.string()),
+    encryptedSecret: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const admin = await ctx.db
@@ -190,14 +246,18 @@ export const provisionRecord = internalMutation({
     if (existing) invalid("A connector with that slug already exists.");
 
     const bearer = args.authStrategy === "bearer";
+    const providerSignature = args.authStrategy === "providerSignature";
     if (
       (args.capability === "agentTasks" && args.authStrategy !== "bearer") ||
       (args.capability === "inboundEvents" && args.authStrategy !== "providerSignature")
     ) {
       invalid("That authentication strategy does not match the connector capability.");
     }
-    if (bearer !== Boolean(args.credentialId && args.secretHash)) {
-      invalid("Bearer connectors require one generated credential.");
+    if (
+      (bearer && (!args.credentialId || !args.secretHash || args.encryptedSecret)) ||
+      (providerSignature && (args.credentialId || !args.secretHash || !args.encryptedSecret))
+    ) {
+      invalid("Connector credentials do not match the authentication strategy.");
     }
     if (args.credentialId) {
       const credentialOwner = await ctx.db
@@ -227,6 +287,7 @@ export const provisionRecord = internalMutation({
       agentId,
       credentialId: args.credentialId,
       secretHash: args.secretHash,
+      encryptedSecret: args.encryptedSecret,
       createdById: admin._id,
       createdAt: now,
       updatedAt: now,
@@ -245,6 +306,127 @@ export const provisionRecord = internalMutation({
       createdAt: now,
     });
     return { connectorId, agentId };
+  },
+});
+
+export const getGithubInboundSignatureMaterial = internalQuery({
+  args: { connectorId: v.id("connectors") },
+  handler: async (ctx, args) => {
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.slug !== "github" ||
+      connector.capability !== "inboundEvents" ||
+      connector.authStrategy !== "providerSignature" ||
+      !connector.encryptedSecret ||
+      connector.revokedAt
+    ) {
+      forbidden("Inbound connector is unavailable.");
+    }
+    const agent = await ctx.db.get(connector.agentId);
+    if (
+      !agent ||
+      agent.orgId !== connector.orgId ||
+      agent.isAgent !== true ||
+      agent.deactivatedAt !== undefined
+    ) {
+      forbidden("Inbound connector is unavailable.");
+    }
+    return { encryptedSecret: connector.encryptedSecret };
+  },
+});
+
+export const getGithubSecretForRewrap = internalQuery({
+  args: {
+    adminTokenIdentifier: v.string(),
+    connectorId: v.id("connectors"),
+  },
+  handler: async (ctx, args) => {
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", args.adminTokenIdentifier),
+      )
+      .unique();
+    if (
+      !admin?.orgId ||
+      admin.role !== "admin" ||
+      admin.status === "pending" ||
+      admin.deactivatedAt
+    ) {
+      forbidden("Admins only.");
+    }
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.orgId !== admin.orgId ||
+      connector.slug !== "github" ||
+      connector.capability !== "inboundEvents" ||
+      connector.authStrategy !== "providerSignature" ||
+      !connector.encryptedSecret ||
+      connector.revokedAt
+    ) {
+      invalid("GitHub connector not found.");
+    }
+    return { encryptedSecret: connector.encryptedSecret };
+  },
+});
+
+export const commitGithubSecretRewrap = internalMutation({
+  args: {
+    adminTokenIdentifier: v.string(),
+    connectorId: v.id("connectors"),
+    expectedEncryptedSecret: v.string(),
+    encryptedSecret: v.string(),
+    fromKeyId: v.string(),
+    toKeyId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", args.adminTokenIdentifier),
+      )
+      .unique();
+    if (
+      !admin?.orgId ||
+      admin.role !== "admin" ||
+      admin.status === "pending" ||
+      admin.deactivatedAt
+    ) {
+      forbidden("Admins only.");
+    }
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.orgId !== admin.orgId ||
+      connector.slug !== "github" ||
+      connector.capability !== "inboundEvents" ||
+      connector.authStrategy !== "providerSignature" ||
+      connector.revokedAt
+    ) {
+      invalid("GitHub connector not found.");
+    }
+    if (connector.encryptedSecret !== args.expectedEncryptedSecret) {
+      invalid("Connector secret changed during rewrap.");
+    }
+    const now = Date.now();
+    await ctx.db.patch(connector._id, {
+      encryptedSecret: args.encryptedSecret,
+      updatedAt: now,
+    });
+    await ctx.db.insert("auditLog", {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "connector.secret.rewrapped",
+      targetType: "connector",
+      targetId: connector._id,
+      metadata: JSON.stringify({
+        fromKeyId: args.fromKeyId,
+        toKeyId: args.toKeyId,
+      }),
+      createdAt: now,
+    });
   },
 });
 
@@ -476,6 +658,23 @@ export const recordInboundEvent = internalMutation({
     connectorId: v.id("connectors"),
     externalEventId: v.string(),
     eventType: v.string(),
+    lifecycle: v.optional(
+      v.union(
+        v.object({
+          kind: v.literal("post"),
+          title: v.string(),
+          body: v.string(),
+          priority: v.union(v.literal("normal"), v.literal("high")),
+        }),
+        v.object({
+          kind: v.literal("agentTask"),
+          title: v.string(),
+          body: v.string(),
+          prompt: v.string(),
+          priority: v.literal("high"),
+        }),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const connector = await ctx.db.get(args.connectorId);
@@ -496,7 +695,24 @@ export const recordInboundEvent = internalMutation({
         q.eq("connectorId", connector._id).eq("externalEventId", externalEventId),
       )
       .unique();
-    if (existing) return { eventId: existing._id, duplicate: true as const };
+    if (existing) {
+      return {
+        eventId: existing._id,
+        duplicate: true as const,
+        postId: existing.postId,
+        agentTaskId: existing.agentTaskId,
+      };
+    }
+
+    const agent = await ctx.db.get(connector.agentId);
+    if (
+      !agent ||
+      agent.orgId !== connector.orgId ||
+      agent.isAgent !== true ||
+      agent.deactivatedAt !== undefined
+    ) {
+      forbidden("Inbound connector is unavailable.");
+    }
 
     const now = Date.now();
     const eventId = await ctx.db.insert("connectorEvents", {
@@ -515,6 +731,62 @@ export const recordInboundEvent = internalMutation({
       metadata: JSON.stringify({ connectorId: connector._id, eventType }),
       createdAt: now,
     });
-    return { eventId, duplicate: false as const };
+
+    if (!args.lifecycle) {
+      return {
+        eventId,
+        duplicate: false as const,
+        postId: undefined,
+        agentTaskId: undefined,
+      };
+    }
+
+    const title = args.lifecycle.title.trim().replace(/\s+/g, " ").slice(0, 160);
+    const body = args.lifecycle.body.trim().slice(0, 12_000);
+    if (!title || !body) invalid("Inbound lifecycle content is required.");
+    const postId = await ctx.db.insert("posts", {
+      orgId: connector.orgId,
+      authorId: connector.agentId,
+      title,
+      body,
+      space: "Engineering",
+      priority: args.lifecycle.priority,
+      pinned: false,
+      createdAt: now,
+      lastActivityAt: now,
+      replyCount: 0,
+      participantIds: [connector.agentId],
+    });
+
+    let agentTaskId: Id<"agentTasks"> | undefined;
+    if (args.lifecycle.kind === "agentTask") {
+      const prompt = args.lifecycle.prompt.trim().slice(0, 4_000);
+      if (!prompt) invalid("Inbound agent task prompt is required.");
+      agentTaskId = await ctx.db.insert("agentTasks", {
+        orgId: connector.orgId,
+        postId,
+        agentId: connector.agentId,
+        requestedById: connector.createdById,
+        status: "queued",
+        prompt,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.scheduler.runAfter(0, internal.agentTasks.runSimulated, { taskId: agentTaskId });
+    }
+
+    await ctx.db.patch(eventId, { postId, agentTaskId });
+    await ctx.db.insert("auditLog", {
+      orgId: connector.orgId,
+      actorId: connector.agentId,
+      action: agentTaskId
+        ? "connector.github.agent_task.queued"
+        : "connector.github.post.created",
+      targetType: agentTaskId ? "agentTask" : "post",
+      targetId: agentTaskId ?? postId,
+      metadata: JSON.stringify({ connectorId: connector._id, eventId, eventType }),
+      createdAt: now,
+    });
+    return { eventId, duplicate: false as const, postId, agentTaskId };
   },
 });
