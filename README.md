@@ -146,8 +146,10 @@ bunx convex dev --configure
 Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
 `VITE_CLERK_PUBLISHABLE_KEY` for product. Set `DEMO=true` on the demo Convex
 deployment and `DEMO=false` on product. Product also requires
-`CLERK_JWT_ISSUER_DOMAIN` and owns its notification configuration. Seed and
-reseed operations are destructive and may target only the demo deployment.
+`CLERK_JWT_ISSUER_DOMAIN`; the demo Convex deployment requires the same issuer
+so its auth config can load, but the demo frontend remains anonymous. Product
+owns its notification configuration. Seed and reseed operations are destructive
+and fail unless the target deployment has `DEMO=true`.
 `DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL` are public endpoint references, not
 secrets, and both must be configured in both Vercel projects so the build rejects
 a missing, shared, or swapped Convex target.

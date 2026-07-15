@@ -56,7 +56,7 @@ into Vercel unless a separate frontend variable explicitly needs them.
 | Variable | Demo Convex deployment | Product Convex deployment |
 | --- | --- | --- |
 | `DEMO` | `true` | `false` |
-| `CLERK_JWT_ISSUER_DOMAIN` | Unset | Required to verify Clerk JWTs |
+| `CLERK_JWT_ISSUER_DOMAIN` | Required so Convex auth config can load | Required to verify Clerk JWTs |
 | `AI_PROVIDER` and its provider key/model variables | Optional; baked summaries work without a key | Optional; enables live summaries and agent tasks |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `POSTWORK_APP_URL` | Unset | Required together for outbound product email |
 
@@ -65,6 +65,11 @@ The AI provider pairs are documented in `AGENTS.md`: OpenAI uses
 `AI_GATEWAY_API_KEY` and `AI_GATEWAY_MODEL`; OpenRouter uses
 `OPENROUTER_API_KEY` plus optional model and base URL values; Pioneer uses
 `PIONEER_API_KEY`, `PIONEER_MODEL`, and an optional base URL.
+
+The demo frontend remains anonymous and does not request or send Clerk tokens.
+Its Convex deployment still needs `CLERK_JWT_ISSUER_DOMAIN` because
+`convex/auth.config.ts` is loaded for every deployment and fails closed when the
+issuer is missing.
 
 `CONVEX_DEPLOY_KEY` is a backend release secret, not a Convex runtime variable
 or Vercel frontend variable. The demo and product workflows must use different
@@ -196,8 +201,8 @@ never be present during this procedure.
    disposable by design.
 
 Local development remains `bun run seed`, which targets the deployment selected
-by `.env.local`. It is not a substitute for the explicit demo deployment command
-above.
+by `.env.local` and succeeds only when that deployment has `DEMO=true`. It is not
+a substitute for the explicit demo deployment command above.
 
 ## Summary refresh policy
 
