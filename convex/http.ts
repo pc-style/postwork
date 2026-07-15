@@ -83,7 +83,7 @@ http.route({
 
     let material: { encryptedSecret: string };
     try {
-      material = await ctx.runQuery(internal.connectors.getInboundSignatureMaterial, {
+      material = await ctx.runQuery(internal.connectors.getGithubInboundSignatureMaterial, {
         connectorId: connectorId as Id<"connectors">,
       });
     } catch {

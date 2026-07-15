@@ -135,7 +135,16 @@ function routeWorkflowRun(
   if (!workflow || !repository || !actor || !name || !conclusion || !url || !runNumber) {
     return null;
   }
-  if (!new Set(["failure", "timed_out", "cancelled", "action_required"]).has(conclusion)) {
+  if (!new Set([
+    "action_required",
+    "cancelled",
+    "failure",
+    "neutral",
+    "skipped",
+    "stale",
+    "startup_failure",
+    "timed_out",
+  ]).has(conclusion)) {
     return null;
   }
   const title = `GitHub workflow ${conclusion}: ${name} #${runNumber}`.slice(0, 160);

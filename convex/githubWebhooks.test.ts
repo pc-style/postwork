@@ -72,14 +72,14 @@ function issuePayload(action = "opened") {
   };
 }
 
-function workflowPayload() {
+function workflowPayload(conclusion: unknown) {
   return {
     action: "completed",
     repository: { full_name: "pc-style/postwork" },
     sender: { login: "github-actions" },
     workflow_run: {
       name: "CI",
-      conclusion: "failure",
+      conclusion,
       run_number: 42,
       html_url: "https://github.com/pc-style/postwork/actions/runs/42",
     },
@@ -155,6 +155,32 @@ describe("GitHub webhook ingestion", () => {
       posts: (await ctx.db.query("posts").collect()).length,
     }));
     expect(counts).toEqual({ events: 0, posts: 0 });
+  });
+
+  test("rejects a non-GitHub inbound connector before signature verification", async () => {
+    const state = await setup();
+    const nonGithub = await state.authed.action(api.connectors.provision, {
+      name: "Deployment events",
+      slug: "deployments",
+      capability: "inboundEvents",
+      authStrategy: "providerSignature",
+    });
+    if (!nonGithub.secret) throw new Error("Expected provider secret.");
+
+    const response = await deliver(state, {
+      connectorId: nonGithub.connectorId,
+      secret: nonGithub.secret,
+      deliveryId: "wrong-provider",
+    });
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "unauthorized" });
+    const counts = await state.t.run(async (ctx) => ({
+      events: (await ctx.db.query("connectorEvents").collect()).length,
+      posts: (await ctx.db.query("posts").collect()).length,
+      tasks: (await ctx.db.query("agentTasks").collect()).length,
+    }));
+    expect(counts).toEqual({ events: 0, posts: 0, tasks: 0 });
   });
 
   test("accepts a signed ping without reserving a receipt or creating content", async () => {
@@ -406,12 +432,21 @@ describe("GitHub webhook ingestion", () => {
     expect(post?.orgId).not.toBe(state.orgId);
   });
 
-  test("turns a failed workflow into the mapped agent task lifecycle", async () => {
+  test.each([
+    "action_required",
+    "cancelled",
+    "failure",
+    "neutral",
+    "skipped",
+    "stale",
+    "startup_failure",
+    "timed_out",
+  ])("turns a completed workflow with conclusion %s into an agent task", async (conclusion) => {
     const state = await setup();
     const response = await deliver(state, {
       event: "workflow_run",
-      payload: workflowPayload(),
-      deliveryId: "workflow-42",
+      payload: workflowPayload(conclusion),
+      deliveryId: `workflow-${conclusion}`,
     });
 
     expect(response.status).toBe(202);
@@ -427,7 +462,7 @@ describe("GitHub webhook ingestion", () => {
     expect(stored.post).toMatchObject({
       orgId: state.orgId,
       authorId: state.agentId,
-      title: "GitHub workflow failure: CI #42",
+      title: `GitHub workflow ${conclusion}: CI #42`,
     });
     expect(stored.task).toMatchObject({
       orgId: state.orgId,
@@ -442,5 +477,28 @@ describe("GitHub webhook ingestion", () => {
       action: "connector.github.agent_task.queued",
       targetId: result.agentTaskId,
     });
+  });
+
+  test.each([
+    ["success", "success"],
+    ["unsupported string", "unknown"],
+    ["missing", undefined],
+    ["non-string", 1],
+  ])("rejects a completed workflow with %s conclusion", async (_name, conclusion) => {
+    const state = await setup();
+    const response = await deliver(state, {
+      event: "workflow_run",
+      payload: workflowPayload(conclusion),
+      deliveryId: `workflow-rejected-${_name.replace(/\s+/g, "-")}`,
+    });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({ error: "unsupported_event" });
+    const counts = await state.t.run(async (ctx) => ({
+      events: (await ctx.db.query("connectorEvents").collect()).length,
+      posts: (await ctx.db.query("posts").collect()).length,
+      tasks: (await ctx.db.query("agentTasks").collect()).length,
+    }));
+    expect(counts).toEqual({ events: 0, posts: 0, tasks: 0 });
   });
 });

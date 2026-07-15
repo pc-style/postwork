@@ -309,12 +309,13 @@ export const provisionRecord = internalMutation({
   },
 });
 
-export const getInboundSignatureMaterial = internalQuery({
+export const getGithubInboundSignatureMaterial = internalQuery({
   args: { connectorId: v.id("connectors") },
   handler: async (ctx, args) => {
     const connector = await ctx.db.get(args.connectorId);
     if (
       !connector ||
+      connector.slug !== "github" ||
       connector.capability !== "inboundEvents" ||
       connector.authStrategy !== "providerSignature" ||
       !connector.encryptedSecret ||
