@@ -20,6 +20,7 @@
     "seed": "convex run seed:run",
     "typecheck": "tsc -b --noEmit",
     "test:notifications": "vitest run convex/notification*.test.ts",
+    "agent:run": "bun run scripts/agent-task-runner.ts",
     "linear:pull": "bun run scripts/linear-pull.mjs",
     "linear:pull:json": "bun run scripts/linear-pull.mjs --json"
   },

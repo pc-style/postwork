@@ -8,8 +8,9 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
+    "types": ["bun"],
     "noEmit": true,
     "strict": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "scripts/agent-task-runner.ts"]
 }

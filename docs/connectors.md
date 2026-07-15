@@ -29,6 +29,34 @@ Both calls use `Authorization: Bearer pwc.<credentialId>.<secret>`. Only the
 SHA-256 secret digest is stored. Revocation disables the credential and
 deactivates its agent user without deleting prior tasks, replies, or audit rows.
 
+### Running a coding agent
+
+Provision an `agentTasks` connector through `api.connectors.provision` and save
+the returned token when it is shown. A task created for that connector's agent
+stays queued and returns its task ID to the caller. Run that task from the repo
+that the coding agent should inspect:
+
+```bash
+POSTWORK_URL=https://your-deployment.convex.site \
+POSTWORK_CONNECTOR_TOKEN=pwc.<credentialId>.<secret> \
+bun run agent:run <taskId> -- <agent-command> <argument> ...
+```
+
+The runner claims the task, sends the bounded thread context and request to the
+command on stdin, captures its output, and submits the result through the same
+task lifecycle. It executes the command as an argument vector without a shell.
+The default timeout is ten minutes and stdout is capped below the reply limit;
+change the timeout or lower the cap with `POSTWORK_AGENT_TIMEOUT_MS` and
+`POSTWORK_AGENT_MAX_OUTPUT_BYTES`. Set `POSTWORK_AGENT_CWD` to choose the repo,
+`POSTWORK_AGENT_MODEL` to record a model label, or
+`POSTWORK_AGENT_COMMAND_JSON` to configure the command as a JSON string array
+instead of passing it after `--`.
+
+The default external run ID is deterministic from the task ID, so retried claims
+and result submissions use the existing idempotency contract. The token binds
+the run to one connected agent. Unconnected demo agents continue to use the
+internal simulator.
+
 ## Inbound event adapters
 
 An `inboundEvents` connector uses `providerSignature` authentication. The
