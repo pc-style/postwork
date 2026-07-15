@@ -15,9 +15,11 @@ function requireConvexDeploymentUrl(name, value) {
     throw new Error(`${name} must be a valid HTTPS Convex deployment URL.`);
   }
 
-  const isConvexHost = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.convex\.cloud$/i.test(
-    url.hostname,
-  );
+  const hostnameLabel = "[a-z0-9](?:[a-z0-9-]*[a-z0-9])?";
+  const isConvexHost = new RegExp(
+    `^${hostnameLabel}(?:\\.${hostnameLabel})?\\.convex\\.cloud$`,
+    "i",
+  ).test(url.hostname);
   if (
     url.protocol !== "https:" ||
     url.port ||

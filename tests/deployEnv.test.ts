@@ -42,6 +42,21 @@ describe("deployment environment contract", () => {
     ).toBe(0);
   });
 
+  test("accepts regional Convex deployment hosts", () => {
+    const regionalDemoUrl =
+      "https://postwork-demo.eu-west-1.convex.cloud";
+    const regionalProductUrl =
+      "https://postwork-product.eu-west-1.convex.cloud";
+
+    expect(
+      validate({
+        DEMO_CONVEX_URL: regionalDemoUrl,
+        PRODUCT_CONVEX_URL: regionalProductUrl,
+        VITE_CONVEX_URL: regionalDemoUrl,
+      }).exitCode,
+    ).toBe(0);
+  });
+
   test.each(["DEMO_CONVEX_URL", "PRODUCT_CONVEX_URL"])(
     "rejects missing %s",
     (name) => {
@@ -75,6 +90,7 @@ describe("deployment environment contract", () => {
   test.each([
     ["DEMO_CONVEX_URL", "http://postwork-demo.convex.cloud"],
     ["DEMO_CONVEX_URL", "https://postwork-demo.convex.cloud:444"],
+    ["DEMO_CONVEX_URL", "https://too.deep.postwork-demo.convex.cloud"],
     ["PRODUCT_CONVEX_URL", "https://example.com"],
     ["VITE_CONVEX_URL", "not-a-url"],
   ])("rejects invalid deployment URL in %s", (name, value) => {
