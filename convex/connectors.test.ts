@@ -261,6 +261,148 @@ describe("connector agent task boundary", () => {
     ).rejects.toThrow("Task not found.");
     expect(first.agentId).not.toBe(second.agentId);
   });
+
+  test("rejects claims when the mapped agent was directly deactivated", async () => {
+    const state = await setup();
+    const provisioned = await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "Deactivated Claim Runner",
+      slug: "deactivated-claim-runner",
+      capability: "agentTasks",
+      authStrategy: "bearer",
+      credentialId: "credential-deactivated-claim",
+      secretHash: "secret-deactivated-claim",
+    });
+    const taskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: provisioned.agentId,
+      prompt: "This claim must be blocked.",
+    });
+    await state.t.run(async (ctx) => {
+      await ctx.db.patch(provisioned.agentId, { deactivatedAt: 100 });
+    });
+
+    await expect(
+      state.t.mutation(internal.connectors.claimAgentTask, {
+        credentialId: "credential-deactivated-claim",
+        secretHash: "secret-deactivated-claim",
+        taskId,
+        externalRunId: "blocked-claim",
+      }),
+    ).rejects.toThrow("Connector authentication failed.");
+  });
+
+  test("rejects results when the mapped agent was directly deactivated", async () => {
+    const state = await setup();
+    const provisioned = await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "Deactivated Result Runner",
+      slug: "deactivated-result-runner",
+      capability: "agentTasks",
+      authStrategy: "bearer",
+      credentialId: "credential-deactivated-result",
+      secretHash: "secret-deactivated-result",
+    });
+    const taskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: provisioned.agentId,
+      prompt: "This result must be blocked.",
+    });
+    await state.t.mutation(internal.connectors.claimAgentTask, {
+      credentialId: "credential-deactivated-result",
+      secretHash: "secret-deactivated-result",
+      taskId,
+      externalRunId: "blocked-result",
+    });
+    await state.t.run(async (ctx) => {
+      await ctx.db.patch(provisioned.agentId, { deactivatedAt: 100 });
+    });
+
+    await expect(
+      state.t.mutation(internal.connectors.finishAgentTask, {
+        credentialId: "credential-deactivated-result",
+        secretHash: "secret-deactivated-result",
+        taskId,
+        externalRunId: "blocked-result",
+        outcome: { status: "done", body: "This must not be posted." },
+      }),
+    ).rejects.toThrow("Connector authentication failed.");
+  });
+
+  test("normalizes external run ID whitespace for claim and result", async () => {
+    const state = await setup();
+    const provisioned = await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "Whitespace Runner",
+      slug: "whitespace-runner",
+      capability: "agentTasks",
+      authStrategy: "bearer",
+      credentialId: "credential-whitespace",
+      secretHash: "secret-whitespace",
+    });
+    const taskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: provisioned.agentId,
+      prompt: "Normalize this run ID.",
+    });
+
+    await state.t.mutation(internal.connectors.claimAgentTask, {
+      credentialId: "credential-whitespace",
+      secretHash: "secret-whitespace",
+      taskId,
+      externalRunId: "  run-with-whitespace\n",
+    });
+    await expect(
+      state.t.mutation(internal.connectors.finishAgentTask, {
+        credentialId: "credential-whitespace",
+        secretHash: "secret-whitespace",
+        taskId,
+        externalRunId: "\trun-with-whitespace  ",
+        outcome: { status: "failed", error: "Expected test failure." },
+      }),
+    ).resolves.toEqual({ status: "failed" });
+
+    const task = await state.t.run(async (ctx) => ctx.db.get(taskId));
+    expect(task?.externalRunId).toBe("run-with-whitespace");
+  });
+
+  test("normalizes overlength external run IDs for claim and result", async () => {
+    const state = await setup();
+    const provisioned = await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "Long ID Runner",
+      slug: "long-id-runner",
+      capability: "agentTasks",
+      authStrategy: "bearer",
+      credentialId: "credential-long-id",
+      secretHash: "secret-long-id",
+    });
+    const taskId = await state.authed.mutation(api.agentTasks.create, {
+      postId: state.postId,
+      agentId: provisioned.agentId,
+      prompt: "Normalize this long run ID.",
+    });
+    const externalRunId = "r".repeat(240);
+
+    await state.t.mutation(internal.connectors.claimAgentTask, {
+      credentialId: "credential-long-id",
+      secretHash: "secret-long-id",
+      taskId,
+      externalRunId,
+    });
+    await expect(
+      state.t.mutation(internal.connectors.finishAgentTask, {
+        credentialId: "credential-long-id",
+        secretHash: "secret-long-id",
+        taskId,
+        externalRunId,
+        outcome: { status: "failed", error: "Expected test failure." },
+      }),
+    ).resolves.toEqual({ status: "failed" });
+
+    const task = await state.t.run(async (ctx) => ctx.db.get(taskId));
+    expect(task?.externalRunId).toBe("r".repeat(200));
+  });
 });
 
 describe("inbound connector boundary", () => {

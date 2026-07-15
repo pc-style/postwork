@@ -56,6 +56,12 @@ function connectorSlug(value: string): string {
   return slug;
 }
 
+function normalizeExternalRunId(value: string): string {
+  const externalRunId = value.trim().slice(0, 200);
+  if (!externalRunId) invalid("External run ID is required.");
+  return externalRunId;
+}
+
 type OrgUser = Doc<"users"> & { orgId: Id<"orgs"> };
 
 async function requireAdminForRead(ctx: QueryCtx): Promise<OrgUser> {
@@ -280,6 +286,15 @@ async function authenticatedBearerConnector(
   ) {
     forbidden("Connector authentication failed.");
   }
+  const agent = await ctx.db.get(connector.agentId);
+  if (
+    !agent ||
+    agent.orgId !== connector.orgId ||
+    agent.isAgent !== true ||
+    agent.deactivatedAt !== undefined
+  ) {
+    forbidden("Connector authentication failed.");
+  }
   return connector;
 }
 
@@ -338,8 +353,7 @@ export const claimAgentTask = internalMutation({
     ) {
       invalid("Task not found.");
     }
-    const externalRunId = args.externalRunId.trim().slice(0, 200);
-    if (!externalRunId) invalid("External run ID is required.");
+    const externalRunId = normalizeExternalRunId(args.externalRunId);
     if (task.status === "running" && task.externalRunId === externalRunId) {
       return await taskContext(ctx, task);
     }
@@ -386,13 +400,14 @@ export const finishAgentTask = internalMutation({
       args.credentialId,
       args.secretHash,
     );
+    const externalRunId = normalizeExternalRunId(args.externalRunId);
     const task = await ctx.db.get(args.taskId);
     if (
       !task ||
       task.orgId !== connector.orgId ||
       task.connectorId !== connector._id ||
       task.agentId !== connector.agentId ||
-      task.externalRunId !== args.externalRunId
+      task.externalRunId !== externalRunId
     ) {
       invalid("Task not found.");
     }
