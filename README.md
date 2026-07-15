@@ -130,25 +130,24 @@ generation path. API keys always stay in Convex environment variables.
 ## Deploy
 
 The Vite frontend deploys to Vercel and the backend deploys to Convex Cloud.
-Use separate Vercel projects for the public demo and authenticated product. Both
-frontends point to one Convex deployment, where backend authorization isolates
-the seeded `postwork-demo` organization from the Clerk-authenticated `postwork`
-organization.
+The public demo and authenticated product use separate Vercel projects and
+separate Convex deployments. Each frontend receives the `VITE_CONVEX_URL` for
+its own backend, and each backend release workflow owns only its matching
+`CONVEX_DEPLOY_KEY`.
 
 ```bash
 bunx convex dev --configure
-# deploy Convex from the designated backend release workflow
-# configure each Vercel project with VITE_CONVEX_URL and its mode-specific values
+# deploy each Convex backend from its matching release workflow
+# configure each Vercel project with its own VITE_CONVEX_URL and mode values
 # build command: bun run validate:deploy-env && bun run build
 ```
 
 Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
-`VITE_CLERK_PUBLISHABLE_KEY` for product. The shared Convex deployment requires
-`CLERK_JWT_ISSUER_DOMAIN`; set `DEMO=false` there when product notification
-delivery is enabled. Seed resets only the demo tenant and preserves product
-rows, but it is destructive. Follow the guarded reseed runbook in
-[`docs/deployment.md`](docs/deployment.md), which scopes the same backend deploy
-key to the ownership audit and seed.
+`VITE_CLERK_PUBLISHABLE_KEY` for product. Set `DEMO=true` on the demo Convex
+deployment and `DEMO=false` on product. Product also requires
+`CLERK_JWT_ISSUER_DOMAIN` and owns its notification configuration. Seed and
+reseed operations are destructive and may target only the demo deployment.
+Follow the guarded runbook in [`docs/deployment.md`](docs/deployment.md).
 
 See [`docs/deployment.md`](docs/deployment.md) for the complete Vercel demo and
 product environment matrix, including optional Sentry error reporting and the

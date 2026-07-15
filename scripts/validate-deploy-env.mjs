@@ -5,7 +5,7 @@ if (demo !== "true" && demo !== "false") {
 }
 
 if (!process.env.VITE_CONVEX_URL) {
-  throw new Error("VITE_CONVEX_URL must point to the shared Convex deployment.");
+  throw new Error("VITE_CONVEX_URL must point to this frontend's Convex deployment.");
 }
 
 if (demo === "false" && !process.env.VITE_CLERK_PUBLISHABLE_KEY) {
