@@ -104,17 +104,35 @@ the target, because that deployment also serves product traffic.
      trap 'exit 143' TERM
 
      export CONVEX_DEPLOY_KEY='<production backend deploy key>'
-     bunx convex run --prod migrations:auditTenantOwnership
+     audit_output=$(bunx convex run --prod migrations:auditTenantOwnership)
+     printf '%s\n' "$audit_output"
+     printf '%s\n' "$audit_output" | bun -e '
+       const output = await Bun.stdin.text();
+       let audit;
+       try {
+         audit = JSON.parse(output);
+       } catch {
+         console.error("Tenant ownership audit returned malformed output.");
+         process.exit(1);
+       }
+       if (audit?.ok !== true) {
+         console.error("Tenant ownership audit did not return ok: true.");
+         process.exit(1);
+       }
+     '
 
-     printf 'Audit reports ok: true? Type yes to seed: '
-     read -r audit_ok
-     [ "$audit_ok" = 'yes' ] || exit 1
+     printf 'Machine audit passed. Type yes to confirm the demo reseed: '
+     read -r reseed_confirmed
+     [ "$reseed_confirmed" = 'yes' ] || exit 1
 
      bunx convex run --prod seed:run
    )
    ```
 
-   Do not type `yes` or run the seed unless the audit reports `ok: true`.
+   The parser exits before confirmation unless the audit command succeeds, its
+   output is valid JSON, and the parsed result contains `ok: true`. Type `yes`
+   only after separately reviewing the printed audit output and confirming the
+   demo reseed.
 3. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
    teammates, and verify the feed, one post with replies, priorities, and the
    catch-up page. Confirm baked summaries render without an AI provider key.
