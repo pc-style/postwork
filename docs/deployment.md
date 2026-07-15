@@ -92,19 +92,22 @@ the target, because that deployment also serves product traffic.
    `convex/seed.ts`, then run `bun run build` locally.
 2. Confirm the target is the designated shared Convex deployment. Run the audit
    and seed in one temporary subshell so both commands use the same production
-   deploy key and the key is removed when either command fails or the shell is
-   interrupted:
+   deploy key. The silent prompt keeps the value out of the command text and
+   shell history:
 
    ```bash
    (
      set -e
-     trap 'unset CONVEX_DEPLOY_KEY' EXIT
-     trap 'exit 129' HUP
-     trap 'exit 130' INT
-     trap 'exit 143' TERM
+     deploy_key=
+     audit_output=
+     reseed_confirmed=
+     trap 'unset deploy_key audit_output reseed_confirmed' EXIT
 
-     export CONVEX_DEPLOY_KEY='<production backend deploy key>'
-     audit_output=$(bunx convex run --prod migrations:auditTenantOwnership)
+     read -rs 'deploy_key?Production backend deploy key: '
+     printf '\n'
+     [ -n "$deploy_key" ] || exit 1
+
+     audit_output=$(CONVEX_DEPLOY_KEY="$deploy_key" bunx convex run --prod migrations:auditTenantOwnership)
      printf '%s\n' "$audit_output"
      printf '%s\n' "$audit_output" | bun -e '
        const output = await Bun.stdin.text();
@@ -125,14 +128,17 @@ the target, because that deployment also serves product traffic.
      read -r reseed_confirmed
      [ "$reseed_confirmed" = 'yes' ] || exit 1
 
-     bunx convex run --prod seed:run
+     CONVEX_DEPLOY_KEY="$deploy_key" bunx convex run --prod seed:run
    )
    ```
 
    The parser exits before confirmation unless the audit command succeeds, its
    output is valid JSON, and the parsed result contains `ok: true`. Type `yes`
    only after separately reviewing the printed audit output and confirming the
-   demo reseed.
+   demo reseed. The exit trap clears the wrapper shell's copies on completion or
+   failure. A running child process has its own inherited copy, so if only the
+   wrapper PID is externally signaled, confirm that no `bunx` or Convex child
+   remains before leaving the terminal.
 3. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
    teammates, and verify the feed, one post with replies, priorities, and the
    catch-up page. Confirm baked summaries render without an AI provider key.
