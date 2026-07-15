@@ -146,11 +146,9 @@ Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
 `VITE_CLERK_PUBLISHABLE_KEY` for product. The shared Convex deployment requires
 `CLERK_JWT_ISSUER_DOMAIN`; set `DEMO=false` there when product notification
 delivery is enabled. Seed resets only the demo tenant and preserves product
-rows:
-
-```bash
-bunx convex run --prod seed:run
-```
+rows, but it is destructive. Follow the guarded reseed runbook in
+[`docs/deployment.md`](docs/deployment.md), which scopes the same backend deploy
+key to the ownership audit and seed.
 
 See [`docs/deployment.md`](docs/deployment.md) for the complete Vercel demo and
 product environment matrix, including optional Sentry error reporting and the

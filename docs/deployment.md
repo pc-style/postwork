@@ -67,6 +67,8 @@ Convex runtime variable and not a Vercel frontend variable. After deploying a
 new backend, run `migrations:ensureProductOrg`,
 `migrations:auditTenantOwnership`, then `migrations:activateFirstProductAdmin`
 with the intended product user ID when initial product bootstrap is needed.
+Scope every command in that sequence to the designated shared deployment with
+the same backend deploy key.
 
 ## Demo reseed policy
 
@@ -88,12 +90,21 @@ the target, because that deployment also serves product traffic.
 
 1. Confirm the current branch contains the intended narrative in
    `convex/seed.ts`, then run `bun run build` locally.
-2. Confirm the target is the designated shared Convex deployment and run
-   `migrations:auditTenantOwnership`. Do not continue unless it reports `ok`.
-3. Export the backend deploy key only for this shell and run the seed:
+2. Confirm the target is the designated shared Convex deployment. Export its
+   backend deploy key only for this shell, then run the ownership audit:
 
    ```bash
-   CONVEX_DEPLOY_KEY='<backend deploy key>' bunx convex run --prod seed:run
+   export CONVEX_DEPLOY_KEY='<backend deploy key>'
+   bunx convex run --prod migrations:auditTenantOwnership
+   ```
+
+   Do not continue unless the audit reports `ok`.
+3. Without changing shells or deploy keys, run the seed against the audited
+   deployment, then remove the key from the shell:
+
+   ```bash
+   bunx convex run --prod seed:run
+   unset CONVEX_DEPLOY_KEY
    ```
 
 4. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
