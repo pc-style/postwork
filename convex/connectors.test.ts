@@ -6,9 +6,16 @@ import { describe, expect, test } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 import { hashConnectorSecret, parseConnectorToken } from "./connectors";
+import {
+  connectorSecretKeyring,
+  decryptConnectorSecret,
+  encryptConnectorSecret,
+} from "./lib/connectorSecrets";
 
 const modules = import.meta.glob("./**/*.ts");
 const ADMIN_TOKEN = "https://issuer.example|connector-admin";
+const OLD_ENCRYPTION_KEY = "11".repeat(32);
+const ACTIVE_ENCRYPTION_KEY = "22".repeat(32);
 
 async function setup() {
   const t = convexTest(schema, modules);
@@ -52,6 +59,51 @@ async function setup() {
   });
   return { t, authed, ...state };
 }
+
+describe("connector secret key rotation", () => {
+  test("decrypts ciphertext with active and bounded previous keys", async () => {
+    const oldKeyring = connectorSecretKeyring({
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID: "2026-06",
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: OLD_ENCRYPTION_KEY,
+    });
+    const rotatedKeyring = connectorSecretKeyring({
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID: "2026-07",
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: ACTIVE_ENCRYPTION_KEY,
+      CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS: JSON.stringify({
+        "2026-06": OLD_ENCRYPTION_KEY,
+      }),
+    });
+    const oldCiphertext = await encryptConnectorSecret("old-secret", oldKeyring);
+    const activeCiphertext = await encryptConnectorSecret("active-secret", rotatedKeyring);
+
+    await expect(decryptConnectorSecret(oldCiphertext, rotatedKeyring)).resolves.toEqual({
+      secret: "old-secret",
+      keyId: "2026-06",
+    });
+    await expect(decryptConnectorSecret(activeCiphertext, rotatedKeyring)).resolves.toEqual({
+      secret: "active-secret",
+      keyId: "2026-07",
+    });
+  });
+
+  test("fails closed when ciphertext references an unknown key", async () => {
+    const oldCiphertext = await encryptConnectorSecret(
+      "old-secret",
+      connectorSecretKeyring({
+        CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID: "retired",
+        CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: OLD_ENCRYPTION_KEY,
+      }),
+    );
+    const activeOnly = connectorSecretKeyring({
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID: "active",
+      CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: ACTIVE_ENCRYPTION_KEY,
+    });
+
+    await expect(decryptConnectorSecret(oldCiphertext, activeOnly)).rejects.toThrow(
+      "unavailable",
+    );
+  });
+});
 
 describe("connector agent task boundary", () => {
   test("returns a bearer secret once and stores only its digest", async () => {
@@ -415,7 +467,7 @@ describe("inbound connector boundary", () => {
       capability: "inboundEvents",
       authStrategy: "providerSignature",
       secretHash: "github-secret-hash",
-      encryptedSecret: "v1.test.encrypted",
+      encryptedSecret: "v1.test.iv.encrypted",
     });
 
     const first = await state.t.mutation(internal.connectors.recordInboundEvent, {

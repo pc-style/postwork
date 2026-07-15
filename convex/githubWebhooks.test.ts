@@ -5,14 +5,20 @@ import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test";
 import { beforeEach, describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
-import { signGitHubPayload } from "./lib/githubWebhooks";
+import {
+  GITHUB_WEBHOOK_MAX_BYTES,
+  signGitHubPayload,
+} from "./lib/githubWebhooks";
 
 const modules = import.meta.glob("./**/*.ts");
 const ENCRYPTION_KEY = "11".repeat(32);
+const ROTATED_ENCRYPTION_KEY = "22".repeat(32);
 const ADMIN_TOKEN = "https://issuer.example|github-admin";
 
 beforeEach(() => {
-  process.env.CONNECTOR_SECRET_ENCRYPTION_KEY = ENCRYPTION_KEY;
+  process.env.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID = "key-1";
+  process.env.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY = ENCRYPTION_KEY;
+  delete process.env.CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS;
 });
 
 async function setup(name = "Postwork", tokenIdentifier = ADMIN_TOKEN) {
@@ -127,7 +133,7 @@ describe("GitHub webhook ingestion", () => {
       post: await ctx.db.get(result.postId as never),
       events: await ctx.db.query("connectorEvents").collect(),
     }));
-    expect(stored.connector?.encryptedSecret).toMatch(/^v1\./);
+    expect(stored.connector?.encryptedSecret).toMatch(/^v1\.key-1\./);
     expect(stored.connector?.secretHash).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(stored.connector)).not.toContain(state.secret);
     expect(stored.events).toHaveLength(1);
@@ -149,6 +155,165 @@ describe("GitHub webhook ingestion", () => {
       posts: (await ctx.db.query("posts").collect()).length,
     }));
     expect(counts).toEqual({ events: 0, posts: 0 });
+  });
+
+  test("accepts a signed ping without reserving a receipt or creating content", async () => {
+    const state = await setup();
+    const response = await deliver(state, {
+      event: "ping",
+      payload: { zen: "Keep it logically awesome." },
+      deliveryId: "ping-1",
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    const stored = await state.t.run(async (ctx) => ({
+      events: await ctx.db.query("connectorEvents").collect(),
+      posts: await ctx.db.query("posts").collect(),
+      tasks: await ctx.db.query("agentTasks").collect(),
+      audit: await ctx.db.query("auditLog").collect(),
+    }));
+    expect(stored.events).toEqual([]);
+    expect(stored.posts).toEqual([]);
+    expect(stored.tasks).toEqual([]);
+    expect(stored.audit.map((entry) => entry.action)).toEqual([
+      "connector.provisioned",
+    ]);
+  });
+
+  test("rejects an invalidly signed ping before any mutation", async () => {
+    const state = await setup();
+    const response = await deliver(state, {
+      event: "ping",
+      payload: { zen: "Keep it logically awesome." },
+      deliveryId: "ping-invalid",
+      secret: "wrong-secret",
+    });
+
+    expect(response.status).toBe(401);
+    const counts = await state.t.run(async (ctx) => ({
+      events: (await ctx.db.query("connectorEvents").collect()).length,
+      posts: (await ctx.db.query("posts").collect()).length,
+      tasks: (await ctx.db.query("agentTasks").collect()).length,
+    }));
+    expect(counts).toEqual({ events: 0, posts: 0, tasks: 0 });
+  });
+
+  test.each([
+    ["missing Content-Length", undefined],
+    ["dishonest Content-Length", "1"],
+  ])("rejects streamed oversized bodies with %s and cancels the reader", async (_name, length) => {
+    const state = await setup();
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(GITHUB_WEBHOOK_MAX_BYTES));
+        controller.enqueue(new Uint8Array([1]));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      "x-github-delivery": `oversized-${length ?? "missing"}`,
+      "x-github-event": "issues",
+      "x-hub-signature-256": `sha256=${"0".repeat(64)}`,
+    };
+    if (length) headers["content-length"] = length;
+
+    const request = {
+      method: "POST",
+      headers,
+      body,
+      duplex: "half" as const,
+    };
+    const response = await state.t.fetch(
+      `/api/connectors/github?connector=${state.connectorId}`,
+      request,
+    );
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "payload_too_large" });
+    expect(cancelled).toBe(true);
+  });
+
+  test("rewraps a previous-key secret before the previous key is removed", async () => {
+    const state = await setup();
+    process.env.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID = "key-2";
+    process.env.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY = ROTATED_ENCRYPTION_KEY;
+    process.env.CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS = JSON.stringify({
+      "key-1": ENCRYPTION_KEY,
+    });
+
+    await expect(
+      state.authed.action(api.connectors.rewrapGithubSecret, {
+        connectorId: state.connectorId,
+      }),
+    ).resolves.toEqual({
+      connectorId: state.connectorId,
+      keyId: "key-2",
+      rewrapped: true,
+    });
+    const stored = await state.t.run(async (ctx) => ({
+      connector: await ctx.db.get(state.connectorId),
+      audit: await ctx.db.query("auditLog").collect(),
+    }));
+    expect(stored.connector?.encryptedSecret).toMatch(/^v1\.key-2\./);
+    expect(JSON.stringify(stored.connector)).not.toContain(state.secret);
+    expect(stored.audit.at(-1)).toMatchObject({
+      orgId: state.orgId,
+      actorId: state.adminId,
+      action: "connector.secret.rewrapped",
+      targetId: state.connectorId,
+    });
+
+    delete process.env.CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS;
+    const response = await deliver(state, { deliveryId: "after-rewrap" });
+    expect(response.status).toBe(202);
+  });
+
+  test("keeps GitHub secret rewrap tenant-isolated", async () => {
+    const state = await setup();
+    const otherToken = "https://issuer.example|other-rewrap-admin";
+    await state.t.run(async (ctx) => {
+      const orgId = await ctx.db.insert("orgs", {
+        name: "Other Rewrap",
+        slug: "other-rewrap",
+        createdAt: 1,
+      });
+      await ctx.db.insert("users", {
+        orgId,
+        name: "Other Rewrap Admin",
+        title: "Admin",
+        avatarColor: "#8c1862",
+        initials: "OA",
+        role: "admin",
+        status: "active",
+        tokenIdentifier: otherToken,
+        subject: otherToken,
+      });
+    });
+    const otherAuthed = state.t.withIdentity({
+      tokenIdentifier: otherToken,
+      subject: otherToken,
+      issuer: "https://issuer.example",
+    });
+    const other = await otherAuthed.action(api.connectors.provision, {
+      name: "GitHub",
+      slug: "github",
+      capability: "inboundEvents",
+      authStrategy: "providerSignature",
+    });
+    const before = await state.t.run(async (ctx) => ctx.db.get(other.connectorId));
+
+    await expect(
+      state.authed.action(api.connectors.rewrapGithubSecret, {
+        connectorId: other.connectorId,
+      }),
+    ).rejects.toThrow();
+    const after = await state.t.run(async (ctx) => ctx.db.get(other.connectorId));
+    expect(after?.encryptedSecret).toBe(before?.encryptedSecret);
   });
 
   test("deduplicates a GitHub delivery at the receipt boundary", async () => {

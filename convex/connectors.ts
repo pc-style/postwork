@@ -14,7 +14,12 @@ import { ensureActiveViewerUser, getViewerFromAuth, initialsFrom } from "./authU
 import { insertAgentReply } from "./replies";
 import { connectorAuthStrategy, connectorCapability } from "./schema";
 import { parse, replyBodySchema } from "./lib/validation";
-import { encryptConnectorSecret, sha256Hex } from "./lib/connectorSecrets";
+import {
+  connectorSecretKeyring,
+  decryptConnectorSecret,
+  encryptConnectorSecret,
+  sha256Hex,
+} from "./lib/connectorSecrets";
 
 const TOKEN_PREFIX = "pwc";
 
@@ -139,7 +144,7 @@ export const provision = action({
     const encryptedSecret = args.authStrategy === "providerSignature"
       ? await encryptConnectorSecret(
           secret,
-          env.CONNECTOR_SECRET_ENCRYPTION_KEY ?? "",
+          connectorSecretKeyring(env),
         )
       : undefined;
     const created: { connectorId: Id<"connectors">; agentId: Id<"users"> } =
@@ -157,6 +162,48 @@ export const provision = action({
       ...created,
       token: credentialId ? `${TOKEN_PREFIX}.${credentialId}.${secret}` : null,
       secret: args.authStrategy === "providerSignature" ? secret : null,
+    };
+  },
+});
+
+export const rewrapGithubSecret = action({
+  args: { connectorId: v.id("connectors") },
+  handler: async (ctx, args): Promise<{
+    connectorId: Id<"connectors">;
+    keyId: string;
+    rewrapped: boolean;
+  }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) forbidden("Sign in first.");
+    const material: { encryptedSecret: string } = await ctx.runQuery(
+      internal.connectors.getGithubSecretForRewrap,
+      {
+        adminTokenIdentifier: identity.tokenIdentifier,
+        connectorId: args.connectorId,
+      },
+    );
+    const keyring = connectorSecretKeyring(env);
+    const decrypted = await decryptConnectorSecret(material.encryptedSecret, keyring);
+    if (decrypted.keyId === keyring.activeKeyId) {
+      return {
+        connectorId: args.connectorId,
+        keyId: keyring.activeKeyId,
+        rewrapped: false,
+      };
+    }
+    const encryptedSecret = await encryptConnectorSecret(decrypted.secret, keyring);
+    await ctx.runMutation(internal.connectors.commitGithubSecretRewrap, {
+      adminTokenIdentifier: identity.tokenIdentifier,
+      connectorId: args.connectorId,
+      expectedEncryptedSecret: material.encryptedSecret,
+      encryptedSecret,
+      fromKeyId: decrypted.keyId,
+      toKeyId: keyring.activeKeyId,
+    });
+    return {
+      connectorId: args.connectorId,
+      keyId: keyring.activeKeyId,
+      rewrapped: true,
     };
   },
 });
@@ -285,6 +332,100 @@ export const getInboundSignatureMaterial = internalQuery({
       forbidden("Inbound connector is unavailable.");
     }
     return { encryptedSecret: connector.encryptedSecret };
+  },
+});
+
+export const getGithubSecretForRewrap = internalQuery({
+  args: {
+    adminTokenIdentifier: v.string(),
+    connectorId: v.id("connectors"),
+  },
+  handler: async (ctx, args) => {
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", args.adminTokenIdentifier),
+      )
+      .unique();
+    if (
+      !admin?.orgId ||
+      admin.role !== "admin" ||
+      admin.status === "pending" ||
+      admin.deactivatedAt
+    ) {
+      forbidden("Admins only.");
+    }
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.orgId !== admin.orgId ||
+      connector.slug !== "github" ||
+      connector.capability !== "inboundEvents" ||
+      connector.authStrategy !== "providerSignature" ||
+      !connector.encryptedSecret ||
+      connector.revokedAt
+    ) {
+      invalid("GitHub connector not found.");
+    }
+    return { encryptedSecret: connector.encryptedSecret };
+  },
+});
+
+export const commitGithubSecretRewrap = internalMutation({
+  args: {
+    adminTokenIdentifier: v.string(),
+    connectorId: v.id("connectors"),
+    expectedEncryptedSecret: v.string(),
+    encryptedSecret: v.string(),
+    fromKeyId: v.string(),
+    toKeyId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const admin = await ctx.db
+      .query("users")
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", args.adminTokenIdentifier),
+      )
+      .unique();
+    if (
+      !admin?.orgId ||
+      admin.role !== "admin" ||
+      admin.status === "pending" ||
+      admin.deactivatedAt
+    ) {
+      forbidden("Admins only.");
+    }
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.orgId !== admin.orgId ||
+      connector.slug !== "github" ||
+      connector.capability !== "inboundEvents" ||
+      connector.authStrategy !== "providerSignature" ||
+      connector.revokedAt
+    ) {
+      invalid("GitHub connector not found.");
+    }
+    if (connector.encryptedSecret !== args.expectedEncryptedSecret) {
+      invalid("Connector secret changed during rewrap.");
+    }
+    const now = Date.now();
+    await ctx.db.patch(connector._id, {
+      encryptedSecret: args.encryptedSecret,
+      updatedAt: now,
+    });
+    await ctx.db.insert("auditLog", {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "connector.secret.rewrapped",
+      targetType: "connector",
+      targetId: connector._id,
+      metadata: JSON.stringify({
+        fromKeyId: args.fromKeyId,
+        toKeyId: args.toKeyId,
+      }),
+      createdAt: now,
+    });
   },
 });
 

@@ -44,8 +44,21 @@ webhook payloads and direct unaudited replies stay outside this boundary.
 GitHub sends webhooks to `POST /api/connectors/github?connector=<connector-id>`.
 Provisioning returns the webhook secret once; the connector stores only its
 digest and an AES-GCM encrypted copy used for HMAC verification. Deployments
-must set `CONNECTOR_SECRET_ENCRYPTION_KEY` to a 32-byte hexadecimal key and keep
-it separate from Convex data.
+must set `CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID` to a stable identifier and
+`CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY` to a 32-byte hexadecimal key. Optional
+`CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS` is a JSON object of up to three
+retired key IDs and 32-byte hexadecimal keys. Keep all keys separate from Convex
+data. Missing configuration and unknown ciphertext key IDs fail closed.
+
+To rotate keys safely:
+
+1. Add the current active key to `CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS`,
+   then deploy a new active key ID and key.
+2. From an authenticated admin session, call
+   `api.connectors.rewrapGithubSecret` once for each GitHub connector in that
+   admin's organization. The action never returns the decrypted secret.
+3. After every connector reports the new key ID, remove the retired key from
+   `CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS` and redeploy.
 
 The adapter accepts issue open, reopen, and close events; pull request open,
 reopen, ready-for-review, and close events; and unsuccessful completed workflow

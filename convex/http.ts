@@ -3,7 +3,10 @@ import { env, httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { hashConnectorSecret, parseConnectorToken } from "./connectors";
-import { decryptConnectorSecret } from "./lib/connectorSecrets";
+import {
+  connectorSecretKeyring,
+  decryptConnectorSecret,
+} from "./lib/connectorSecrets";
 import {
   GITHUB_WEBHOOK_MAX_BYTES,
   githubExternalEventId,
@@ -26,6 +29,33 @@ function objectBody(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+async function boundedRequestBody(
+  request: Request,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (!request.body) return new Uint8Array();
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
 http.route({
   path: "/api/connectors/github",
   method: "POST",
@@ -38,12 +68,16 @@ http.route({
       return json({ error: "invalid_headers" }, 400);
     }
 
-    const declaredLength = Number(request.headers.get("content-length") ?? "0");
-    if (Number.isFinite(declaredLength) && declaredLength > GITHUB_WEBHOOK_MAX_BYTES) {
+    const contentLength = request.headers.get("content-length")?.trim();
+    if (
+      contentLength &&
+      /^\d+$/.test(contentLength) &&
+      Number(contentLength) > GITHUB_WEBHOOK_MAX_BYTES
+    ) {
       return json({ error: "payload_too_large" }, 413);
     }
-    const bytes = new Uint8Array(await request.arrayBuffer());
-    if (bytes.byteLength > GITHUB_WEBHOOK_MAX_BYTES) {
+    const bytes = await boundedRequestBody(request, GITHUB_WEBHOOK_MAX_BYTES);
+    if (!bytes) {
       return json({ error: "payload_too_large" }, 413);
     }
 
@@ -58,10 +92,10 @@ http.route({
 
     let secret: string;
     try {
-      secret = await decryptConnectorSecret(
+      secret = (await decryptConnectorSecret(
         material.encryptedSecret,
-        env.CONNECTOR_SECRET_ENCRYPTION_KEY ?? "",
-      );
+        connectorSecretKeyring(env),
+      )).secret;
     } catch {
       return json({ error: "connector_unavailable" }, 503);
     }
@@ -79,6 +113,7 @@ http.route({
     } catch {
       return json({ error: "invalid_json" }, 400);
     }
+    if (event === "ping") return json({ ok: true });
     const route = routeGitHubEvent(event, payload);
     if (!route) return json({ error: "unsupported_event" }, 422);
 
