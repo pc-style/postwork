@@ -93,8 +93,9 @@ never be present during this procedure.
    the key out of the command text and shell history. The wrapper forwards
    signals to the active command and waits for it before exiting:
 
-   ```bash
+   ```zsh
    (
+     unsetopt XTRACE VERBOSE
      set -e
      child_pid=''
      deploy_key=''
@@ -118,6 +119,7 @@ never be present during this procedure.
        exit "$status"
      }
      run_convex() {
+       unsetopt XTRACE VERBOSE
        set -m
        CONVEX_DEPLOY_KEY="$deploy_key" bunx convex "$@" &
        child_pid=$!
@@ -172,12 +174,15 @@ never be present during this procedure.
    )
    ```
 
-   The mode check blocks any deployment that does not report `DEMO=true`. The
-   parser exits before confirmation unless the audit succeeds, returns valid
-   JSON, and contains `ok: true`. Type `yes` only after reviewing the printed
-   audit. On exit, the wrapper clears its shell variables and removes its
-   temporary files after the active command stops. This does not revoke or
-   rotate the deploy key, so keep the key in an approved secret store.
+   The wrapper disables inherited zsh xtrace and verbose output before reading
+   the key, then disables them again before every Convex launch so the expanded
+   environment assignment cannot enter trace output. The mode check blocks any
+   deployment that does not report `DEMO=true`. The parser exits before
+   confirmation unless the audit succeeds, returns valid JSON, and contains
+   `ok: true`. Type `yes` only after reviewing the printed audit. On exit, the
+   wrapper clears its shell variables and removes its temporary files after the
+   active command stops. This does not revoke or rotate the deploy key, so keep
+   the key in an approved secret store.
 3. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
    teammates, and verify the feed, one post with replies, priorities, and the
    catch-up page. Confirm baked summaries render without an AI provider key.
