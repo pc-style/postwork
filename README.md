@@ -131,22 +131,31 @@ generation path. API keys always stay in Convex environment variables.
 ## Deploy
 
 The Vite frontend deploys to Vercel and the backend deploys to Convex Cloud.
-Use separate deployments and frontend environments for the public demo and the
-authenticated product so their data never mix.
+The public demo and authenticated product use separate Vercel projects and
+separate Convex deployments. Each frontend receives the `VITE_CONVEX_URL` for
+its own backend, and each backend release workflow owns only its matching
+`CONVEX_DEPLOY_KEY`.
 
 ```bash
 bunx convex dev --configure
-# configure Vercel with CONVEX_DEPLOY_KEY and the mode-specific environment values
-# build command: bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'
+# deploy each Convex backend from its matching release workflow
+# configure both Vercel projects with DEMO_CONVEX_URL and PRODUCT_CONVEX_URL
+# set each project's VITE_CONVEX_URL to its matching endpoint and mode
+# build command: bun run validate:deploy-env && bun run build
 ```
 
-For a demo deployment, set `DEMO=true` on Convex and `VITE_DEMO=true` in the
-frontend build. For product, leave both unset/false and supply the Clerk
-environment values. Seed only the demo deployment:
+Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
+`VITE_CLERK_PUBLISHABLE_KEY` for product. Set `DEMO=true` on the demo Convex
+deployment and `DEMO=false` on product. Product also requires
+`CLERK_JWT_ISSUER_DOMAIN`; the demo Convex deployment requires the same issuer
+so its auth config can load, but the demo frontend remains anonymous. Product
+owns its notification configuration. Seed and reseed operations are destructive
+and fail unless the target deployment has `DEMO=true`.
+`DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL` are public endpoint references, not
+secrets, and both must be configured in both Vercel projects so the build rejects
+a missing, shared, or swapped Convex target.
 
-```bash
-bunx convex run --prod seed:run
-```
+Follow the guarded runbook in [`docs/deployment.md`](docs/deployment.md).
 
 See [`docs/deployment.md`](docs/deployment.md) for the complete Vercel demo and
 product environment matrix, including optional Sentry error reporting and the

@@ -19,6 +19,10 @@ const DAY = 24 * HOUR;
 export const run = internalMutation({
   args: {},
   handler: async (ctx) => {
+    if (process.env.DEMO !== "true") {
+      throw new Error("Demo seed requires DEMO=true on the Convex deployment.");
+    }
+
     const existingDemoOrg = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", DEMO_ORG_SLUG)).unique();
     const now = Date.now();
     const orgId = existingDemoOrg?._id ?? await ctx.db.insert("orgs", {

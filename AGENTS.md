@@ -121,10 +121,18 @@ priority state colors from `src/lib/format.ts`.
 
 ## Deployment
 
-Frontend is a static Vite build (`dist/`) → deploy to Vercel. Convex Cloud hosts
-the backend; set the AI env vars on the Convex deployment. The committed Vercel
-build command injects `VITE_CONVEX_URL`; set `CONVEX_DEPLOY_KEY` and
-`VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev` in Vercel.
+Frontend is a static Vite build (`dist/`) deployed to Vercel. The demo and
+product Vercel projects each target a separate Convex deployment through their
+own `VITE_CONVEX_URL`. Both projects also set `DEMO_CONVEX_URL` and
+`PRODUCT_CONVEX_URL` to the two public endpoint references so the build can
+reject a swapped backend. These URLs are not secrets. Separate backend release
+workflows own the corresponding `CONVEX_DEPLOY_KEY`; the keys never belong to
+Vercel. Only the demo deployment may be seeded or reseeded. The demo project
+also sets `VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev`. Both Convex deployments
+require `CLERK_JWT_ISSUER_DOMAIN` so auth config can load, though the demo
+frontend remains anonymous. The seed mutation fails unless the target deployment
+has `DEMO=true`. See
+`docs/deployment.md` for the full frontend and backend environment contracts.
 
 <!-- convex-ai-start -->
 

@@ -1,12 +1,16 @@
 /// <reference types="vite/client" />
 
 import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
 const TOKEN = "https://issuer.example|product-member";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 async function setup() {
   const t = convexTest(schema, modules);
@@ -130,6 +134,7 @@ describe("shared deployment tenant isolation", () => {
   });
 
   test("demo seed preserves product rows", async () => {
+    vi.stubEnv("DEMO", "true");
     const state = await setup();
 
     await state.t.mutation(internal.seed.run, {});
