@@ -1,29 +1,35 @@
 # Deployment and observability
 
-Postwork has two deliberately separate Vercel + Convex deployments. The public
-demo is seeded and anonymous; the product deployment is authenticated. Never
-point both frontend environments at the same Convex deployment.
+Postwork has two Vercel frontends backed by one tenant-isolated Convex
+deployment. The public demo is anonymous and fixed to the seeded
+`postwork-demo` organization. The product frontend requires Clerk and is fixed
+to the `postwork` organization. Backend authorization derives that scope from
+authentication, never from `VITE_DEMO` or a caller-provided organization.
 
 Vercel uses the committed build command:
 
 ```bash
-bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'
+bun run validate:deploy-env && bun run build
 ```
 
-It deploys the Convex project selected by `CONVEX_DEPLOY_KEY`, then injects that
-deployment's URL into the Vite build as `VITE_CONVEX_URL`.
+Each Vercel project injects the shared backend URL as `VITE_CONVEX_URL`. Vercel
+builds only the frontend and must not own `CONVEX_DEPLOY_KEY` or deploy Convex.
+One separate backend release workflow owns Convex deployment and migrations.
+
+`beta` is the active base for deployment work and pull requests. Keep `main`
+frozen until the demo-to-product phases are complete.
 
 ## Vercel environment matrix
 
-Configure each value in the matching Vercel project/environment. Do not share a
-`CONVEX_DEPLOY_KEY` across the demo and product deployments.
+Configure each value in the matching Vercel project and environment.
 
 | Variable | Public demo (`postwork.pcstyle.dev`) | Product | Notes |
 | --- | --- | --- | --- |
 | `VITE_DEMO` | `true` | `false` | Required explicitly so the build and frontend agree about their mode. |
-| `VITE_CONVEX_URL` | Injected by the build command from the demo Convex deployment | Injected by the build command from the product Convex deployment | Do not manually pin it in Vercel when using the committed build command. For local builds, `bunx convex dev` writes it to `.env.local`. |
-| `CONVEX_DEPLOY_KEY` | Demo deployment key | Product deployment key | Server-side Vercel secret; never prefix with `VITE_`. |
+| `VITE_CONVEX_URL` | Shared Convex deployment URL | Same shared Convex deployment URL | Required by `validate:deploy-env`. For local development, `bunx convex dev` writes it to `.env.local`. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | **unset** | Clerk publishable key | Required by `validate:deploy-env` when `VITE_DEMO=false`. This is a browser-visible key. |
 | `VITE_PLAUSIBLE_DOMAIN` | `postwork.pcstyle.dev` | **unset** | The client also checks demo mode and the actual hostname before initializing Plausible. Product analytics policy is intentionally unset. |
+| `VITE_GIPHY_API_KEY` | Optional browser key | Optional browser key | Enables GIF search. Keep it restricted to the intended origins. |
 | `VITE_SENTRY_DSN` | Optional public Sentry DSN for the demo project | Optional public Sentry DSN for the product project | Leaving it unset disables Sentry fully; no monitoring client is initialized or contacted. A browser DSN is safe to expose, but must be project-scoped. |
 | `VITE_SENTRY_ENVIRONMENT` | Recommended: `demo` | Recommended: `production` | Optional explicit Sentry environment label. Without it, demo defaults to `demo` and product uses Vite's build mode. |
 | `VITE_SENTRY_RELEASE` | Optional immutable release identifier | Optional immutable release identifier | Set this when a release identifier is available (for example, the commit SHA supplied by your deployment process). |
@@ -38,6 +44,30 @@ No server-side Sentry integration is configured: Convex structured logging in
 `convex/lib/observability.ts` remains the backend source of truth, and this keeps
 the local anonymous Convex workflow credential-free.
 
+## Convex deployment contract
+
+The shared Convex deployment owns server configuration. Do not copy these
+values into Vercel unless a separate frontend variable explicitly needs them.
+
+| Variable | Requirement | Purpose |
+| --- | --- | --- |
+| `CLERK_JWT_ISSUER_DOMAIN` | Required | Configures Convex to verify Clerk JWTs for product traffic. |
+| `DEMO` | Set to `false` when outbound product email is enabled | Gates Resend delivery only. It does not select the demo or product tenant. |
+| `AI_PROVIDER` and its provider key/model variables | Optional | Enables live summaries and agent tasks. Seeded demo summaries use `seed/baked` without a provider key. |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `POSTWORK_APP_URL` | Required together for outbound product email | Configures the product notification transport. |
+
+The AI provider pairs are documented in `AGENTS.md`: OpenAI uses
+`OPENAI_API_KEY` and optional `OPENAI_MODEL`; Gateway uses
+`AI_GATEWAY_API_KEY` and `AI_GATEWAY_MODEL`; OpenRouter uses
+`OPENROUTER_API_KEY` plus optional model and base URL values; Pioneer uses
+`PIONEER_API_KEY`, `PIONEER_MODEL`, and an optional base URL.
+
+`CONVEX_DEPLOY_KEY` is a secret for the single backend release workflow, not a
+Convex runtime variable and not a Vercel frontend variable. After deploying a
+new backend, run `migrations:ensureProductOrg`,
+`migrations:auditTenantOwnership`, then `migrations:activateFirstProductAdmin`
+with the intended product user ID when initial product bootstrap is needed.
+
 ## Demo reseed policy
 
 The public demo uses a **manual reseed**, owned by the person deploying or
@@ -48,22 +78,22 @@ traffic level does not justify surprising active visitors with an automatic
 reset. `PCS-227` retains a scheduled job as an optional fallback if manual
 ownership proves unreliable.
 
-The seed mutation is destructive and idempotent. It wipes application tables
-before rebuilding the demo organization, people, spaces, posts, replies,
-priorities, reads, tasks, and baked summaries. It must run only against the
-dedicated demo Convex deployment, never product.
+The seed mutation is destructive and idempotent within the demo tenant. It
+preserves the demo organization ID and every product-owned row, then rebuilds
+the demo people, spaces, posts, replies, priorities, reads, tasks, and baked
+summaries. Run it only against the designated shared deployment after verifying
+the target, because that deployment also serves product traffic.
 
 ### Reseed runbook
 
 1. Confirm the current branch contains the intended narrative in
    `convex/seed.ts`, then run `bun run build` locally.
-2. In the Convex dashboard, copy the deploy key for the **demo** deployment and
-   verify that its `DEMO` environment variable is `true`. Do not continue if the
-   deployment identity or mode is ambiguous.
-3. Export the demo deploy key only for this shell and run the seed:
+2. Confirm the target is the designated shared Convex deployment and run
+   `migrations:auditTenantOwnership`. Do not continue unless it reports `ok`.
+3. Export the backend deploy key only for this shell and run the seed:
 
    ```bash
-   CONVEX_DEPLOY_KEY='<demo deploy key>' bunx convex run --prod seed:run
+   CONVEX_DEPLOY_KEY='<backend deploy key>' bunx convex run --prod seed:run
    ```
 
 4. Open `https://postwork.pcstyle.dev`, switch between at least two seeded
@@ -103,11 +133,3 @@ bun run verify:builds
 `verify:builds` runs the default demo build and an explicit
 `VITE_DEMO=false` product build. Neither command needs a Sentry DSN; absent
 monitoring credentials are an expected, supported local configuration.
-
-## Shared Convex deployment tenancy
-
-Both frontends use one Convex deployment and one schema. Anonymous demo traffic is fixed to the `postwork-demo` organization; Clerk-authenticated product traffic is fixed to `postwork` (`Postwork`). Backend authorization derives this scope from Convex auth and never from `DEMO` or a caller-provided organization.
-
-Bootstrap in order: deploy backend from the single designated backend release workflow, run `migrations:ensureProductOrg`, run `migrations:auditTenantOwnership`, then run `migrations:activateFirstProductAdmin` with the intended product user ID. Vercel builds only the frontend; it must not deploy Convex.
-
-Set the demo frontend to `VITE_CONVEX_URL=<shared deployment URL>` with demo UI mode enabled. Set the product frontend to the same `VITE_CONVEX_URL`, plus its Clerk publishable key and product UI mode. Convex owns Clerk issuer/auth configuration and provider secrets. Only the backend release workflow owns `CONVEX_DEPLOY_KEY`.

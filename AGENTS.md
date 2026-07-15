@@ -121,10 +121,12 @@ priority state colors from `src/lib/format.ts`.
 
 ## Deployment
 
-Frontend is a static Vite build (`dist/`) → deploy to Vercel. Convex Cloud hosts
-the backend; set the AI env vars on the Convex deployment. The committed Vercel
-build command injects `VITE_CONVEX_URL`; set `CONVEX_DEPLOY_KEY` and
-`VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev` in Vercel.
+Frontend is a static Vite build (`dist/`) deployed to Vercel. Convex Cloud hosts
+the shared, tenant-isolated backend. Each Vercel project sets
+`VITE_CONVEX_URL` plus its mode variables; Vercel never owns
+`CONVEX_DEPLOY_KEY`. The demo project also sets
+`VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev`. See `docs/deployment.md` for the
+full frontend and backend environment contracts.
 
 <!-- convex-ai-start -->
 

@@ -130,18 +130,23 @@ generation path. API keys always stay in Convex environment variables.
 ## Deploy
 
 The Vite frontend deploys to Vercel and the backend deploys to Convex Cloud.
-Use separate deployments and frontend environments for the public demo and the
-authenticated product so their data never mix.
+Use separate Vercel projects for the public demo and authenticated product. Both
+frontends point to one Convex deployment, where backend authorization isolates
+the seeded `postwork-demo` organization from the Clerk-authenticated `postwork`
+organization.
 
 ```bash
 bunx convex dev --configure
-# configure Vercel with CONVEX_DEPLOY_KEY and the mode-specific environment values
-# build command: bunx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'bun run build'
+# deploy Convex from the designated backend release workflow
+# configure each Vercel project with VITE_CONVEX_URL and its mode-specific values
+# build command: bun run validate:deploy-env && bun run build
 ```
 
-For a demo deployment, set `DEMO=true` on Convex and `VITE_DEMO=true` in the
-frontend build. For product, leave both unset/false and supply the Clerk
-environment values. Seed only the demo deployment:
+Set `VITE_DEMO=true` for the public demo. Set `VITE_DEMO=false` and
+`VITE_CLERK_PUBLISHABLE_KEY` for product. The shared Convex deployment requires
+`CLERK_JWT_ISSUER_DOMAIN`; set `DEMO=false` there when product notification
+delivery is enabled. Seed resets only the demo tenant and preserves product
+rows:
 
 ```bash
 bunx convex run --prod seed:run
