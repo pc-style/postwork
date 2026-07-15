@@ -132,6 +132,50 @@ describe("agent task runner", () => {
     expect(timedOut.timedOut).toBe(true);
   });
 
+  test("kills descendants on timeout without waiting for inherited output pipes", async () => {
+    const startedAt = performance.now();
+    const result = await executeCommand(
+      [
+        process.execPath,
+        "-e",
+        [
+          `Bun.spawn([process.execPath, "-e", "await Bun.sleep(5000)"],`,
+          `{ stdout: "inherit", stderr: "inherit" });`,
+        ].join(" "),
+      ],
+      "",
+      { timeoutMs: 30, maxOutputBytes: 100 },
+    );
+    const elapsedMs = performance.now() - startedAt;
+
+    expect(result.timedOut).toBe(true);
+    expect(elapsedMs).toBeLessThan(1_000);
+  });
+
+  test("submits a failed result when the executable cannot be launched", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+      return bodies.length === 1 ? json(claim) : json({ status: "failed" });
+    }) as typeof fetch;
+
+    const result = await runAgentTask(config, {
+      fetch: fetchImpl,
+      execute: async () => {
+        throw new Error("ENOENT: executable not found");
+      },
+    });
+
+    const externalRunId = externalRunIdFor(claim.taskId);
+    expect(result).toEqual({ status: "failed", externalRunId });
+    expect(bodies[1]).toEqual({
+      taskId: claim.taskId,
+      externalRunId,
+      status: "failed",
+      error: "Coding-agent command could not be started. ENOENT: executable not found",
+    });
+  });
+
   test("retries result submission with the same stable run identity", async () => {
     const resultBodies: string[] = [];
     let calls = 0;
@@ -145,6 +189,7 @@ describe("agent task runner", () => {
 
     await runAgentTask(config, {
       fetch: fetchImpl,
+      sleep: async () => {},
       execute: async () => ({
         exitCode: 0,
         stdout: "Stable result",
@@ -158,6 +203,78 @@ describe("agent task runner", () => {
     expect(resultBodies).toHaveLength(2);
     expect(resultBodies[0]).toBe(resultBodies[1]);
     expect(JSON.parse(resultBodies[0] ?? "{}").externalRunId).toBe(externalRunIdFor(claim.taskId));
+  });
+
+  test("backs off network and server retries and honors Retry-After", async () => {
+    const delays: number[] = [];
+    const resultBodies: string[] = [];
+    let calls = 0;
+    const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+      calls += 1;
+      if (calls === 1) return json(claim);
+      resultBodies.push(String(init?.body));
+      if (calls === 2) throw new Error("temporary network failure");
+      if (calls === 3) {
+        return Response.json(
+          { error: "temporarily unavailable" },
+          { status: 503, headers: { "retry-after": "2" } },
+        );
+      }
+      return json({ status: "done", replyId: "reply-1" });
+    }) as typeof fetch;
+
+    await runAgentTask({ ...config, requestAttempts: 4 }, {
+      fetch: fetchImpl,
+      sleep: async (delayMs) => {
+        delays.push(delayMs);
+      },
+      execute: async () => ({
+        exitCode: 0,
+        stdout: "Stable result",
+        stderr: "",
+        stdoutTruncated: false,
+        stderrTruncated: false,
+        timedOut: false,
+      }),
+    });
+
+    expect(delays).toEqual([100, 2_000]);
+    expect(resultBodies).toHaveLength(3);
+    expect(new Set(resultBodies).size).toBe(1);
+  });
+
+  test("rejects malformed reply entries before formatting command input", async () => {
+    const malformedReplies: unknown[] = [
+      null,
+      { id: "reply-1", authorId: "user-1" },
+      { id: "reply-1", authorId: "user-1", body: "hello", parentId: 42 },
+    ];
+
+    for (const malformedReply of malformedReplies) {
+      let executed = false;
+      await expect(runAgentTask(config, {
+        fetch: (async () => json({ ...claim, replies: [malformedReply] })) as typeof fetch,
+        execute: async () => {
+          executed = true;
+          throw new Error("Malformed claims must not execute commands.");
+        },
+      })).rejects.toThrow("invalid task claim");
+      expect(executed).toBe(false);
+    }
+  });
+
+  test("rejects output limits above the backend-safe maximum", async () => {
+    let calls = 0;
+    await expect(runAgentTask({ ...config, maxOutputBytes: 9_501 }, {
+      fetch: (async () => {
+        calls += 1;
+        return json(claim);
+      }) as typeof fetch,
+      execute: async () => {
+        throw new Error("Oversized configuration must fail before execution.");
+      },
+    })).rejects.toThrow("Maximum output bytes must be at most 9500");
+    expect(calls).toBe(0);
   });
 
   test("does not retry a rejected claim", async () => {

@@ -1,6 +1,8 @@
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_OUTPUT_BYTES = 9_500;
 const DEFAULT_REQUEST_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 100;
+const MAX_RETRY_DELAY_MS = 5_000;
 
 type AgentTaskClaim = {
   taskId: string;
@@ -42,6 +44,7 @@ export type RunnerConfig = {
 type RunnerDependencies = {
   fetch: typeof fetch;
   execute: typeof executeCommand;
+  sleep?: (delayMs: number) => Promise<void>;
 };
 
 function required(value: string | undefined, name: string): string {
@@ -55,6 +58,20 @@ function positiveInteger(value: string | undefined, fallback: number, name: stri
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function outputLimit(value: string | undefined): number {
+  const parsed = positiveInteger(
+    value,
+    DEFAULT_MAX_OUTPUT_BYTES,
+    "POSTWORK_AGENT_MAX_OUTPUT_BYTES",
+  );
+  if (parsed > DEFAULT_MAX_OUTPUT_BYTES) {
+    throw new Error(
+      `POSTWORK_AGENT_MAX_OUTPUT_BYTES must be at most ${DEFAULT_MAX_OUTPUT_BYTES}.`,
+    );
   }
   return parsed;
 }
@@ -98,11 +115,7 @@ export function configFromEnvironment(
       DEFAULT_TIMEOUT_MS,
       "POSTWORK_AGENT_TIMEOUT_MS",
     ),
-    maxOutputBytes: positiveInteger(
-      env.POSTWORK_AGENT_MAX_OUTPUT_BYTES,
-      DEFAULT_MAX_OUTPUT_BYTES,
-      "POSTWORK_AGENT_MAX_OUTPUT_BYTES",
-    ),
+    maxOutputBytes: outputLimit(env.POSTWORK_AGENT_MAX_OUTPUT_BYTES),
   };
 }
 
@@ -110,16 +123,40 @@ export function externalRunIdFor(taskId: string): string {
   return `postwork-${taskId}`.slice(0, 200);
 }
 
+function isRequiredString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || isRequiredString(value);
+}
+
+function isClaimReply(value: unknown): value is AgentTaskClaim["replies"][number] {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const reply = value as Partial<AgentTaskClaim["replies"][number]>;
+  return (
+    isRequiredString(reply.id) &&
+    isOptionalString(reply.parentId) &&
+    isRequiredString(reply.authorId) &&
+    isRequiredString(reply.body)
+  );
+}
+
 function isClaim(value: unknown): value is AgentTaskClaim {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const claim = value as Partial<AgentTaskClaim>;
   return (
-    typeof claim.taskId === "string" &&
-    typeof claim.prompt === "string" &&
-    typeof claim.post?.title === "string" &&
-    typeof claim.post.body === "string" &&
-    typeof claim.agent?.name === "string" &&
-    Array.isArray(claim.replies)
+    isRequiredString(claim.taskId) &&
+    isRequiredString(claim.prompt) &&
+    isRequiredString(claim.post?.id) &&
+    isRequiredString(claim.post.title) &&
+    isRequiredString(claim.post.body) &&
+    isOptionalString(claim.sourceReplyId) &&
+    isRequiredString(claim.agent?.id) &&
+    isRequiredString(claim.agent.name) &&
+    Array.isArray(claim.replies) &&
+    claim.replies.every(isClaimReply) &&
+    typeof claim.repliesTruncated === "boolean"
   );
 }
 
@@ -182,26 +219,34 @@ export async function executeCommand(
   input: string,
   options: { cwd?: string; timeoutMs: number; maxOutputBytes: number },
 ): Promise<CommandResult> {
-  const process = Bun.spawn(command, {
+  const subprocess = Bun.spawn(command, {
     cwd: options.cwd,
     env: processEnv(),
+    detached: true,
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",
   });
-  process.stdin.write(input);
-  process.stdin.end();
+  subprocess.stdin.write(input);
+  subprocess.stdin.end();
 
   let timedOut = false;
   const timeout = setTimeout(() => {
     timedOut = true;
-    process.kill(9);
+    try {
+      process.kill(-subprocess.pid, "SIGKILL");
+    } catch {
+      subprocess.kill(9);
+    }
   }, options.timeoutMs);
-  const stdoutPromise = readBounded(process.stdout, options.maxOutputBytes);
-  const stderrPromise = readBounded(process.stderr, options.maxOutputBytes);
-  const exitCode = await process.exited;
+  const stdoutPromise = readBounded(subprocess.stdout, options.maxOutputBytes);
+  const stderrPromise = readBounded(subprocess.stderr, options.maxOutputBytes);
+  const [exitCode, stdout, stderr] = await Promise.all([
+    subprocess.exited,
+    stdoutPromise,
+    stderrPromise,
+  ]);
   clearTimeout(timeout);
-  const [stdout, stderr] = await Promise.all([stdoutPromise, stderrPromise]);
   return {
     exitCode,
     stdout: stdout.text,
@@ -224,6 +269,7 @@ async function postJson(
   token: string,
   body: unknown,
   attempts: number,
+  sleep: (delayMs: number) => Promise<void>,
 ): Promise<unknown> {
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -240,6 +286,7 @@ async function postJson(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt === attempts) throw lastError;
+      await sleep(retryDelayMs(attempt));
       continue;
     }
     const payload: unknown = await response.json().catch(() => null);
@@ -247,8 +294,28 @@ async function postJson(
     const error = new Error(`Postwork returned HTTP ${response.status}.`);
     if (response.status < 500 || attempt === attempts) throw error;
     lastError = error;
+    await sleep(retryDelayMs(attempt, response.headers.get("retry-after")));
   }
   throw lastError ?? new Error("Postwork request failed.");
+}
+
+function retryDelayMs(attempt: number, retryAfter: string | null = null): number {
+  if (retryAfter !== null) {
+    const trimmed = retryAfter.trim();
+    const seconds = /^\d+$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+    const fromSeconds = Number.isSafeInteger(seconds) ? seconds * 1_000 : Number.NaN;
+    const date = Number.isNaN(fromSeconds) ? Date.parse(trimmed) : Number.NaN;
+    const requested = Number.isNaN(fromSeconds) ? date - Date.now() : fromSeconds;
+    if (Number.isFinite(requested) && requested >= 0) {
+      return Math.min(requested, MAX_RETRY_DELAY_MS);
+    }
+  }
+  return Math.min(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1), MAX_RETRY_DELAY_MS);
+}
+
+function launchFailure(error: unknown): string {
+  const detail = (error instanceof Error ? error.message : String(error)).trim().slice(0, 850);
+  return `Coding-agent command could not be started.${detail ? ` ${detail}` : ""}`;
 }
 
 function boundedFailure(result: CommandResult, timeoutMs: number): string {
@@ -266,44 +333,57 @@ export async function runAgentTask(
   const externalRunId = config.externalRunId?.trim() || externalRunIdFor(config.taskId);
   const attempts = config.requestAttempts ?? DEFAULT_REQUEST_ATTEMPTS;
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxOutputBytes = Math.min(
-    config.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES,
-    DEFAULT_MAX_OUTPUT_BYTES,
-  );
+  const maxOutputBytes = config.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes <= 0) {
+    throw new Error("Maximum output bytes must be a positive integer.");
+  }
+  if (maxOutputBytes > DEFAULT_MAX_OUTPUT_BYTES) {
+    throw new Error(`Maximum output bytes must be at most ${DEFAULT_MAX_OUTPUT_BYTES}.`);
+  }
+  const sleep = dependencies.sleep ?? ((delayMs: number) => Bun.sleep(delayMs));
   const claimPayload = await postJson(
     dependencies.fetch,
     `${baseUrl}/api/connectors/agent-tasks/claim`,
     config.token,
     { taskId: config.taskId, externalRunId },
     attempts,
+    sleep,
   );
   if (!isClaim(claimPayload)) throw new Error("Postwork returned an invalid task claim.");
 
-  const commandResult = await dependencies.execute(
-    config.command,
-    formatAgentInput(claimPayload),
-    { cwd: config.cwd, timeoutMs, maxOutputBytes },
-  );
-  const output = commandResult.stdout.trim();
-  const successful = commandResult.exitCode === 0 && !commandResult.timedOut && output.length > 0;
-  const outcome = successful
-    ? {
-        status: "done" as const,
-        body: commandResult.stdoutTruncated ? `${output}\n\n[output truncated]` : output,
-        model: config.model,
-      }
-    : {
-        status: "failed" as const,
-        error: output.length === 0 && commandResult.exitCode === 0 && !commandResult.timedOut
-          ? "Coding-agent command returned no output."
-          : boundedFailure(commandResult, timeoutMs),
-      };
+  let outcome:
+    | { status: "done"; body: string; model?: string }
+    | { status: "failed"; error: string };
+  try {
+    const commandResult = await dependencies.execute(
+      config.command,
+      formatAgentInput(claimPayload),
+      { cwd: config.cwd, timeoutMs, maxOutputBytes },
+    );
+    const output = commandResult.stdout.trim();
+    const successful = commandResult.exitCode === 0 && !commandResult.timedOut && output.length > 0;
+    outcome = successful
+      ? {
+          status: "done",
+          body: commandResult.stdoutTruncated ? `${output}\n\n[output truncated]` : output,
+          model: config.model,
+        }
+      : {
+          status: "failed",
+          error: output.length === 0 && commandResult.exitCode === 0 && !commandResult.timedOut
+            ? "Coding-agent command returned no output."
+            : boundedFailure(commandResult, timeoutMs),
+        };
+  } catch (error) {
+    outcome = { status: "failed", error: launchFailure(error) };
+  }
   await postJson(
     dependencies.fetch,
     `${baseUrl}/api/connectors/agent-tasks/result`,
     config.token,
     { taskId: config.taskId, externalRunId, ...outcome },
     attempts,
+    sleep,
   );
   return { status: outcome.status, externalRunId };
 }
