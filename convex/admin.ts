@@ -336,6 +336,21 @@ function randomInviteCode(): string {
   return `pw-${code}`;
 }
 
+/**
+ * Codes are resolved globally across orgs (invites.by_code), so enforce
+ * global uniqueness at mint time instead of relying on entropy alone.
+ */
+async function uniqueInviteCode(ctx: MutationCtx): Promise<string> {
+  for (;;) {
+    const code = randomInviteCode();
+    const existing = await ctx.db
+      .query("invites")
+      .withIndex("by_code", (q) => q.eq("code", code))
+      .unique();
+    if (!existing) return code;
+  }
+}
+
 export const createInvite = mutation({
   args: {
     note: v.optional(v.string()),
@@ -367,7 +382,7 @@ export const createInvite = mutation({
         : undefined;
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
-      code: randomInviteCode(),
+      code: await uniqueInviteCode(ctx),
       note,
       createdBy: admin._id,
       createdAt: Date.now(),
@@ -433,7 +448,7 @@ export const approveAccessRequest = mutation({
     // is a follow-up integration — the admin can copy it from the invites list.
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
-      code: randomInviteCode(),
+      code: await uniqueInviteCode(ctx),
       note: `access request: ${request.email}`,
       createdBy: admin._id,
       createdAt: Date.now(),

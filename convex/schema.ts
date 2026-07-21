@@ -333,6 +333,8 @@ export default defineSchema({
     targetKind: v.optional(v.union(v.literal("github"), v.literal("email"))),
     targetValue: v.optional(v.string()),
   })
+    .index("by_code", ["code"])
+    .index("by_target", ["targetKind", "targetValue"])
     .index("by_org_id_and_code", ["orgId", "code"])
     .index("by_org_id_and_created_at", ["orgId", "createdAt"])
     .index("by_org_id_and_target", ["orgId", "targetKind", "targetValue"]),

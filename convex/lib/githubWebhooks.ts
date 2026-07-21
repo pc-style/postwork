@@ -179,7 +179,7 @@ export function githubExternalEventId(deliveryId: string): string | null {
 }
 
 export async function signGitHubPayload(
-  payload: Uint8Array,
+  payload: Uint8Array<ArrayBuffer>,
   secret: string,
 ): Promise<string> {
   const key = await crypto.subtle.importKey(
@@ -196,7 +196,7 @@ export async function signGitHubPayload(
 }
 
 export async function verifyGitHubSignature(
-  payload: Uint8Array,
+  payload: Uint8Array<ArrayBuffer>,
   signature: string | null,
   secret: string,
 ): Promise<boolean> {

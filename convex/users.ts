@@ -68,7 +68,8 @@ export const viewer = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    const user = await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
+    const legacyOrgId = await getProductOrgId(ctx);
+    const user = await findUserForIdentity(ctx, identity, legacyOrgId);
     return publicUser(user);
   },
 });
@@ -78,12 +79,14 @@ export const me = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    const user = await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
+    const legacyOrgId = await getProductOrgId(ctx);
+    const user = await findUserForIdentity(ctx, identity, legacyOrgId);
     if (!user) {
       return {
         user: null,
         status: "pending" as const,
         needsProfileSetup: false,
+        needsOrg: false,
       };
     }
     return {
@@ -91,6 +94,7 @@ export const me = query({
       status: user.status ?? "active" as const,
       needsProfileSetup:
         user.profileCompletedAt === undefined && user.tokenIdentifier !== undefined,
+      needsOrg: user.orgId === undefined,
     };
   },
 });

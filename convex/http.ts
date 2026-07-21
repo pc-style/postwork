@@ -32,7 +32,7 @@ function objectBody(value: unknown): Record<string, unknown> | null {
 async function boundedRequestBody(
   request: Request,
   maxBytes: number,
-): Promise<Uint8Array | null> {
+): Promise<Uint8Array<ArrayBuffer> | null> {
   if (!request.body) return new Uint8Array();
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];

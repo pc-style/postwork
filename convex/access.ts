@@ -29,13 +29,15 @@ export const checkInvite = query({
   handler: async (ctx, args) => {
     const code = args.code.trim().toLowerCase();
     if (!code) return { valid: false as const };
-    const orgId = await getProductOrgId(ctx);
     const invite = await ctx.db
       .query("invites")
-      .withIndex("by_org_id_and_code", (q) => q.eq("orgId", orgId).eq("code", code))
+      .withIndex("by_code", (q) => q.eq("code", code))
       .unique();
     if (!invite || !inviteIsUsable(invite)) return { valid: false as const };
-    return { valid: true as const, note: invite.note };
+    const orgId = invite.orgId ?? await getProductOrgId(ctx);
+    const org = await ctx.db.get(orgId);
+    if (!org) return { valid: false as const };
+    return { valid: true as const, note: invite.note, orgName: org.name };
   },
 });
 
@@ -51,14 +53,19 @@ export const redeemInvite = mutation({
     const code = args.code.trim().toLowerCase();
     const invite = await ctx.db
       .query("invites")
-      .withIndex("by_org_id_and_code", (q) =>
-        q.eq("orgId", viewer.orgId).eq("code", code),
-      )
+      .withIndex("by_code", (q) => q.eq("code", code))
       .unique();
     if (!invite || !inviteIsUsable(invite)) {
       throw new ConvexError({
         code: "INVALID_INPUT",
         message: "That invite code is not valid anymore.",
+      });
+    }
+    const targetOrgId = invite.orgId ?? await getProductOrgId(ctx);
+    if (viewer.orgId && viewer.orgId !== targetOrgId) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Your account already belongs to a different organization.",
       });
     }
     const identity = await ctx.auth.getUserIdentity();
@@ -69,9 +76,9 @@ export const redeemInvite = mutation({
       });
     }
     await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
-    await ctx.db.patch(viewer._id, { status: "active" });
+    await ctx.db.patch(viewer._id, { orgId: targetOrgId, status: "active" });
     await logAudit(ctx, {
-      orgId: viewer.orgId,
+      orgId: targetOrgId,
       actorId: viewer._id,
       action: "invite.redeemed",
       targetType: "invite",
@@ -97,22 +104,32 @@ export const claimTargetedInvite = mutation({
     if (!identity) return { activated: false as const };
 
     for (const candidate of identityTargetCandidates(identity)) {
-      const invites = await ctx.db
-        .query("invites")
-        .withIndex("by_org_id_and_target", (q) =>
-          q
-            .eq("orgId", viewer.orgId)
-            .eq("targetKind", candidate.kind)
-            .eq("targetValue", candidate.value),
-        )
-        .collect();
+      const invites = viewer.orgId
+        ? await ctx.db
+            .query("invites")
+            .withIndex("by_org_id_and_target", (q) =>
+              q
+                .eq("orgId", viewer.orgId)
+                .eq("targetKind", candidate.kind)
+                .eq("targetValue", candidate.value),
+            )
+            .collect()
+        : await ctx.db
+            .query("invites")
+            .withIndex("by_target", (q) =>
+              q
+                .eq("targetKind", candidate.kind)
+                .eq("targetValue", candidate.value),
+            )
+            .collect();
       const invite = invites.find(inviteIsUsable);
       if (!invite) continue;
 
+      const orgId = invite.orgId ?? await getProductOrgId(ctx);
       await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
-      await ctx.db.patch(viewer._id, { status: "active" });
+      await ctx.db.patch(viewer._id, { orgId, status: "active" });
       await logAudit(ctx, {
-        orgId: viewer.orgId,
+        orgId,
         actorId: viewer._id,
         action: "invite.redeemed",
         targetType: "invite",
@@ -146,6 +163,7 @@ export const requestAccess = mutation({
         message: "Enter a valid email address.",
       });
     }
+    // Access requests remain product-org scoped until orgs have their own request inboxes.
     const orgId = await getProductOrgId(ctx);
     const existing = await ctx.db
       .query("accessRequests")

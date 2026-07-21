@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ConvexError } from "convex/values";
 import { Link } from "@tanstack/react-router";
 import { SignIn, useAuth, useClerk } from "@clerk/clerk-react";
 import { useConvex, useMutation, useQuery } from "convex/react";
@@ -29,7 +30,7 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
   if (!isSignedIn) return <SignInScreen />;
   if (me === undefined) return <GateLoading label="Loading account" />;
   if (me === null || me.user === null) return <GateLoading label="Setting up account" />;
-  if (me.status === "pending") return <ActivationScreen />;
+  if (me.status === "pending") return <ActivationScreen needsOrg={me.needsOrg} />;
   if (me.needsProfileSetup) {
     return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
   }
@@ -46,13 +47,19 @@ function GateLoading({ label }: { label: string }) {
   );
 }
 
-function ActivationScreen() {
+function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
   const { signOut } = useClerk();
   const convexClient = useConvex();
   const redeemInvite = useMutation(api.access.redeemInvite);
   const claimTargetedInvite = useMutation(api.access.claimTargetedInvite);
+  const createOrganization = useMutation(api.orgs.create);
   const [invite, setInvite] = useState("");
   const [state, setState] = useState<InviteActivationState>("idle");
+  const [organizationName, setOrganizationName] = useState("");
+  const [organizationState, setOrganizationState] = useState<
+    "idle" | "creating" | "error"
+  >("idle");
+  const [organizationError, setOrganizationError] = useState<string>();
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
   const signOutGuard = useRef(false);
   const signOutCancellationGuard = useRef(false);
@@ -98,6 +105,24 @@ function ActivationScreen() {
     });
   };
 
+  const createOrg = async () => {
+    const name = organizationName.trim();
+    if (!name || organizationState === "creating") return;
+
+    setOrganizationState("creating");
+    setOrganizationError(undefined);
+    try {
+      await createOrganization({ name });
+    } catch (error) {
+      setOrganizationState("error");
+      const data =
+        error instanceof ConvexError ? (error.data as { message?: string }) : null;
+      setOrganizationError(
+        data?.message ?? "we couldn't create your organization. try again.",
+      );
+    }
+  };
+
   if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
 
   if (signOutState === "waitingForRedemption") {
@@ -110,14 +135,21 @@ function ActivationScreen() {
 
   return (
     <AuthFrame
-      title="Activate your invite"
-      description="Enter the code an admin sent you. You will finish your profile after activation."
+      title={needsOrg ? "Set up your workspace" : "Activate your invite"}
+      description={
+        needsOrg
+          ? "Join an existing organization with an invite, or create your own."
+          : "Enter the code an admin sent you. You will finish your profile after activation."
+      }
     >
       <div className="rounded-lg border border-border bg-surface-2 p-4 sm:p-5">
         {signOutState === "error" ? (
           <p role="alert" className="ui-error mb-3">
             Couldn't sign out. Try again.
           </p>
+        ) : null}
+        {needsOrg ? (
+          <p className="mb-3 text-sm font-medium text-fg">join with an invite</p>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <FormField
@@ -152,6 +184,48 @@ function ActivationScreen() {
             activate
           </Button>
         </div>
+        {needsOrg ? (
+          <form
+            className="mt-6 border-t border-border pt-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void createOrg();
+            }}
+          >
+            <p className="text-sm font-medium text-fg">create your own organization</p>
+            <p className="mt-1 text-xs leading-5 text-muted">
+              start a new organization for your team.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <FormField
+                label="organization name"
+                required
+                error={organizationState === "error" ? organizationError : undefined}
+              >
+                <input
+                  value={organizationName}
+                  onChange={(event) => {
+                    setOrganizationName(event.target.value);
+                    setOrganizationState("idle");
+                    setOrganizationError(undefined);
+                  }}
+                  placeholder="Acme Inc"
+                  className="ui-field"
+                  disabled={organizationState === "creating"}
+                />
+              </FormField>
+              <Button
+                type="submit"
+                disabled={!organizationName.trim()}
+                loading={organizationState === "creating"}
+                loadingLabel="creating…"
+                className="w-full sm:w-auto"
+              >
+                create organization
+              </Button>
+            </div>
+          </form>
+        ) : null}
         <div className="mt-6 border-t border-border pt-5">
           <AccessOnboarding />
         </div>

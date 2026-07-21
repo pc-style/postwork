@@ -130,10 +130,14 @@ export async function applyAvatarAction(
   };
 }
 
+/**
+ * Resolve canonical token identifiers globally. `legacyOrgId` is used only to
+ * scope the subject lookup for legacy rows that do not have a token identifier.
+ */
 export async function findUserForIdentity(
   ctx: AuthCtx,
   identity: AuthIdentity,
-  orgId?: Id<"orgs">,
+  legacyOrgId?: Id<"orgs">,
 ): Promise<Doc<"users"> | null> {
   // tokenIdentifier includes the issuer and subject and is the canonical,
   // globally stable identity key. Resolve it without guessing an org so an
@@ -144,18 +148,16 @@ export async function findUserForIdentity(
       q.eq("tokenIdentifier", identity.tokenIdentifier),
     )
     .unique();
-  if (byToken && (orgId === undefined || byToken.orgId === orgId)) return byToken;
-  if (byToken) return null;
+  if (byToken) return byToken;
 
   // Legacy subject-only rows predate tokenIdentifier. Keep that migration path
-  // explicitly org-scoped; subject alone is not safe as a global identity key.
-  if (!orgId) return null;
-  const resolvedOrgId = orgId;
+  // scoped to the fallback org; subject alone is not safe as a global identity key.
+  if (!legacyOrgId) return null;
 
   const bySubject = await ctx.db
     .query("users")
     .withIndex("by_org_id_and_subject", (q) =>
-      q.eq("orgId", resolvedOrgId).eq("subject", identity.subject),
+      q.eq("orgId", legacyOrgId).eq("subject", identity.subject),
     )
     .first();
   if (!bySubject) return null;
@@ -206,7 +208,8 @@ export async function getViewerFromAuth(
 ): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
-  return await findUserForIdentity(ctx, identity, await getProductOrgId(ctx));
+  const legacyOrgId = await getProductOrgId(ctx);
+  return await findUserForIdentity(ctx, identity, legacyOrgId);
 }
 
 export type ReadScope = { orgId: Id<"orgs">; viewer: Doc<"users"> | null; authenticated: boolean };
@@ -214,8 +217,9 @@ export type ReadScope = { orgId: Id<"orgs">; viewer: Doc<"users"> | null; authen
 export async function resolveReadScope(ctx: QueryCtx, requestedViewerId?: Id<"users">): Promise<ReadScope> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity) {
-    const orgId = await getProductOrgId(ctx);
-    const viewer = await findUserForIdentity(ctx, identity, orgId);
+    const productOrgId = await getProductOrgId(ctx);
+    const viewer = await findUserForIdentity(ctx, identity, productOrgId);
+    const orgId = viewer?.orgId ?? productOrgId;
     return { orgId, viewer: viewer?.status === "active" && !viewer.deactivatedAt ? viewer : null, authenticated: true };
   }
   const orgId = await getDemoOrgId(ctx);
@@ -232,11 +236,10 @@ export async function ensureViewerUser(
     unauthenticated(options?.unauthenticatedMessage ?? "Sign in to continue.");
   }
 
-  // Resolve the canonical token globally before selecting an organization.
-  // Existing identities keep the org that owns their user row; the default org
-  // is only a creation target for identities that do not exist yet.
-  const orgId = await getProductOrgId(ctx);
-  const existing = await findUserForIdentity(ctx, identity, orgId);
+  // Resolve the canonical token globally. The product org is only the legacy
+  // subject-lookup fallback for identities that predate tokenIdentifier.
+  const legacyOrgId = await getProductOrgId(ctx);
+  const existing = await findUserForIdentity(ctx, identity, legacyOrgId);
   const name = nameFromIdentity(identity);
   const title = existing?.title?.trim() ? existing.title : "member";
   const initials = initialsFrom(name);
@@ -286,7 +289,7 @@ export async function ensureViewerUser(
   const role = "member";
   const avatarColor = colorFor(identity.tokenIdentifier);
   const userId = await ctx.db.insert("users", {
-    orgId,
+    orgId: undefined,
     name,
     title,
     avatarColor,
@@ -305,7 +308,7 @@ export async function ensureViewerUser(
   return {
     _id: userId,
     _creationTime: Date.now(),
-    orgId,
+    orgId: undefined,
     name,
     title,
     avatarColor,
