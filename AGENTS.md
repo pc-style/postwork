@@ -93,6 +93,13 @@ Seed posts ship **baked** summaries (`summaryModel: "seed/baked"`) so the featur
 is visible without a key. Without a key, the Generate/Regenerate button surfaces a
 friendly "configure a provider" message instead of crashing.
 
+## Changelog
+
+`src/routes/ChangelogPage.tsx` holds the public dev changelog (`/changelog`).
+When you ship a user-visible or dev-relevant change, add an entry: today's
+date, a lowercase narrative title, and a note that says what actually changed
+(concrete behavior, not marketing). Newest entries go first.
+
 ## Idea backlog
 
 `todo.md` at the repo root holds the working backlog: retention-hook ideas and

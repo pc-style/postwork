@@ -10,8 +10,18 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
+    title: "hierarchy, alignment, and a collapsible sidebar",
+    note: "the agent sidebar got a divider line and a hide toggle that collapses it to a slim rail. post and reply bodies dropped to 80% opacity so titles and names carry the weight. breadcrumb dead space tightened and the summary teaser skips its bare TL;DR label.",
+  },
+  {
+    date: "27 July 2026",
+    title: "less is more, everywhere",
+    note: "the reply composer idles as a single line and expands on focus. feed cards hide the space chip and ai-summary label until hover, and normal priority is no longer chipped. stale summaries show a quiet dot, disclosure panels animate in, and the sticky sidebar scrolls instead of clipping.",
+  },
+  {
+    date: "27 July 2026",
     title: "the post page calmed down",
-    note: "agent panels moved to a sidebar on wide screens and collapse by default. actions look like buttons and only show up when you need them.",
+    note: "agent summary and agent tasks moved to a sticky right sidebar on wide screens, and the summary collapses to a one-line teaser strip. quiet buttons got hairline borders and real padding, and edit, delete, and ask-agent actions hover-reveal instead of always showing.",
   },
   {
     date: "21 July 2026",
