@@ -109,7 +109,7 @@ export function AnchoredConfirmation({
         ref={triggerRef}
         variant="quiet"
         size="sm"
-        className="min-h-11 px-1.5 text-xs hover:text-urgent sm:min-h-9"
+        className="min-h-11 text-xs hover:border-urgent/50 hover:text-urgent sm:min-h-9"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => {

@@ -29,12 +29,12 @@ export function PostModeration({
   if (!canEdit && !canDelete) return null;
 
   return (
-    <div className="mt-2 flex min-h-11 flex-wrap items-center gap-1 text-xs sm:min-h-9">
+    <div className="mt-3 flex min-h-11 flex-wrap items-center gap-1.5 text-xs transition-opacity sm:min-h-9 sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover/post:opacity-100">
       {canEdit ? (
         <Button
           variant="quiet"
           size="sm"
-          className="min-h-11 px-1.5 text-xs sm:min-h-9"
+          className="min-h-11 text-xs sm:min-h-9"
           onClick={onStartEdit}
         >
           edit

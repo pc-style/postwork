@@ -4,7 +4,15 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { Markdown } from "./Markdown";
 import { timeAgo } from "../lib/format";
 import { Button } from "./Button";
-import { AccentPanel } from "./AccentPanel";
+
+function teaserFrom(summary?: string) {
+  if (!summary) return "Generate a catch-up on key decisions and open questions.";
+  const line = summary
+    .split("\n")
+    .map((part) => part.replace(/^[#>\-*\s]+/, "").replace(/\*\*/g, "").trim())
+    .find((part) => part.length > 0);
+  return line ?? "Summary available.";
+}
 
 export function AgentSummary({
   postId,
@@ -22,6 +30,7 @@ export function AgentSummary({
   const store = useStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const local = isLocalId(postId);
 
@@ -43,48 +52,75 @@ export function AgentSummary({
   };
 
   return (
-    <AccentPanel
-      chipLabel="ai"
-      title="agent summary"
-      action={
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onRegenerate}
-          disabled={local}
-          loading={busy}
-          loadingLabel="summarizing…"
-          title={local ? "Save the post before generating a summary" : undefined}
+    <section className="rounded-lg border border-accent/25 bg-accent/[0.06]">
+      <details open={expanded}>
+        <summary
+          onClick={(event) => {
+            event.preventDefault();
+            setExpanded((value) => !value);
+          }}
+          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-2.5 transition-colors hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
-          {local ? "save first" : summary ? "regenerate" : "generate"}
-        </Button>
-      }
-    >
-      {summary ? <Markdown text={summary} /> : (
-        <p className="text-sm text-muted">
-          No summary yet. Generate one to catch up on key decisions and open questions.
-        </p>
-      )}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+              ai
+            </span>
+            <span className="text-xs font-semibold lowercase text-accent-soft">
+              agent summary
+            </span>
+            {!expanded ? (
+              <span className="hidden truncate text-xs text-muted sm:inline">
+                {teaserFrom(summary)}
+                {summary && isStale ? " · new replies since" : ""}
+              </span>
+            ) : null}
+          </span>
+          <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
+        </summary>
 
-      {summary && isStale && (
-        <p className="mt-2.5 text-label text-muted">
-          New replies arrived after this summary. Regenerate to include them.
-        </p>
-      )}
+        <div className="px-4 pb-4">
+          {summary ? <Markdown text={summary} /> : (
+            <p className="text-sm text-muted">
+              No summary yet. Generate one to catch up on key decisions and open questions.
+            </p>
+          )}
 
-      {error && (
-        <p role="alert" className="ui-error mt-2">
-          {error}
-        </p>
-      )}
+          {summary && isStale && (
+            <p className="mt-2.5 text-label text-muted">
+              New replies arrived after this summary. Regenerate to include them.
+            </p>
+          )}
 
-      {(model || updatedAt) && !error && (
-        <p className="mt-2.5 text-label text-muted">
-          {model ? (model === "seed/baked" ? "Demo summary" : `Model: ${model}`) : null}
-          {model && updatedAt ? ", " : ""}
-          {updatedAt ? `covers activity through ${timeAgo(updatedAt)}` : ""}
-        </p>
-      )}
-    </AccentPanel>
+          {error && (
+            <p role="alert" className="ui-error mt-2">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            {(model || updatedAt) && !error ? (
+              <p className="text-label text-muted">
+                {model ? (model === "seed/baked" ? "Demo summary" : `Model: ${model}`) : null}
+                {model && updatedAt ? ", " : ""}
+                {updatedAt ? `covers activity through ${timeAgo(updatedAt)}` : ""}
+              </p>
+            ) : (
+              <span />
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onRegenerate}
+              disabled={local}
+              loading={busy}
+              loadingLabel="summarizing…"
+              title={local ? "Save the post before generating a summary" : undefined}
+            >
+              {local ? "save first" : summary ? "regenerate" : "generate"}
+            </Button>
+          </div>
+        </div>
+      </details>
+    </section>
   );
 }

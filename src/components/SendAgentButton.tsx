@@ -60,7 +60,7 @@ export function SendAgentButton({
       <Button
         variant="quiet"
         size="sm"
-        className="min-h-9 px-1.5 text-xs"
+        className="min-h-9 text-xs"
         onClick={() => {
           setError(null);
           setOpen((value) => !value);

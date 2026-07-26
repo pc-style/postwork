@@ -13,7 +13,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary:
     "border border-border bg-surface font-medium text-fg hover:border-accent/50 hover:bg-surface-2 active:bg-bg disabled:border-border disabled:bg-surface disabled:text-muted",
   quiet:
-    "border border-transparent bg-transparent font-medium text-muted hover:bg-surface hover:text-fg active:bg-surface-2 disabled:text-muted/70",
+    "border border-border/60 bg-transparent font-medium text-muted hover:border-border hover:bg-surface hover:text-fg active:bg-surface-2 disabled:border-border/40 disabled:text-muted/70",
   danger:
     "border border-urgent/50 bg-urgent/10 font-medium text-urgent hover:border-urgent/70 hover:bg-urgent/20 active:bg-urgent/25 disabled:border-urgent/25 disabled:bg-urgent/5 disabled:text-urgent/65",
   icon:

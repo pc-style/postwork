@@ -115,7 +115,7 @@ function ReplyNode({
 
   return (
     <div className={indentation}>
-      <article className="py-3">
+      <article className="group py-3">
         <div className="flex items-start gap-2.5">
           <Avatar user={node.author} size={30} />
           <div className="min-w-0 flex-1">
@@ -177,11 +177,11 @@ function ReplyNode({
             </div>
 
             {!editing ? (
-              <div className="mt-1 flex min-h-11 flex-wrap items-center gap-1 sm:min-h-9">
+              <div className="mt-1.5 flex min-h-11 flex-wrap items-center gap-1.5 sm:min-h-9">
                 <Button
                   variant="quiet"
                   size="sm"
-                  className="min-h-11 px-1.5 text-xs sm:min-h-9"
+                  className="min-h-11 text-xs sm:min-h-9"
                   onClick={() => setReplying((value) => !value)}
                   aria-expanded={replying}
                 >
@@ -191,7 +191,7 @@ function ReplyNode({
                   <Button
                     variant="quiet"
                     size="sm"
-                    className="min-h-11 px-1.5 text-xs sm:min-h-9"
+                    className="min-h-11 text-xs sm:min-h-9"
                     onClick={() => setChildrenExpanded((value) => !value)}
                     aria-controls={childRepliesId}
                     aria-expanded={childrenExpanded}
@@ -201,35 +201,37 @@ function ReplyNode({
                       : `show ${childReplyLabel}`}
                   </Button>
                 ) : null}
-                {canEdit ? (
-                  <Button
-                    variant="quiet"
-                    size="sm"
-                    className="min-h-11 px-1.5 text-xs sm:min-h-9"
-                    onClick={() => {
-                      setEditBody(node.body);
-                      setError(null);
-                      setEditing(true);
-                    }}
-                  >
-                    edit
-                  </Button>
-                ) : null}
-                {canDelete ? (
-                  <AnchoredConfirmation
-                    triggerLabel="delete"
-                    title="Delete reply?"
-                    description="This can't be undone."
-                    confirmLabel="delete reply"
-                    fallbackFocusRef={fallbackFocusRef}
-                    onConfirm={() => store.deleteReply({ replyId: node._id })}
+                <span className="flex flex-wrap items-center gap-1.5 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100">
+                  {canEdit ? (
+                    <Button
+                      variant="quiet"
+                      size="sm"
+                      className="min-h-11 text-xs sm:min-h-9"
+                      onClick={() => {
+                        setEditBody(node.body);
+                        setError(null);
+                        setEditing(true);
+                      }}
+                    >
+                      edit
+                    </Button>
+                  ) : null}
+                  {canDelete ? (
+                    <AnchoredConfirmation
+                      triggerLabel="delete"
+                      title="Delete reply?"
+                      description="This can't be undone."
+                      confirmLabel="delete reply"
+                      fallbackFocusRef={fallbackFocusRef}
+                      onConfirm={() => store.deleteReply({ replyId: node._id })}
+                    />
+                  ) : null}
+                  <SendAgentButton
+                    postId={postId}
+                    replyId={node._id}
+                    contextText={subthreadText(node)}
                   />
-                ) : null}
-                <SendAgentButton
-                  postId={postId}
-                  replyId={node._id}
-                  contextText={subthreadText(node)}
-                />
+                </span>
               </div>
             ) : null}
           </div>

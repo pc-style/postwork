@@ -62,8 +62,24 @@ export function RedesignPostPage() {
   const showPriority = post.priority !== "normal";
   const priority = priorityStyles[post.priority];
 
+  const agentPanels = (
+    <>
+      <AgentSummary
+        postId={post._id}
+        summary={post.summary}
+        model={post.summaryModel}
+        updatedAt={post.summaryUpdatedAt}
+        isStale={post.isStale}
+      />
+      <div className="mt-4">
+        <AgentTasksPanel postId={post._id} />
+      </div>
+    </>
+  );
+
   return (
-    <article className="mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
+    <div className="mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:max-w-6xl xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-10 xl:px-8 xl:pt-10">
+    <article className="min-w-0">
       <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted">
         <Link
           to="/app"
@@ -75,6 +91,7 @@ export function RedesignPostPage() {
         {post.pinned ? <span className="ml-3 text-accent-soft">Pinned</span> : null}
       </nav>
 
+      <header className="group/post">
       {editing ? (
         <PostEditForm post={post} onDone={() => setEditing(false)} />
       ) : (
@@ -99,6 +116,7 @@ export function RedesignPostPage() {
       {!editing ? (
         <PostModeration post={post} onStartEdit={() => setEditing(true)} />
       ) : null}
+      </header>
 
       {!editing ? (
         <div className="mt-7 max-w-[65ch]">
@@ -108,19 +126,7 @@ export function RedesignPostPage() {
         </div>
       ) : null}
 
-      <div className="mt-8 border-t border-border pt-5">
-        <AgentSummary
-          postId={post._id}
-          summary={post.summary}
-          model={post.summaryModel}
-          updatedAt={post.summaryUpdatedAt}
-          isStale={post.isStale}
-        />
-      </div>
-
-      <div className="mt-4">
-        <AgentTasksPanel postId={post._id} />
-      </div>
+      <div className="mt-8 border-t border-border pt-5 xl:hidden">{agentPanels}</div>
 
       <section aria-labelledby="replies-heading" className="mt-10">
         <h2 id="replies-heading" className="mb-2 text-sm font-semibold text-fg">
@@ -151,6 +157,14 @@ export function RedesignPostPage() {
         </div>
       </section>
     </article>
+
+    <aside
+      aria-label="Agent panels"
+      className="hidden xl:block"
+    >
+      <div className="sticky top-6">{agentPanels}</div>
+    </aside>
+    </div>
   );
 }
 
