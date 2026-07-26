@@ -93,6 +93,12 @@ Seed posts ship **baked** summaries (`summaryModel: "seed/baked"`) so the featur
 is visible without a key. Without a key, the Generate/Regenerate button surfaces a
 friendly "configure a provider" message instead of crashing.
 
+## Idea backlog
+
+`todo.md` at the repo root holds the working backlog: retention-hook ideas and
+pending UI-polish feedback. Check it when picking up new work; keep it updated
+when ideas ship or get rejected.
+
 ## Design Context
 
 Read `docs/product.md` when shaping product flows, users, or interaction
