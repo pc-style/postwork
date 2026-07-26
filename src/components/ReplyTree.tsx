@@ -287,7 +287,7 @@ export function ReplyTree({
   const focusFallbackRef = useRef<HTMLDivElement>(null);
 
   if (tree.length === 0) {
-    return <p className="py-4 text-sm text-muted">No replies yet. Start the thread.</p>;
+    return null;
   }
 
   return (

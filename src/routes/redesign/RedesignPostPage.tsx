@@ -162,7 +162,7 @@ export function RedesignPostPage() {
       aria-label="Agent panels"
       className="hidden xl:block"
     >
-      <div className="sticky top-6">{agentPanels}</div>
+      <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">{agentPanels}</div>
     </aside>
     </div>
   );

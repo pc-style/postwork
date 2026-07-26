@@ -68,17 +68,25 @@ export function AgentSummary({
             <span className="text-xs font-semibold lowercase text-accent-soft">
               agent summary
             </span>
+            {!expanded && summary && isStale ? (
+              <span
+                className="size-1.5 shrink-0 rounded-full bg-accent-soft"
+                aria-hidden="true"
+              />
+            ) : null}
             {!expanded ? (
               <span className="hidden truncate text-xs text-muted sm:inline">
                 {teaserFrom(summary)}
-                {summary && isStale ? " · new replies since" : ""}
+                {summary && isStale ? (
+                  <span className="sr-only"> New replies since this summary.</span>
+                ) : null}
               </span>
             ) : null}
           </span>
           <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
-        <div className="px-4 pb-4">
+        <div className="ui-reveal px-4 pb-4">
           {summary ? <Markdown text={summary} /> : (
             <p className="text-sm text-muted">
               No summary yet. Generate one to catch up on key decisions and open questions.

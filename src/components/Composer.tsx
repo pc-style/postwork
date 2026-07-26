@@ -56,6 +56,8 @@ export function Composer({
   } = useAttachmentPicker();
 
   const mentioned = parseAgentMentions(body);
+  const engaged =
+    body.length > 0 || pending.length > 0 || busy || error !== null;
 
   const onCodeFence = () => {
     const element = textareaRef.current;
@@ -129,7 +131,7 @@ export function Composer({
   return (
     <div className="flex min-w-0 gap-2.5">
       {!compact ? <Avatar user={currentUser ?? null} size={32} /> : null}
-      <div className="min-w-0 flex-1">
+      <div className="group/composer min-w-0 flex-1">
         <ComposerShell
           body={body}
           setBody={(value) => {
@@ -141,8 +143,15 @@ export function Composer({
           bodyLabel="Reply"
           srOnlyBodyLabel
           placeholder={placeholder}
-          rows={compact ? 2 : 3}
-          textareaClassName="ui-field min-h-24 resize-y"
+          rows={engaged ? (compact ? 2 : 3) : 1}
+          textareaClassName={
+            engaged
+              ? "ui-field min-h-24 resize-y"
+              : "ui-field min-h-11 resize-none transition-[min-height] group-focus-within/composer:min-h-24 group-focus-within/composer:resize-y"
+          }
+          footerClassName={`ui-reveal mt-3 flex-wrap items-center justify-between gap-3 ${
+            engaged ? "flex" : "hidden group-focus-within/composer:flex"
+          }`}
           onPaste={(event) => {
             if (!canUpload) return;
             const files = Array.from(event.clipboardData.files).filter(

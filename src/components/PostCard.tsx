@@ -26,8 +26,12 @@ export function PostCard({ post }: { post: EnrichedPost }) {
         <span className={`mt-2 size-2 shrink-0 rounded-full ${post.unread ? "bg-accent-soft" : "bg-transparent"}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <PostMetaChips post={post} />
-            {post.summary ? <span className="text-label text-accent-soft">AI summary</span> : null}
+            <PostMetaChips post={post} quiet />
+            {post.summary ? (
+              <span className="text-label text-accent-soft transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                AI summary
+              </span>
+            ) : null}
           </div>
 
           <h2 className={`break-words text-title ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>

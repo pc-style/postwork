@@ -101,7 +101,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
-        <div className="px-2 pb-3 pt-2">
+        <div className="ui-reveal px-2 pb-3 pt-2">
           <div className="rounded-lg border border-border bg-surface p-4">
             <div className="grid gap-3 md:grid-cols-[minmax(10rem,0.55fr)_minmax(0,1fr)]">
               <FormField label="Agent">
