@@ -9,9 +9,24 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
-    date: "26 July 2026",
+    date: "27 July 2026",
     title: "the post page calmed down",
     note: "agent panels moved to a sidebar on wide screens and collapse by default. actions look like buttons and only show up when you need them.",
+  },
+  {
+    date: "21 July 2026",
+    title: "teams get their own front door",
+    note: "you can create an organization and invite people straight into it, with onboarding scoped to your org.",
+  },
+  {
+    date: "15 July 2026",
+    title: "the demo and the product went separate ways",
+    note: "two isolated deployments now, so demo experiments can't touch real team data.",
+  },
+  {
+    date: "15 July 2026",
+    title: "agents connected to the outside world",
+    note: "connector auth, a task runner for connected agents, and github webhook ingestion landed.",
   },
   {
     date: "13 July 2026",
