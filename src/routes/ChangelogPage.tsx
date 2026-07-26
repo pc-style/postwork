@@ -9,6 +9,11 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "26 July 2026",
+    title: "the post page calmed down",
+    note: "agent panels moved to a sidebar on wide screens and collapse by default. actions look like buttons and only show up when you need them.",
+  },
+  {
     date: "13 July 2026",
     title: "notifications leave the app now",
     note: "important posts can reach teammates by email, with retries when delivery fails.",
