@@ -169,7 +169,7 @@ function ReplyNode({
                 </div>
               ) : (
                 <>
-                  <RichText text={node.body} className="prose-post text-sm text-fg" />
+                  <RichText text={node.body} className="prose-post text-sm text-fg/80" />
                   <RichEmbedList text={node.body} />
                   <AttachmentGallery attachments={replyAttachments} />
                 </>

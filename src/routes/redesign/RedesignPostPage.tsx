@@ -29,6 +29,7 @@ export function RedesignPostPage() {
   const attachments = useAttachments(postId);
   const [editing, setEditing] = useState(false);
   const showSkeleton = useDeferredFlag(150);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
 
@@ -78,9 +79,15 @@ export function RedesignPostPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:max-w-6xl xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-10 xl:px-8 xl:pt-10">
+    <div
+      className={`mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:max-w-6xl xl:grid xl:gap-8 xl:px-8 xl:pt-10 ${
+        sidebarOpen
+          ? "xl:grid-cols-[minmax(0,1fr)_21rem]"
+          : "xl:grid-cols-[minmax(0,1fr)_2.75rem]"
+      }`}
+    >
     <article className="min-w-0">
-      <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted">
+      <nav aria-label="Breadcrumb" className="mb-2 text-xs text-muted">
         <Link
           to="/app"
           search={{ space: post.space }}
@@ -120,7 +127,7 @@ export function RedesignPostPage() {
 
       {!editing ? (
         <div className="mt-7 max-w-[65ch]">
-          <RichText text={post.body} className="prose-post text-[15px] text-fg/95" />
+          <RichText text={post.body} className="prose-post text-[15px] text-fg/80" />
           <RichEmbedList text={post.body} />
           <AttachmentGallery attachments={attachments.filter((attachment) => !attachment.replyId)} />
         </div>
@@ -160,9 +167,37 @@ export function RedesignPostPage() {
 
     <aside
       aria-label="Agent panels"
-      className="hidden xl:block"
+      className="hidden xl:block xl:border-l xl:border-border xl:pl-6"
     >
-      <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">{agentPanels}</div>
+      <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+        {sidebarOpen ? (
+          <>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-label font-semibold text-muted">agents</span>
+              <Button
+                variant="quiet"
+                size="sm"
+                className="min-h-8 text-xs"
+                onClick={() => setSidebarOpen(false)}
+                aria-expanded={true}
+              >
+                hide
+              </Button>
+            </div>
+            {agentPanels}
+          </>
+        ) : (
+          <Button
+            variant="quiet"
+            size="sm"
+            className="min-h-24 w-full px-1 text-xs [writing-mode:vertical-rl]"
+            onClick={() => setSidebarOpen(true)}
+            aria-expanded={false}
+          >
+            agents
+          </Button>
+        )}
+      </div>
     </aside>
     </div>
   );

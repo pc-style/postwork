@@ -10,7 +10,7 @@ function teaserFrom(summary?: string) {
   const line = summary
     .split("\n")
     .map((part) => part.replace(/^[#>\-*\s]+/, "").replace(/\*\*/g, "").trim())
-    .find((part) => part.length > 0);
+    .find((part) => part.length > 0 && !/^tl;?dr:?$/i.test(part));
   return line ?? "Summary available.";
 }
 

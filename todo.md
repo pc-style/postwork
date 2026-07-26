@@ -18,10 +18,8 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
 
 ## ui polish (shivam, post-page screenshot review)
 
-- [ ] sidebar panels (agent summary / ask an agent): add left accent lines,
-      make the whole sidebar collapsible.
-- [ ] typographic hierarchy pass: differentiate with font size, weight, and
-      opacity — bold+bright = important, less opaque = extra info. Post body
-      description slightly lower opacity ("too much space. can use slightly
-      less opacity for the description").
-- [ ] alignment audit of the post page (ask opus/fable for suggestions).
+- [x] sidebar panels: left divider line + collapsible sidebar (27 July).
+- [x] typographic hierarchy: post body and reply bodies at fg/80, names and
+      titles stay bold+bright (27 July).
+- [x] alignment pass: tightened breadcrumb dead space, summary teaser skips
+      the bare "TL;DR" line (27 July). Revisit after next screenshot review.
