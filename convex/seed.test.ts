@@ -43,9 +43,9 @@ describe("demo seed deployment guard", () => {
     await expect(t.mutation(internal.seed.run, {})).resolves.toEqual({
       message: "Seeded Postwork demo data.",
       orgs: 1,
-      posts: 15,
+      posts: 16,
       spaces: 3,
-      users: 9,
+      users: 10,
     });
 
     const demoOrg = await t.run(async (ctx) =>

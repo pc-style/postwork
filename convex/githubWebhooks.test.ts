@@ -4,6 +4,7 @@ import { convexTest } from "convex-test";
 import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test";
 import { beforeEach, describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
 import {
   GITHUB_WEBHOOK_MAX_BYTES,
@@ -424,7 +425,9 @@ describe("GitHub webhook ingestion", () => {
     });
     expect(accepted.status).toBe(202);
     const result = await accepted.json() as { postId: string };
-    const post = await state.t.run(async (ctx) => ctx.db.get(result.postId as never));
+    const post = await state.t.run(async (ctx) =>
+      ctx.db.get(result.postId as Id<"posts">),
+    );
     expect(post).toMatchObject({
       orgId: other.orgId,
       authorId: otherConnector.agentId,

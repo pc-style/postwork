@@ -13,6 +13,9 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
    analytics + mentions into a daily Postwork post rendered in the
    agent-summary slot. The thing Pronsh checks Twitter for lives in Postwork.
    Same pipe as the GitHub webhook ingestion, different source.
+   - [x] demo prototype shipped (27 July): X Pulse connector agent + seeded
+         daily digest post with baked summary and a "mentions need a human
+         reply" loop. Next: real X API connector through the inboundEvents pipe.
 4. **Tab-title badge count** — `(3) postwork` in the document title so a pinned
    tab shows unread count.
 
