@@ -31,6 +31,7 @@ import type * as lib_observability from "../lib/observability.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_summaryStaleness from "../lib/summaryStaleness.js";
 import type * as lib_validation from "../lib/validation.js";
+import type * as linkPreviews from "../linkPreviews.js";
 import type * as migrations from "../migrations.js";
 import type * as notificationComposer from "../notificationComposer.js";
 import type * as notificationDelivery from "../notificationDelivery.js";
@@ -73,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/summaryStaleness": typeof lib_summaryStaleness;
   "lib/validation": typeof lib_validation;
+  linkPreviews: typeof linkPreviews;
   migrations: typeof migrations;
   notificationComposer: typeof notificationComposer;
   notificationDelivery: typeof notificationDelivery;
