@@ -8,15 +8,20 @@ Convex deployment.
 Vercel uses the committed build command:
 
 ```bash
-bun run validate:deploy-env && bun run build
+bun run scripts/vercel-build.mjs
 ```
 
 Each Vercel project injects its matching backend URL as `VITE_CONVEX_URL`. Both
 projects also receive `DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL`, which are public
 endpoint references used only to reject a missing, shared, or swapped target.
-Vercel builds only the frontend and must not own `CONVEX_DEPLOY_KEY` or deploy
-Convex. Separate demo and product backend release workflows each own only their
-matching deploy key, deployment, environment, and migrations.
+Each Vercel project also owns its matching `CONVEX_DEPLOY_KEY` (production
+environment only). On production builds (`VERCEL_ENV=production`),
+`scripts/vercel-build.mjs` runs `bunx convex deploy` against that key first, so
+backend and frontend ship together; it then validates the deploy environment
+and builds the frontend. Preview builds and builds without a deploy key never
+touch the backend — they validate and build the frontend only. Keep each key
+scoped to its own project: demo key on the demo project, product key on the
+product project, never both.
 
 `beta` is the active base for deployment work and pull requests. Keep `main`
 frozen until the demo-to-product phases are complete.
