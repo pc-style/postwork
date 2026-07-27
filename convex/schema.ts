@@ -41,7 +41,8 @@ export const aiGenerationKind = v.union(
 export default defineSchema({
   orgs: defineTable({
     name: v.string(),
-    slug: v.string(),
+    // Optional while existing organizations are backfilled.
+    slug: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),
 

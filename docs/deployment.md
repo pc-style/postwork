@@ -48,6 +48,59 @@ No server-side Sentry integration is configured: Convex structured logging in
 `convex/lib/observability.ts` remains the backend source of truth, and this keeps
 the local anonymous Convex workflow credential-free.
 
+## Tenant subdomains
+
+The product Vercel project serves every organization from the same static Vite
+deployment and the same product Convex backend. Add
+`*.postwork.pcstyle.dev` to that project's **Settings → Domains**. Do not add the
+wildcard to the demo Vercel project; the demo remains a single fixed hostname.
+
+Vercel normally requires wildcard domains to use Vercel DNS so it can complete
+and renew the DNS challenge for wildcard certificates. If `pcstyle.dev` uses
+Vercel nameservers, adding the wildcard in Vercel is sufficient. If its DNS must
+remain at another provider, Vercel's supported nested-wildcard setup requires
+both ACME delegation and traffic routing; a wildcard CNAME by itself is not
+enough:
+
+| Type | Name at the `pcstyle.dev` DNS provider | Value |
+| --- | --- | --- |
+| `NS` | `_acme-challenge.postwork` | `ns1.vercel-dns.com.` |
+| `NS` | `_acme-challenge.postwork` | `ns2.vercel-dns.com.` |
+| `CNAME` | `*.postwork` | `cname.vercel-dns-0.com.` |
+
+Enable Vercel DNS for the domain in Vercel before using the delegated-challenge
+setup, then wait until the project reports the wildcard as verified. Keep the
+record target shown by Vercel if its dashboard supplies a project-specific value
+instead. The ACME delegation gives Vercel control only of certificate challenges
+below `postwork.pcstyle.dev`; the rest of `pcstyle.dev` remains at its current DNS
+provider. It can prevent another host from issuing certificates for that same
+wildcard, so do not share the delegated challenge zone. Vercel provisions and
+renews TLS automatically after DNS and domain verification succeed.
+
+The SPA resolves tenancy in the browser. On load, it lowercases
+`window.location.hostname`, removes the `.postwork.pcstyle.dev` suffix, and
+treats the remaining single label as the organization slug. Reject missing,
+multi-label, malformed, unknown, or reserved slugs before loading organization
+data. Reserved slugs are `www`, `app`, `api`, `demo`, `admin`, `postwork`,
+`beta`, and `staging`. Hostname selection changes tenant context only: it does
+not select a different build or Convex deployment, and authorization must still
+verify organization membership in the backend.
+
+Configure the Clerk production instance with `postwork.pcstyle.dev` as the
+application's root domain. Clerk permits requests from all of that root's
+subdomains by default. If **Allowed Subdomains** is enabled, Clerk accepts only
+the primary domain and explicitly listed hostnames; its current dashboard flow
+documents exact subdomains, not a wildcard allowlist entry. Either leave that
+restriction disabled for dynamic organization slugs, accepting the broader
+subdomain trust boundary, or add every provisioned organization hostname and
+keep the list synchronized. Also make every Clerk redirect allowlist used by the
+SPA match the tenant origins: use an anchored `allowedRedirectOrigins` regular
+expression for `https://<org-slug>.postwork.pcstyle.dev` or add each exact HTTPS
+origin. Do not use an unanchored suffix check, and keep the reserved-slug and
+valid-slug rules identical to tenant resolution. Re-test sign-in, sign-up,
+sign-out, OAuth, and organization switching from a tenant hostname whenever the
+Clerk domain or redirect configuration changes.
+
 ## Convex deployment contract
 
 Each Convex deployment owns its server configuration. Do not copy these values

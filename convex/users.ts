@@ -90,8 +90,10 @@ export const me = query({
         needsOrg: false,
       };
     }
+    const org = user.orgId ? await ctx.db.get(user.orgId) : null;
     return {
       user: publicUser(user),
+      org: org ? { name: org.name, slug: org.slug } : null,
       status: user.status ?? "active" as const,
       needsProfileSetup:
         user.profileCompletedAt === undefined && user.tokenIdentifier !== undefined,

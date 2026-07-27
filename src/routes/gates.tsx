@@ -16,6 +16,7 @@ import {
   type InviteActivationState,
 } from "../lib/activationSignOut";
 import { clerkAppearance } from "../lib/providers";
+import { requestedTenantSlug, workspaceUrl } from "../lib/tenant";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   if (isDemo) return <>{children}</>;
@@ -33,6 +34,20 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
   if (me.status === "pending") return <ActivationScreen needsOrg={me.needsOrg} />;
   if (me.needsProfileSetup) {
     return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
+  }
+  if (requestedTenantSlug && me.org?.slug && requestedTenantSlug !== me.org.slug) {
+    const canonicalUrl = `${workspaceUrl(me.org.slug)}${window.location.pathname}${window.location.search}`;
+    return (
+      <AuthFrame
+        title="This workspace has another address"
+        description={`you're signed in to ${me.org.name}, not the workspace at this address.`}
+      >
+        <div className="rounded-lg border border-border bg-surface-2 p-5">
+          <p className="text-sm leading-6 text-muted">continue to your workspace at <span className="font-mono text-fg">{me.org.slug}.postwork.pcstyle.dev</span>.</p>
+          <a href={canonicalUrl} className="mt-4 inline-flex bg-accent px-4 py-2 text-sm font-medium text-fg hover:bg-accent-soft">open {me.org.name}</a>
+        </div>
+      </AuthFrame>
+    );
   }
   return <>{children}</>;
 }
@@ -56,6 +71,8 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
   const [invite, setInvite] = useState("");
   const [state, setState] = useState<InviteActivationState>("idle");
   const [organizationName, setOrganizationName] = useState("");
+  const [organizationSlug, setOrganizationSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
   const [organizationState, setOrganizationState] = useState<
     "idle" | "creating" | "error"
   >("idle");
@@ -112,7 +129,7 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
     setOrganizationState("creating");
     setOrganizationError(undefined);
     try {
-      await createOrganization({ name });
+      await createOrganization({ name, slug: organizationSlug.trim() || undefined });
     } catch (error) {
       setOrganizationState("error");
       const data =
@@ -196,7 +213,7 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
             <p className="mt-1 text-xs leading-5 text-muted">
               start a new organization for your team.
             </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div className="mt-3 grid gap-3">
               <FormField
                 label="organization name"
                 required
@@ -206,6 +223,9 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
                   value={organizationName}
                   onChange={(event) => {
                     setOrganizationName(event.target.value);
+                    if (!slugEdited) {
+                      setOrganizationSlug(event.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32));
+                    }
                     setOrganizationState("idle");
                     setOrganizationError(undefined);
                   }}
@@ -214,9 +234,24 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
                   disabled={organizationState === "creating"}
                 />
               </FormField>
+              <FormField label="workspace slug" required>
+                <input
+                  value={organizationSlug}
+                  onChange={(event) => {
+                    setOrganizationSlug(event.target.value.toLowerCase());
+                    setSlugEdited(true);
+                    setOrganizationState("idle");
+                    setOrganizationError(undefined);
+                  }}
+                  placeholder="acme"
+                  className="ui-field font-mono"
+                  disabled={organizationState === "creating"}
+                />
+              </FormField>
+              <p className="-mt-1 text-xs text-muted"><span className="font-mono">{organizationSlug || "your-team"}.postwork.pcstyle.dev</span> will be your workspace URL.</p>
               <Button
                 type="submit"
-                disabled={!organizationName.trim()}
+                disabled={!organizationName.trim() || !organizationSlug.trim()}
                 loading={organizationState === "creating"}
                 loadingLabel="creating…"
                 className="w-full sm:w-auto"
@@ -254,11 +289,12 @@ function SignInScreen() {
   return (
     <AuthFrame
       title="Sign in to Postwork"
-      description="Use your existing provider. If you need access, check an invite or send a request first."
+      description="Sign in to join a team or create a workspace. New accounts continue into workspace setup."
       sidebar={<AccessOnboarding />}
     >
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <SignIn appearance={clerkAppearance} />
+        <p className="border-t border-border px-4 py-3 text-center text-xs text-muted">new here? sign up above, then choose <span className="text-fg">create your own organization</span>.</p>
       </div>
     </AuthFrame>
   );

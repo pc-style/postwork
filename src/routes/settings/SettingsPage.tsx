@@ -8,8 +8,9 @@ import { ProfileSettingsForm } from "../../components/ProfileSettingsForm";
 import { demoPolicy } from "../../lib/demoMode";
 import { useSession } from "../../lib/session";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
+import { workspaceUrl } from "../../lib/tenant";
 
-const SECTIONS = ["profile", "agents", "notifications"] as const;
+const SECTIONS = ["profile", "workspace", "agents", "notifications"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export function SettingsPage() {
@@ -35,11 +36,58 @@ export function SettingsPage() {
         </nav>
         <main className="min-w-0 border-t border-border pt-6 md:border-l md:border-t-0 md:pl-10 md:pt-0">
           {section === "profile" ? <ProfileSection /> : null}
+          {section === "workspace" ? <WorkspaceSection /> : null}
           {section === "agents" ? <AgentsSection /> : null}
           {section === "notifications" ? <NotificationsSection /> : null}
         </main>
       </div>
     </div>
+  );
+}
+
+function WorkspaceSection() {
+  const { currentUser } = useSession();
+  const me = useQuery(api.users.me, demoPolicy.productAuth ? {} : "skip");
+  const setSlug = useMutation(api.orgs.setSlug);
+  const [slug, setSlugDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (me?.org?.slug) setSlugDraft(me.org.slug);
+  }, [me]);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await setSlug({ slug });
+      setSlugDraft(result.slug);
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section>
+      <SectionHeader title="workspace" description="your team's name and canonical address." />
+      {!demoPolicy.productAuth ? <p className="text-sm text-muted">workspace settings are available on the product deployment.</p> : me === undefined ? <p className="text-sm text-muted">loading workspace…</p> : (
+        <div className="max-w-xl rounded-md border border-border bg-surface p-4">
+          <h3 className="text-sm font-medium">{me?.org?.name ?? "workspace"}</h3>
+          <p className="mt-2 text-xs text-muted">{slug ? workspaceUrl(slug) : "this workspace still needs a slug."}</p>
+          {currentUser?.role === "admin" ? (
+            <form className="mt-4 flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+              <label htmlFor="workspace-slug" className="sr-only">workspace slug</label>
+              <input id="workspace-slug" value={slug} onChange={(event) => { setSlugDraft(event.target.value.toLowerCase()); setError(null); }} className="ui-field font-mono" placeholder="your-team" />
+              <Button type="submit" size="sm" loading={saving} loadingLabel="saving…">save</Button>
+            </form>
+          ) : null}
+          {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
+        </div>
+      )}
+    </section>
   );
 }
 

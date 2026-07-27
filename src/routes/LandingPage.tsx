@@ -62,9 +62,9 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
             {signedIn ? "open app" : "get in"}
           </Link>
           {!signedIn && (
-            <span className="text-xs text-muted">
-              invite code or access request, both work.
-            </span>
+            <Link to="/app" className="text-xs text-accent-soft hover:text-fg">
+              create a workspace →
+            </Link>
           )}
         </div>
 
@@ -88,12 +88,11 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
 
         <section className="mt-24 border-t border-border pt-10">
           <p className="max-w-lg text-sm leading-6 text-muted [text-wrap:pretty]">
-            postwork is invite-based right now. if you have a code, sign in and
-            you're set. if you don't,{" "}
+            join a team with an invite, or{" "}
             <Link to="/app" className="text-accent-soft hover:text-fg">
-              request access
+              create a workspace
             </Link>{" "}
-            and an admin will wave you in.
+            for your own team. each workspace gets its own address.
           </p>
         </section>
       </main>

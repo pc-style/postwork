@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
+    title: "workspaces got their own addresses",
+    note: "new workspace setup now includes a unique slug and previews its postwork.pcstyle.dev address. admins can update that address in settings, and tenant subdomains guide signed-in users back to their canonical workspace.",
+  },
+  {
+    date: "27 July 2026",
     title: "browser notifications follow your account",
     note: "signed-in product users now keep their browser-notification preference in convex, so the setting follows their account. the public demo still stores the toggle only in that browser.",
   },
