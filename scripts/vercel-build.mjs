@@ -14,7 +14,13 @@ const FRONTEND_BUILD = "bun run validate:deploy-env && bun run build";
 const hasDeployKey = Boolean(process.env.CONVEX_DEPLOY_KEY);
 
 let command;
+const env = { ...process.env };
 if (hasDeployKey) {
+  // The beta branch ships the live site from Vercel's preview environment.
+  // The Convex CLI refuses a production deploy key when VERCEL_ENV is not
+  // "production", so mark the subprocess as production: having the key IS the
+  // deliberate deploy signal here.
+  env.VERCEL_ENV = "production";
   command = [
     "bunx",
     "convex",
@@ -32,5 +38,8 @@ if (hasDeployKey) {
   command = ["bash", "-c", FRONTEND_BUILD];
 }
 
-const result = spawnSync(command[0], command.slice(1), { stdio: "inherit" });
+const result = spawnSync(command[0], command.slice(1), {
+  stdio: "inherit",
+  env,
+});
 process.exit(result.status ?? 1);
