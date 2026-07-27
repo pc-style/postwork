@@ -8,11 +8,13 @@ import { spawnSync } from "node:child_process";
 
 const FRONTEND_BUILD = "bun run validate:deploy-env && bun run build";
 
-const isProduction = process.env.VERCEL_ENV === "production";
+// Key-driven: any build that has a CONVEX_DEPLOY_KEY deploys the backend.
+// Scope the key in Vercel env settings (e.g. only the environment that serves
+// the live domain) to control which builds deploy Convex.
 const hasDeployKey = Boolean(process.env.CONVEX_DEPLOY_KEY);
 
 let command;
-if (isProduction && hasDeployKey) {
+if (hasDeployKey) {
   command = [
     "bunx",
     "convex",
@@ -23,17 +25,10 @@ if (isProduction && hasDeployKey) {
     FRONTEND_BUILD,
   ];
 } else {
-  if (isProduction && !hasDeployKey) {
-    console.warn(
-      "vercel-build: VERCEL_ENV=production but CONVEX_DEPLOY_KEY is unset; " +
-        "building the frontend only (backend NOT deployed).",
-    );
-  } else {
-    console.log(
-      `vercel-build: VERCEL_ENV=${process.env.VERCEL_ENV ?? "unset"}; ` +
-        "frontend-only build (backend not deployed).",
-    );
-  }
+  console.log(
+    `vercel-build: no CONVEX_DEPLOY_KEY (VERCEL_ENV=${process.env.VERCEL_ENV ?? "unset"}); ` +
+      "frontend-only build (backend not deployed).",
+  );
   command = ["bash", "-c", FRONTEND_BUILD];
 }
 
