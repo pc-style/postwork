@@ -560,6 +560,100 @@ describe("x cross-posting", () => {
     });
   }
 
+  test("configures X sync and provisions its connector agent when missing", async () => {
+    const state = await setup();
+
+    const result = await state.authed.mutation(api.connectors.setXSyncHandle, {
+      handle: "  @Pronsh  ",
+    });
+
+    expect(result).toEqual({
+      configured: true,
+      handle: "pronsh",
+      agentName: "X Pulse",
+    });
+    await expect(state.authed.query(api.connectors.xSyncStatus, {})).resolves.toEqual(result);
+    const stored = await state.t.run(async (ctx) => {
+      const connector = await ctx.db
+        .query("connectors")
+        .withIndex("by_org_id_and_slug", (q) =>
+          q.eq("orgId", state.orgId).eq("slug", "x"),
+        )
+        .unique();
+      return {
+        connector,
+        agent: connector ? await ctx.db.get(connector.agentId) : null,
+      };
+    });
+    expect(stored.connector).toMatchObject({
+      xSyncHandle: "pronsh",
+      capability: "inboundEvents",
+      authStrategy: "bearer",
+      createdById: state.adminId,
+    });
+    expect(stored.connector?.credentialId).toMatch(/^x-[a-f0-9]{16}$/);
+    expect(stored.agent).toMatchObject({
+      orgId: state.orgId,
+      name: "X Pulse",
+      title: "Connector Agent",
+      initials: "XP",
+      isAgent: true,
+    });
+  });
+
+  test("rejects an invalid X sync handle", async () => {
+    const state = await setup();
+    await expect(
+      state.authed.mutation(api.connectors.setXSyncHandle, {
+        handle: "not-a-handle",
+      }),
+    ).rejects.toThrow("X handle must be 1–15 letters, numbers, or underscores.");
+  });
+
+  test("clears the configured X sync handle", async () => {
+    const state = await setup();
+    await state.authed.mutation(api.connectors.setXSyncHandle, { handle: "pronsh" });
+
+    await expect(
+      state.authed.mutation(api.connectors.setXSyncHandle, { handle: null }),
+    ).resolves.toEqual({ configured: false, handle: null, agentName: "X Pulse" });
+    const connector = await state.t.run(async (ctx) =>
+      ctx.db
+        .query("connectors")
+        .withIndex("by_org_id_and_slug", (q) =>
+          q.eq("orgId", state.orgId).eq("slug", "x"),
+        )
+        .unique(),
+    );
+    expect(connector?.xSyncHandle).toBeUndefined();
+  });
+
+  test("rejects X sync configuration by non-admins", async () => {
+    const state = await setup();
+    const memberToken = "https://issuer.example|connector-member";
+    await state.t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        orgId: state.orgId,
+        name: "Member",
+        title: "Member",
+        avatarColor: "#555555",
+        initials: "ME",
+        role: "member",
+        status: "active",
+        tokenIdentifier: memberToken,
+      });
+    });
+    const member = state.t.withIdentity({
+      tokenIdentifier: memberToken,
+      subject: "connector-member",
+      issuer: "https://issuer.example",
+    });
+
+    await expect(
+      member.mutation(api.connectors.setXSyncHandle, { handle: "pronsh" }),
+    ).rejects.toThrow("Admins only.");
+  });
+
   test("mirrors a tweet as a post by the connector agent and dedupes on tweet id", async () => {
     const state = await setup();
     const connector = await xConnector(state);

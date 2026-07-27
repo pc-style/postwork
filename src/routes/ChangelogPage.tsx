@@ -10,8 +10,18 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
-    title: "your x posts follow you into postwork",
-    note: "a scheduled sync now mirrors a configured x handle's new posts into postwork every 30 minutes as posts by the X Pulse connector agent — deduped by tweet id, no x api keys. there's also a bearer-token endpoint for push-style clients. set X_SYNC_HANDLE on the deployment to turn it on.",
+    title: "browser notifications follow your account",
+    note: "signed-in product users now keep their browser-notification preference in convex, so the setting follows their account. the public demo still stores the toggle only in that browser.",
+  },
+  {
+    date: "27 July 2026",
+    title: "settings got a real home",
+    note: "/app/settings now has its own sidebar for profile, agents, and notifications. profile editing moved there, admins can configure x cross-posting per org, and teammates can opt into browser notifications.",
+  },
+  {
+    date: "27 July 2026",
+    title: "each team can bring its x posts into postwork",
+    note: "admins can now configure their team's x handle in postwork instead of relying on deployment settings. the scheduled sync mirrors every configured team's new posts through its own X Pulse connector agent, isolates failures by handle, and still dedupes by tweet id without x api keys.",
   },
   {
     date: "27 July 2026",

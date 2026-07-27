@@ -30,6 +30,7 @@ const avatarActionValidator = v.optional(v.union(
 
 type ProfileUpdateArgs = {
   name: string;
+  title?: string;
   initials: string;
   avatar?: Infer<typeof avatarActionValidator>;
 };
@@ -194,6 +195,7 @@ export const generateAvatarUploadUrl = mutation({
 export const updateProfile = mutation({
   args: {
     name: v.string(),
+    title: v.optional(v.string()),
     initials: v.string(),
     avatar: avatarActionValidator,
   },
@@ -228,10 +230,14 @@ async function updateProfileFields(
   });
 
   const name = parse(profileNameSchema, args.name, "name");
+  const title = args.title === undefined
+    ? undefined
+    : parse(profileTitleSchema, args.title, "title");
   const initials = parse(profileInitialsSchema, args.initials, "initials");
   const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
   await ctx.db.patch(user._id, {
     name,
+    ...(title === undefined ? {} : { title }),
     initials: initials.toUpperCase(),
     ...avatarPatch,
   });

@@ -47,6 +47,7 @@ describe("notification preferences API", () => {
     await expect(
       authed.query(api.notificationPreferences.current, {}),
     ).resolves.toMatchObject({
+      browserEnabled: false,
       outboundEnabled: false,
       immediateUrgentEnabled: true,
       digestEnabled: true,
@@ -58,6 +59,7 @@ describe("notification preferences API", () => {
     });
 
     await authed.mutation(api.notificationPreferences.update, {
+      browserEnabled: true,
       outboundEnabled: true,
       immediateUrgentEnabled: false,
       digestEnabled: true,
@@ -68,6 +70,7 @@ describe("notification preferences API", () => {
     });
 
     await authed.mutation(api.notificationPreferences.update, {
+      browserEnabled: true,
       outboundEnabled: true,
       immediateUrgentEnabled: false,
       digestEnabled: true,
@@ -80,6 +83,7 @@ describe("notification preferences API", () => {
     await expect(
       authed.query(api.notificationPreferences.current, {}),
     ).resolves.toMatchObject({
+      browserEnabled: true,
       outboundEnabled: true,
       immediateUrgentEnabled: false,
       quietHoursTimeZone: "Europe/Warsaw",
@@ -93,6 +97,56 @@ describe("notification preferences API", () => {
         )
         .unique(),
     );
-    expect(stored).toMatchObject({ orgId, userId, outboundEnabled: true });
+    expect(stored).toMatchObject({
+      orgId,
+      userId,
+      browserEnabled: true,
+      outboundEnabled: true,
+    });
+  });
+
+  test("treats legacy rows without browser preferences as disabled", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = "https://issuer.example|legacy-member";
+    await t.run(async (ctx) => {
+      const orgId = await ctx.db.insert("orgs", {
+        name: "Postwork",
+        slug: "postwork",
+        createdAt: 1,
+      });
+      const userId = await ctx.db.insert("users", {
+        orgId,
+        name: "Grace",
+        title: "Engineer",
+        avatarColor: "#8c1862",
+        initials: "GH",
+        role: "member",
+        status: "active",
+        tokenIdentifier,
+        subject: "legacy-member",
+      });
+      await ctx.db.insert("notificationPreferences", {
+        orgId,
+        userId,
+        outboundEnabled: true,
+        immediateUrgentEnabled: true,
+        digestEnabled: true,
+        quietHoursEnabled: true,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "08:00",
+        quietHoursTimeZone: "UTC",
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    });
+
+    const authed = t.withIdentity({
+      tokenIdentifier,
+      subject: "legacy-member",
+      issuer: "https://issuer.example",
+    });
+    await expect(
+      authed.query(api.notificationPreferences.current, {}),
+    ).resolves.toMatchObject({ browserEnabled: false, isDefault: false });
   });
 });

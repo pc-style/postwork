@@ -90,6 +90,7 @@ function ProfileDialogBody({
     const browserTimeZone =
       Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     setNotificationDraft({
+      browserEnabled: notificationPreferences.browserEnabled,
       outboundEnabled: notificationPreferences.outboundEnabled,
       immediateUrgentEnabled: notificationPreferences.immediateUrgentEnabled,
       digestEnabled: notificationPreferences.digestEnabled,

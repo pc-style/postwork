@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import {
   ensureActiveViewerUser,
   forbidden,
@@ -13,6 +14,7 @@ import {
 } from "./notificationComposer";
 
 export const preferenceArgs = {
+  browserEnabled: v.boolean(),
   outboundEnabled: v.boolean(),
   immediateUrgentEnabled: v.boolean(),
   digestEnabled: v.boolean(),
@@ -93,9 +95,10 @@ export async function savePreferences(
 }
 
 function toPublicPreferences(
-  stored: NotificationPreferences,
+  stored: Doc<"notificationPreferences">,
 ): NotificationPreferences {
   return {
+    browserEnabled: stored.browserEnabled ?? false,
     outboundEnabled: stored.outboundEnabled,
     immediateUrgentEnabled: stored.immediateUrgentEnabled,
     digestEnabled: stored.digestEnabled,

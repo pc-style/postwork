@@ -167,6 +167,7 @@ export default defineSchema({
   notificationPreferences: defineTable({
     orgId: v.id("orgs"),
     userId: v.id("users"),
+    browserEnabled: v.optional(v.boolean()),
     outboundEnabled: v.boolean(),
     immediateUrgentEnabled: v.boolean(),
     digestEnabled: v.boolean(),
@@ -240,6 +241,7 @@ export default defineSchema({
     credentialId: v.optional(v.string()),
     secretHash: v.optional(v.string()),
     encryptedSecret: v.optional(v.string()),
+    xSyncHandle: v.optional(v.string()),
     createdById: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),

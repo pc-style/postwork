@@ -10,12 +10,14 @@ import { demoPolicy } from "../../lib/demoMode";
 import { useSession } from "../../lib/session";
 import { useCounts } from "../../lib/store";
 import { useUnreadTabBadge } from "../../lib/useDocumentTitle";
+import { useUnreadNotifier } from "../../lib/notifications";
 
 export function RedesignShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const counts = useCounts();
   useUnreadTabBadge(counts?.unread);
+  useUnreadNotifier(counts?.unread);
   const showComposerDock =
     !pathname.startsWith("/app/posts/") &&
     !pathname.startsWith("/app/catch-up") &&
@@ -63,6 +65,7 @@ const NAV = [
   },
   { label: "spaces", to: "/app/spaces" as const, exact: false },
   { label: "agents", to: "/app/agents" as const, exact: false },
+  { label: "settings", to: "/app/settings" as const, exact: false },
 ] as const;
 
 const SIDEBAR_TOP = demoPolicy.publicDemoBanner ? "md:top-8" : "md:top-0";

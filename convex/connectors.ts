@@ -116,6 +116,100 @@ export const list = query({
   },
 });
 
+export const xSyncStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const admin = await requireAdminForRead(ctx);
+    const connector = await ctx.db
+      .query("connectors")
+      .withIndex("by_org_id_and_slug", (q) =>
+        q.eq("orgId", admin.orgId).eq("slug", "x"),
+      )
+      .unique();
+    if (!connector || connector.revokedAt) {
+      return { configured: false, handle: null, agentName: null };
+    }
+    const agent = await ctx.db.get(connector.agentId);
+    return {
+      configured: connector.xSyncHandle !== undefined,
+      handle: connector.xSyncHandle ?? null,
+      agentName: agent?.name ?? null,
+    };
+  },
+});
+
+export const setXSyncHandle = mutation({
+  args: { handle: v.union(v.string(), v.null()) },
+  handler: async (ctx, args) => {
+    const admin = await requireAdminForWrite(ctx);
+    const normalized = args.handle === null
+      ? null
+      : args.handle.trim().replace(/^@/, "").toLowerCase();
+    if (normalized !== null && !/^[a-z0-9_]{1,15}$/.test(normalized)) {
+      invalid("X handle must be 1–15 letters, numbers, or underscores.");
+    }
+
+    let connector = await ctx.db
+      .query("connectors")
+      .withIndex("by_org_id_and_slug", (q) =>
+        q.eq("orgId", admin.orgId).eq("slug", "x"),
+      )
+      .unique();
+    if (connector?.revokedAt) invalid("The X connector was revoked.");
+    if (!connector && normalized !== null) {
+      const now = Date.now();
+      const agentId = await ctx.db.insert("users", {
+        orgId: admin.orgId,
+        name: "X Pulse",
+        title: "Connector Agent",
+        avatarColor: "#5f6f8f",
+        initials: "XP",
+        role: "member",
+        status: "active",
+        isAgent: true,
+      });
+      const connectorId = await ctx.db.insert("connectors", {
+        orgId: admin.orgId,
+        name: "X Pulse",
+        slug: "x",
+        capability: "inboundEvents",
+        authStrategy: "bearer",
+        agentId,
+        credentialId: `x-${randomHex(8)}`,
+        secretHash: `unusable-${randomHex(8)}`,
+        createdById: admin._id,
+        createdAt: now,
+        updatedAt: now,
+      });
+      connector = await ctx.db.get(connectorId);
+    }
+    if (!connector) {
+      return { configured: false, handle: null, agentName: null };
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(connector._id, {
+      xSyncHandle: normalized ?? undefined,
+      updatedAt: now,
+    });
+    await ctx.db.insert("auditLog", {
+      orgId: admin.orgId,
+      actorId: admin._id,
+      action: "connector.x.sync_configured",
+      targetType: "connector",
+      targetId: connector._id,
+      metadata: JSON.stringify({ handle: normalized }),
+      createdAt: now,
+    });
+    const agent = await ctx.db.get(connector.agentId);
+    return {
+      configured: normalized !== null,
+      handle: normalized,
+      agentName: agent?.name ?? null,
+    };
+  },
+});
+
 export const provision = action({
   args: {
     name: v.string(),
@@ -899,6 +993,24 @@ export const findXSyncConnector = internalQuery({
         !connector.revokedAt,
     );
     return match ? { connectorId: match._id } : null;
+  },
+});
+
+export const listXSyncConfigured = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const connectors = await ctx.db.query("connectors").take(500);
+    return connectors
+      .filter(
+        (connector): connector is typeof connector & { xSyncHandle: string } =>
+          connector.capability === "inboundEvents" &&
+          !connector.revokedAt &&
+          connector.xSyncHandle !== undefined,
+      )
+      .map((connector) => ({
+        connectorId: connector._id,
+        handle: connector.xSyncHandle,
+      }));
   },
 });
 

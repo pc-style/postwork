@@ -1,6 +1,7 @@
 export type NotificationPriority = "urgent" | "high" | "normal";
 
 export type NotificationPreferences = {
+  browserEnabled: boolean;
   outboundEnabled: boolean;
   immediateUrgentEnabled: boolean;
   digestEnabled: boolean;
@@ -27,6 +28,7 @@ export type OutboundDeliveryCandidate = {
 };
 
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
+  browserEnabled: false,
   outboundEnabled: false,
   immediateUrgentEnabled: true,
   digestEnabled: true,

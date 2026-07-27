@@ -19,6 +19,7 @@ import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
 import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
 import { CatchUpPage } from "./routes/redesign/CatchUpPage";
+import { SettingsPage } from "./routes/settings/SettingsPage";
 import { AdminLayout } from "./routes/admin/AdminShell";
 import { AdminOverviewPage } from "./routes/admin/AdminOverviewPage";
 import { AdminUsersPage } from "./routes/admin/AdminUsersPage";
@@ -114,6 +115,12 @@ const appAgentsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/agents",
   component: AgentsPage,
+});
+
+const appSettingsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/settings",
+  component: SettingsPage,
 });
 
 const appSpacesRoute = createRoute({
@@ -278,6 +285,7 @@ const routeTree = rootRoute.addChildren([
     appCatchUpRoute,
     appPostRoute,
     appAgentsRoute,
+    appSettingsRoute,
     appSpacesRoute,
     appSpaceRoute,
     appWallRoute,

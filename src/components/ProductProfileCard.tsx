@@ -1,16 +1,14 @@
-import { useState } from "react";
 import { useClerk } from "@clerk/clerk-react";
+import { Link } from "@tanstack/react-router";
 import { useSession } from "../lib/session";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
-import { ProfileDialog } from "../components/ProfileDialog";
 import { UserRoleTag } from "./UserRoleTag";
 import { Skeleton } from "./Skeleton";
 
 export function ProductProfileCard() {
   const { signOut } = useClerk();
   const { currentUser } = useSession();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!currentUser) {
     return (
@@ -35,18 +33,13 @@ export function ProductProfileCard() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setDialogOpen(true)}>
-            edit profile
-          </Button>
+          <Link to="/app/settings" className="inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-fg transition-colors hover:border-accent/50 hover:bg-surface-2">
+            settings
+          </Link>
           <Button variant="quiet" size="sm" onClick={() => void signOut()}>
             sign out
           </Button>
         </div>
-        <ProfileDialog
-          mode="edit"
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-        />
       </section>
     </div>
   );
