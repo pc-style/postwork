@@ -29,6 +29,8 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
 
 ## ui polish (shivam, post-page screenshot review)
 
+- [x] clickable links and real opengraph previews in post and reply bodies
+      (27 July).
 - [x] sidebar panels: left divider line + collapsible sidebar (27 July).
 - [x] typographic hierarchy: post body and reply bodies at fg/80, names and
       titles stay bold+bright (27 July).

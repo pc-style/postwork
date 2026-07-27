@@ -47,7 +47,7 @@ function withoutCode(text: string): string {
     .replace(/`[^`\n]*`/g, " ");
 }
 
-function trimUrlPunctuation(value: string): string {
+export function trimUrlPunctuation(value: string): string {
   let result = value.replace(/[.,!?;:]+$/g, "");
   while (result.endsWith(")")) {
     const opens = (result.match(/\(/g) ?? []).length;
@@ -76,7 +76,7 @@ export function extractUrls(text: string): string[] {
   return [...unique];
 }
 
-function trustedUrl(value: string): URL | null {
+export function normalizeRichUrl(value: string): string | null {
   try {
     const url = new URL(value);
     if (
@@ -87,10 +87,15 @@ function trustedUrl(value: string): URL | null {
     ) {
       return null;
     }
-    return url;
+    return url.toString();
   } catch {
     return null;
   }
+}
+
+function trustedUrl(value: string): URL | null {
+  const normalized = normalizeRichUrl(value);
+  return normalized ? new URL(normalized) : null;
 }
 
 function youtubeEmbed(url: URL): TrustedEmbed | null {

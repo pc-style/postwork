@@ -1,15 +1,43 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { buildRichPreview, extractUrls } from "../lib/richEmbeds";
 
 const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
 export const MAX_RICH_PREVIEWS_PER_BODY = 3;
 
 export function RichEmbedList({ text }: { text: string }) {
-  const previews = [...new Map(
+  const previews = useMemo(() => [...new Map(
     extractUrls(text)
       .map(buildRichPreview)
       .filter((preview) => preview !== null)
       .map((preview) => [preview.sourceUrl, preview]),
-  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY);
+  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY), [text]);
+  const genericUrls = useMemo(() => previews
+    .filter((preview) => preview.kind === "link")
+    .map((preview) => {
+      const url = new URL(preview.sourceUrl);
+      url.hash = "";
+      return url.toString();
+    }), [previews]);
+  const storedPreviews = useQuery(api.linkPreviews.get, { urls: genericUrls });
+  const requestPreviews = useMutation(api.linkPreviews.request);
+  const requestedKey = useRef("");
+
+  useEffect(() => {
+    if (!storedPreviews) return;
+    const storedUrls = new Set(storedPreviews.flatMap((preview) => preview ? [preview.url] : []));
+    const missing = genericUrls.filter((url) => !storedUrls.has(url));
+    const key = missing.join("\n");
+    if (!key || requestedKey.current === key) return;
+    requestedKey.current = key;
+    // Unsafe/private URLs intentionally stay on the hostname/path fallback.
+    void requestPreviews({ urls: missing }).catch(() => undefined);
+  }, [genericUrls, requestPreviews, storedPreviews]);
+
+  const previewByUrl = new Map(storedPreviews?.flatMap((preview) =>
+    preview ? [[preview.url, preview] as const] : [],
+  ));
 
   if (previews.length === 0) return null;
 
@@ -66,16 +94,38 @@ export function RichEmbedList({ text }: { text: string }) {
           );
         }
 
+        const lookupUrl = new URL(preview.sourceUrl);
+        lookupUrl.hash = "";
+        const metadata = previewByUrl.get(lookupUrl.toString());
+        const hasMetadata = metadata?.status === "ok" && Boolean(metadata.title || metadata.description);
         return (
           <a
             key={preview.sourceUrl}
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block min-w-0 rounded-md border border-border bg-bg px-3 py-2.5 transition-colors hover:border-accent/50 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
+            className="group flex min-w-0 overflow-hidden rounded-md border border-border bg-bg transition-colors hover:border-accent/50 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
           >
-            <span className="block text-label text-accent-soft">{preview.hostname}</span>
-            <span className="mt-0.5 block truncate text-sm text-muted group-hover:text-fg">{preview.label}</span>
+            <span className="min-w-0 flex-1 px-3 py-2.5">
+              <span className="block font-mono text-[11px] text-accent-soft">
+                {hasMetadata && metadata.siteName ? metadata.siteName : preview.hostname}
+              </span>
+              <span className={`mt-0.5 block text-sm group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}>
+                {hasMetadata ? metadata.title ?? preview.label : preview.label}
+              </span>
+              {hasMetadata && metadata.description ? (
+                <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted">{metadata.description}</span>
+              ) : null}
+            </span>
+            {hasMetadata && metadata.imageUrl ? (
+              <img
+                src={metadata.imageUrl}
+                alt=""
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                className="h-24 w-28 shrink-0 self-stretch border-l border-border object-cover sm:w-36"
+              />
+            ) : null}
           </a>
         );
       })}

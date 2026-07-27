@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
+    title: "shared links now show what is behind them",
+    note: "http and https links in posts and replies are now clickable outside code, and ordinary web links fetch cached title, description, site, and image metadata instead of showing a hostname-only placeholder.",
+  },
+  {
+    date: "27 July 2026",
     title: "workspaces got their own addresses",
     note: "new workspace setup now includes a unique slug and previews its postwork.pcstyle.dev address. admins can update that address in settings, and tenant subdomains guide signed-in users back to their canonical workspace.",
   },

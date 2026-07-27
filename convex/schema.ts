@@ -163,6 +163,16 @@ export default defineSchema({
     lastReadAt: v.number(),
   }).index("by_org_id_and_user_id_and_post_id", ["orgId", "userId", "postId"]),
 
+  linkPreviews: defineTable({
+    url: v.string(),
+    status: v.union(v.literal("pending"), v.literal("ok"), v.literal("failed")),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    siteName: v.optional(v.string()),
+    fetchedAt: v.number(),
+  }).index("by_url", ["url"]),
+
   // Stable, org-scoped outbound notification choices. In-app postReads remain
   // the canonical unread state; this row only controls projections of it.
   notificationPreferences: defineTable({
