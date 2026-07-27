@@ -35,3 +35,6 @@ artifacts
 
 videos/
 .env.local.team-backup
+
+# Local database snapshots
+backups/
