@@ -85,16 +85,18 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
             event.preventDefault();
             setExpanded((value) => !value);
           }}
-          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-2 py-2 text-sm text-fg transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
+          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-sm text-fg transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="rounded-sm bg-accent/15 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+            <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
               agents
             </span>
-            <span className="font-medium">ask an agent</span>
-            <span className="hidden truncate text-xs font-normal text-muted sm:inline">
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold lowercase text-accent-soft">
+              ask an agent
+            </span>
+            <span className="min-w-0 truncate text-xs font-normal text-muted">
               {tasks.length === 0
-                ? "Investigate this post without starting a side conversation."
+                ? "investigate this post"
                 : `${tasks.length} ${tasks.length === 1 ? "investigation" : "investigations"}`}
             </span>
           </span>
@@ -102,8 +104,8 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
         </summary>
 
         <div className="ui-reveal px-2 pb-3 pt-2">
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <div className="grid gap-3 md:grid-cols-[minmax(10rem,0.55fr)_minmax(0,1fr)]">
+          <div className="rounded-lg border border-border bg-surface p-3 sm:p-4">
+            <div className="grid gap-3">
               <FormField label="Agent">
                 <select
                   value={selectedAgent?._id ?? ""}
@@ -124,7 +126,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                     setPrompt(event.target.value);
                     setError(null);
                   }}
-                  rows={2}
+                  rows={3}
                   placeholder="Example: Check the release risks and report back."
                   className="ui-field min-h-20 resize-y"
                 />

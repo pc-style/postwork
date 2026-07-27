@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
+    title: "ask an agent stops stacking and the sidebar stretches",
+    note: "the agent-tasks header keeps “ask an agent” on one line instead of wrapping word-by-word in the narrow rail, and the post-page agent sidebar can be drag-resized (persisted) with keyboard arrow support.",
+  },
+  {
+    date: "27 July 2026",
     title: "shared links now show what is behind them",
     note: "http and https links in posts and replies are now clickable outside code, and ordinary web links fetch cached title, description, site, and image metadata instead of showing a hostname-only placeholder.",
   },
