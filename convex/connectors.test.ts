@@ -546,3 +546,72 @@ describe("inbound connector boundary", () => {
     ]);
   });
 });
+
+describe("x cross-posting", () => {
+  async function xConnector(state: Awaited<ReturnType<typeof setup>>) {
+    return await state.t.mutation(internal.connectors.provisionRecord, {
+      adminTokenIdentifier: ADMIN_TOKEN,
+      name: "X Pulse",
+      slug: "x",
+      capability: "inboundEvents",
+      authStrategy: "bearer",
+      credentialId: "x-credential",
+      secretHash: await hashConnectorSecret("x-secret"),
+    });
+  }
+
+  test("mirrors a tweet as a post by the connector agent and dedupes on tweet id", async () => {
+    const state = await setup();
+    const connector = await xConnector(state);
+
+    const first = await state.t.mutation(internal.connectors.recordXCrossPostFromSync, {
+      connectorId: connector.connectorId,
+      tweet: {
+        id: "2080000000000000001",
+        handle: "pronsh",
+        text: "wrec 3.0 is live. threads, agents, the lot.",
+        url: "https://x.com/pronsh/status/2080000000000000001",
+      },
+    });
+    expect(first.duplicate).toBe(false);
+    const post = await state.t.run(async (ctx) => ctx.db.get(first.postId!));
+    expect(post).toMatchObject({
+      orgId: state.orgId,
+      authorId: connector.agentId,
+      space: "Growth",
+      title: "@pronsh on x: wrec 3.0 is live. threads, agents, the lot.",
+    });
+    expect(post?.body).toContain("Cross-posted from https://x.com/pronsh/status/2080000000000000001");
+
+    const retry = await state.t.mutation(internal.connectors.recordXCrossPostFromSync, {
+      connectorId: connector.connectorId,
+      tweet: {
+        id: "2080000000000000001",
+        handle: "pronsh",
+        text: "wrec 3.0 is live. threads, agents, the lot.",
+      },
+    });
+    expect(retry).toEqual({ eventId: first.eventId, duplicate: true, postId: first.postId });
+    const posts = await state.t.run(async (ctx) =>
+      ctx.db
+        .query("posts")
+        .collect()
+        .then((rows) => rows.filter((row) => row.authorId === connector.agentId)),
+    );
+    expect(posts).toHaveLength(1);
+  });
+
+  test("rejects a revoked connector", async () => {
+    const state = await setup();
+    const connector = await xConnector(state);
+    await state.t.run(async (ctx) => {
+      await ctx.db.patch(connector.connectorId, { revokedAt: 100 });
+    });
+    await expect(
+      state.t.mutation(internal.connectors.recordXCrossPostFromSync, {
+        connectorId: connector.connectorId,
+        tweet: { id: "1", handle: "pronsh", text: "hello" },
+      }),
+    ).rejects.toThrow("Inbound connector is unavailable.");
+  });
+});

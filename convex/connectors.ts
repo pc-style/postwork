@@ -132,8 +132,10 @@ export const provision = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) forbidden("Sign in first.");
     if (
-      (args.capability === "agentTasks" && args.authStrategy !== "bearer") ||
-      (args.capability === "inboundEvents" && args.authStrategy !== "providerSignature")
+      // agentTasks connectors poll with a bearer token. inboundEvents accepts
+      // either a provider signature (github) or a bearer token (the opt-in
+      // browser-extension flow, e.g. the x digest).
+      args.capability === "agentTasks" && args.authStrategy !== "bearer"
     ) {
       invalid("That authentication strategy does not match the connector capability.");
     }
@@ -247,10 +249,9 @@ export const provisionRecord = internalMutation({
 
     const bearer = args.authStrategy === "bearer";
     const providerSignature = args.authStrategy === "providerSignature";
-    if (
-      (args.capability === "agentTasks" && args.authStrategy !== "bearer") ||
-      (args.capability === "inboundEvents" && args.authStrategy !== "providerSignature")
-    ) {
+    // agentTasks connectors poll with a bearer token. inboundEvents accepts a
+    // provider signature (github) or a bearer token (the x cross-post sync).
+    if (args.capability === "agentTasks" && args.authStrategy !== "bearer") {
       invalid("That authentication strategy does not match the connector capability.");
     }
     if (
@@ -788,5 +789,150 @@ export const recordInboundEvent = internalMutation({
       createdAt: now,
     });
     return { eventId, duplicate: false as const, postId, agentTaskId };
+  },
+});
+
+// Shared insert path for X cross-posts: dedupes on the tweet id, mirrors the
+// tweet as a post by the connector's agent, and audit-logs the ingestion.
+async function insertXCrossPost(
+  ctx: MutationCtx,
+  connector: Doc<"connectors">,
+  tweet: { id: string; handle: string; text: string; url?: string },
+) {
+  const tweetId = tweet.id.trim().slice(0, 100);
+  const handle = tweet.handle.trim().replace(/^@/, "").slice(0, 30);
+  const text = tweet.text.trim().slice(0, 12_000);
+  if (!tweetId || !handle || !text) invalid("Tweet id, handle, and text are required.");
+  const url = tweet.url?.trim().slice(0, 400);
+
+  const externalEventId = `x-post-${tweetId}`;
+  const existing = await ctx.db
+    .query("connectorEvents")
+    .withIndex("by_connector_id_and_external_event_id", (q) =>
+      q.eq("connectorId", connector._id).eq("externalEventId", externalEventId),
+    )
+    .unique();
+  if (existing) {
+    return { eventId: existing._id, duplicate: true as const, postId: existing.postId };
+  }
+
+  const now = Date.now();
+  const eventId = await ctx.db.insert("connectorEvents", {
+    orgId: connector.orgId,
+    connectorId: connector._id,
+    externalEventId,
+    eventType: "x.post.created",
+    receivedAt: now,
+  });
+
+  const teaser = text.replace(/\s+/g, " ").slice(0, 90);
+  const title = `@${handle} on x: ${teaser}${text.length > 90 ? "…" : ""}`.slice(0, 160);
+  const body = url
+    ? `${text}\n\n—\nCross-posted from ${url}`
+    : `${text}\n\n—\nCross-posted from @${handle} on X.`;
+  const postId = await ctx.db.insert("posts", {
+    orgId: connector.orgId,
+    authorId: connector.agentId,
+    title,
+    body,
+    space: "Growth",
+    priority: "normal",
+    pinned: false,
+    createdAt: now,
+    lastActivityAt: now,
+    replyCount: 0,
+    participantIds: [connector.agentId],
+  });
+
+  await ctx.db.patch(eventId, { postId });
+  await ctx.db.insert("auditLog", {
+    orgId: connector.orgId,
+    actorId: connector.agentId,
+    action: "connector.x.post.created",
+    targetType: "post",
+    targetId: postId,
+    metadata: JSON.stringify({ connectorId: connector._id, eventId, tweetId }),
+    createdAt: now,
+  });
+  return { eventId, duplicate: false as const, postId };
+}
+
+// Inbound cross-posting from X via the opt-in browser extension. The extension
+// catches a tweet as the user posts it and mirrors it into Postwork as a post
+// by the connector's agent. Authenticated with a bearer connector token, so a
+// team member opts in by pasting the token into the extension — no X API keys.
+export const recordXCrossPost = internalMutation({
+  args: {
+    credentialId: v.string(),
+    secretHash: v.string(),
+    tweet: v.object({
+      id: v.string(),
+      handle: v.string(),
+      text: v.string(),
+      url: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const connector = await authenticatedBearerConnector(
+      ctx,
+      args.credentialId,
+      args.secretHash,
+    );
+    if (connector.capability !== "inboundEvents") {
+      forbidden("Connector cannot record inbound events.");
+    }
+    return await insertXCrossPost(ctx, connector, args.tweet);
+  },
+});
+
+// Locates the connector the X sync should post through when
+// X_SYNC_CONNECTOR_ID is not set: the first active inboundEvents connector
+// with the "x" slug. Internal-only; used by the scheduled sync action.
+export const findXSyncConnector = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const connectors = await ctx.db.query("connectors").take(500);
+    const match = connectors.find(
+      (connector) =>
+        connector.slug === "x" &&
+        connector.capability === "inboundEvents" &&
+        !connector.revokedAt,
+    );
+    return match ? { connectorId: match._id } : null;
+  },
+});
+
+// Trusted path for the server-side X sync (cron polling x.pcstyle.dev).
+// Internal-only: callers are our own scheduled actions, so it authenticates
+// the connector by id instead of a bearer credential.
+export const recordXCrossPostFromSync = internalMutation({
+  args: {
+    connectorId: v.id("connectors"),
+    tweet: v.object({
+      id: v.string(),
+      handle: v.string(),
+      text: v.string(),
+      url: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const connector = await ctx.db.get(args.connectorId);
+    if (
+      !connector ||
+      connector.capability !== "inboundEvents" ||
+      connector.revokedAt
+    ) {
+      forbidden("Inbound connector is unavailable.");
+    }
+    const agent = await ctx.db.get(connector.agentId);
+    if (
+      !agent ||
+      agent.orgId !== connector.orgId ||
+      agent.isAgent !== true ||
+      agent.deactivatedAt !== undefined
+    ) {
+      forbidden("Inbound connector is unavailable.");
+    }
+    return await insertXCrossPost(ctx, connector, args.tweet);
   },
 });

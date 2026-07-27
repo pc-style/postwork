@@ -9,10 +9,13 @@ import { UserSwitcher } from "../../components/UserSwitcher";
 import { demoPolicy } from "../../lib/demoMode";
 import { useSession } from "../../lib/session";
 import { useCounts } from "../../lib/store";
+import { useUnreadTabBadge } from "../../lib/useDocumentTitle";
 
 export function RedesignShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const counts = useCounts();
+  useUnreadTabBadge(counts?.unread);
   const showComposerDock =
     !pathname.startsWith("/app/posts/") &&
     !pathname.startsWith("/app/catch-up") &&

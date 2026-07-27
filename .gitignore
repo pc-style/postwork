@@ -31,3 +31,6 @@ skills-lock.json
 # Local test artifacts / generated outputs
 artifacts
 .video/
+
+videos/
+.env.local.team-backup

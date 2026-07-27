@@ -91,6 +91,24 @@ export const run = internalMutation({
       u[d.initials] = id;
     }
 
+    // X Pulse gets a real inboundEvents connector so the x cross-post sync
+    // (convex/xSync.ts) works on the demo deployment out of the box: set
+    // X_SYNC_HANDLE and the cron mirrors that handle's posts through it.
+    // The credential is random and unused by the sync path.
+    await ctx.db.insert("connectors", {
+      orgId,
+      name: "X Pulse",
+      slug: "x",
+      capability: "inboundEvents",
+      authStrategy: "bearer",
+      agentId: u["XP"],
+      credentialId: `seed-x-${Math.random().toString(36).slice(2, 10)}`,
+      secretHash: "seed-unusable",
+      createdById: u["MC"],
+      createdAt: now,
+      updatedAt: now,
+    });
+
     const spaceDefs = [
       {
         key: "nw_acme_platform",

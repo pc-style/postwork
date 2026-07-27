@@ -159,6 +159,42 @@ http.route({
   }),
 });
 
+// Inbound cross-posting from X: an opt-in client (browser extension, script,
+// or automation) catches the user's tweet and mirrors it into Postwork.
+http.route({
+  path: "/api/connectors/x",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const credential = parseConnectorToken(request.headers.get("authorization"));
+    if (!credential) return json({ error: "unauthorized" }, 401);
+    const body = objectBody(await request.json().catch(() => null));
+    if (
+      !body ||
+      typeof body.id !== "string" ||
+      typeof body.handle !== "string" ||
+      typeof body.text !== "string" ||
+      (body.url !== undefined && typeof body.url !== "string")
+    ) {
+      return json({ error: "invalid_request" }, 400);
+    }
+    try {
+      const receipt = await ctx.runMutation(internal.connectors.recordXCrossPost, {
+        credentialId: credential.credentialId,
+        secretHash: await hashConnectorSecret(credential.secret),
+        tweet: {
+          id: body.id,
+          handle: body.handle,
+          text: body.text,
+          url: body.url as string | undefined,
+        },
+      });
+      return json(receipt, receipt.duplicate ? 200 : 202);
+    } catch {
+      return json({ error: "event_rejected" }, 409);
+    }
+  }),
+});
+
 http.route({
   path: "/api/connectors/agent-tasks/result",
   method: "POST",

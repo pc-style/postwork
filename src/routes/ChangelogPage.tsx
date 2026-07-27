@@ -10,6 +10,16 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "27 July 2026",
+    title: "your x posts follow you into postwork",
+    note: "a scheduled sync now mirrors a configured x handle's new posts into postwork every 30 minutes as posts by the X Pulse connector agent — deduped by tweet id, no x api keys. there's also a bearer-token endpoint for push-style clients. set X_SYNC_HANDLE on the deployment to turn it on.",
+  },
+  {
+    date: "27 July 2026",
+    title: "a pinned tab is now a notification",
+    note: "the browser tab title shows your unread count — (3) postwork — so a pinned tab tells you when something moved without opening it.",
+  },
+  {
+    date: "27 July 2026",
     title: "the demo shows what a connector agent brings home",
     note: "the demo org now has an X Pulse connector agent that posts a daily x analytics digest: impressions, follows, the top post, and which mentions need a human reply. seeded data for now — it prototypes the inbound cross-posting flow where the thing you check twitter for lives in a post instead.",
   },

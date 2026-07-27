@@ -41,6 +41,7 @@ import type * as replies from "../replies.js";
 import type * as seed from "../seed.js";
 import type * as spaces from "../spaces.js";
 import type * as users from "../users.js";
+import type * as xSync from "../xSync.js";
 
 import type {
   ApiFromModules,
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   spaces: typeof spaces;
   users: typeof users;
+  xSync: typeof xSync;
 }>;
 
 /**

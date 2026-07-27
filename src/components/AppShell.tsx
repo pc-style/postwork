@@ -6,6 +6,7 @@ import { NewPostDialog } from "./NewPostDialog";
 import { Button } from "./Button";
 import { demoPolicy } from "../lib/demoMode";
 import { ProductProfileCard } from "./ProductProfileCard";
+import { useUnreadTabBadge } from "../lib/useDocumentTitle";
 
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
 // not a duplicate of "home". Both point at "/" but carry different search.
@@ -18,6 +19,7 @@ const DEMO_ROUTE_NAV = [{ label: "experiments", to: "/app/flash-experiments" }] 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const counts = useCounts();
+  useUnreadTabBadge(counts?.unread);
   const [composing, setComposing] = useState(false);
   const composeTriggerRef = useRef<HTMLButtonElement>(null);
 
