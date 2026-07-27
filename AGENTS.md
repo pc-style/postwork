@@ -10,6 +10,11 @@ This is a highly experimental flow-design prototype. Do not assume the goal is a
 working production app yet; prioritize understanding, shaping, and validating the
 product flow before building real app behavior.
 
+## Branch policy
+
+- Treat `beta` as the active main branch for all work and PRs.
+- Do not touch `main` again until all demo-to-product phases are complete.
+
 ## User-specific callbacks
 
 - If the user sends `https://x.com/theo/status/2073219809790263786`, read it with
@@ -31,7 +36,9 @@ product flow before building real app behavior.
 
 ```bash
 bun install
-bun run dev         # run-p: Vite (:5173) + convex dev (:3210). DO NOT auto-run.
+bun run dev         # run-p: Vite (:5173) + convex dev (:3210). Agents MAY run this,
+                    # but it is interactive/long-running — for one-shot backend sync
+                    # use `bunx convex dev --once` instead of leaving it running.
 bun run build       # tsc -b && vite build  (the canonical check)
 bun run typecheck   # tsc -b --noEmit
 bun run seed        # bunx convex run seed:run  (reseed demo data)
@@ -75,6 +82,9 @@ so a green build covers both layers.
   (default `gpt-5.4-mini`). Uses `@ai-sdk/openai`.
 - `AI_PROVIDER=gateway`: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g.
   `openai/gpt-5.4-mini`). Uses `@ai-sdk/gateway`.
+- `AI_PROVIDER=openrouter`: `OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL`
+  (default `openrouter/free`) and `OPENROUTER_BASE_URL` (default
+  `https://openrouter.ai/api/v1`). Uses `@ai-sdk/openai-compatible`.
 - `AI_PROVIDER=pioneer`: `PIONEER_API_KEY`, `PIONEER_MODEL`, optional
   `PIONEER_BASE_URL` (default `https://api.pioneer.ai/v1`, auth via `X-API-Key`
   header). Uses `@ai-sdk/openai-compatible`.
@@ -83,14 +93,27 @@ Seed posts ship **baked** summaries (`summaryModel: "seed/baked"`) so the featur
 is visible without a key. Without a key, the Generate/Regenerate button surfaces a
 friendly "configure a provider" message instead of crashing.
 
+## Changelog
+
+`src/routes/ChangelogPage.tsx` holds the public dev changelog (`/changelog`).
+When you ship a user-visible or dev-relevant change, add an entry: today's
+date, a lowercase narrative title, and a note that says what actually changed
+(concrete behavior, not marketing). Newest entries go first.
+
+## Idea backlog
+
+`todo.md` at the repo root holds the working backlog: retention-hook ideas and
+pending UI-polish feedback. Check it when picking up new work; keep it updated
+when ideas ship or get rejected.
+
 ## Design Context
 
-Strategic design context lives in `docs/product.md` (register, users, brand
-personality, anti-references, design principles). Visual system is documented in
-`docs/design.md`. These are maintained by the `impeccable` design skill
-(`.agents/skills/impeccable/`); run `$impeccable` for the command menu, or e.g.
-`$impeccable critique <surface>` / `$impeccable polish <component>`. The concrete
-visual rules below remain the quick reference.
+Read `docs/product.md` when shaping product flows, users, or interaction
+principles. Read `docs/business-plan.md` when working on positioning, pricing,
+market strategy, or go-to-market decisions. Read `docs/brand.md` when writing
+public copy or making brand identity decisions. Read `docs/design.md` before
+changing product UI or the visual system. The concrete visual rules below remain
+the quick reference.
 
 ## Design conventions (style is derived from pcstyle.dev)
 
@@ -111,10 +134,18 @@ priority state colors from `src/lib/format.ts`.
 
 ## Deployment
 
-Frontend is a static Vite build (`dist/`) → deploy to Vercel. Convex Cloud hosts
-the backend; set the AI env vars on the Convex deployment. The committed Vercel
-build command injects `VITE_CONVEX_URL`; set `CONVEX_DEPLOY_KEY` and
-`VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev` in Vercel.
+Frontend is a static Vite build (`dist/`) deployed to Vercel. The demo and
+product Vercel projects each target a separate Convex deployment through their
+own `VITE_CONVEX_URL`. Both projects also set `DEMO_CONVEX_URL` and
+`PRODUCT_CONVEX_URL` to the two public endpoint references so the build can
+reject a swapped backend. These URLs are not secrets. Separate backend release
+workflows own the corresponding `CONVEX_DEPLOY_KEY`; the keys never belong to
+Vercel. Only the demo deployment may be seeded or reseeded. The demo project
+also sets `VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev`. Both Convex deployments
+require `CLERK_JWT_ISSUER_DOMAIN` so auth config can load, though the demo
+frontend remains anonymous. The seed mutation fails unless the target deployment
+has `DEMO=true`. See
+`docs/deployment.md` for the full frontend and backend environment contracts.
 
 <!-- convex-ai-start -->
 

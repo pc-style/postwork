@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { AVATAR_PALETTE } from "./avatarPalette";
+import { DEMO_ORG_NAME, DEMO_ORG_SLUG } from "./authUsers";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -18,13 +19,45 @@ const DAY = 24 * HOUR;
 export const run = internalMutation({
   args: {},
   handler: async (ctx) => {
-    // Wipe existing data so the seed is idempotent.
-    for (const table of ["postReads", "replies", "posts", "users"] as const) {
-      const rows = await ctx.db.query(table).collect();
-      await Promise.all(rows.map((r) => ctx.db.delete(r._id)));
+    if (process.env.DEMO !== "true") {
+      throw new Error("Demo seed requires DEMO=true on the Convex deployment.");
     }
 
+    const existingDemoOrg = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", DEMO_ORG_SLUG)).unique();
     const now = Date.now();
+    const orgId = existingDemoOrg?._id ?? await ctx.db.insert("orgs", {
+      name: DEMO_ORG_NAME,
+      slug: DEMO_ORG_SLUG,
+      createdAt: now,
+    });
+
+    // Reset only demo-owned rows. The order removes dependants before parents,
+    // and deliberately preserves the demo org document and every product row.
+    for (const table of [
+      "auditLog",
+      "connectorEvents",
+      "connectors",
+      "accessRequests",
+      "invites",
+      "attachmentUploadTickets",
+      "postAttachments",
+      "notificationPreferences",
+      "notificationDeliveries",
+      "aiGenerationSettings",
+      "agentTasks",
+      "postReads",
+      "replies",
+      "posts",
+      "spaceMemberships",
+      "spaces",
+      "users",
+    ] as const) {
+      const rows = await ctx.db.query(table).collect();
+      for (const row of rows) {
+        if (row.orgId !== orgId) continue;
+        await ctx.db.delete(row._id);
+      }
+    }
 
     const user = (
       name: string,
@@ -32,14 +65,15 @@ export const run = internalMutation({
       initials: string,
       avatarColor: string,
       isAgent = false,
-    ) => ({ name, title, initials, avatarColor, isAgent });
+      role: "admin" | "tester" | "member" = "member",
+    ) => ({ name, title, initials, avatarColor, isAgent, role });
 
     // Humans use the warm palette; AI agents get the cooler entries so they
     // read as "bot" teammates without breaking the page's color story.
     const userDefs = [
-      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0]),
+      user("Maya Chen", "VP Engineering", "MC", AVATAR_PALETTE[0], false, "admin"),
       user("Diego Ramos", "Staff Engineer", "DR", AVATAR_PALETTE[8]),
-      user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1]),
+      user("Priya Nair", "Product Manager", "PN", AVATAR_PALETTE[1], false, "tester"),
       user("Tom Becker", "Design Lead", "TB", AVATAR_PALETTE[2]),
       user("Aisha Khan", "Engineering Manager", "AK", AVATAR_PALETTE[3]),
       user("Lukas Wolf", "SRE", "LW", AVATAR_PALETTE[4]),
@@ -47,11 +81,85 @@ export const run = internalMutation({
       user("Cursor", "Coding Agent", "Cu", AVATAR_PALETTE[5], true),
       user("Codex", "Coding Agent", "Cx", AVATAR_PALETTE[6], true),
       user("Claude Code", "Coding Agent", "Cl", AVATAR_PALETTE[7], true),
+      // Connector agent — pulls external sources (X/Twitter) into posts, so
+      // "the thing you check Twitter for" lives in Postwork instead.
+      user("X Pulse", "Connector Agent", "XP", AVATAR_PALETTE[6], true),
     ];
     const u: Record<string, Id<"users">> = {};
     for (const d of userDefs) {
-      const id = await ctx.db.insert("users", d);
+      const id = await ctx.db.insert("users", { orgId, ...d });
       u[d.initials] = id;
+    }
+
+    // X Pulse gets a real inboundEvents connector so the x cross-post sync
+    // (convex/xSync.ts) works on the demo deployment out of the box: set
+    // X_SYNC_HANDLE and the cron mirrors that handle's posts through it.
+    // The credential is random and unused by the sync path.
+    await ctx.db.insert("connectors", {
+      orgId,
+      name: "X Pulse",
+      slug: "x",
+      capability: "inboundEvents",
+      authStrategy: "bearer",
+      agentId: u["XP"],
+      credentialId: `seed-x-${Math.random().toString(36).slice(2, 10)}`,
+      secretHash: "seed-unusable",
+      createdById: u["MC"],
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const spaceDefs = [
+      {
+        key: "nw_acme_platform",
+        name: "northwind × acme — platform integration",
+        slug: "northwind-acme-platform-integration",
+        description:
+          "Launch planning, API contracts, and rollout decisions for the shared platform integration.",
+        createdAgo: 24 * 12 * HOUR,
+        members: ["MC", "DR", "PN", "TB"],
+      },
+      {
+        key: "nw_globex_support",
+        name: "northwind × globex — vendor support",
+        slug: "northwind-globex-vendor-support",
+        description:
+          "Operational support lane for incidents, renewals, and account coordination.",
+        createdAgo: 24 * 8 * HOUR,
+        members: ["MC", "AK", "LW", "Cu"],
+      },
+      {
+        key: "initech_nw_security",
+        name: "initech × northwind — security review",
+        slug: "initech-northwind-security-review",
+        description:
+          "Security review thread for evidence exchange, access scoping, and launch gating.",
+        createdAgo: 30 * HOUR,
+        members: ["DR", "LW", "Cx", "Cl"],
+      },
+    ] as const;
+
+    const spaceIds: Record<(typeof spaceDefs)[number]["key"], Id<"spaces">> =
+      {} as Record<(typeof spaceDefs)[number]["key"], Id<"spaces">>;
+
+    for (const space of spaceDefs) {
+      const spaceId = await ctx.db.insert("spaces", {
+        orgId,
+        name: space.name,
+        slug: space.slug,
+        description: space.description,
+        createdAt: now - space.createdAgo,
+      });
+      spaceIds[space.key] = spaceId;
+
+      for (const member of space.members) {
+        await ctx.db.insert("spaceMemberships", {
+          orgId,
+          spaceId,
+          userId: u[member],
+          createdAt: now - space.createdAgo + 1000,
+        });
+      }
     }
 
     type ReplyDef = {
@@ -64,6 +172,7 @@ export const run = internalMutation({
       author: string;
       title: string;
       space: string;
+      spaceKey?: keyof typeof spaceIds;
       priority: "urgent" | "high" | "normal";
       pinned?: boolean;
       createdAgo: number; // ms before now
@@ -73,6 +182,122 @@ export const run = internalMutation({
     };
 
     const posts: PostDef[] = [
+      {
+        author: "XP",
+        title: "X daily digest: 41.2k impressions, 2 mentions need a reply",
+        space: "Growth",
+        priority: "normal",
+        createdAgo: 3 * HOUR,
+        body: "Pulled from the connected @northwindhq X account for the last 24h.\n\nImpressions: 41,208 (+18% vs 7-day avg) · Follows: +64 · Profile visits: 1,930.\n\nTop post: the wrec 3.0 launch thread — 28.4k impressions, 312 reposts, still climbing.\n\nMentions worth a human reply:\n- @deviousfishy asks whether the export API supports cursor pagination (potential customer, 4.1k followers).\n- @plausible_dev flagged a broken docs link in the launch thread.\n\nEverything else was noise (reply-guys, 3 spam mentions filtered). Reply here and I'll post it to X for you.",
+        summary:
+          "**TL;DR**\nStrong day on X: 41.2k impressions (+18%), 64 new follows, launch thread still climbing. Two mentions need a human reply.\n\n**Action items**\n- Answer @deviousfishy on export API pagination (potential customer).\n- Fix the broken docs link @plausible_dev flagged in the launch thread.",
+        replies: [
+          {
+            who: "PN",
+            at: 40 * 60 * 1000,
+            body: "Taking the pagination question — the answer is yes since v3, I'll reply with the docs link. Someone from eng grab the broken link?",
+          },
+          {
+            who: "DR",
+            at: 70 * 60 * 1000,
+            body: "Docs link fixed, it was the versioned path from the old site. Safe to reply to @plausible_dev.",
+            parent: 0,
+          },
+        ],
+      },
+      {
+        author: "PN",
+        title: "Catch-up checkpoint: decisions needed before Thursday cutover",
+        space: "Product",
+        priority: "normal",
+        createdAgo: 4 * HOUR,
+        body: "A short return-to-work checkpoint: account mapping still needs a decision, the export replay needs its final checksum, and the security packet is waiting on evidence owners. The linked source posts remain canonical; this is the orientation layer for anyone coming back online.",
+        summary:
+          "**TL;DR**\nThree threads need attention before Thursday: decide account mapping, confirm the export checksum, and assign the remaining security evidence owners.",
+      },
+      {
+        author: "PN",
+        title: "API contract question: account mapping edge cases",
+        space: "northwind × acme — platform integration",
+        spaceKey: "nw_acme_platform",
+        priority: "high",
+        createdAgo: 2 * HOUR,
+        body: "We found three customers where the external account id maps to multiple billing entities. Can Northwind confirm whether the canonical id should be workspace-level or contract-level before we freeze the import job?",
+        summary:
+          "**TL;DR**\nAcme needs a decision on whether the canonical external account id should resolve at the workspace or contract level before the import job is frozen.\n\n**Open questions**\n- Which identifier becomes the single source of truth for the shared import path?\n\n**Action items**\n- Northwind to confirm the canonical account mapping model in-thread.",
+        replies: [
+          {
+            who: "DR",
+            at: 35 * 60 * 1000,
+            body: "Current assumption on our side is workspace-level, but contracts inherit differently in enterprise tenants. I'll pull the three edge cases and confirm which shape survives downstream reconciliation.",
+          },
+          {
+            who: "PN",
+            at: 80 * 60 * 1000,
+            body: "Perfect. Once that's settled we'll freeze the import job and note the fallback for any split-contract tenants in the launch doc.",
+            parent: 0,
+          },
+        ],
+      },
+      {
+        author: "MC",
+        title: "Integration timeline after staging dry run",
+        space: "northwind × acme — platform integration",
+        spaceKey: "nw_acme_platform",
+        priority: "normal",
+        createdAgo: 6 * HOUR,
+        body: "Staging dry run is green except for webhook replay ordering. Proposed plan: patch idempotency today, run a second dry run tomorrow morning, and keep the production cutover window on Thursday.",
+        replies: [
+          {
+            who: "TB",
+            at: 45 * 60 * 1000,
+            body: "No design blockers on the launch checklist. If the second dry run is green, we can publish the customer-facing migration note immediately after the Thursday cutover.",
+          },
+        ],
+      },
+      {
+        author: "LW",
+        title: "Incident coordination: delayed export batch",
+        space: "northwind × globex — vendor support",
+        spaceKey: "nw_globex_support",
+        priority: "urgent",
+        createdAgo: 90 * 60 * 1000,
+        body: "The 02:00 UTC export batch missed its delivery window. We isolated it to a queue worker restart and are backfilling now. Please hold downstream reconciliation until we post the final checksum.",
+        summary:
+          "**TL;DR**\nA delayed export batch was traced to a queue worker restart. Backfill is in progress; downstream reconciliation should wait for the final checksum.\n\n**Action items**\n- Lukas to post the checksum when replay completes.\n- Globex-side reconciliation stays paused until then.",
+        replies: [
+          {
+            who: "Cu",
+            at: 20 * 60 * 1000,
+            body: "Replay worker is stable now. I added a guard so a rolling restart won't mark the batch complete until the final chunk flushes to storage.",
+          },
+        ],
+      },
+      {
+        author: "AK",
+        title: "Renewal data request for Q3 capacity planning",
+        space: "northwind × globex — vendor support",
+        spaceKey: "nw_globex_support",
+        priority: "normal",
+        createdAgo: 28 * HOUR,
+        body: "We need updated seat forecasts by region before the renewal model locks. Please post final assumptions here so the decision trail stays searchable.",
+      },
+      {
+        author: "Cx",
+        title: "Security evidence checklist before review kickoff",
+        space: "initech × northwind — security review",
+        spaceKey: "initech_nw_security",
+        priority: "high",
+        createdAgo: 20 * HOUR,
+        body: "Before the first review call, let's keep the evidence checklist in one thread: latest pen test summary, SSO configuration notes, access review owner, and retention defaults. Once those are attached, we can turn the meeting into a short sign-off instead of a discovery call.",
+        replies: [
+          {
+            who: "Cl",
+            at: 70 * 60 * 1000,
+            body: "I can assemble the checklist into a single security packet after the documents land. That gives the reviewer a concise package instead of four separate links.",
+          },
+        ],
+      },
       {
         author: "MC",
         title: "Decision: We're moving the mobile app to a monthly release train",
@@ -321,10 +546,12 @@ export const run = internalMutation({
         : createdAt;
 
       const postId = await ctx.db.insert("posts", {
+        orgId,
         authorId: u[p.author],
         title: p.title,
         body: p.body,
         space: p.space,
+        spaceId: p.spaceKey ? spaceIds[p.spaceKey] : undefined,
         priority: p.priority,
         pinned: p.pinned ?? false,
         createdAt,
@@ -339,6 +566,7 @@ export const run = internalMutation({
       const replyIds: Id<"replies">[] = [];
       for (const r of replyDefs) {
         const id = await ctx.db.insert("replies", {
+          orgId,
           postId,
           parentId: r.parent !== undefined ? replyIds[r.parent] : undefined,
           authorId: u[r.who],
@@ -350,7 +578,9 @@ export const run = internalMutation({
     }
 
     return {
+      orgs: 1,
       users: userDefs.length,
+      spaces: spaceDefs.length,
       posts: posts.length,
       message: "Seeded Postwork demo data.",
     };

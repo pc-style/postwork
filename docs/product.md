@@ -70,6 +70,33 @@ confidence comes from clarity, not volume.
 5. **Quiet confidence** — state things plainly. The interface persuades by being
    obviously clearer than chat, not by saying so.
 
+## Catch-up digest contract
+
+The catch-up digest is a viewer-specific return-to-work view, not a generic
+activity feed and not an outbound-notification queue.
+
+- Eligibility is evaluated when the digest is read. A post is eligible only
+  when it is still unread for the authenticated viewer and the viewer can access
+  its organization and, when present, its space. Reading a post removes it from
+  the next composition; composing a digest never marks anything read.
+- Priority is the post's existing team-authored priority. Eligible posts are
+  grouped `urgent`, then `high`, then `normal`. Within a priority, newest thread
+  activity comes first; post creation time breaks equal-activity ties, then the
+  stable post ID breaks any remaining tie. The same data therefore produces the
+  same order.
+- Recency affects order within a bounded scan. The backend considers at most the
+  200 most recently active org posts and returns at most 25 eligible items.
+  `eligibleInWindow` and `omittedEligibleInWindow` describe only that scanned
+  window. `scan.complete` is false whenever the query hits its 200-post cap, so
+  callers never mistake the window's counts for a complete org-wide total.
+- Summary quality never hides an unread post. Every item declares its summary as
+  `fresh`, `stale`, or `missing`; stale means activity advanced beyond the stored
+  summary timestamp. Missing and stale items remain in their normal priority and
+  activity position. Composition does not generate or refresh a summary.
+- The query derives the viewer from Convex authentication. It accepts no viewer
+  or organization ID, rejects pending/deactivated members, scans only the
+  viewer's organization, and applies normal space-membership authorization.
+
 ## Accessibility & Inclusion
 
 Pragmatic: sensible, well-built defaults rather than a formally certified WCAG
@@ -79,3 +106,12 @@ surfaces (watch the muted-gray text especially), priority states distinguishable
 by more than hue alone (label + dot, not color only), and a
 `prefers-reduced-motion` path for any motion. Treat AA-level contrast and keyboard
 access as the working floor even though the project isn't chasing a badge.
+
+## Thread media
+
+Posts and replies can carry up to eight image or video attachments. PNG, JPEG,
+GIF, and WebP images are accepted up to 10 MB; MP4 and WebM video is accepted up
+to 50 MB and plays inline in the thread. JPEG and PNG sources up to 40 MB are
+resized or compressed in the browser when useful, with a 10 MB upload target.
+GIF and WebP files are uploaded unchanged so animation is never silently
+flattened, and video is not transcoded in the browser.

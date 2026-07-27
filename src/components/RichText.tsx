@@ -1,5 +1,39 @@
 import type { ReactNode } from "react";
+import { normalizeRichUrl, trimUrlPunctuation } from "../lib/richEmbeds";
 import { CodeBlock } from "./CodeBlock";
+
+const URL_PATTERN = /https?:\/\/[^\s<>"'`]+/giu;
+
+function renderLinks(text: string, keyPrefix: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(URL_PATTERN)) {
+    const index = match.index;
+    const raw = match[0];
+    const candidate = trimUrlPunctuation(raw);
+    const href = normalizeRichUrl(candidate);
+    if (!href) continue;
+
+    if (index > lastIndex) nodes.push(text.slice(lastIndex, index));
+    nodes.push(
+      <a
+        key={`${keyPrefix}-${index}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent-soft underline decoration-accent/40 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
+      >
+        {candidate}
+      </a>,
+    );
+    if (candidate.length < raw.length) nodes.push(raw.slice(candidate.length));
+    lastIndex = index + raw.length;
+  }
+
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return nodes;
+}
 
 function renderInlineCode(text: string): ReactNode[] {
   return text.split(/(`[^`]+`)/g).map((part, index) => {
@@ -13,7 +47,7 @@ function renderInlineCode(text: string): ReactNode[] {
         </code>
       );
     }
-    return <span key={index}>{part}</span>;
+    return <span key={index}>{renderLinks(part, `link-${index}`)}</span>;
   });
 }
 

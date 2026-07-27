@@ -28,14 +28,17 @@ export function FlashExperimentPage() {
 
   if (!experiment) {
     return (
-      <div className="rounded-lg border border-dashed border-accent/40 bg-surface p-5 font-mono">
-        <h1 className="text-lg font-semibold text-fg">experiment not found</h1>
-        <Link
-          to="/flash-experiments"
-          className="mt-3 inline-block text-sm text-accent-soft"
-        >
-          ← back to experiments
-        </Link>
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-dashed border-accent/40 bg-surface p-5">
+          <h1 className="text-lg font-semibold text-fg">Experiment not found</h1>
+          <Link
+            to="/app/flash-experiments"
+            className="mt-3 inline-flex min-h-11 items-center text-sm text-accent-soft"
+          >
+            <span aria-hidden="true" className="mr-1.5">←</span>
+            back to experiments
+          </Link>
+        </div>
       </div>
     );
   }

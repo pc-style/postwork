@@ -10,6 +10,7 @@ import { Composer } from "../components/Composer";
 import { timeAgo } from "../lib/format";
 import { AgentTag } from "../components/AgentTag";
 import { RichText } from "../components/RichText";
+import { RichEmbedList } from "../components/RichEmbedList";
 import { AgentTasksPanel } from "../components/AgentTasksPanel";
 import { UserRoleTag } from "../components/UserRoleTag";
 import { PostMetaChips } from "../components/PostMetaChips";
@@ -26,7 +27,7 @@ export function PostPage() {
   const { slots } = useActiveExperiment();
 
   const post = usePost(postId);
-  const replies = useReplies(postId);
+  const replies = useReplies(postId).replies;
 
   useDocumentTitle(post ? `${post.title} · postwork` : "postwork");
 
@@ -40,13 +41,13 @@ export function PostPage() {
   }, [postId, post?.lastActivityAt]);
 
   if (post === undefined) {
-    return <LoadingState />;
+    return <LoadingState label="Loading post" preset="post" />;
   }
   if (post === null) {
     return (
       <div className="py-12 text-center text-sm text-muted">
         Post not found.{" "}
-        <Link to="/" className="text-accent-soft">
+        <Link to="/app" className="text-accent-soft">
           back to feed
         </Link>
       </div>
@@ -54,8 +55,8 @@ export function PostPage() {
   }
 
   return (
-    <div>
-      <PageHeader backTo="/" backLabel="feed" />
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <PageHeader backTo="/app" backLabel="feed" />
 
       {slots.post ? (
         slots.post({ postId: post._id })
@@ -65,17 +66,18 @@ export function PostPage() {
 
         <h1 className="text-xl font-semibold text-fg">{post.title}</h1>
 
-        <div className="mt-2 flex items-center gap-2.5 text-sm text-muted">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted">
           <Avatar user={post.author} size={28} />
           <span className="text-fg">{post.author?.name}</span>
           {post.author?.isAgent && <AgentTag />}
           <UserRoleTag role={post.author?.role} />
-          <span>· {post.author?.title}</span>
-          <span>· {timeAgo(post.createdAt)}</span>
+          <span>{post.author?.title}</span>
+          <span>{timeAgo(post.createdAt)}</span>
         </div>
 
         <div className="mt-4">
           <RichText text={post.body} className="prose-post text-title text-fg" />
+          <RichEmbedList text={post.body} />
         </div>
 
         <div className="mt-5">
@@ -84,6 +86,7 @@ export function PostPage() {
             summary={post.summary}
             model={post.summaryModel}
             updatedAt={post.summaryUpdatedAt}
+            isStale={post.isStale}
           />
         </div>
 
@@ -108,7 +111,7 @@ export function PostPage() {
         {slots.composer ? (
           slots.composer({ postId: post._id })
         ) : (
-          <Composer postId={post._id} placeholder="add to the discussion…" />
+          <Composer postId={post._id} placeholder="Add to the discussion." />
         )}
       </div>
     </div>

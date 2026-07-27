@@ -1,45 +1,59 @@
-import { useEffect, useState } from "react";
-import { Link, getRouteApi } from "@tanstack/react-router";
-import { useStore, usePost, useReplies, isLocalId } from "../../lib/store";
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "@tanstack/react-router";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ReplyTree } from "../../components/ReplyTree";
-import { Composer } from "../../components/Composer";
-import { RichText } from "../../components/RichText";
-import { Markdown } from "../../components/Markdown";
+import { AgentSummary } from "../../components/AgentSummary";
+import { AgentTasksPanel } from "../../components/AgentTasksPanel";
 import { AgentTag } from "../../components/AgentTag";
+import { AttachmentGallery } from "../../components/AttachmentGallery";
+import { Button } from "../../components/Button";
+import { Composer } from "../../components/Composer";
+import { ComposerShell } from "../../components/ComposerShell";
 import { LoadingState } from "../../components/LoadingState";
-import { timeAgo, priorityStyles } from "../../lib/format";
+import { PostModeration } from "../../components/PostModeration";
+import { ReplyTree } from "../../components/ReplyTree";
+import { RichText } from "../../components/RichText";
+import { RichEmbedList } from "../../components/RichEmbedList";
+import { useAttachments } from "../../lib/attachments";
+import { priorityStyles, timeAgo } from "../../lib/format";
+import { usePost, useReplies, useStore } from "../../lib/store";
+import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
-
-const routeApi = getRouteApi("/redesign/posts/$postId");
+import { useDeferredFlag } from "../../lib/useDeferredFlag";
 
 export function RedesignPostPage() {
-  const { postId: postIdParam } = routeApi.useParams();
+  const { postId: postIdParam } = useParams({ strict: false });
   const postId = postIdParam as Id<"posts">;
   const store = useStore();
-
   const post = usePost(postId);
-  const replies = useReplies(postId);
+  const repliesResult = useReplies(postId);
+  const attachments = useAttachments(postId);
+  const [editing, setEditing] = useState(false);
+  const showSkeleton = useDeferredFlag(150);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useDocumentTitle(post ? `${post.title} · postwork` : "postwork · ink");
+  useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
 
   useEffect(() => {
     if (post) store.markRead(postId);
+    // Re-run only when the post identity or latest activity changes,
+    // not on every object identity change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.lastActivityAt]);
 
   if (post === undefined) {
+    if (!showSkeleton) return null;
     return (
-      <div className="mx-auto max-w-3xl px-8 py-10">
-        <LoadingState />
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <LoadingState label="Loading post" preset="post" />
       </div>
     );
   }
+
   if (post === null) {
     return (
-      <div className="mx-auto max-w-3xl px-8 py-16 text-center text-sm text-muted">
-        post not found.{" "}
-        <Link to="/redesign" className="text-accent-soft">
+      <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center text-sm text-muted sm:px-6">
+        <p>We couldn't find this post.</p>
+        <Link to="/app" className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg">
           back to feed
         </Link>
       </div>
@@ -47,88 +61,179 @@ export function RedesignPostPage() {
   }
 
   const showPriority = post.priority !== "normal";
-  const p = priorityStyles[post.priority];
+  const priority = priorityStyles[post.priority];
 
-  return (
-    <div className="mx-auto max-w-3xl px-8 pb-40 pt-10">
-      {/* breadcrumb — quiet, one line */}
-      <div className="mb-6 text-xs text-faint">
-        <Link to="/redesign" className="text-muted transition hover:text-fg">
-          {post.space.toLowerCase()}
-        </Link>
-        {post.pinned && <span> / pinned</span>}
-      </div>
-
-      {/* the post is the hero */}
-      <h1 className="text-3xl font-bold leading-tight tracking-tight text-fg">
-        {post.title}
-      </h1>
-
-      {/* one quiet byline line */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-muted">
-        <span className="font-medium text-fg">{post.author?.name}</span>
-        {post.author?.isAgent && <AgentTag />}
-        <span>posted {timeAgo(post.createdAt)}</span>
-        {showPriority && (
-          <span className={p.dot === "bg-urgent" ? "text-urgent" : "text-high"}>
-            · {p.label.toLowerCase()} priority
-          </span>
-        )}
-      </div>
-
-      {/* body in a ~65ch reading column */}
-      <div className="mt-8 max-w-[65ch]">
-        <RichText text={post.body} className="prose-post text-[15px] text-fg/90" />
-      </div>
-
-      <AgentSummarySection
+  const agentPanels = (
+    <>
+      <AgentSummary
         postId={post._id}
         summary={post.summary}
         model={post.summaryModel}
         updatedAt={post.summaryUpdatedAt}
+        isStale={post.isStale}
       />
-
-      <h2 className="mb-2 text-xs text-faint">
-        {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
-      </h2>
-      <ReplyTree replies={replies ?? []} postId={post._id} />
-
-      {/* sticky composer that fades up from the page */}
-      <div className="sticky bottom-0 -mx-8 mt-8 bg-gradient-to-t from-bg from-40% to-transparent px-8 pt-10 pb-6">
-        <Composer postId={post._id} placeholder="add to the discussion…" />
+      <div className="mt-4">
+        <AgentTasksPanel postId={post._id} />
       </div>
+    </>
+  );
+
+  return (
+    <div
+      className={`mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:max-w-6xl xl:grid xl:gap-8 xl:px-8 xl:pt-10 ${
+        sidebarOpen
+          ? "xl:grid-cols-[minmax(0,1fr)_21rem]"
+          : "xl:grid-cols-[minmax(0,1fr)_2.75rem]"
+      }`}
+    >
+    <article className="min-w-0">
+      <nav aria-label="Breadcrumb" className="mb-2 text-xs text-muted">
+        <Link
+          to="/app"
+          search={{ space: post.space }}
+          className="inline-flex min-h-11 items-center hover:text-fg"
+        >
+          {post.space}
+        </Link>
+        {post.pinned ? <span className="ml-3 text-accent-soft">Pinned</span> : null}
+      </nav>
+
+      <header className="group/post">
+      {editing ? (
+        <PostEditForm post={post} onDone={() => setEditing(false)} />
+      ) : (
+        <h1 className="text-xl font-semibold leading-tight tracking-tight text-fg">
+          {post.title}
+        </h1>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+        <span className="font-medium text-fg">{post.author?.name ?? "Unknown"}</span>
+        {post.author?.isAgent ? <AgentTag /> : null}
+        <span>Posted {timeAgo(post.createdAt)}</span>
+        {showPriority ? (
+          <span className={`inline-flex items-center gap-1.5 ${post.priority === "urgent" ? "text-urgent" : "text-high"}`}>
+            <span className={`size-1.5 rounded-full ${priority.dot}`} aria-hidden="true" />
+            {priority.label} priority
+          </span>
+        ) : null}
+        {post.editedAt ? <span>Edited {timeAgo(post.editedAt)}</span> : null}
+      </div>
+
+      {!editing ? (
+        <PostModeration post={post} onStartEdit={() => setEditing(true)} />
+      ) : null}
+      </header>
+
+      {!editing ? (
+        <div className="mt-7 max-w-[65ch]">
+          <RichText text={post.body} className="prose-post text-[15px] text-fg/80" />
+          <RichEmbedList text={post.body} />
+          <AttachmentGallery attachments={attachments.filter((attachment) => !attachment.replyId)} />
+        </div>
+      ) : null}
+
+      <div className="mt-8 border-t border-border pt-5 xl:hidden">{agentPanels}</div>
+
+      <section aria-labelledby="replies-heading" className="mt-10">
+        <h2 id="replies-heading" className="mb-2 text-sm font-semibold text-fg">
+          {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+        </h2>
+        {repliesResult.status === "LoadingFirstPage" ? (
+          showSkeleton ? (
+            <LoadingState label="Loading replies" preset="feed" count={3} />
+          ) : null
+        ) : (
+          <ReplyTree replies={repliesResult.replies} postId={post._id} attachments={attachments} />
+        )}
+        {(repliesResult.status === "CanLoadMore" || repliesResult.status === "LoadingMore") && repliesResult.loadMore ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-3"
+            onClick={repliesResult.loadMore}
+            loading={repliesResult.status === "LoadingMore"}
+            loadingLabel="loading…"
+          >
+            load more replies
+          </Button>
+        ) : null}
+        <div className="mt-7 border-t border-border pt-5">
+          <h2 className="mb-3 text-sm font-semibold text-fg">add a reply</h2>
+          <Composer postId={post._id} placeholder="Add a reply." />
+        </div>
+      </section>
+    </article>
+
+    <aside
+      aria-label="Agent panels"
+      className="hidden xl:block xl:border-l xl:border-border xl:pl-6"
+    >
+      <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+        {sidebarOpen ? (
+          <>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-label font-semibold text-muted">agents</span>
+              <Button
+                variant="quiet"
+                size="sm"
+                className="min-h-8 text-xs"
+                onClick={() => setSidebarOpen(false)}
+                aria-expanded={true}
+              >
+                hide
+              </Button>
+            </div>
+            {agentPanels}
+          </>
+        ) : (
+          <Button
+            variant="quiet"
+            size="sm"
+            className="min-h-24 w-full px-1 text-xs [writing-mode:vertical-rl]"
+            onClick={() => setSidebarOpen(true)}
+            aria-expanded={false}
+          >
+            agents
+          </Button>
+        )}
+      </div>
+    </aside>
     </div>
   );
 }
 
-// A quiet, ruled agent-summary section — no boxed card, matching rule 3.
-function AgentSummarySection({
-  postId,
-  summary,
-  model,
-  updatedAt,
+function PostEditForm({
+  post,
+  onDone,
 }: {
-  postId: Id<"posts">;
-  summary?: string;
-  model?: string;
-  updatedAt?: number;
+  post: EnrichedPost;
+  onDone: () => void;
 }) {
   const store = useStore();
+  const [title, setTitle] = useState(post.title);
+  const [body, setBody] = useState(post.body);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const local = isLocalId(postId);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
-  const onRegenerate = async () => {
+  const save = async () => {
+    if (!title.trim() || !body.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await store.summarize(postId);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      await store.editPost({
+        postId: post._id,
+        title: title.trim(),
+        body: body.trim(),
+      });
+      onDone();
+    } catch (caught) {
       setError(
-        /API_KEY|not set/i.test(msg)
-          ? "no ai provider configured — set a key in the convex env to enable live summaries."
-          : msg,
+        caught instanceof Error
+          ? caught.message
+          : "We couldn't save the post. Try again.",
       );
     } finally {
       setBusy(false);
@@ -136,43 +241,42 @@ function AgentSummarySection({
   };
 
   return (
-    <section className="my-9 border-y border-border py-5">
-      <div className="mb-3 flex items-baseline justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-          agent summary
-        </span>
-        <button
-          onClick={onRegenerate}
-          disabled={busy || local}
-          title={local ? "save the post to generate a summary" : undefined}
-          className="text-xs text-faint transition hover:text-fg disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? "summarizing…" : local ? "unsaved" : summary ? "regenerate" : "generate"}
-        </button>
-      </div>
-
-      {summary ? (
-        <div className="max-w-[65ch] text-[15px] text-fg/90">
-          <Markdown text={summary} />
-        </div>
-      ) : (
-        <p className="text-sm text-muted">
-          no summary yet. generate one to catch up on this thread instantly.
-        </p>
-      )}
-
-      {error && (
-        <p className="mt-2 rounded-md bg-red-500/10 px-2 py-1.5 text-xs text-red-300">
-          {error}
-        </p>
-      )}
-
-      {(model || updatedAt) && !error && (
-        <p className="mt-3 text-label text-faint">
-          {model === "seed/baked" ? "demo summary" : `model: ${model}`}
-          {updatedAt ? ` · updated ${timeAgo(updatedAt)}` : ""}
-        </p>
-      )}
-    </section>
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <ComposerShell
+        title={title}
+        setTitle={(value) => {
+          setTitle(value);
+          setError(null);
+        }}
+        titleRef={titleRef}
+        titleAutoFocus
+        titleLabel="Title"
+        titleRequired
+        titlePlaceholder="Post title"
+        titleClassName="ui-field text-lg font-semibold"
+        body={body}
+        setBody={(value) => {
+          setBody(value);
+          setError(null);
+        }}
+        textareaRef={bodyRef}
+        bodyLabel="Post"
+        placeholder="Post content"
+        rows={8}
+        textareaClassName="ui-field min-h-48 resize-y"
+        footerClassName="mt-3 flex flex-wrap items-center justify-end gap-2"
+        actions={
+          <Button variant="secondary" onClick={onDone} disabled={busy}>
+            cancel
+          </Button>
+        }
+        submitLabel="save"
+        submittingLabel="saving…"
+        submitting={busy}
+        disabled={!title.trim() || !body.trim()}
+        onSubmit={() => void save()}
+      />
+      {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
+    </div>
   );
 }

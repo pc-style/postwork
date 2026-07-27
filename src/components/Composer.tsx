@@ -1,22 +1,29 @@
 import { useRef, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useSession } from "../lib/session";
-import { useStore } from "../lib/store";
-import { useAgentTasks } from "../lib/agentTasks";
 import {
+  AGENT_HANDLES,
   parseAgentMentions,
   resolveAgentUser,
-  AGENT_HANDLES,
 } from "../lib/agentMentions";
+import { useAgentTasks } from "../lib/agentTasks";
 import { insertCodeFence } from "../lib/codeFence";
+import { insertContentUrl } from "../lib/insertContentUrl";
+import { useSession } from "../lib/session";
+import { useStore } from "../lib/store";
+import {
+  AttachmentButton,
+  AttachmentThumbnails,
+  useAttachmentPicker,
+} from "./AttachmentPicker";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
+import { GifPicker } from "./GifPicker";
 
 export function Composer({
   postId,
   parentId,
-  placeholder = "write a reply…",
+  placeholder = "Write a reply.",
   autoFocus = false,
   compact = false,
   onDone,
@@ -33,18 +40,31 @@ export function Composer({
   const { dispatch } = useAgentTasks();
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    pending,
+    addFiles,
+    removeAttachment,
+    getReadyAttachments,
+    clear: clearAttachments,
+    canUpload,
+    hasUploading,
+    hasAttachmentErrors,
+    attachmentError,
+    attachmentWarning,
+  } = useAttachmentPicker();
 
-  // Live preview of which agents this message will summon.
   const mentioned = parseAgentMentions(body);
+  const engaged =
+    body.length > 0 || pending.length > 0 || busy || error !== null;
 
   const onCodeFence = () => {
-    const el = textareaRef.current;
-    const start = el?.selectionStart ?? body.length;
-    const end = el?.selectionEnd ?? body.length;
+    const element = textareaRef.current;
+    const start = element?.selectionStart ?? body.length;
+    const end = element?.selectionEnd ?? body.length;
     const next = insertCodeFence(body, start, end);
     setBody(next.value);
-    // Restore focus + selection after React re-renders.
     requestAnimationFrame(() => {
       const node = textareaRef.current;
       if (!node) return;
@@ -53,22 +73,38 @@ export function Composer({
     });
   };
 
+  const onGif = (url: string) => {
+    const element = textareaRef.current;
+    const next = insertContentUrl(
+      body,
+      element?.selectionStart ?? body.length,
+      element?.selectionEnd ?? body.length,
+      url,
+    );
+    setBody(next.value);
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(next.cursor, next.cursor);
+    });
+  };
+
   const submit = async () => {
-    if (!body.trim() || !currentUserId) return;
+    if (!body.trim() || !currentUserId || busy) return;
     setBusy(true);
+    setError(null);
     try {
       const text = body.trim();
+      const attachments = getReadyAttachments();
       const replyId = await store.createReply({
         postId,
         parentId,
-        authorId: currentUserId,
         body: text,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
       setBody("");
+      clearAttachments();
       onDone?.();
 
-      // @agent invocation: any @cursor/@codex/@claude mention dispatches an
-      // agent task seeded with this message as the prompt + context.
       for (const handle of parseAgentMentions(text)) {
         const agent = resolveAgentUser(handle, users);
         if (!agent) continue;
@@ -81,58 +117,92 @@ export function Composer({
           contextText: text,
         });
       }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "We couldn't add the reply. Try again.",
+      );
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="flex gap-2.5">
-      {!compact && <Avatar user={currentUser ?? null} size={32} />}
-      <div className="flex-1">
+    <div className="flex min-w-0 gap-2.5">
+      {!compact ? <Avatar user={currentUser ?? null} size={32} /> : null}
+      <div className="group/composer min-w-0 flex-1">
         <ComposerShell
           body={body}
-          setBody={setBody}
+          setBody={(value) => {
+            setBody(value);
+            setError(null);
+          }}
           textareaRef={textareaRef}
           autoFocus={autoFocus}
+          bodyLabel="Reply"
+          srOnlyBodyLabel
           placeholder={placeholder}
-          rows={compact ? 2 : 3}
-          textareaClassName="w-full resize-y rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent/50"
+          rows={engaged ? (compact ? 2 : 3) : 1}
+          textareaClassName={
+            engaged
+              ? "ui-field min-h-24 resize-y"
+              : "ui-field min-h-11 resize-none transition-[min-height] group-focus-within/composer:min-h-24 group-focus-within/composer:resize-y"
+          }
+          footerClassName={`ui-reveal mt-3 flex-wrap items-center justify-between gap-3 ${
+            engaged ? "flex" : "hidden group-focus-within/composer:flex"
+          }`}
+          onPaste={(event) => {
+            if (!canUpload) return;
+            const files = Array.from(event.clipboardData.files).filter(
+              (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
+            );
+            if (files.length > 0) {
+              event.preventDefault();
+              void addFiles(files);
+            }
+          }}
+          beforeBody={
+            pending.length > 0 ? (
+              <div className="mb-2">
+                <AttachmentThumbnails pending={pending} onRemove={removeAttachment} />
+              </div>
+            ) : undefined
+          }
           hint={
             <>
-              <button
-                type="button"
-                onClick={onCodeFence}
-                title="insert code block"
-                className="rounded-md border border-border px-2 py-1 text-label text-muted transition hover:text-fg"
-              >
-                {"</> code"}
-              </button>
-              {mentioned.length > 0 ? (
-                <span className="text-label text-accent-soft">
-                  summons {mentioned.map((h) => AGENT_HANDLES[h]).join(", ")}
-                </span>
-              ) : (
-                <span className="hidden text-label text-muted sm:inline">
-                  ⌘/Ctrl + Enter · @cursor to summon an agent
-                </span>
-              )}
+              <Button variant="secondary" size="sm" onClick={onCodeFence}>
+                add code block
+              </Button>
+              {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
+              <GifPicker onSelect={onGif} />
+              <span aria-live="polite">
+                {hasUploading
+                  ? "Optimizing and uploading media…"
+                  : hasAttachmentErrors
+                    ? (attachmentError ?? "A media attachment failed to upload.")
+                    : attachmentWarning
+                      ? attachmentWarning
+                    : mentioned.length > 0
+                      ? `Asking ${mentioned.map((handle) => AGENT_HANDLES[handle]).join(", ")}`
+                      : "Cmd or Ctrl + Enter to reply. Mention @cursor to ask an agent."}
+              </span>
             </>
           }
           actions={
-            onDone && (
-              <Button variant="quiet" onClick={onDone}>
+            onDone ? (
+              <Button variant="secondary" onClick={onDone} disabled={busy}>
                 cancel
               </Button>
-            )
+            ) : undefined
           }
           submitLabel="reply"
           submittingLabel="sending…"
           submitting={busy}
-          disabled={busy || !body.trim()}
-          submitButtonClassName="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={busy || !body.trim() || hasUploading || hasAttachmentErrors}
           onSubmit={() => void submit()}
         />
+        {error ? <p role="alert" className="ui-error mt-2">{error}</p> : null}
       </div>
     </div>
   );

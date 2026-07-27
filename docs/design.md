@@ -3,17 +3,17 @@ name: Postwork
 description: Posts, not channels — a calm, durable record of team decisions.
 colors:
   deep-wine: "#8c1862"
-  wine-glow: "#b53a82"
+  wine-glow: "#c64f98"
   near-black: "#0a0a0b"
   surface: "#121014"
   surface-2: "#18151a"
-  hairline: "#252327"
+  hairline: "#302d32"
   ink: "#e8e6e3"
-  muted: "#8a8782"
-  faint: "#4a4845"
-  urgent: "#ff6b6b"
-  high: "#d9a441"
-  normal: "#8a8782"
+  muted: "#a19d98"
+  faint: "#5c5956"
+  urgent: "#ff7b7b"
+  high: "#e1b452"
+  normal: "#a19d98"
 typography:
   display:
     fontFamily: "'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
@@ -156,7 +156,7 @@ of signal; everything else is a tonal neutral.
 - **Deep Wine** (`#8c1862`): The one accent. Carries primary actions (`new
   post`, `invite org`), the brand mark, selection, and the agent-summary frame.
   Used on ≤10% of any screen — its rarity is the point.
-- **Wine Glow** (`#b53a82`): The softer, brighter sibling. Used for accent *text*
+- **Wine Glow** (`#c64f98`): The softer, brighter sibling. Used for accent *text*
   and links (`active 5d ago`, `ai summary`, unread dot, scope tags, the org-only
   lock), and for the primary button's hover state. Where Deep Wine fills, Wine
   Glow speaks.
@@ -169,21 +169,22 @@ of signal; everything else is a tonal neutral.
   from the canvas.
 - **Surface-2** (`#18151a`): The next tonal step up, used on hover and for inset
   affordances (agent tag, role badge, code).
-- **Hairline** (`#252327`): Borders and dividers. The structural grid of the UI;
+- **Hairline** (`#302d32`): Borders and dividers. The structural grid of the UI;
   flat layering leans on these instead of shadows.
 - **Ink** (`#e8e6e3`): Primary text and headings. Warm off-white, not pure white.
-- **Muted** (`#8a8782`): Secondary text — metadata, snippets, labels, timestamps.
-- **Faint** (`#4a4845`): The quietest neutral; backgrounds for the `Normal`
-  priority chip and the lowest-emphasis surfaces.
+- **Muted** (`#a19d98`): Secondary text — metadata, snippets, labels, timestamps.
+- **Faint** (`#5c5956`): Decorative separators, disabled ornament, and low-emphasis
+  surfaces only. Faint never carries instructions, required metadata, errors, or
+  disabled control labels. Meaningful secondary text uses Muted.
 
 ### Tertiary (priority state colors)
 
 Warm, muted state colors — distinct from the page accent, never used as
 decoration.
 
-- **Urgent Coral** (`#ff6b6b`): The `Urgent` priority chip and dot.
-- **High Gold** (`#d9a441`): The `High` priority chip and dot.
-- **Normal Grey** (`#8a8782`): The `Normal` priority chip and dot (shares Muted).
+- **Urgent Coral** (`#ff7b7b`): The `Urgent` priority chip and dot.
+- **High Gold** (`#e1b452`): The `High` priority chip and dot.
+- **Normal Grey** (`#a19d98`): The `Normal` priority chip and dot (shares Muted).
 
 ### Identity colors (avatars & orgs)
 
@@ -278,8 +279,10 @@ screen to screen. Every interactive element should read as obviously itself.
   primary action per view.
 - **Ghost / Secondary:** Transparent with a wine-tinted hairline border, Wine Glow
   text; hover adds a faint `accent/15` wash. Used for `generate` / `regenerate`.
-- **Disabled:** `opacity-40`, `cursor-not-allowed`, no color change (e.g. an
-  unsaved post's submit button).
+- **Disabled:** Keep labels legible and preserve the control's shape. Use a muted
+  border/fill and muted text rather than fading the whole control. Loading keeps
+  the label footprint stable, adds a small progress indicator, sets
+  `aria-busy`, and blocks duplicate activation.
 
 ### Cards (post)
 
@@ -318,25 +321,37 @@ screen to screen. Every interactive element should read as obviously itself.
 
 ### Inputs / Fields
 
-- **Style:** 1px hairline border, near-black fill, `rounded-md`/`rounded-lg` (pill
-  for the inline `@handle` invite), muted placeholder.
-- **Focus:** border shifts to `accent/50`; no glow, no ring bloat.
+- **Style:** 1px hairline border, near-black fill, `rounded-md`/`rounded-lg`, and
+  at least 44px height for primary form controls. Labels stay visible above the
+  control; placeholders are examples, never labels.
+- **Focus:** border shifts to Wine Glow and a visible 2px focus outline remains
+  unclipped. Errors keep an urgent border plus specific inline recovery copy.
+- **Selection:** priority is one labeled native radio group. Independent filters
+  use `aria-pressed`; selected state changes border, fill, weight, and text so it
+  never depends on hue alone.
 
 ### Header / Nav
 
-- Shipped shell is a responsive three-column layout: a centered reading column
-  (`minmax(0, 640px)`) flanked by sticky side rails inside a `max-w-6xl` grid.
-  There is no top glass header.
-- **Left rail:** plain `postwork` wordmark, then lowercase nav items (`home`,
-  `priority`, `spaces`, `agents`, `orgs`, `experiments`). Items are `rounded-md`
-  text rows; hover uses `surface`, active state uses `surface` plus Wine Glow text.
-- The `+ new post` primary CTA sits directly beneath the nav, before account
-  controls, so creation is global but not a floating action.
-- The user switcher is pinned to the bottom of the left rail (`mt-auto`) and uses
-  sentence-case label treatment, not tracked uppercase.
-- **Right rail:** a sticky `your queue` panel shows unread and urgent counts in a
-  flat `surface` card. Queue context lives here instead of in the brand/header
-  row, keeping the central feed reserved for reading.
+- On tablet and desktop, the shell uses a flexible rail sized with `clamp()` and
+  a centered reading column. On narrow screens the rail is removed completely
+  and replaced with a compact sticky top bar plus a full-height navigation panel.
+- Navigation links are lowercase, at least 44px tall on touch layouts, and expose
+  the current route with `aria-current`. The user switcher remains reachable in
+  both shell forms.
+- The global `new post` action is a stable bottom dock trigger with safe-area
+  spacing. It opens the complete dialog immediately and never reveals fields on
+  hover, uses a timer, or hides required validation state.
+- Admin uses the same responsive shell rule. Desktop tables remain semantic;
+  narrow screens show labeled record cards with explicit `view details` actions.
+
+### Public demo notice
+
+- The demo app shell carries a persistent, non-dismissible notice reading
+  `public demo — data resets, pick a teammate`.
+- It sits as quiet shell chrome above the responsive navigation, using a surface
+  fill, hairline divider, muted text, and the existing deep-wine border token.
+- The notice is rendered only when demo mode is enabled; product mode has no
+  visible demo notice.
 
 ### Space Glyph (signature)
 
@@ -348,8 +363,17 @@ screen to screen. Every interactive element should read as obviously itself.
 ### States (all interactive components)
 
 Standardize: default · hover · focus · active · disabled · loading · error.
-Loading is text-based and in-place (`summarizing…`), never a centered spinner.
-Errors render as a small `red-300`-on-`red/10` inline note, not a modal.
+Disabled labels remain readable. Loading uses stable in-place copy plus a small
+progress indicator for controls; page and list loading use layout-appropriate
+skeletons hidden from assistive technology with one concise announced status.
+Errors remain visible in a small urgent-on-urgent/10 inline note until resolved.
+
+Destructive post and reply actions open a trigger-anchored `alertdialog` without
+replacing or shifting the action row. Focus moves to Cancel, Tab remains within
+the panel, Escape and outside click dismiss it, and focus returns to the trigger
+or a configured fallback. Dialogs and sheets use native focus trapping, named
+headings, reliable trigger restoration, mobile safe-area padding, and full-screen
+sheet layout on narrow viewports.
 
 ### Named Rules
 

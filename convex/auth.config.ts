@@ -1,11 +1,18 @@
+import type { AuthConfig } from "convex/server";
+
+const clerkIssuerDomain = process.env.CLERK_JWT_ISSUER_DOMAIN;
+
+if (!clerkIssuerDomain) {
+  throw new Error(
+    "CLERK_JWT_ISSUER_DOMAIN must be set on the Convex deployment.",
+  );
+}
+
 export default {
   providers: [
     {
-      type: "customJwt",
-      issuer: "https://shoo.dev",
-      jwks: "https://shoo.dev/.well-known/jwks.json",
-      algorithm: "ES256",
-      applicationID: "origin:https://postwork.pcstyle.dev",
+      domain: clerkIssuerDomain,
+      applicationID: "convex",
     },
   ],
-};
+} satisfies AuthConfig;

@@ -11,19 +11,32 @@ export const priorityTones: Record<string, ChipTone> = {
 export function PostMetaChips({
   post,
   className = "",
+  quiet = false,
 }: {
   post: Pick<EnrichedPost, "pinned" | "priority" | "space">;
   className?: string;
+  /**
+   * Feed-card mode: skip the normal-priority chip and reveal the space chip
+   * only on hover/focus of the surrounding `group` (always visible on touch).
+   */
+  quiet?: boolean;
 }) {
   const p = priorityStyles[post.priority];
+  const revealClass = quiet
+    ? "transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+    : "";
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       {post.pinned && <Chip tone="accent">Pinned</Chip>}
-      <Chip tone={priorityTones[post.priority] ?? "muted"} dot>
-        {p.label}
-      </Chip>
-      <Chip tone="neutral">{post.space}</Chip>
+      {!quiet || post.priority !== "normal" ? (
+        <Chip tone={priorityTones[post.priority] ?? "muted"} dot>
+          {p.label}
+        </Chip>
+      ) : null}
+      <span className={revealClass}>
+        <Chip tone="neutral">{post.space}</Chip>
+      </span>
     </div>
   );
 }

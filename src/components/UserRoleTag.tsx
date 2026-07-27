@@ -10,11 +10,11 @@ export function UserRoleTag({
   role: UserRole;
   className?: string;
 }) {
-  if (role !== "admin") return null;
+  if (role !== "admin" && role !== "tester") return null;
 
   return (
     <Chip tone="accent" size="sm" className={className}>
-      Admin
+      {role === "admin" ? "Admin" : "Tester"}
     </Chip>
   );
 }
