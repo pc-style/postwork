@@ -9,6 +9,11 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "29 July 2026",
+    title: "link cards now read like discord embeds",
+    note: "generic link previews switched from a thin row with a side thumbnail to a stacked card: accent bar on the left, site name, title, up to three description lines, and a large image below, capped at a readable width.",
+  },
+  {
     date: "27 July 2026",
     title: "ask an agent stops stacking and the sidebar stretches",
     note: "the agent-tasks header keeps “ask an agent” on one line instead of wrapping word-by-word in the narrow rail, and the post-page agent sidebar can be drag-resized (persisted) with keyboard arrow support.",
