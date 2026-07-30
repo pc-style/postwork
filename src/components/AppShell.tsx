@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </aside>
 
-        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-4">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-24 md:scroll-mt-4">{children}</main>
 
         <aside aria-label="queue summary" className="hidden lg:block">
           <div className="sticky top-6 space-y-3">

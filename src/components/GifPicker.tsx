@@ -24,7 +24,16 @@ export function GifPicker({
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  usePopoverDismiss(rootRef, () => setOpen(false));
+  usePopoverDismiss(rootRef, () => {
+    setOpen(false);
+    // Restore focus to the trigger only when the dismissal would otherwise
+    // drop focus to <body> (keyboard/screen-reader case). When the user
+    // clicks a focusable element elsewhere, leave their focus alone.
+    requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body) triggerRef.current?.focus();
+    });
+  });
 
   const close = (restoreFocus = true) => {
     setOpen(false);
@@ -97,7 +106,7 @@ export function GifPicker({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") {
+                    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                       event.preventDefault();
                       void search();
                     }

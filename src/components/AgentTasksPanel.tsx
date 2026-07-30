@@ -123,7 +123,6 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
               </FormField>
               <FormField label="Task">
                 <textarea
-                  aria-label="agent task"
                   value={prompt}
                   onChange={(event) => {
                     setPrompt(event.target.value);

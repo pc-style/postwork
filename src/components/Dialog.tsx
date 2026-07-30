@@ -46,12 +46,17 @@ export function Dialog({
     const dialog = ref.current;
     dialog?.showModal();
     const focusFrame = requestAnimationFrame(() => {
+      const firstTabbable = dialog
+        ? Array.from(
+            dialog.querySelectorAll<HTMLElement>(
+              "input:not([type='hidden']):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
+            ),
+          ).find((element) => element.checkVisibility?.() ?? true)
+        : undefined;
       const target =
         initialFocusRefRef.current?.current ??
         dialog?.querySelector<HTMLElement>("[autofocus]") ??
-        dialog?.querySelector<HTMLElement>(
-          "input:not([type='hidden']), textarea, select, button, a[href]",
-        ) ??
+        firstTabbable ??
         dialog;
       target?.focus();
     });

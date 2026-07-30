@@ -53,7 +53,7 @@ export function UserSwitcher() {
               requestAnimationFrame(() => triggerRef.current?.focus());
             }
           }}
-          className="absolute top-full left-0 z-50 mt-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)] md:top-auto md:bottom-full md:mt-0 md:mb-2"
+          className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
         >
           <p id={headingId} className="px-3 py-2 text-xs font-medium text-muted">View as teammate</p>
           {users.map((user) => {
@@ -63,7 +63,7 @@ export function UserSwitcher() {
                 <button
                   ref={selected ? selectedRef : undefined}
                   type="button"
-                  aria-pressed={selected}
+                  aria-current={selected ? "true" : undefined}
                   onClick={() => {
                     setCurrentUserId(user._id);
                     setOpen(false);
