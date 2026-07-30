@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { gifProvider, type GifResult, type GifSearchProvider } from "../lib/gifProvider";
+import { usePopoverDismiss } from "../lib/usePopoverDismiss";
 import { Button } from "./Button";
 
 export function GifPicker({
@@ -16,11 +17,14 @@ export function GifPicker({
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const searchId = useId();
   const pickerId = useId();
   const titleId = useId();
 
   useEffect(() => () => controllerRef.current?.abort(), []);
+
+  usePopoverDismiss(rootRef, () => setOpen(false));
 
   const close = (restoreFocus = true) => {
     setOpen(false);
@@ -49,6 +53,7 @@ export function GifPicker({
 
   return (
     <div
+      ref={rootRef}
       className="relative"
       onKeyDown={(event) => {
         if (open && event.key === "Escape") {

@@ -64,7 +64,7 @@ function WorkspaceSection() {
       const result = await setSlug({ slug });
       setSlugDraft(result.slug);
     } catch (caught) {
-      setError(getErrorMessage(caught));
+      setError(getErrorMessage(caught, "couldn't update the workspace address. review the slug and try again."));
     } finally {
       setSaving(false);
     }
@@ -131,7 +131,7 @@ function AgentsSection() {
       const next = await setXSyncHandle({ handle: nextHandle });
       setHandle(next.handle ? `@${next.handle}` : "");
     } catch (caught) {
-      setError(getErrorMessage(caught));
+      setError(getErrorMessage(caught, "couldn't update this agent. review the handle and try again."));
     } finally {
       setSaving(false);
     }
@@ -176,10 +176,10 @@ function NotificationsSection() {
   );
 }
 
-function getErrorMessage(error: unknown) {
+function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ConvexError) {
     const data = error.data as { message?: string };
-    return data.message?.toLowerCase() ?? "couldn't update this agent. review the handle and try again.";
+    return data.message?.toLowerCase() ?? fallback;
   }
-  return "couldn't update this agent. check your connection and try again.";
+  return fallback;
 }

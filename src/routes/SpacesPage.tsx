@@ -41,7 +41,11 @@ export function SpacesPage() {
       ) : null}
 
       {spaces.length === 0 ? (
-        <EmptyState>Spaces group posts by team or area of work. Create a space to start one.</EmptyState>
+        <EmptyState>
+          {creationStatus && !creationStatus.canCreate
+            ? "You’ve reached the space limit for this workspace."
+            : "Spaces group posts by team or area of work. Create a space to start one."}
+        </EmptyState>
       ) : (
         <div className="space-y-3">
           {spaces.map((space) => (

@@ -67,6 +67,7 @@ export function UserSwitcher() {
                   onClick={() => {
                     setCurrentUserId(user._id);
                     setOpen(false);
+                    requestAnimationFrame(() => triggerRef.current?.focus());
                   }}
                   className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-2"
                 >
