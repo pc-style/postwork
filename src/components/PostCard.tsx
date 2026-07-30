@@ -34,11 +34,11 @@ export function PostCard({ post }: { post: EnrichedPost }) {
             ) : null}
           </div>
 
-          <h2 className={`break-words text-title ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
+          <h2 className={`type-heading break-words text-title ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
             {post.unread ? <span className="sr-only">Unread: </span> : null}
             {post.title}
           </h2>
-          <p className="mt-1 line-clamp-2 text-sm text-muted">{snippet}</p>
+          <p className="type-description mt-1 line-clamp-2 text-sm text-muted">{snippet}</p>
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted">
@@ -46,7 +46,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
               <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
               {post.author?.isAgent ? <AgentTag /> : null}
               <UserRoleTag role={post.author?.role} />
-              <span>{timeAgo(post.createdAt)}</span>
+              <span className="type-numeric">{timeAgo(post.createdAt)}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
@@ -57,8 +57,8 @@ export function PostCard({ post }: { post: EnrichedPost }) {
                   ))}
                 </div>
               ) : null}
-              <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-              <span className="text-accent-soft">Active {timeAgo(post.lastActivityAt)}</span>
+              <span className="type-numeric">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+              <span className="type-numeric text-accent-soft">Active {timeAgo(post.lastActivityAt)}</span>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { useAgentTasks } from "../lib/agentTasks";
 import { timeAgo } from "../lib/format";
@@ -39,17 +39,19 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(tasks.length > 0);
+  const [previousTaskCount, setPreviousTaskCount] = useState(tasks.length);
+
+  if (tasks.length !== previousTaskCount) {
+    setPreviousTaskCount(tasks.length);
+    if (tasks.length > 0) setExpanded(true);
+  }
 
   const selectedAgent = agents.find((agent) => agent._id === agentId) ?? agents[0];
   const contextText = useMemo(
     () => (post ? buildContextText({ post, replies, users }) : ""),
     [post, replies, users],
   );
-
-  useEffect(() => {
-    if (tasks.length > 0) setExpanded(true);
-  }, [tasks.length]);
 
   const send = async () => {
     if (!selectedAgent || !post || !prompt.trim() || busy) return;
@@ -121,6 +123,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
               </FormField>
               <FormField label="Task">
                 <textarea
+                  aria-label="agent task"
                   value={prompt}
                   onChange={(event) => {
                     setPrompt(event.target.value);

@@ -40,7 +40,7 @@ export function NotificationSettingsSection() {
 
       {permission === "denied" ? (
         <p className="text-xs text-muted">
-          notifications are blocked in your browser settings.
+          notifications are blocked. allow postwork notifications in your browser settings, then reload this page.
         </p>
       ) : null}
     </div>

@@ -56,7 +56,9 @@ export function RedesignPostPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(AGENT_SIDEBAR_DEFAULT);
   const [resizing, setResizing] = useState(false);
-  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const resizeRef = useRef<{ startX: number; startWidth: number; currentWidth: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     setSidebarWidth(readSidebarWidth());
@@ -66,7 +68,11 @@ export function RedesignPostPage() {
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!sidebarOpen) return;
       event.preventDefault();
-      resizeRef.current = { startX: event.clientX, startWidth: sidebarWidth };
+      resizeRef.current = {
+        startX: event.clientX,
+        startWidth: sidebarWidth,
+        currentWidth: sidebarWidth,
+      };
       setResizing(true);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
@@ -78,11 +84,13 @@ export function RedesignPostPage() {
     if (!drag) return;
     // Handle sits on the left edge; dragging left grows the sidebar.
     const next = clampSidebarWidth(drag.startWidth + (drag.startX - event.clientX));
+    drag.currentWidth = next;
     setSidebarWidth(next);
   }, []);
 
   const endResize = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!resizeRef.current) return;
+    const drag = resizeRef.current;
+    if (!drag) return;
     resizeRef.current = null;
     setResizing(false);
     try {
@@ -90,10 +98,7 @@ export function RedesignPostPage() {
     } catch {
       // already released
     }
-    setSidebarWidth((width) => {
-      window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(width));
-      return width;
-    });
+    window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(drag.currentWidth));
   }, []);
 
   useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
@@ -256,11 +261,9 @@ export function RedesignPostPage() {
             if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
             event.preventDefault();
             const delta = event.key === "ArrowLeft" ? 16 : -16;
-            setSidebarWidth((width) => {
-              const next = clampSidebarWidth(width + delta);
-              window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(next));
-              return next;
-            });
+            const next = clampSidebarWidth(sidebarWidth + delta);
+            setSidebarWidth(next);
+            window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(next));
           }}
           className={`absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none ${
             resizing ? "bg-accent/30" : "hover:bg-accent/20"

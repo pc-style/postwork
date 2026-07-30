@@ -48,7 +48,7 @@ export function SendAgentButton({
       setError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't send the agent task. Try again.",
+          : "Couldn't send the agent task. Check your connection and try again.",
       );
     } finally {
       setBusy(false);

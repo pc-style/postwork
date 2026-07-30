@@ -20,7 +20,7 @@ export function PageHeader({
         to={backTo}
         className="mb-3 inline-flex min-h-11 items-center text-sm text-muted transition-colors hover:text-fg"
       >
-        <span aria-hidden="true" className="mr-1.5">←</span>
+        <span aria-hidden="true" className="me-1.5">←</span>
         {backLabel.toLowerCase()}
       </Link>
 
@@ -28,9 +28,9 @@ export function PageHeader({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           {title ? (
             <div className="min-w-0">
-              <h1 className="text-xl font-semibold text-fg">{title}</h1>
+              <h1 className="type-heading text-xl font-semibold text-fg">{title}</h1>
               {description ? (
-                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">{description}</p>
+                <p className="type-description mt-1.5 text-sm text-muted">{description}</p>
               ) : null}
             </div>
           ) : null}

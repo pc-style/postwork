@@ -57,12 +57,12 @@ export function SpacePage() {
       <header className="mb-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-fg">{space.name}</h1>
+            <h1 className="type-heading text-xl font-semibold text-fg">{space.name}</h1>
             {space.description ? (
-              <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">{space.description}</p>
+              <p className="type-description mt-1.5 text-sm text-muted">{space.description}</p>
             ) : null}
           </div>
-          <div className="flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-right">
+          <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-end">
             <div>{space.memberCount} members</div>
             <div className="sm:mt-1">{feed.length} posts</div>
           </div>
@@ -81,7 +81,7 @@ export function SpacePage() {
       </header>
 
       {feed.length === 0 ? (
-        <EmptyState>No posts have been added to this space.</EmptyState>
+        <EmptyState>This space has no posts yet. Use the form below to create the first post.</EmptyState>
       ) : (
         <div className="space-y-3">
           {feed.map((post) => <PostCard key={post._id} post={post} />)}
@@ -89,7 +89,7 @@ export function SpacePage() {
       )}
 
       <section className="mt-6 rounded-lg border border-border bg-surface p-4" aria-labelledby="space-post-heading">
-        <h2 id="space-post-heading" className="mb-4 text-base font-semibold text-fg">New post in {space.name}</h2>
+        <h2 id="space-post-heading" className="type-heading mb-4 text-base font-semibold text-fg">New post in {space.name}</h2>
         <PostForm
           fixedSpace={{ id: space._id, label: space.name }}
           titlePlaceholder="Example: Release plan update"

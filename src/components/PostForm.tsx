@@ -79,7 +79,7 @@ export function PostForm({
   bodyPlaceholder = "Add the context, decision, or question.",
   titleHelp = "Summarize the post in one line.",
   bodyHelp = "Add the context, decision, or question.",
-  submitLabel = "post",
+  submitLabel = "create post",
   submittingLabel = "posting…",
   resetOnSubmit = false,
   extraFields,
@@ -119,7 +119,9 @@ export function PostForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [titleTouched, setTitleTouched] = useState(false);
   const [bodyTouched, setBodyTouched] = useState(false);
+  const internalTitleRef = useRef<HTMLInputElement>(null);
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const resolvedTitleRef = titleRef ?? internalTitleRef;
   const bodyRef = textareaRef ?? internalTextareaRef;
   const {
     pending,
@@ -209,7 +211,13 @@ export function PostForm({
   const submit = async () => {
     setTitleTouched(true);
     setBodyTouched(true);
-    if (!canSubmit || busy) return;
+    if (!canSubmit || busy) {
+      requestAnimationFrame(() => {
+        if (titleMissing) resolvedTitleRef.current?.focus();
+        else if (bodyMissing) bodyRef.current?.focus();
+      });
+      return;
+    }
     setBusy(true);
     setFormError(null);
     try {
@@ -228,7 +236,7 @@ export function PostForm({
       setFormError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't create the post. Check the fields and try again.",
+          : "Couldn't create the post. Check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -236,14 +244,21 @@ export function PostForm({
   };
 
   return (
-    <div className="space-y-5">
+    <form
+      className="space-y-5"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
       <ComposerShell
         title={title}
         setTitle={(value) => {
           setTitle(value);
           setFormError(null);
         }}
-        titleRef={titleRef}
+        titleRef={resolvedTitleRef}
         titleLabel="Title"
         titleHelp={titleHelp}
         titleError={titleTouched && titleMissing ? "Add a title." : undefined}
@@ -259,7 +274,7 @@ export function PostForm({
         textareaRef={bodyRef}
         bodyLabel="Post"
         bodyHelp={bodyHelp}
-        bodyError={bodyTouched && bodyMissing ? "Add the post content." : undefined}
+        bodyError={bodyTouched && bodyMissing ? "Add context, a decision, or a question." : undefined}
         placeholder={bodyPlaceholder}
         rows={bodyRows}
         autoFocus={autoFocusBody}
@@ -310,7 +325,7 @@ export function PostForm({
               <GifPicker onSelect={onGif} />
               {hasUploading ? <span className="text-xs text-accent-soft">Optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
-                <span className="ui-error">{attachmentError ?? "A media attachment failed to upload."}</span>
+                <span className="ui-error">{attachmentError ?? "Couldn't upload a media attachment. Remove it or try again."}</span>
               ) : null}
               {attachmentWarning ? <span className="text-xs text-urgent">{attachmentWarning}</span> : null}
               {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
@@ -337,11 +352,12 @@ export function PostForm({
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}
         submitting={busy}
-        disabled={busy || !canSubmit}
+        disabled={busy || hasUploading || hasAttachmentErrors}
+        submitType="submit"
         onSubmit={() => void submit()}
       />
       {formError ? <p role="alert" className="ui-error">{formError}</p> : null}
-    </div>
+    </form>
   );
 }
 

@@ -35,13 +35,13 @@ export function SpacesPage() {
       />
 
       {creationStatus && !creationStatus.canCreate ? (
-        <p className="mb-4 text-xs text-muted">
+        <p className="type-numeric mb-4 text-xs text-muted">
           You’ve created {creationStatus.createdCount} of {creationStatus.limit} available spaces.
         </p>
       ) : null}
 
       {spaces.length === 0 ? (
-        <EmptyState>No spaces are available yet.</EmptyState>
+        <EmptyState>Spaces group posts by team or area of work. Create a space to start one.</EmptyState>
       ) : (
         <div className="space-y-3">
           {spaces.map((space) => (
@@ -53,17 +53,17 @@ export function SpacesPage() {
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <h2 className="text-title font-semibold text-fg">{space.name}</h2>
+                  <h2 className="type-heading text-title font-semibold text-fg">{space.name}</h2>
                   {space.description ? (
-                    <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{space.description}</p>
+                    <p className="type-description mt-1 text-sm text-muted">{space.description}</p>
                   ) : null}
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-right">
+                <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-end">
                   <div>{space.memberCount} members</div>
                   <div className="sm:mt-1">{space.postCount} posts</div>
                 </div>
               </div>
-              <div className="mt-3 text-xs text-muted">Active {timeAgo(space.latestActivityAt)}</div>
+              <div className="type-numeric mt-3 text-xs text-muted">Active {timeAgo(space.latestActivityAt)}</div>
             </Link>
           ))}
         </div>
@@ -105,7 +105,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't create this space. Try again.",
+          : "Couldn't create the space. Check your connection and try again.",
       );
     } finally {
       setSaving(false);

@@ -16,7 +16,7 @@ export function JoinPage() {
       <div className="mx-auto max-w-3xl px-6 pt-20 pb-24 md:pt-28">
         <header className="flex items-center justify-between">
           <Link to="/" className="text-base font-semibold tracking-tight">
-            post<span className="text-accent">work</span>
+            post<span className="text-accent-soft">work</span>
           </Link>
           <Link
             to="/app"
@@ -44,7 +44,7 @@ export function JoinPage() {
               </p>
               <Link
                 to="/"
-                className="mt-10 inline-flex rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96]"
+                className="mt-10 inline-flex rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96]"
               >
                 request access
               </Link>
@@ -115,13 +115,13 @@ function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean })
             type="button"
             onClick={() => void redeem()}
             disabled={state === "redeeming"}
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96] disabled:opacity-40"
+            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96] disabled:opacity-40"
           >
             {state === "redeeming" ? "joining…" : "join postwork"}
           </button>
           {state === "error" && (
             <p className="mt-3 max-w-md text-xs leading-5 text-urgent">
-              couldn't redeem that invite. it may have just been used or revoked.
+              couldn't redeem this invite. try joining again; if it still fails, ask for a new invite.
             </p>
           )}
         </div>
@@ -129,7 +129,7 @@ function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean })
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link
             to="/app"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-soft active:scale-[0.96]"
+            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96]"
           >
             sign in to join
           </Link>

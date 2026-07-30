@@ -19,27 +19,27 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
-      <h1 className="text-xl font-semibold tracking-tight">settings</h1>
+      <h1 className="type-heading text-xl font-semibold">settings</h1>
       <div className="mt-7 grid gap-8 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-12">
-        <nav aria-label="settings sections" className="flex gap-1 overflow-x-auto md:flex-col">
+        <nav aria-label="settings sections" className="flex gap-1 overflow-x-auto pb-2 pe-6 md:flex-col md:overflow-visible md:p-0">
           {SECTIONS.map((item) => (
             <button
               key={item}
               type="button"
               aria-current={section === item ? "page" : undefined}
               onClick={() => setSection(item)}
-              className={`min-h-10 shrink-0 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-surface hover:text-fg ${section === item ? "bg-surface text-accent-soft" : "text-muted"}`}
+              className={`min-h-10 shrink-0 rounded-md px-3 py-2 text-start text-sm transition-colors hover:bg-surface hover:text-fg ${section === item ? "bg-surface text-accent-soft" : "text-muted"}`}
             >
               {item}
             </button>
           ))}
         </nav>
-        <main className="min-w-0 border-t border-border pt-6 md:border-l md:border-t-0 md:pl-10 md:pt-0">
+        <div className="min-w-0 md:ps-10">
           {section === "profile" ? <ProfileSection /> : null}
           {section === "workspace" ? <WorkspaceSection /> : null}
           {section === "agents" ? <AgentsSection /> : null}
           {section === "notifications" ? <NotificationsSection /> : null}
-        </main>
+        </div>
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ function WorkspaceSection() {
             <form className="mt-4 flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void save(); }}>
               <label htmlFor="workspace-slug" className="sr-only">workspace slug</label>
               <input id="workspace-slug" value={slug} onChange={(event) => { setSlugDraft(event.target.value.toLowerCase()); setError(null); }} className="ui-field font-mono" placeholder="your-team" />
-              <Button type="submit" size="sm" loading={saving} loadingLabel="saving…">save</Button>
+              <Button type="submit" size="sm" loading={saving} loadingLabel="saving…">save workspace address</Button>
             </form>
           ) : null}
           {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
@@ -94,8 +94,8 @@ function WorkspaceSection() {
 function SectionHeader({ title, description }: { title: string; description?: string }) {
   return (
     <header className="mb-6">
-      <h2 className="text-base font-semibold">{title}</h2>
-      {description ? <p className="mt-2 text-sm text-muted">{description}</p> : null}
+      <h2 className="type-heading text-base font-semibold">{title}</h2>
+      {description ? <p className="type-description mt-2 text-sm text-muted">{description}</p> : null}
     </header>
   );
 }
@@ -147,15 +147,15 @@ function AgentsSection() {
           <h3 className="text-sm font-medium">x cross-posting</h3>
           {status === undefined ? <p className="mt-3 text-sm text-muted">loading agent…</p> : (
             <>
-              <p className="mt-2 text-xs text-muted">
+              <p className="type-description mt-2 text-xs text-muted">
                 {status.configured ? `current handle: @${status.handle}` : "not configured"}
                 {status.agentName ? ` · posts as ${status.agentName}` : ""}
               </p>
               <form className="mt-4 flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void save(handle); }}>
                 <label htmlFor="x-sync-handle" className="sr-only">x handle</label>
                 <input id="x-sync-handle" value={handle} onChange={(event) => { setHandle(event.target.value); setError(null); }} placeholder="@handle" className="ui-field" />
-                <Button type="submit" size="sm" loading={saving} loadingLabel="saving…">save</Button>
-                {status.configured ? <Button variant="quiet" size="sm" disabled={saving} onClick={() => void save(null)}>disconnect</Button> : null}
+                <Button type="submit" size="sm" loading={saving} loadingLabel="saving…">save x handle</Button>
+                {status.configured ? <Button variant="quiet" size="sm" disabled={saving} onClick={() => void save(null)}>disconnect x</Button> : null}
               </form>
               {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
             </>
@@ -179,7 +179,7 @@ function NotificationsSection() {
 function getErrorMessage(error: unknown) {
   if (error instanceof ConvexError) {
     const data = error.data as { message?: string };
-    return data.message?.toLowerCase() ?? "we couldn't update this agent.";
+    return data.message?.toLowerCase() ?? "couldn't update this agent. review the handle and try again.";
   }
-  return "we couldn't update this agent. try again.";
+  return "couldn't update this agent. check your connection and try again.";
 }

@@ -44,11 +44,11 @@ export function WallPage() {
             <Avatar user={owner} size={48} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="break-words text-xl font-semibold text-fg">{owner.name}</h1>
+                <h1 className="type-heading break-words text-xl font-semibold text-fg">{owner.name}</h1>
                 {owner.isAgent ? <AgentTag /> : null}
                 <UserRoleTag role={owner.role} />
               </div>
-              <p className="mt-1 break-words text-sm text-muted">{owner.title}</p>
+              <p className="type-description mt-1 break-words text-sm text-muted">{owner.title}</p>
             </div>
           </div>
           <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
@@ -60,7 +60,7 @@ export function WallPage() {
       {posts === undefined ? (
         <LoadingState label="Loading wall posts" preset="feed" count={3} />
       ) : posts.length === 0 ? (
-        <EmptyState>No posts have been added to this wall.</EmptyState>
+        <EmptyState>This wall keeps notes attached to the profile. Use “post on this wall” to add one.</EmptyState>
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (

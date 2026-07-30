@@ -6,7 +6,7 @@ import { timeAgo } from "../lib/format";
 import { Button } from "./Button";
 
 function teaserFrom(summary?: string) {
-  if (!summary) return "Generate a catch-up on key decisions and open questions.";
+  if (!summary) return "Generate a summary of key decisions and open questions.";
   const line = summary
     .split("\n")
     .map((part) => part.replace(/^[#>\-*\s]+/, "").replace(/\*\*/g, "").trim())
@@ -89,7 +89,7 @@ export function AgentSummary({
         <div className="ui-reveal px-4 pb-4">
           {summary ? <Markdown text={summary} /> : (
             <p className="text-sm text-muted">
-              No summary yet. Generate one to catch up on key decisions and open questions.
+              Generate a summary of key decisions and open questions.
             </p>
           )}
 
@@ -124,7 +124,7 @@ export function AgentSummary({
               loadingLabel="summarizing…"
               title={local ? "Save the post before generating a summary" : undefined}
             >
-              {local ? "save first" : summary ? "regenerate" : "generate"}
+              {local ? "save post first" : summary ? "regenerate summary" : "generate summary"}
             </Button>
           </div>
         </div>

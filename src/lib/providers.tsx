@@ -44,7 +44,7 @@ export const clerkAppearance = {
     formFieldInput:
       "border-border bg-bg text-fg shadow-none placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent",
     formButtonPrimary:
-      "bg-accent text-fg shadow-none transition-colors hover:bg-accent-soft focus:ring-2 focus:ring-accent-soft",
+      "bg-accent text-fg shadow-none transition-colors hover:bg-accent-hover focus:ring-2 focus:ring-accent-soft",
     footer: "hidden",
     footerAction: "hidden",
     identityPreviewText: "text-fg",
