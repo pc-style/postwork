@@ -9,6 +9,21 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "30 July 2026",
+    title: "your reply no longer hides from you",
+    note: "replying inside a collapsed subthread now expands it immediately, so your fresh reply shows up instead of disappearing behind a “show 1 reply” button.",
+  },
+  {
+    date: "30 July 2026",
+    title: "unread counts are now doors, not decorations",
+    note: "the unread and urgent counters in the mobile header and sidebar queue are clickable: unread opens the feed filtered to unread posts, urgent opens the priority view.",
+  },
+  {
+    date: "30 July 2026",
+    title: "sign-in remembers where you were going",
+    note: "opening a deep link like /app/settings while signed out now returns you to that exact page after signing in, instead of dropping you on home. the sign-in page also got a mobile remodel: the sign-in card comes first, the invite/request-access block moved below it, and the double border inside the card is gone.",
+  },
+  {
     date: "29 July 2026",
     title: "link cards now read like discord embeds",
     note: "generic link previews switched from a thin row with a side thumbnail to a stacked card: accent bar on the left, site name, title, up to three description lines, and a large image below, capped at a readable width.",

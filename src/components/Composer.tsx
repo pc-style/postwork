@@ -27,13 +27,17 @@ export function Composer({
   autoFocus = false,
   compact = false,
   onDone,
+  onSubmitted,
 }: {
   postId: Id<"posts">;
   parentId?: Id<"replies">;
   placeholder?: string;
   autoFocus?: boolean;
   compact?: boolean;
+  /** Called on submit success AND when the user cancels. */
   onDone?: () => void;
+  /** Called only after a reply is successfully created. */
+  onSubmitted?: () => void;
 }) {
   const { currentUser, currentUserId, users } = useSession();
   const store = useStore();
@@ -103,6 +107,7 @@ export function Composer({
       });
       setBody("");
       clearAttachments();
+      onSubmitted?.();
       onDone?.();
 
       for (const handle of parseAgentMentions(text)) {

@@ -286,6 +286,9 @@ function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
 }
 
 function SignInScreen() {
+  // Keep deep links working: signing in (or up) from a protected URL like
+  // /app/settings must land back on that URL, not Clerk's default "/".
+  const redirectTarget = `${window.location.pathname}${window.location.search}`;
   return (
     <AuthFrame
       title="Sign in to Postwork"
@@ -293,7 +296,11 @@ function SignInScreen() {
       sidebar={<AccessOnboarding />}
     >
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <SignIn appearance={clerkAppearance} />
+        <SignIn
+          appearance={clerkAppearance}
+          forceRedirectUrl={redirectTarget}
+          signUpForceRedirectUrl={redirectTarget}
+        />
         <p className="border-t border-border px-4 py-3 text-center text-xs text-muted">new here? sign up above, then choose <span className="text-fg">create your own organization</span>.</p>
       </div>
     </AuthFrame>
@@ -311,22 +318,26 @@ function AuthFrame({
   sidebar?: ReactNode;
   children: ReactNode;
 }) {
+  // Mobile order: title → main card → secondary actions. On md+ the left
+  // column holds title + sidebar and the card spans both rows on the right.
   return (
     <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-4 py-8 sm:px-6 sm:py-10">
-      <div className="grid w-full max-w-4xl gap-6 rounded-lg border border-border bg-surface p-5 sm:p-7 md:grid-cols-[0.85fr_1.15fr] md:gap-8 md:p-8">
-        <div className="flex min-w-0 flex-col">
+      <div className="grid w-full max-w-4xl gap-6 rounded-lg border border-border bg-surface p-5 sm:p-7 md:grid-cols-[0.85fr_1.15fr] md:grid-rows-[auto_1fr] md:gap-x-8 md:p-8">
+        <div className="flex min-w-0 flex-col md:col-start-1 md:row-start-1">
           <p className="text-label font-medium lowercase text-accent-soft">postwork</p>
           <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] text-fg sm:text-4xl">
             {title}
           </h1>
           <p className="mt-4 max-w-sm text-sm leading-6 text-muted">{description}</p>
+        </div>
+        <div className="min-w-0 md:col-start-2 md:row-span-2 md:row-start-1">{children}</div>
+        <div className="flex min-w-0 flex-col md:col-start-1 md:row-start-2">
           {sidebar}
           <Link to="/" className="mt-8 inline-flex min-h-11 items-center text-xs text-accent-soft hover:text-fg">
             <span aria-hidden="true" className="mr-1.5">←</span>
             back to the landing page
           </Link>
         </div>
-        <div className="min-w-0">{children}</div>
       </div>
     </div>
   );

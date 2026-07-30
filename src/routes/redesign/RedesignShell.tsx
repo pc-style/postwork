@@ -81,8 +81,22 @@ function MobileHeader({ onOpen }: { onOpen: () => void }) {
         post<span className="text-accent-soft">work</span>
       </Link>
       <div className="ml-auto flex items-center gap-2 text-xs text-muted" aria-label="Your queue">
-        <span><strong className="text-fg">{counts?.unread ?? 0}</strong> unread</span>
-        {counts?.urgent ? <span className="text-urgent">{counts.urgent} urgent</span> : null}
+        <Link
+          to="/app"
+          search={{ unread: true }}
+          className="flex min-h-11 items-center gap-1 transition-colors hover:text-fg"
+        >
+          <strong className="text-fg">{counts?.unread ?? 0}</strong> unread
+        </Link>
+        {counts?.urgent ? (
+          <Link
+            to="/app"
+            search={{ priority: "urgent" }}
+            className="flex min-h-11 items-center text-urgent transition-colors hover:text-fg"
+          >
+            {counts.urgent} urgent
+          </Link>
+        ) : null}
       </div>
       <Button variant="icon" aria-label="Open navigation" onClick={onOpen}>
         <MenuIcon />
@@ -111,12 +125,28 @@ function Sidebar() {
   );
 }
 
-function Queue() {
+function Queue({ onSelect }: { onSelect?: () => void }) {
   const counts = useCounts();
   return (
     <div className="mt-4 flex flex-wrap gap-4 border-y border-border px-5 py-3 text-xs text-muted" aria-label="Your queue">
-      <span><strong className="text-fg">{counts?.unread ?? 0}</strong> unread</span>
-      {counts?.urgent ? <span className="font-medium text-urgent">{counts.urgent} urgent</span> : null}
+      <Link
+        to="/app"
+        search={{ unread: true }}
+        onClick={onSelect}
+        className="flex items-center gap-1 transition-colors hover:text-fg"
+      >
+        <strong className="text-fg">{counts?.unread ?? 0}</strong> unread
+      </Link>
+      {counts?.urgent ? (
+        <Link
+          to="/app"
+          search={{ priority: "urgent" }}
+          onClick={onSelect}
+          className="flex items-center font-medium text-urgent transition-colors hover:text-fg"
+        >
+          {counts.urgent} urgent
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -166,7 +196,7 @@ function MobileNavigation({ onSelect }: { onSelect: () => void }) {
     <div className="flex min-h-full flex-col">
       <NavLinks onSelect={onSelect} />
       <div className="mt-6 border-t border-border pt-5">
-        <Queue />
+        <Queue onSelect={onSelect} />
       </div>
       <div className="mt-auto pt-6">
         {demoPolicy.userSwitcher && <UserSwitcher />}

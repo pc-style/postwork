@@ -29,9 +29,12 @@ export const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full",
-    cardBox: "w-full shadow-none",
-    card: "w-full border border-border bg-surface p-0 shadow-none",
+    cardBox: "w-full border-0 shadow-none",
+    // The card sits inside our own bordered wrapper (see SignInScreen), so it
+    // carries no border of its own — one border, even padding on all sides.
+    card: "w-full border-0 bg-transparent p-5 shadow-none sm:p-6",
     header: "hidden",
+    badge: "bg-surface-2 text-muted shadow-none",
     socialButtonsBlockButton:
       "border-border bg-bg text-fg shadow-none transition-colors hover:bg-surface-2",
     socialButtonsBlockButtonText: "text-fg",

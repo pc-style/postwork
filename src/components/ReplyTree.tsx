@@ -246,6 +246,9 @@ function ReplyNode({
               autoFocus
               placeholder={`Reply to ${node.author?.name ?? "this reply"}.`}
               onDone={() => setReplying(false)}
+              // Your own reply must show up immediately, even when this
+              // subtree was collapsed (read replies default to hidden).
+              onSubmitted={() => setChildrenExpanded(true)}
             />
           </div>
         ) : null}
