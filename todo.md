@@ -2,6 +2,15 @@
 
 Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026).
 
+## dx / infra (Pronsh, PR #25 review, 30 July)
+
+- [ ] evaluate react compiler (vite plugin + eslint plugin) in one pass —
+      would make most manual `useMemo`/`useCallback`/`memo` redundant.
+      don't strip memoization piecemeal before it lands.
+- [ ] consider `useActionState` for button-triggered async mutations
+      (agent tasks panel, settings saves) if we wrap them in form actions;
+      today the manual busy/error pair is the repo convention.
+
 ## retention hooks (Pronsh: "i need something to hook me in")
 
 1. **Digest email as teaser** — daily "3 posts moved, 1 needs you" via existing
