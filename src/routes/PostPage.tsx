@@ -64,7 +64,7 @@ export function PostPage() {
       <article className="rounded-lg border border-border bg-surface p-5">
         <PostMetaChips post={post} className="mb-3" />
 
-        <h1 className="text-xl font-semibold text-fg">{post.title}</h1>
+        <h1 className="type-heading text-xl font-semibold text-fg">{post.title}</h1>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted">
           <Avatar user={post.author} size={28} />
@@ -72,7 +72,7 @@ export function PostPage() {
           {post.author?.isAgent && <AgentTag />}
           <UserRoleTag role={post.author?.role} />
           <span>{post.author?.title}</span>
-          <span>{timeAgo(post.createdAt)}</span>
+          <span className="type-numeric">{timeAgo(post.createdAt)}</span>
         </div>
 
         <div className="mt-4">
@@ -97,7 +97,7 @@ export function PostPage() {
       )}
 
       <div className="mt-6">
-        <h2 className="mb-1 text-sm font-semibold text-muted">
+        <h2 className="type-numeric mb-1 text-sm font-semibold text-muted">
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
         {slots.replies ? (

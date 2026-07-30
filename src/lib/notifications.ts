@@ -45,19 +45,6 @@ export function useNotificationPermission(): {
   };
 }
 
-export function useBrowserNotificationsEnabled(): [
-  boolean,
-  (enabled: boolean) => void,
-] {
-  // Demo uses a plain ConvexProvider, which intentionally has no auth context.
-  // Product mode is fixed for the lifetime of the build, so this dispatch does
-  // not change hook order between renders.
-  if (!demoPolicy.productAuth) {
-    return useLocalBrowserNotificationsEnabled();
-  }
-  return useProductBrowserNotificationsEnabled();
-}
-
 function useProductBrowserNotificationsEnabled(): [
   boolean,
   (enabled: boolean) => void,
@@ -180,6 +167,16 @@ function useLocalBrowserNotificationsEnabled(): [
 
   return [enabled, setEnabled];
 }
+
+// Demo uses a plain ConvexProvider, which intentionally has no auth context.
+// Product mode is fixed for the lifetime of the build, so select the hook once
+// at module initialization rather than conditionally dispatching during render.
+export const useBrowserNotificationsEnabled: () => [
+  boolean,
+  (enabled: boolean) => void,
+] = demoPolicy.productAuth
+  ? useProductBrowserNotificationsEnabled
+  : useLocalBrowserNotificationsEnabled;
 
 export function useUnreadNotifier(unread: number | undefined): void {
   const previousUnread = useRef<number | undefined>(undefined);

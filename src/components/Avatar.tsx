@@ -18,7 +18,7 @@ export function Avatar({
   if (!user) {
     return (
       <div
-        className="rounded-full bg-surface-2"
+        className="ui-media-outline rounded-full bg-surface-2"
         style={{ width: size, height: size }}
       />
     );
@@ -28,7 +28,7 @@ export function Avatar({
   if (avatarUrl && avatarUrl !== failedUrl) {
     return (
       <div
-        className={`shrink-0 overflow-hidden rounded-full bg-surface-2 ${
+        className={`ui-media-outline shrink-0 overflow-hidden rounded-full bg-surface-2 ${
           ring ? "ring-2 ring-bg" : ""
         }`}
         style={{ width: size, height: size }}
@@ -47,7 +47,7 @@ export function Avatar({
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-fg ${
+      className={`ui-media-outline flex shrink-0 items-center justify-center rounded-full font-semibold text-fg ${
         ring ? "ring-2 ring-bg" : ""
       }`}
       style={{

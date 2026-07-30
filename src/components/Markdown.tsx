@@ -52,5 +52,5 @@ export function Markdown({ text }: { text: string }) {
   });
   flush("ul-end");
 
-  return <div className="space-y-1.5 text-sm">{blocks}</div>;
+  return <div className="type-description space-y-1.5 text-sm">{blocks}</div>;
 }

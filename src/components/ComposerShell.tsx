@@ -41,6 +41,7 @@ export function ComposerShell({
   submittingLabel,
   submitting,
   disabled,
+  submitType = "button",
   onSubmit,
 }: {
   title?: string;
@@ -78,6 +79,7 @@ export function ComposerShell({
   submittingLabel: string;
   submitting: boolean;
   disabled: boolean;
+  submitType?: "button" | "submit";
   onSubmit: () => void;
 }) {
   useEffect(() => {
@@ -143,8 +145,8 @@ export function ComposerShell({
         <div className="ml-auto flex flex-wrap justify-end gap-2">
           {actions}
           <Button
-            type="button"
-            onClick={onSubmit}
+            type={submitType}
+            onClick={submitType === "button" ? onSubmit : undefined}
             disabled={disabled}
             loading={submitting}
             loadingLabel={submittingLabel}

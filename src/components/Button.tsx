@@ -9,7 +9,7 @@ type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "border border-accent bg-accent font-medium text-fg hover:border-accent-soft hover:bg-accent-soft active:border-accent active:bg-accent disabled:border-accent/45 disabled:bg-accent/45 disabled:text-fg/80",
+    "border border-accent bg-accent font-medium text-fg hover:border-accent-hover hover:bg-accent-hover active:border-accent active:bg-accent disabled:border-accent/45 disabled:bg-accent/45 disabled:text-fg/80",
   secondary:
     "border border-border bg-surface font-medium text-fg hover:border-accent/50 hover:bg-surface-2 active:bg-bg disabled:border-border disabled:bg-surface disabled:text-muted",
   quiet:
@@ -55,7 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         type="button"
-        className={`relative inline-flex items-center justify-center gap-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${radiusClass} ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
+        className={`ui-button relative inline-flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${radiusClass} ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}

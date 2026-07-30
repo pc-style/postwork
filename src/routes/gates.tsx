@@ -44,7 +44,7 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
       >
         <div className="rounded-lg border border-border bg-surface-2 p-5">
           <p className="text-sm leading-6 text-muted">continue to your workspace at <span className="font-mono text-fg">{me.org.slug}.postwork.pcstyle.dev</span>.</p>
-          <a href={canonicalUrl} className="mt-4 inline-flex bg-accent px-4 py-2 text-sm font-medium text-fg hover:bg-accent-soft">open {me.org.name}</a>
+          <a href={canonicalUrl} className="mt-4 inline-flex bg-accent px-4 py-2 text-sm font-medium text-fg hover:bg-accent-hover">open {me.org.name}</a>
         </div>
       </AuthFrame>
     );

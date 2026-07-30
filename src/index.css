@@ -9,7 +9,9 @@
   --color-muted: #a19d98;
   --color-faint: #5c5956;
   --color-accent: #8c1862;
-  --color-accent-soft: #c64f98;
+  --color-accent-soft: #ca559d;
+  --color-accent-hover: #af367e;
+  --color-avatar-fallback: #3a2526;
 
   --color-urgent: #ff7b7b;
   --color-high: #e1b452;
@@ -30,9 +32,14 @@
 
   --text-label: 0.6875rem;
   --text-label--line-height: 1.2;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
   --text-title: 0.9375rem;
   --text-title--line-height: 1.3;
+  --text-display: 1.25rem;
+  --text-display--line-height: 1.2;
   --text-code: 0.8125rem;
+  --text-code--line-height: 1.6;
 }
 
 :root {
@@ -57,6 +64,7 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.011em;
   overflow-x: clip;
 }
@@ -102,6 +110,7 @@ input,
 textarea,
 select {
   accent-color: var(--color-accent-soft);
+  caret-color: var(--color-accent-soft);
 }
 
 @media (max-width: 639px) {
@@ -123,7 +132,31 @@ samp {
 .prose-post {
   white-space: pre-wrap;
   line-height: 1.65;
+  max-width: 70ch;
   overflow-wrap: anywhere;
+}
+
+.prose-post a {
+  text-decoration-thickness: from-font;
+  text-underline-position: from-font;
+  text-decoration-skip-ink: auto;
+}
+
+/* wrapping only: sizes, tracking and leading stay with the text-* tokens
+   and explicit utilities so this class never fights the type scale */
+.type-heading {
+  text-wrap: balance;
+}
+
+.type-description {
+  max-width: 70ch;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.type-numeric {
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-ink {
@@ -163,6 +196,35 @@ samp {
   color: var(--color-muted);
 }
 
+.ui-button {
+  transition-property: color, background-color, border-color, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.ui-button:active:not(:disabled) {
+  scale: 0.96;
+}
+
+.ui-media-outline {
+  outline: 1px solid rgb(255 255 255 / 0.1);
+  outline-offset: -1px;
+}
+
+.ui-interactive-media {
+  transition-property: outline-color, background-color, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.ui-interactive-media:hover {
+  outline-color: color-mix(in srgb, var(--color-accent-soft) 40%, transparent);
+}
+
+.ui-interactive-media:active {
+  scale: 0.96;
+}
+
 .ui-error {
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-urgent) 10%, transparent);
@@ -197,8 +259,10 @@ samp {
 }
 
 .ui-dialog {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-fg) 6%, transparent),
-    0 24px 64px rgb(0 0 0 / 0.58);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-fg) 8%, transparent),
+    0 8px 24px -8px rgb(0 0 0 / 0.52),
+    0 24px 56px -24px rgb(0 0 0 / 0.68);
 }
 
 dialog[open] {

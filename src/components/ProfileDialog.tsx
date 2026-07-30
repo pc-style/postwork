@@ -215,7 +215,9 @@ function ProfileDialogBody({
         <div
           className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 font-semibold text-fg"
           style={{
-            backgroundColor: effectivePreview ? undefined : user?.avatarColor ?? "#3a2526",
+            backgroundColor: effectivePreview
+              ? undefined
+              : user?.avatarColor ?? "var(--color-avatar-fallback)",
             fontSize: 72 * 0.38,
           }}
           aria-label="Profile image preview"

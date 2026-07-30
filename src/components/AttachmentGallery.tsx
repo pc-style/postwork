@@ -44,7 +44,7 @@ export function AttachmentMedia({
         preload="metadata"
         aria-label={attachment.filename}
         onError={() => setFailed(true)}
-        className="max-h-80 max-w-full rounded-md border border-border bg-black"
+        className="ui-media-outline max-h-80 max-w-full rounded-md bg-black"
       >
         <source src={attachment.url} type={attachment.contentType} />
         <a href={attachment.url}>open {attachment.filename}</a>
@@ -61,7 +61,7 @@ export function AttachmentMedia({
       href={attachment.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block max-w-full overflow-hidden rounded-md border border-border transition hover:border-accent/40"
+      className="ui-interactive-media ui-media-outline block max-w-full overflow-hidden rounded-md"
     >
       <img
         src={attachment.url}
@@ -118,7 +118,7 @@ function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
       type="button"
       onClick={() => void download()}
       disabled={downloading}
-      className="flex max-w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-left text-sm transition hover:border-accent/40 disabled:cursor-progress disabled:opacity-70"
+      className="ui-button flex max-w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-left text-sm hover:border-accent/40 hover:bg-surface-2 disabled:cursor-progress disabled:opacity-70"
     >
       <svg viewBox="0 0 24 24" fill="none" className="size-5 shrink-0 text-muted" aria-hidden="true">
         <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

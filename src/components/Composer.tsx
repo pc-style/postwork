@@ -126,7 +126,7 @@ export function Composer({
       setError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't add the reply. Try again.",
+          : "Couldn't add the reply. Check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -201,7 +201,7 @@ export function Composer({
               </Button>
             ) : undefined
           }
-          submitLabel="reply"
+          submitLabel="add reply"
           submittingLabel="sending…"
           submitting={busy}
           disabled={busy || !body.trim() || hasUploading || hasAttachmentErrors}

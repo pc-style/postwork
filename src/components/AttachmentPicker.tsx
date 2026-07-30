@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAttachmentUpload } from "../lib/attachments";
 import {
   getMediaKind,
@@ -37,6 +37,20 @@ export function useAttachmentPicker() {
   const [limitError, setLimitError] = useState<string | null>(null);
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null);
   const counter = useRef(0);
+  const pendingRef = useRef(pending);
+
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+
+  useEffect(
+    () => () => {
+      for (const item of pendingRef.current) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+    },
+    [],
+  );
 
   const addFiles = useCallback(
     async (files: FileList | File[]) => {

@@ -100,8 +100,8 @@ function ReplyNode({
     depth === 0
       ? ""
       : depth < 4
-        ? "ml-2 border-l border-border pl-2 sm:ml-4 sm:pl-4"
-        : "border-l border-border pl-2 sm:pl-4";
+        ? "ms-2 border-s border-border ps-2 sm:ms-4 sm:ps-4"
+        : "border-s border-border ps-2 sm:ps-4";
 
   useEffect(() => {
     if (subtreeHasUnread && !previousSubtreeHasUnread.current) {
@@ -125,7 +125,7 @@ function ReplyNode({
               </span>
               {node.author?.isAgent ? <AgentTag /> : null}
               <UserRoleTag role={node.author?.role} />
-              <span className="text-label text-muted">{timeAgo(node.createdAt)}</span>
+              <span className="type-numeric text-label text-muted">{timeAgo(node.createdAt)}</span>
               {node.editedAt ? <span className="text-label text-muted">edited</span> : null}
             </div>
 
@@ -183,6 +183,7 @@ function ReplyNode({
                   size="sm"
                   className="min-h-11 text-xs sm:min-h-9"
                   onClick={() => setReplying((value) => !value)}
+                  aria-controls={replying ? `reply-composer-${node._id}` : undefined}
                   aria-expanded={replying}
                 >
                   {replying ? "cancel" : "reply"}
@@ -238,7 +239,7 @@ function ReplyNode({
         </div>
 
         {replying ? (
-          <div className="mt-2 pl-8 sm:pl-10">
+          <div id={`reply-composer-${node._id}`} className="mt-2 ps-8 sm:ps-10">
             <Composer
               postId={postId}
               parentId={node._id}
@@ -294,11 +295,11 @@ export function ReplyTree({
   }
 
   return (
-    <div
+    <section
       ref={focusFallbackRef}
       tabIndex={-1}
       aria-label="Replies"
-      className="divide-y divide-border/60 focus:outline-none"
+      className="space-y-2 focus:outline-none"
     >
       {tree.map((node) => (
         <ReplyNode
@@ -310,6 +311,6 @@ export function ReplyTree({
           fallbackFocusRef={focusFallbackRef}
         />
       ))}
-    </div>
+    </section>
   );
 }

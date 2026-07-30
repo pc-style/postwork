@@ -27,28 +27,51 @@ export function Dialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const initialFocusRefRef = useRef(initialFocusRef);
+  const returnFocusRefRef = useRef(returnFocusRef);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
+    initialFocusRefRef.current = initialFocusRef;
+    returnFocusRefRef.current = returnFocusRef;
+  }, [initialFocusRef, returnFocusRef]);
+
+  useEffect(() => {
     triggerRef.current ??=
-      returnFocusRef?.current ??
+      returnFocusRefRef.current?.current ??
       (document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null);
     const dialog = ref.current;
     dialog?.showModal();
-    requestAnimationFrame(() => initialFocusRef?.current?.focus());
+    const focusFrame = requestAnimationFrame(() => {
+      const firstTabbable = dialog
+        ? Array.from(
+            dialog.querySelectorAll<HTMLElement>(
+              "input:not([type='hidden']):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
+            ),
+          ).find((element) => element.checkVisibility?.() ?? true)
+        : undefined;
+      const target =
+        initialFocusRefRef.current?.current ??
+        dialog?.querySelector<HTMLElement>("[autofocus]") ??
+        firstTabbable ??
+        dialog;
+      target?.focus();
+    });
 
     return () => {
-      const target = returnFocusRef?.current ?? triggerRef.current;
+      cancelAnimationFrame(focusFrame);
+      const target = returnFocusRefRef.current?.current ?? triggerRef.current;
       window.setTimeout(() => target?.isConnected && target.focus(), 0);
     };
-  }, [initialFocusRef, returnFocusRef]);
+  }, []);
 
   return (
     <dialog
       ref={ref}
+      tabIndex={-1}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onClose={onClose}

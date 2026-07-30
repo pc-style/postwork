@@ -22,7 +22,7 @@ function renderLinks(text: string, keyPrefix: string): ReactNode[] {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-accent-soft underline decoration-accent/40 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
+        className="text-accent-soft underline decoration-accent/40 underline-offset-2 transition-colors hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
       >
         {candidate}
       </a>,

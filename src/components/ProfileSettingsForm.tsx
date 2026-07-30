@@ -78,7 +78,7 @@ export function ProfileSettingsForm() {
       setAvatarAction({ type: "upload", storageId: body.storageId });
       setAvatarDraft("upload");
     } catch {
-      setError("we couldn't upload that image. choose another image and try again.");
+      setError("couldn't upload that image. choose another image and try again.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -102,7 +102,7 @@ export function ProfileSettingsForm() {
       setAvatarDraft("unchanged");
       setSaved(true);
     } catch (caught) {
-      setError(errorMessage(caught, "we couldn't save your profile. review the fields and try again."));
+      setError(errorMessage(caught, "couldn't save your profile. review the fields and try again."));
     } finally {
       setIsSaving(false);
     }
@@ -120,7 +120,7 @@ export function ProfileSettingsForm() {
           <input ref={fileInputRef} type="file" accept="image/*" aria-label="choose a profile image" className="hidden" onChange={(event) => void upload(event.target.files?.[0])} />
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} loading={isUploading} loadingLabel="uploading…">upload image</Button>
-            <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "remove" }); setAvatarDraft("remove"); }}>remove</Button>
+            <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "remove" }); setAvatarDraft("remove"); }}>remove image</Button>
             {user.providerAvatarUrl && preview !== user.providerAvatarUrl ? (
               <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "useProvider" }); setAvatarDraft("provider"); }}>use sign-in photo</Button>
             ) : null}
