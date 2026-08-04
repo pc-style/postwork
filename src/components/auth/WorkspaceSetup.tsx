@@ -18,6 +18,21 @@ const REQUEST_STORAGE_KEY = "postwork.accessRequestEmail";
 
 type Choice = "invite" | "request" | "create";
 
+// The saved request is scoped to the Clerk user who sent it, so signing out
+// and back in with a different account never shows someone else's request.
+function readStoredRequest(userId: string | undefined): string | null {
+  const raw = window.localStorage.getItem(REQUEST_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { email?: string; userId?: string };
+    if (parsed.email && userId && parsed.userId === userId) return parsed.email;
+  } catch {
+    // Legacy plain-email values (no user scope) fall through and are cleared.
+  }
+  window.localStorage.removeItem(REQUEST_STORAGE_KEY);
+  return null;
+}
+
 export function inviteCodeFromInput(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -85,20 +100,21 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
     };
   }, [claimTargetedInvite]);
 
-  // Restore context saved before sign-in: an invite code from a /join link
-  // jumps straight to the prefilled invite form; a previously sent access
-  // request shows its waiting state instead of an empty form.
+  // Restore context saved before sign-in: a pending access request wins over
+  // an older saved invite code (sending a request clears the invite key, so a
+  // present request is always the newer decision); otherwise an invite code
+  // from a /join link jumps straight to the prefilled invite form.
   useEffect(() => {
+    const storedRequest = readStoredRequest(user?.id);
     const storedInvite = window.localStorage.getItem(INVITE_STORAGE_KEY) ?? "";
-    const storedRequest = window.localStorage.getItem(REQUEST_STORAGE_KEY);
-    if (storedInvite) {
-      setInvite(storedInvite);
-      setChoice("invite");
-    } else if (storedRequest) {
+    if (storedRequest) {
       setRequestedEmail(storedRequest);
       setChoice("request");
+    } else if (storedInvite) {
+      setInvite(storedInvite);
+      setChoice("invite");
     }
-  }, []);
+  }, [user?.id]);
 
   const normalizedInvite = inviteCodeFromInput(invite);
 
@@ -128,7 +144,14 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
     setRequestError(undefined);
     try {
       await requestAccess({ email });
-      window.localStorage.setItem(REQUEST_STORAGE_KEY, email);
+      window.localStorage.setItem(
+        REQUEST_STORAGE_KEY,
+        JSON.stringify({ email, userId: user?.id }),
+      );
+      // Newest decision wins: a fresh access request replaces any invite code
+      // saved earlier from a /join link, so a reload shows the request state
+      // instead of resurrecting the stale invite.
+      window.localStorage.removeItem(INVITE_STORAGE_KEY);
       setRequestedEmail(email);
       setRequestState("idle");
     } catch (error) {
@@ -277,6 +300,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
                   window.localStorage.removeItem(REQUEST_STORAGE_KEY);
                   setRequestedEmail(null);
                 }}
+                onEnterInvite={() => setChoice("invite")}
               />
             ) : null}
             {choice === "create" ? (
@@ -425,6 +449,7 @@ function RequestPanel({
   error,
   onSubmit,
   onReset,
+  onEnterInvite,
 }: {
   requestedEmail: string | null;
   email: string;
@@ -435,17 +460,25 @@ function RequestPanel({
   error?: string;
   onSubmit: () => void;
   onReset: () => void;
+  onEnterInvite: () => void;
 }) {
   if (requestedEmail) {
     return (
       <div className="grid gap-3">
         <StatusNote>
           request sent for <span className="text-fg">{requestedEmail}</span>.
-          an admin reviews it and connects your account. once approved, sign
-          in here or on any other device with this same account and you'll
-          land in the workspace.
+          an admin reviews it and sends you an invite code. when your code
+          arrives, come back here and enter it to join.
         </StatusNote>
-        <Button variant="quiet" size="sm" onClick={onReset} className="justify-self-start">
+        <Button variant="secondary" onClick={onEnterInvite} className="w-full">
+          have your code? enter it
+        </Button>
+        <Button
+          variant="quiet"
+          size="sm"
+          onClick={onReset}
+          className="justify-self-start"
+        >
           send a different request
         </Button>
       </div>
