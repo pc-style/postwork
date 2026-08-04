@@ -30,7 +30,7 @@ export function AttachmentMedia({
 
   if (failed) {
     return (
-      <div className="flex min-h-20 min-w-40 items-center rounded-md border border-border bg-surface px-3 text-xs text-muted">
+      <div className="flex min-h-20 min-w-40 items-center rounded-md border border-border bg-surface px-3 text-label text-muted">
         media is no longer available
       </div>
     );
@@ -118,17 +118,17 @@ function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
       type="button"
       onClick={() => void download()}
       disabled={downloading}
-      className="ui-button flex max-w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-left text-sm hover:border-accent/40 hover:bg-surface-2 disabled:cursor-progress disabled:opacity-70"
+      className="ui-button flex max-w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-left text-body hover:border-accent/40 hover:bg-surface-2 disabled:cursor-progress disabled:opacity-70"
     >
       <svg viewBox="0 0 24 24" fill="none" className="size-5 shrink-0 text-muted" aria-hidden="true">
         <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
       <span className="min-w-0 truncate">{attachment.filename}</span>
-      <span className={`shrink-0 text-xs ${errored ? "text-urgent" : "text-muted"}`}>
+      <span className={`shrink-0 text-label ${errored ? "text-urgent" : "text-muted"}`}>
         {downloading
           ? "downloading…"
           : errored
-            ? "download failed — retry"
+            ? "download failed, retry"
             : formatFileSize(attachment.size)}
       </span>
     </button>

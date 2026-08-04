@@ -41,7 +41,7 @@ const configuredDemo =
 export const isDemo = parseDemoFlag(configuredDemo);
 export const demoPolicy = getDemoPolicy(isDemo);
 export const DEMO_BANNER_MESSAGE =
-  "public demo — data resets, pick a teammate";
+  "public demo: data resets, pick a teammate";
 
 export function getRequiredViteEnv(
   key: keyof Pick<ImportMetaEnv, "VITE_CONVEX_URL">,

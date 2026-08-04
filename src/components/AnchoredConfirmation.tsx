@@ -100,7 +100,7 @@ export function AnchoredConfirmation({
       setError(
         caught instanceof Error
           ? caught.message
-          : `Couldn't ${confirmLabel}. Check your connection and try again.`,
+          : `couldn't ${confirmLabel}. check your connection and try again.`,
       );
       setBusy(false);
     }
@@ -112,7 +112,7 @@ export function AnchoredConfirmation({
         ref={triggerRef}
         variant="quiet"
         size="sm"
-        className="min-h-11 text-xs hover:border-urgent/50 hover:text-urgent sm:min-h-9"
+        className="min-h-11 text-label hover:border-urgent/50 hover:text-urgent sm:min-h-9"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => {
@@ -132,10 +132,10 @@ export function AnchoredConfirmation({
             align === "right" ? "right-0" : "left-0"
           }`}
         >
-          <strong id={titleId} className="block text-sm font-semibold text-fg">
+          <strong id={titleId} className="block text-body font-semibold text-fg">
             {title}
           </strong>
-          <span id={descriptionId} className="mt-1 block text-xs leading-5 text-muted">
+          <span id={descriptionId} className="mt-1 block text-label leading-5 text-muted">
             {description}
           </span>
           {error ? (

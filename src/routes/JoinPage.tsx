@@ -3,57 +3,37 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { AuthLoading, AuthShell } from "../components/auth/AuthShell";
+import { Button } from "../components/Button";
 import { isDemo } from "../lib/demoMode";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
+const INVITE_STORAGE_KEY = "postwork.inviteCode";
+
 export function JoinPage() {
-  useDocumentTitle("postwork — join");
+  useDocumentTitle("postwork - join");
   const { code } = useParams({ from: "/join/$code" });
   const invite = useQuery(api.access.checkInvite, { code });
 
-  return (
-    <div className="theme-ink min-h-screen bg-bg text-fg">
-      <div className="mx-auto max-w-3xl px-6 pt-20 pb-24 md:pt-28">
-        <header className="flex items-center justify-between">
-          <Link to="/" className="text-base font-semibold tracking-tight">
-            post<span className="text-accent-soft">work</span>
-          </Link>
-          <Link
-            to="/app"
-            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-fg"
-          >
-            sign in
-          </Link>
-        </header>
+  if (invite === undefined) return <AuthLoading label="Checking invite" />;
 
-        <main className="mt-20 md:mt-28">
-          {invite === undefined ? (
-            <JoinShell eyebrow="checking invite">
-              <p className="text-sm leading-6 text-muted">loading…</p>
-            </JoinShell>
-          ) : invite.valid ? (
-            <ValidInvite code={code} />
-          ) : (
-            <JoinShell eyebrow="invite unavailable">
-              <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] lowercase [text-wrap:balance] md:text-5xl">
-                this invite is not active anymore.
-              </h1>
-              <p className="mt-6 max-w-lg text-base leading-7 text-muted [text-wrap:pretty]">
-                it may have expired, been revoked, or already been used. you can
-                still request access from the landing page.
-              </p>
-              <Link
-                to="/"
-                className="mt-10 inline-flex rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96]"
-              >
-                request access
-              </Link>
-            </JoinShell>
-          )}
-        </main>
-      </div>
-    </div>
-  );
+  if (!invite.valid) {
+    return (
+      <AuthShell
+        title="this invite is not active anymore"
+        description="it may have expired, been revoked, or already been used. you can still sign in and request access."
+      >
+        <Link
+          to="/app"
+          className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+        >
+          sign in and request access
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  return <ValidInvite code={code} />;
 }
 
 function ValidInvite({ code }: { code: string }) {
@@ -63,24 +43,26 @@ function ValidInvite({ code }: { code: string }) {
 
 function ProductInvite({ code }: { code: string }) {
   const { isLoaded, isSignedIn } = useAuth();
-  if (!isLoaded) {
-    return (
-      <JoinShell eyebrow="checking session">
-        <p className="text-sm leading-6 text-muted">loading sign-in…</p>
-      </JoinShell>
-    );
-  }
+  if (!isLoaded) return <AuthLoading label="Loading sign-in" />;
   return <RedeemInvite code={code} canRedeem={!!isSignedIn} />;
 }
 
-function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean }) {
+function RedeemInvite({
+  code,
+  canRedeem,
+}: {
+  code: string;
+  canRedeem: boolean;
+}) {
   const navigate = useNavigate();
   const redeemInvite = useMutation(api.access.redeemInvite);
   const [state, setState] = useState<"idle" | "redeeming" | "error">("idle");
 
+  // Save the code before sign-in so the workspace step can prefill it after
+  // the user authenticates, even if they never return to this link.
   useEffect(() => {
     if (canRedeem || isDemo) return;
-    window.localStorage.setItem("postwork.inviteCode", code);
+    window.localStorage.setItem(INVITE_STORAGE_KEY, code);
   }, [canRedeem, code]);
 
   const redeem = async () => {
@@ -98,63 +80,50 @@ function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean })
   };
 
   return (
-    <JoinShell eyebrow="invite ready">
-      <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] lowercase [text-wrap:balance] md:text-5xl">
-        you were invited to postwork.
-      </h1>
-      <p className="mt-6 max-w-lg text-base leading-7 text-muted [text-wrap:pretty]">
-        a calmer place for team decisions to live as posts, not channels.
-      </p>
-      <div className="mt-8 inline-flex rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-xs text-fg">
-        {code}
-      </div>
+    <AuthShell
+      title="you were invited to postwork"
+      description="a calmer place for team decisions to live as posts, not channels."
+    >
+      <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
+        <p className="text-label font-medium lowercase text-muted">
+          your invite code
+        </p>
+        <p className="mt-2 inline-flex rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-code text-fg">
+          {code}
+        </p>
 
-      {canRedeem ? (
-        <div className="mt-10">
-          <button
-            type="button"
-            onClick={() => void redeem()}
-            disabled={state === "redeeming"}
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96] disabled:opacity-40"
-          >
-            {state === "redeeming" ? "joining…" : "join postwork"}
-          </button>
-          {state === "error" && (
-            <p className="mt-3 max-w-md text-xs leading-5 text-urgent">
-              couldn't redeem this invite. try joining again; if it still fails, ask for a new invite.
+        {canRedeem ? (
+          <div className="mt-5 grid gap-3">
+            <Button
+              onClick={() => void redeem()}
+              loading={state === "redeeming"}
+              loadingLabel="joining…"
+              className="w-full"
+            >
+              join postwork
+            </Button>
+            {state === "error" ? (
+              <p role="alert" className="ui-error">
+                couldn't redeem this invite. try again; if it still fails, ask
+                for a new invite.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3">
+            <Link
+              to="/app"
+              className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+            >
+              sign in to accept
+            </Link>
+            <p className="text-body text-muted">
+              we saved your code. sign in or create an account and the code
+              will be filled in for you on the next step.
             </p>
-          )}
-        </div>
-      ) : (
-        <div className="mt-10 flex flex-wrap items-center gap-4">
-          <Link
-            to="/app"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg transition-[background-color,scale] hover:bg-accent-hover active:scale-[0.96]"
-          >
-            sign in to join
-          </Link>
-          <span className="max-w-xs text-xs leading-5 text-muted">
-            after signing in, come back to this link to finish joining.
-          </span>
-        </div>
-      )}
-    </JoinShell>
-  );
-}
-
-function JoinShell({
-  eyebrow,
-  children,
-}: {
-  eyebrow: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="text-label font-medium lowercase text-accent-soft">
-        {eyebrow}
+          </div>
+        )}
       </div>
-      <div className="mt-3">{children}</div>
-    </section>
+    </AuthShell>
   );
 }

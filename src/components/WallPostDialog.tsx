@@ -20,18 +20,18 @@ export function WallPostDialog({
 
   return (
     <Dialog
-      title={`Post on ${wallOwnerName}'s wall`}
-      description="Add a note that remains attached to this profile."
+      title={`post on ${wallOwnerName}'s wall`}
+      description="add a note that remains attached to this profile."
       onClose={onClose}
     >
       <PostForm
         requireTitle={false}
-        titlePlaceholder={`Example: Note for ${wallOwnerName}`}
-        titleHelp="Add a title or leave it blank to use the default."
-        bodyPlaceholder={`Write a note for ${wallOwnerName}.`}
+        titlePlaceholder={`example: note for ${wallOwnerName}`}
+        titleHelp="add a title or leave it blank to use the default."
+        bodyPlaceholder={`write a note for ${wallOwnerName}.`}
         onCancel={onClose}
         onSubmit={async ({ title, body, priority, attachments }) => {
-          if (!currentUserId) throw new Error("Choose a teammate before posting.");
+          if (!currentUserId) throw new Error("choose a teammate before posting.");
           await store.createPost({
             title: title || `note for ${wallOwnerName}`,
             body,

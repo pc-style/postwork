@@ -14,7 +14,7 @@ export function UserRoleTag({
 
   return (
     <Chip tone="accent" size="sm" className={className}>
-      {role === "admin" ? "Admin" : "Tester"}
+      {role === "admin" ? "admin" : "tester"}
     </Chip>
   );
 }

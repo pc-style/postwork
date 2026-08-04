@@ -50,7 +50,7 @@ export function GifPicker({
     try {
       const next = await provider.search(query, controller.signal);
       setResults(next);
-      if (next.length === 0) setError("No GIFs found. Try another phrase.");
+      if (next.length === 0) setError("no GIFs found. try another phrase.");
     } catch (caught) {
       if (!controller.signal.aborted) {
         setError(caught instanceof Error ? caught.message : "GIF search is unavailable right now.");
@@ -90,17 +90,17 @@ export function GifPicker({
           className="absolute bottom-full left-0 z-30 mb-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
         >
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p id={titleId} className="text-sm font-medium text-fg">Find a GIF</p>
+            <p id={titleId} className="text-body font-medium text-fg">find a GIF</p>
             <Button variant="quiet" size="sm" onClick={() => close()}>close</Button>
           </div>
           {!provider.configured ? (
-            <p role="status" className="rounded-md border border-border bg-bg px-3 py-2.5 text-xs leading-relaxed text-muted">
-              GIF search needs a Giphy key. Set <code>VITE_GIPHY_API_KEY</code> locally to enable it.
+            <p role="status" className="rounded-md border border-border bg-bg px-3 py-2.5 text-label leading-relaxed text-muted">
+              GIF search needs a Giphy key. set <code>VITE_GIPHY_API_KEY</code> locally to enable it.
             </p>
           ) : (
             <>
               <div role="search" className="flex gap-2">
-                <label className="sr-only" htmlFor={searchId}>Search GIFs</label>
+                <label className="sr-only" htmlFor={searchId}>search GIFs</label>
                 <input
                   id={searchId}
                   value={query}
@@ -112,7 +112,7 @@ export function GifPicker({
                     }
                   }}
                   autoFocus
-                  placeholder="Search GIFs"
+                  placeholder="search GIFs"
                   className="ui-field min-w-0 flex-1"
                 />
                 <Button
@@ -126,7 +126,7 @@ export function GifPicker({
                   search
                 </Button>
               </div>
-              {error ? <p role="status" className="mt-2 text-xs text-muted">{error}</p> : null}
+              {error ? <p role="status" className="mt-2 text-label text-muted">{error}</p> : null}
               {results.length > 0 ? (
                 <div className="mt-3 grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto" aria-label="GIF results">
                   {results.map((gif) => (
@@ -145,7 +145,7 @@ export function GifPicker({
                   ))}
                 </div>
               ) : null}
-              <p className="mt-2 text-[11px] text-muted">Powered by Giphy</p>
+              <p className="mt-2 text-label text-muted">powered by Giphy</p>
             </>
           )}
         </div>

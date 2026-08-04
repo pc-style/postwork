@@ -21,9 +21,9 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "min-h-9 px-2.5 py-1.5 text-xs",
-  md: "min-h-11 px-3.5 py-2 text-sm",
-  lg: "min-h-12 px-4 py-2.5 text-sm",
+  sm: "min-h-9 px-2.5 py-1.5 text-label",
+  md: "min-h-11 px-3.5 py-2 text-body",
+  lg: "min-h-12 px-4 py-2.5 text-body",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -49,13 +49,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) {
     const sizeClass =
       variant === "icon" ? "size-11 shrink-0 p-0" : SIZE_CLASSES[size];
-    const radiusClass = variant === "primary" ? "rounded-lg" : "rounded-md";
+    const radiusClass = "rounded-md";
 
     return (
       <button
         ref={ref}
         type="button"
-        className={`ui-button relative inline-flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${radiusClass} ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
+        className={`ui-button relative inline-flex items-center justify-center gap-2 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft disabled:cursor-not-allowed ${radiusClass} ${VARIANT_CLASSES[variant]} ${sizeClass} ${className}`.trim()}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}

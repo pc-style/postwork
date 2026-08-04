@@ -62,10 +62,10 @@ export function AgentSummary({
           className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-2.5 transition-colors hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-sm bg-accent/20 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+            <span className="shrink-0 rounded-sm bg-accent/20 px-1.5 py-0.5 text-label lowercase text-accent-soft">
               ai
             </span>
-            <span className="shrink-0 whitespace-nowrap text-xs font-semibold lowercase text-accent-soft">
+            <span className="shrink-0 whitespace-nowrap text-label lowercase text-accent-soft">
               agent summary
             </span>
             {!expanded && summary && isStale ? (
@@ -75,7 +75,7 @@ export function AgentSummary({
               />
             ) : null}
             {!expanded ? (
-              <span className="hidden truncate text-xs text-muted sm:inline">
+              <span className="hidden truncate text-label text-muted sm:inline">
                 {teaserFrom(summary)}
                 {summary && isStale ? (
                   <span className="sr-only"> New replies since this summary.</span>
@@ -83,12 +83,12 @@ export function AgentSummary({
               </span>
             ) : null}
           </span>
-          <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
+          <span className="shrink-0 text-label text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
         <div className="ui-reveal px-4 pb-4">
           {summary ? <Markdown text={summary} /> : (
-            <p className="text-sm text-muted">
+            <p className="text-body text-muted">
               Generate a summary of key decisions and open questions.
             </p>
           )}

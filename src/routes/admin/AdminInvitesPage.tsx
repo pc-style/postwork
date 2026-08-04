@@ -77,7 +77,7 @@ export function AdminInvitesPage() {
                 if (e.key === "Enter" && !creating) void mint();
               }}
               placeholder="@github-handle or email (optional)"
-              className="min-h-11 w-full min-w-0 max-w-56 flex-1 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-xs placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              className="ui-field min-w-0 max-w-56 flex-1 font-mono text-label placeholder:font-sans"
             />
             <Button
               onClick={() => void mint()}
@@ -88,15 +88,15 @@ export function AdminInvitesPage() {
             </Button>
           </div>
           {targetError && (
-            <p className="text-xs text-urgent">{targetError}</p>
+            <p className="text-label text-urgent">{targetError}</p>
           )}
         </div>
       }
     >
       {invites === undefined ? (
-        <Skeleton preset="table" count={5} label="Loading invites" />
+        <Skeleton preset="table" count={5} label="loading invites" />
       ) : invites.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           no invites yet. mint one and share the code.
         </p>
       ) : (
@@ -108,12 +108,12 @@ export function AdminInvitesPage() {
             {
               label: "code",
               primary: true,
-              className: "font-mono text-xs text-fg",
+              className: "font-mono text-label text-fg",
               render: (invite) => invite.code,
             },
             {
               label: "for",
-              className: "max-w-[12rem] truncate font-mono text-xs text-accent-soft",
+              className: "max-w-[12rem] truncate font-mono text-label text-accent-soft",
               render: (invite) => formatTarget(invite) ?? <span className="text-muted">none</span>,
             },
             {
@@ -123,7 +123,7 @@ export function AdminInvitesPage() {
             },
             {
               label: "uses",
-              className: "text-xs text-muted tabular-nums",
+              className: "text-label text-muted tabular-nums",
               render: (invite) => `${invite.usedCount}/${invite.maxUses === 0 ? "unlimited" : invite.maxUses}`,
             },
             {
@@ -135,7 +135,7 @@ export function AdminInvitesPage() {
             },
             {
               label: "created",
-              className: "text-xs text-muted tabular-nums",
+              className: "text-label text-muted tabular-nums",
               render: (invite) => timeAgo(invite.createdAt),
             },
           ]}
@@ -171,7 +171,7 @@ function InviteSheet({
 
   return (
     <Sheet
-      title={<span className="font-mono text-sm">{invite.code}</span>}
+      title={<span className="font-mono text-body">{invite.code}</span>}
       subtitle={`minted by ${invite.createdByName}`}
       onClose={onClose}
       footer={

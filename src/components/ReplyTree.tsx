@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useRef, useState, type RefObject } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 import { timeAgo } from "../lib/format";
@@ -24,12 +18,6 @@ import { SendAgentButton } from "./SendAgentButton";
 import { UserRoleTag } from "./UserRoleTag";
 
 type Node = ReplyTreeNode<EnrichedReply>;
-
-function hasUnreadDescendant(node: Node): boolean {
-  return node.children.some(
-    (child) => child.unread || hasUnreadDescendant(child),
-  );
-}
 
 function subthreadText(node: Node) {
   const lines: string[] = [];
@@ -62,10 +50,6 @@ function ReplyNode({
   const [editBody, setEditBody] = useState(node.body);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const childRepliesId = useId();
-  const subtreeHasUnread = hasUnreadDescendant(node);
-  const [childrenExpanded, setChildrenExpanded] = useState(subtreeHasUnread);
-  const previousSubtreeHasUnread = useRef(subtreeHasUnread);
   const replyAttachments = attachments.filter(
     (attachment) => attachment.replyId === node._id,
   );
@@ -103,16 +87,6 @@ function ReplyNode({
         ? "ms-2 border-s border-border ps-2 sm:ms-4 sm:ps-4"
         : "border-s border-border ps-2 sm:ps-4";
 
-  useEffect(() => {
-    if (subtreeHasUnread && !previousSubtreeHasUnread.current) {
-      setChildrenExpanded(true);
-    }
-    previousSubtreeHasUnread.current = subtreeHasUnread;
-  }, [subtreeHasUnread]);
-
-  const childReplyLabel =
-    node.children.length === 1 ? "1 reply" : `${node.children.length} replies`;
-
   return (
     <div className={indentation}>
       <article className="group py-3">
@@ -120,7 +94,7 @@ function ReplyNode({
           <Avatar user={node.author} size={30} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="text-sm font-medium text-fg">
+              <span className="text-body font-medium text-fg">
                 {node.author?.name ?? "Unknown"}
               </span>
               {node.author?.isAgent ? <AgentTag /> : null}
@@ -140,8 +114,8 @@ function ReplyNode({
                         setError(null);
                       }}
                       autoFocus
-                      rows={3}
-                      className="ui-field resize-y"
+                      rows={4}
+                      className="ui-field min-h-28 resize-none"
                     />
                   </FormField>
                   <div className="mt-3 flex flex-wrap justify-end gap-2">
@@ -169,7 +143,7 @@ function ReplyNode({
                 </div>
               ) : (
                 <>
-                  <RichText text={node.body} className="prose-post text-sm text-fg/80" />
+                  <RichText text={node.body} className="prose-post text-body text-fg/80" />
                   <RichEmbedList text={node.body} />
                   <AttachmentGallery attachments={replyAttachments} />
                 </>
@@ -181,33 +155,19 @@ function ReplyNode({
                 <Button
                   variant="quiet"
                   size="sm"
-                  className="min-h-11 text-xs sm:min-h-9"
+                  className="min-h-11 text-label sm:min-h-9"
                   onClick={() => setReplying((value) => !value)}
                   aria-controls={replying ? `reply-composer-${node._id}` : undefined}
                   aria-expanded={replying}
                 >
                   {replying ? "cancel" : "reply"}
                 </Button>
-                {node.children.length > 0 ? (
-                  <Button
-                    variant="quiet"
-                    size="sm"
-                    className="min-h-11 text-xs sm:min-h-9"
-                    onClick={() => setChildrenExpanded((value) => !value)}
-                    aria-controls={childRepliesId}
-                    aria-expanded={childrenExpanded}
-                  >
-                    {childrenExpanded
-                      ? `hide ${childReplyLabel}`
-                      : `show ${childReplyLabel}`}
-                  </Button>
-                ) : null}
                 <span className="flex flex-wrap items-center gap-1.5 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100">
                   {canEdit ? (
                     <Button
                       variant="quiet"
                       size="sm"
-                      className="min-h-11 text-xs sm:min-h-9"
+                      className="min-h-11 text-label sm:min-h-9"
                       onClick={() => {
                         setEditBody(node.body);
                         setError(null);
@@ -247,9 +207,6 @@ function ReplyNode({
               autoFocus
               placeholder={`Reply to ${node.author?.name ?? "this reply"}.`}
               onDone={() => setReplying(false)}
-              // Your own reply must show up immediately, even when this
-              // subtree was collapsed (read replies default to hidden).
-              onSubmitted={() => setChildrenExpanded(true)}
             />
           </div>
         ) : null}
@@ -257,10 +214,8 @@ function ReplyNode({
 
       {node.children.length > 0 ? (
         <div
-          id={childRepliesId}
           role="group"
           aria-label={`Replies to ${node.author?.name ?? "this reply"}`}
-          hidden={!childrenExpanded}
         >
           {node.children.map((child) => (
             <ReplyNode

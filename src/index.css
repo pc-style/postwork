@@ -165,35 +165,39 @@ samp {
   color: var(--color-fg);
 }
 
-.ui-field {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  color: var(--color-fg);
-  padding: 0.625rem 0.75rem;
-  transition: border-color 150ms ease, background-color 150ms ease;
-}
+/* Layered so single-purpose utilities (e.g. `min-h-24` on composer textareas)
+   can override these defaults. Unlayered rules would beat every Tailwind
+   utility regardless of order, which silently pinned all fields to 44px. */
+@layer components {
+  .ui-field {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    padding: 0.625rem 0.75rem;
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
 
-.ui-field:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
-}
+  .ui-field:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  }
 
-.ui-field:focus-visible {
-  border-color: var(--color-accent-soft);
-  outline: 2px solid var(--color-accent-soft);
-  outline-offset: 2px;
-}
+  .ui-field:focus-visible {
+    outline: 2px solid var(--color-accent-soft);
+    outline-offset: 2px;
+  }
 
-.ui-field[aria-invalid="true"] {
-  border-color: var(--color-urgent);
-}
+  .ui-field[aria-invalid="true"] {
+    border-color: var(--color-urgent);
+  }
 
-.ui-field:disabled {
-  border-color: var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-muted);
+  .ui-field:disabled {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-muted);
+  }
 }
 
 .ui-button {

@@ -29,9 +29,9 @@ export function AdminAccessRequestsPage() {
       description="people who asked to join. approving mints a single-use invite for them."
     >
       {requests === undefined ? (
-        <Skeleton preset="table" count={5} label="Loading access requests" />
+        <Skeleton preset="table" count={5} label="loading access requests" />
       ) : requests.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           no requests yet. they land here when someone asks to join from the
           sign-in screen.
         </p>
@@ -61,7 +61,7 @@ export function AdminAccessRequestsPage() {
             },
             {
               label: "requested",
-              className: "text-xs text-muted tabular-nums",
+              className: "text-label text-muted tabular-nums",
               render: (request) => timeAgo(request.createdAt),
             },
           ]}
@@ -147,12 +147,12 @@ function RequestSheet({
         </SheetField>
       </div>
       {request.status === "approved" && (
-        <p className="mt-4 text-xs text-muted">
+        <p className="mt-4 text-label text-muted">
           the invite code is in the invites section. copy it there and send it
           to the requester.
         </p>
       )}
-      {error && <p className="mt-4 text-xs text-urgent">{error}</p>}
+      {error && <p className="mt-4 text-label text-urgent">{error}</p>}
     </Sheet>
   );
 }

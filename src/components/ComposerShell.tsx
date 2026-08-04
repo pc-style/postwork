@@ -29,6 +29,7 @@ export function ComposerShell({
   placeholder,
   rows,
   autoFocus = false,
+  autoGrow = false,
   textareaClassName = "ui-field resize-y",
   onFieldKeyDown,
   onPaste,
@@ -65,6 +66,12 @@ export function ComposerShell({
   placeholder: string;
   rows: number;
   autoFocus?: boolean;
+  /**
+   * Grow the textarea to fit its content (capped by the max-height in
+   * `textareaClassName`, which then scrolls internally). Replaces manual
+   * `resize-y` dragging, which could blow the composer out of its container.
+   */
+  autoGrow?: boolean;
   textareaClassName?: string;
   onFieldKeyDown?: (
     event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -85,6 +92,16 @@ export function ComposerShell({
   useEffect(() => {
     if (autoFocus) textareaRef?.current?.focus();
   }, [autoFocus, textareaRef]);
+
+  useEffect(() => {
+    if (!autoGrow) return;
+    const node = textareaRef?.current;
+    if (!node) return;
+    // Let CSS min/max-height clamp the measured content height. Resetting to
+    // "auto" first makes scrollHeight shrink again when text is deleted.
+    node.style.height = "auto";
+    node.style.height = `${node.scrollHeight + 2}px`;
+  }, [autoGrow, body, textareaRef]);
 
   const handleKeyDown = (
     event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -139,7 +156,7 @@ export function ComposerShell({
       </FormField>
       {afterBody}
       <div className={footerClassName}>
-        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-muted">
           {hint}
         </div>
         <div className="ml-auto flex flex-wrap justify-end gap-2">

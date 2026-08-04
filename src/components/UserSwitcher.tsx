@@ -32,10 +32,10 @@ export function UserSwitcher() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-surface py-1.5 pl-1.5 pr-2.5 text-left transition-colors hover:bg-surface-2"
+        className="flex min-h-11 w-full items-center gap-2 rounded-md border border-border bg-surface py-1.5 pl-1.5 pr-2.5 text-left transition-colors hover:bg-surface-2"
       >
         <Avatar user={currentUser} size={28} />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{currentUser.name}</span>
+        <span className="min-w-0 flex-1 truncate text-body font-medium">{currentUser.name}</span>
         {currentUser.isAgent ? <AgentTag className="hidden lg:inline-flex" /> : null}
         <UserRoleTag role={currentUser.role} className="hidden lg:inline-flex" />
         <ChevronIcon />
@@ -55,7 +55,7 @@ export function UserSwitcher() {
           }}
           className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
         >
-          <p id={headingId} className="px-3 py-2 text-xs font-medium text-muted">View as teammate</p>
+          <p id={headingId} className="px-3 py-2 text-label font-medium text-muted">view as teammate</p>
           {users.map((user) => {
             const selected = user._id === currentUser._id;
             return (
@@ -74,12 +74,12 @@ export function UserSwitcher() {
                   <Avatar user={user} size={28} />
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="flex items-center gap-1.5">
-                      <span className="truncate text-sm text-fg">{user.name}</span>
+                      <span className="truncate text-body text-fg">{user.name}</span>
                       {user.isAgent ? <AgentTag /> : null}
                     </span>
                     <span className="mt-0.5 block truncate text-label text-muted">{user.title}</span>
                   </span>
-                  {selected ? <span className="text-xs text-accent-soft">selected</span> : null}
+                  {selected ? <span className="text-label text-accent-soft">selected</span> : null}
                 </button>
                 <Link
                   to="/app/u/$userId"

@@ -31,7 +31,8 @@ const AGENT_SIDEBAR_WIDTH_KEY = "postwork.agentSidebarWidth";
 const AGENT_SIDEBAR_DEFAULT = 336;
 const AGENT_SIDEBAR_MIN = 280;
 const AGENT_SIDEBAR_MAX = 560;
-const AGENT_SIDEBAR_COLLAPSED = 44;
+// Wide enough for a normal horizontal "agents" button — never rotated text.
+const AGENT_SIDEBAR_COLLAPSED = 104;
 
 function clampSidebarWidth(width: number) {
   return Math.min(AGENT_SIDEBAR_MAX, Math.max(AGENT_SIDEBAR_MIN, Math.round(width)));
@@ -292,7 +293,7 @@ export function RedesignPostPage() {
             <Button
               variant="quiet"
               size="sm"
-              className="min-h-24 w-full px-1 text-xs [writing-mode:vertical-rl]"
+              className="w-full text-label"
               onClick={() => setSidebarOpen(true)}
               aria-expanded={false}
             >

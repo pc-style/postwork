@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-const DEFAULT_TITLE = "Postwork — async team communication";
+const DEFAULT_TITLE = "postwork: posts, not channels";
 
 // Module-level so the per-page title and the unread badge compose without
 // fighting over document.title: pages own the base title, the shell owns

@@ -45,16 +45,16 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-bg px-6 text-center">
         <div className="max-w-sm">
-          <p className="text-sm font-medium text-accent-soft">Page error</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg">
-            We couldn't show this page
+          <p className="text-label font-medium text-accent-soft">page error</p>
+          <h1 className="mt-2 text-display font-semibold tracking-tight text-fg">
+            we couldn't show this page
           </h1>
-          <p className="mt-3 text-sm leading-6 text-muted">
-            Reload the page to try again. If the error continues, share the
+          <p className="mt-3 text-body text-muted">
+            reload the page to try again. if the error continues, share the
             details below with an admin.
           </p>
         </div>
-        <pre className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface px-4 py-3 text-left text-xs text-muted sm:max-w-lg">
+        <pre className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface px-4 py-3 text-left text-code text-muted sm:max-w-lg">
           {error.message}
         </pre>
         <Button onClick={() => window.location.reload()}>reload</Button>

@@ -15,7 +15,7 @@ export function AdminOverviewPage() {
       description="counts for members, invites, requests, and recent audit activity."
     >
       {overview === undefined ? (
-        <Skeleton preset="stats" count={5} label="Loading admin overview" />
+        <Skeleton preset="stats" count={5} label="loading admin overview" />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -57,13 +57,13 @@ export function AdminOverviewPage() {
               </h2>
               <Link
                 to="/admin/audit-log"
-                className="inline-flex min-h-11 items-center rounded-md px-2 text-xs text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="inline-flex min-h-11 items-center rounded-md px-2 text-label text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
                 view details
               </Link>
             </div>
             {overview.recentAudit.length === 0 ? (
-              <p className="text-sm text-muted">
+              <p className="text-body text-muted">
                 nothing yet. actions taken in the admin panel land here.
               </p>
             ) : (
@@ -71,12 +71,12 @@ export function AdminOverviewPage() {
                 {overview.recentAudit.map((entry) => (
                   <li
                     key={entry._id}
-                    className="flex items-baseline justify-between gap-4 rounded-md border border-border bg-surface px-4 py-2.5 text-sm"
+                    className="flex items-baseline justify-between gap-4 rounded-md border border-border bg-surface px-4 py-2.5 text-body"
                   >
-                    <span className="font-mono text-xs text-fg">
+                    <span className="font-mono text-label text-fg">
                       {entry.action}
                     </span>
-                    <span className="shrink-0 text-xs text-muted tabular-nums">
+                    <span className="shrink-0 text-label text-muted tabular-nums">
                       {timeAgo(entry.createdAt)}
                     </span>
                   </li>
@@ -110,7 +110,7 @@ function Stat({
       className="flex min-h-11 flex-col justify-center rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
     >
       <div
-        className={`text-2xl font-semibold tabular-nums ${
+        className={`text-display font-semibold tabular-nums ${
           highlight ? "text-accent-soft" : "text-fg"
         }`}
       >

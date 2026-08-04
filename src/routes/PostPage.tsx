@@ -3,7 +3,6 @@ import { Link, getRouteApi } from "@tanstack/react-router";
 import { useStore, usePost, useReplies } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
-import { PageHeader } from "../components/PageHeader";
 import { AgentSummary } from "../components/AgentSummary";
 import { ReplyTree } from "../components/ReplyTree";
 import { Composer } from "../components/Composer";
@@ -45,7 +44,7 @@ export function PostPage() {
   }
   if (post === null) {
     return (
-      <div className="py-12 text-center text-sm text-muted">
+      <div className="py-12 text-center text-body text-muted">
         Post not found.{" "}
         <Link to="/app" className="text-accent-soft">
           back to feed
@@ -56,17 +55,15 @@ export function PostPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-      <PageHeader backTo="/app" backLabel="feed" />
-
       {slots.post ? (
         slots.post({ postId: post._id })
       ) : (
       <article className="rounded-lg border border-border bg-surface p-5">
         <PostMetaChips post={post} className="mb-3" />
 
-        <h1 className="type-heading text-xl font-semibold text-fg">{post.title}</h1>
+        <h1 className="type-heading text-display font-semibold text-fg">{post.title}</h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body text-muted">
           <Avatar user={post.author} size={28} />
           <span className="text-fg">{post.author?.name}</span>
           {post.author?.isAgent && <AgentTag />}
@@ -97,7 +94,7 @@ export function PostPage() {
       )}
 
       <div className="mt-6">
-        <h2 className="type-numeric mb-1 text-sm font-semibold text-muted">
+        <h2 className="type-numeric mb-1 text-body font-semibold text-muted">
           {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
         </h2>
         {slots.replies ? (

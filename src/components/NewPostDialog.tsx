@@ -19,8 +19,8 @@ export function NewPostDialog({
 
   return (
     <Dialog
-      title="New post"
-      description="Share a durable update, decision, or question."
+      title="new post"
+      description="share a durable update, decision, or question."
       onClose={onClose}
       initialFocusRef={titleRef}
       returnFocusRef={returnFocusRef}
@@ -32,7 +32,7 @@ export function NewPostDialog({
         onCancel={onClose}
         onSubmit={async ({ title, body, space, spaceId, priority, attachments }) => {
           if (!currentUserId || !space) {
-            throw new Error("Choose a teammate and space before posting.");
+            throw new Error("choose a teammate and space before posting.");
           }
           const postId = await store.createPost({
             title,

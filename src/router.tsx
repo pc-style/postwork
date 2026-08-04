@@ -311,7 +311,12 @@ const routeTree = rootRoute.addChildren([
   legacyFeedRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+// scrollRestoration resets the window to the top on every new navigation and
+// restores the saved offset on back/forward. Without it, TanStack Router keeps
+// the previous page's scroll offset across pushState navigations, so opening a
+// post from a scrolled feed landed you mid-page with phantom space above the
+// post and a sticky sidebar pinned partway down.
+export const router = createRouter({ routeTree, scrollRestoration: true });
 
 declare module "@tanstack/react-router" {
   interface Register {

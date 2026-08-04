@@ -87,22 +87,22 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
             event.preventDefault();
             setExpanded((value) => !value);
           }}
-          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-sm text-fg transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
+          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-body text-fg transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+            <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-0.5 text-label lowercase text-accent-soft">
               agents
             </span>
-            <span className="shrink-0 whitespace-nowrap text-xs font-semibold lowercase text-accent-soft">
+            <span className="shrink-0 whitespace-nowrap text-label lowercase text-accent-soft">
               ask an agent
             </span>
-            <span className="min-w-0 truncate text-xs font-normal text-muted">
+            <span className="min-w-0 truncate text-label font-normal text-muted">
               {tasks.length === 0
                 ? "investigate this post"
                 : `${tasks.length} ${tasks.length === 1 ? "investigation" : "investigations"}`}
             </span>
           </span>
-          <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
+          <span className="shrink-0 text-label text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
         <div className="ui-reveal px-2 pb-3 pt-2">
@@ -128,14 +128,14 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                     setPrompt(event.target.value);
                     setError(null);
                   }}
-                  rows={3}
+                  rows={4}
                   placeholder="Example: Check the release risks and report back."
-                  className="ui-field min-h-20 resize-y"
+                  className="ui-field min-h-28 resize-none"
                 />
               </FormField>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs leading-5 text-muted">
+              <p className="text-label text-muted">
                 Ask for a focused investigation of this thread.
               </p>
               <Button
@@ -160,7 +160,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar user={agent} size={28} />
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 text-sm text-fg">
+                          <div className="flex items-center gap-2 text-body text-fg">
                             <span>{agent?.name ?? "Agent"}</span>
                             {agent?.isAgent ? <AgentTag /> : null}
                           </div>
@@ -169,7 +169,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                       </div>
                       <StatusChip status={task.status} />
                     </div>
-                    <p className="mt-2 text-xs text-muted">{task.prompt}</p>
+                    <p className="mt-2 text-body text-muted">{task.prompt}</p>
                     {task.status === "done" && task.result ? (
                       <div className="mt-3 text-fg"><Markdown text={task.result} /></div>
                     ) : null}

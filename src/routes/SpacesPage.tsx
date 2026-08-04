@@ -11,7 +11,7 @@ import { useStore } from "../lib/store";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function SpacesPage() {
-  useDocumentTitle("Spaces · postwork");
+  useDocumentTitle("spaces · postwork");
   const spaces = useSpacesList().slice().sort((a, b) => b.latestActivityAt - a.latestActivityAt);
   const creationStatus = useSpaceCreationStatus();
   const [creating, setCreating] = useState(false);
@@ -19,10 +19,8 @@ export function SpacesPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <PageHeader
-        backTo="/app"
-        backLabel="feed"
-        title="Spaces"
-        description="Browse posts grouped by team or area of work."
+        title="spaces"
+        description="browse posts grouped by team or area of work."
         action={
           <Button
             className="w-full sm:w-auto"
@@ -35,16 +33,16 @@ export function SpacesPage() {
       />
 
       {creationStatus && !creationStatus.canCreate ? (
-        <p className="type-numeric mb-4 text-xs text-muted">
-          You’ve created {creationStatus.createdCount} of {creationStatus.limit} available spaces.
+        <p className="type-numeric mb-4 text-label text-muted">
+          you’ve created {creationStatus.createdCount} of {creationStatus.limit} available spaces.
         </p>
       ) : null}
 
       {spaces.length === 0 ? (
         <EmptyState>
           {creationStatus && !creationStatus.canCreate
-            ? "You’ve reached the space limit for this workspace."
-            : "Spaces group posts by team or area of work. Create a space to start one."}
+            ? "you’ve reached the space limit for this workspace."
+            : "spaces group posts by team or area of work. create a space to start one."}
         </EmptyState>
       ) : (
         <div className="space-y-3">
@@ -59,15 +57,15 @@ export function SpacesPage() {
                 <div className="min-w-0">
                   <h2 className="type-heading text-title font-semibold text-fg">{space.name}</h2>
                   {space.description ? (
-                    <p className="type-description mt-1 text-sm text-muted">{space.description}</p>
+                    <p className="type-description mt-1 text-body text-muted">{space.description}</p>
                   ) : null}
                 </div>
-                <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-xs text-muted sm:block sm:text-end">
+                <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-label text-muted sm:block sm:text-end">
                   <div>{space.memberCount} members</div>
                   <div className="sm:mt-1">{space.postCount} posts</div>
                 </div>
               </div>
-              <div className="type-numeric mt-3 text-xs text-muted">Active {timeAgo(space.latestActivityAt)}</div>
+              <div className="type-numeric mt-3 text-label text-muted">active {timeAgo(space.latestActivityAt)}</div>
             </Link>
           ))}
         </div>
@@ -109,7 +107,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Couldn't create the space. Check your connection and try again.",
+          : "couldn't create the space. check your connection and try again.",
       );
     } finally {
       setSaving(false);
@@ -118,14 +116,14 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog
-      title="Create a space"
-      description="Start a focused place for a team, project, or area of work."
+      title="create a space"
+      description="start a focused place for a team, project, or area of work."
       onClose={onClose}
       initialFocusRef={nameRef}
       dismissible={!saving}
     >
       <form className="grid gap-4" onSubmit={submit}>
-        <FormField label="Name" required>
+        <FormField label="name" required>
           <input
             ref={nameRef}
             value={name}
@@ -134,11 +132,11 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
               setName(event.target.value);
               setError(null);
             }}
-            placeholder="Example: Launch planning"
-            className="min-h-11 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg transition-colors placeholder:text-muted/60 focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+            placeholder="example: launch planning"
+            className="ui-field text-body placeholder:text-muted/60"
           />
         </FormField>
-        <FormField label="Description" optional help={`${description.length}/240 characters`}>
+        <FormField label="description" optional help={`${description.length}/240 characters`}>
           <textarea
             value={description}
             maxLength={240}
@@ -147,8 +145,8 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
               setDescription(event.target.value);
               setError(null);
             }}
-            placeholder="What belongs in this space?"
-            className="w-full resize-y rounded-md border border-border bg-bg px-3 py-2 text-sm leading-6 text-fg transition-colors placeholder:text-muted/60 focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+            placeholder="what belongs in this space?"
+            className="ui-field resize-y text-body leading-6 placeholder:text-muted/60"
           />
         </FormField>
         {error ? <p role="alert" className="ui-error">{error}</p> : null}

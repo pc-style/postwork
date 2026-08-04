@@ -8,7 +8,7 @@ import { useDocumentTitle } from "../lib/useDocumentTitle";
  * they just get an "open app" CTA instead of "sign in".
  */
 export function LandingPage() {
-  useDocumentTitle("postwork — posts, not channels");
+  useDocumentTitle("postwork: posts, not channels");
   return (
     <div className="theme-ink min-h-screen bg-bg text-fg">
       {isDemo ? <LandingContent signedIn /> : <ProductLanding />}
@@ -25,19 +25,19 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pb-24 sm:pt-16 md:pt-24">
       <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-        <span className="text-base font-semibold tracking-tight">
+        <span className="text-title font-semibold tracking-tight">
           post<span className="text-accent-soft">work</span>
         </span>
         <nav aria-label="Public navigation" className="flex items-center gap-5">
           <Link
             to="/changelog"
-            className="text-xs text-muted transition-colors hover:text-fg"
+            className="text-label text-muted transition-colors hover:text-fg"
           >
             changelog
           </Link>
           <Link
             to="/app"
-            className="ui-button rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-muted hover:text-fg"
+            className="ui-button rounded-md border border-border px-3 py-1.5 text-label text-muted hover:border-muted hover:text-fg"
           >
             {signedIn ? "open app" : "sign in"}
           </Link>
@@ -48,7 +48,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <h1 className="type-heading max-w-xl text-4xl font-semibold tracking-[-0.04em] md:text-5xl">
           your team's decisions keep dying in chat.
         </h1>
-        <p className="mt-6 max-w-lg text-base leading-7 text-muted [text-wrap:pretty]">
+        <p className="mt-6 max-w-lg text-title leading-7 text-muted [text-wrap:pretty]">
           someone asks a good question in a channel. twelve people reply. a
           decision gets made. three weeks later nobody can find it, so someone
           asks again. that loop is the whole reason postwork exists.
@@ -57,12 +57,12 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link
             to="/app"
-            className="ui-button rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-fg hover:bg-accent-hover"
+            className="ui-button rounded-md bg-accent px-5 py-2.5 text-body font-medium text-fg hover:bg-accent-hover"
           >
             {signedIn ? "open app" : "sign in"}
           </Link>
           {!signedIn && (
-            <Link to="/app" className="text-xs text-accent-soft hover:text-fg">
+            <Link to="/app" className="text-label text-accent-soft hover:text-fg">
               create a workspace →
             </Link>
           )}
@@ -87,7 +87,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         </section>
 
         <section className="mt-24 border-t border-border pt-10">
-          <p className="max-w-lg text-sm leading-6 text-muted [text-wrap:pretty]">
+          <p className="max-w-lg text-body leading-6 text-muted [text-wrap:pretty]">
             join a team with an invite, or{" "}
             <Link to="/app" className="text-accent-soft underline decoration-accent/40 underline-offset-2 hover:text-fg">
               create a workspace
@@ -97,7 +97,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         </section>
       </main>
 
-      <footer className="mt-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-border pt-6 text-xs text-faint sm:mt-24">
+      <footer className="mt-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-border pt-6 text-label text-faint sm:mt-24">
         <span>postwork</span>
         <div className="flex items-center gap-5">
           <Link to="/changelog" className="hover:text-muted">
@@ -116,10 +116,10 @@ function Point({ k, title, body }: { k: string; title: string; body: string }) {
   return (
     <div>
       <div className="text-label font-medium lowercase text-accent-soft">{k}</div>
-      <h2 className="mt-2 max-w-lg text-xl font-semibold tracking-tight [text-wrap:balance]">
+      <h2 className="mt-2 max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
         {title}
       </h2>
-      <p className="mt-3 max-w-lg text-sm leading-6 text-muted [text-wrap:pretty]">
+      <p className="mt-3 max-w-lg text-body leading-6 text-muted [text-wrap:pretty]">
         {body}
       </p>
     </div>

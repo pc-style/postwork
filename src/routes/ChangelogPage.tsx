@@ -66,12 +66,12 @@ const changes: readonly Change[] = [
   {
     date: "27 July 2026",
     title: "a pinned tab is now a notification",
-    note: "the browser tab title shows your unread count — (3) postwork — so a pinned tab tells you when something moved without opening it.",
+    note: "the browser tab title shows your unread count, like (3) postwork, so a pinned tab tells you when something moved without opening it.",
   },
   {
     date: "27 July 2026",
     title: "the demo shows what a connector agent brings home",
-    note: "the demo org now has an X Pulse connector agent that posts a daily x analytics digest: impressions, follows, the top post, and which mentions need a human reply. seeded data for now — it prototypes the inbound cross-posting flow where the thing you check twitter for lives in a post instead.",
+    note: "the demo org now has an X Pulse connector agent that posts a daily x analytics digest: impressions, follows, the top post, and which mentions need a human reply. seeded data for now; it prototypes the inbound cross-posting flow where the thing you check twitter for lives in a post instead.",
   },
   {
     date: "27 July 2026",
@@ -184,25 +184,25 @@ export function ChangelogPage() {
         <header className="flex items-center justify-between gap-6">
           <Link
             to="/"
-            className="text-base font-semibold tracking-tight transition-colors hover:text-accent-soft"
+            className="text-title font-semibold tracking-tight transition-colors hover:text-accent-soft"
           >
             post<span className="text-accent">work</span>
           </Link>
           <nav aria-label="Public navigation" className="flex items-center gap-5">
-            <Link to="/" className="text-xs text-muted transition-colors hover:text-fg">
+            <Link to="/" className="text-label text-muted transition-colors hover:text-fg">
               home
             </Link>
-            <Link to="/app" className="text-xs text-muted transition-colors hover:text-fg">
+            <Link to="/app" className="text-label text-muted transition-colors hover:text-fg">
               open app
             </Link>
           </nav>
         </header>
 
         <main className="mt-20 md:mt-28">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] md:text-5xl">
+          <h1 className="max-w-xl text-display font-semibold leading-tight tracking-[-0.04em]">
             dev changelog
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-7 text-muted [text-wrap:pretty]">
+          <p className="mt-6 max-w-lg text-title leading-7 text-muted [text-wrap:pretty]">
             stuff i shipped recently.
           </p>
 
@@ -212,12 +212,12 @@ export function ChangelogPage() {
                 key={`${change.date}-${change.title}`}
                 className="grid gap-4 border-b border-border py-10 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-8"
               >
-                <time className="text-xs leading-6 text-faint">{change.date}</time>
+                <time className="text-label leading-6 text-faint">{change.date}</time>
                 <div>
-                  <h2 className="max-w-lg text-xl font-semibold tracking-tight [text-wrap:balance]">
+                  <h2 className="max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
                     {change.title}
                   </h2>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+                  <p className="mt-3 max-w-xl text-body leading-6 text-muted">
                     {change.note}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export function ChangelogPage() {
           </div>
         </main>
 
-        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-xs text-faint">
+        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-label text-faint">
           <span>postwork</span>
           <Link to="/app" className="transition-colors hover:text-muted">
             open app

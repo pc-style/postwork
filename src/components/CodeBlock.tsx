@@ -42,7 +42,7 @@ export function CodeBlock({ code, lang }: { code: string; lang?: string }) {
     <div className="overflow-hidden rounded-md border border-border bg-bg">
       <div className="flex items-center justify-between border-b border-border bg-surface-2 px-3 py-1.5 text-label text-muted [&>*]:whitespace-nowrap">
         <span>{label}</span>
-        <button type="button" onClick={copy} className="transition hover:text-fg">
+        <button type="button" onClick={copy} className="transition-colors hover:text-fg">
           {copied ? "copied" : "copy"}
         </button>
       </div>

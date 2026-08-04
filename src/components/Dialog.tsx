@@ -87,11 +87,11 @@ export function Dialog({
     >
       <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="min-w-0">
-          <h2 id={titleId} className="text-lg font-semibold text-fg [text-wrap:balance]">
+          <h2 id={titleId} className="text-title font-semibold text-fg [text-wrap:balance]">
             {title}
           </h2>
           {description ? (
-            <p id={descriptionId} className="mt-1 text-sm leading-6 text-muted">
+            <p id={descriptionId} className="mt-1 text-body leading-6 text-muted">
               {description}
             </p>
           ) : null}

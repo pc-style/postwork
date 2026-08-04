@@ -1,21 +1,13 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ConvexError } from "convex/values";
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { SignIn, useAuth, useClerk } from "@clerk/clerk-react";
-import { useConvex, useMutation, useQuery } from "convex/react";
+import { useAuth } from "@clerk/clerk-react";
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Button } from "../components/Button";
-import { FormField } from "../components/FormField";
+import { AuthLoading, AuthShell } from "../components/auth/AuthShell";
+import { SignInScreen } from "../components/auth/SignInScreen";
+import { WorkspaceSetup } from "../components/auth/WorkspaceSetup";
 import { ProfileDialog } from "../components/ProfileDialog";
-import { Skeleton } from "../components/Skeleton";
 import { demoPolicy, isDemo } from "../lib/demoMode";
-import {
-  activateInvite,
-  signOutFromActivation,
-  type ActivationSignOutState,
-  type InviteActivationState,
-} from "../lib/activationSignOut";
-import { clerkAppearance } from "../lib/providers";
 import { requestedTenantSlug, workspaceUrl } from "../lib/tenant";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -23,437 +15,55 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <ProductAuthGate>{children}</ProductAuthGate>;
 }
 
+// The auth flow is linear, one decision per screen:
+// 1. SignInScreen: sign in or create an account (Clerk).
+// 2. WorkspaceSetup: connect the account to a workspace (invite code,
+//    access request, or creating a new workspace).
+// 3. ProfileDialog: finish the profile.
 function ProductAuthGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
   const me = useQuery(api.users.me, isSignedIn ? {} : "skip");
 
-  if (!isLoaded) return <GateLoading label="Loading sign-in" />;
+  if (!isLoaded) return <AuthLoading label="Loading sign-in" />;
   if (!isSignedIn) return <SignInScreen />;
-  if (me === undefined) return <GateLoading label="Loading account" />;
-  if (me === null || me.user === null) return <GateLoading label="Setting up account" />;
-  if (me.status === "pending") return <ActivationScreen needsOrg={me.needsOrg} />;
+  if (me === undefined) return <AuthLoading label="Loading account" />;
+  if (me === null || me.user === null) {
+    return <AuthLoading label="Setting up account" />;
+  }
+  if (me.status === "pending") return <WorkspaceSetup needsOrg={me.needsOrg} />;
   if (me.needsProfileSetup) {
     return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
   }
-  if (requestedTenantSlug && me.org?.slug && requestedTenantSlug !== me.org.slug) {
+  if (
+    requestedTenantSlug &&
+    me.org?.slug &&
+    requestedTenantSlug !== me.org.slug
+  ) {
     const canonicalUrl = `${workspaceUrl(me.org.slug)}${window.location.pathname}${window.location.search}`;
     return (
-      <AuthFrame
-        title="This workspace has another address"
+      <AuthShell
+        title="this workspace has another address"
         description={`you're signed in to ${me.org.name}, not the workspace at this address.`}
       >
-        <div className="rounded-lg border border-border bg-surface-2 p-5">
-          <p className="text-sm leading-6 text-muted">continue to your workspace at <span className="font-mono text-fg">{me.org.slug}.postwork.pcstyle.dev</span>.</p>
-          <a href={canonicalUrl} className="mt-4 inline-flex bg-accent px-4 py-2 text-sm font-medium text-fg hover:bg-accent-hover">open {me.org.name}</a>
+        <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
+          <p className="text-body text-muted">
+            continue to your workspace at{" "}
+            <span className="font-mono text-code text-fg">
+              {me.org.slug}.postwork.pcstyle.dev
+            </span>
+            .
+          </p>
+          <a
+            href={canonicalUrl}
+            className="ui-button mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+          >
+            open {me.org.name}
+          </a>
         </div>
-      </AuthFrame>
+      </AuthShell>
     );
   }
   return <>{children}</>;
-}
-
-function GateLoading({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-6">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-surface p-5">
-        <Skeleton label={label} preset="inline" count={3} />
-      </div>
-    </div>
-  );
-}
-
-function ActivationScreen({ needsOrg }: { needsOrg: boolean }) {
-  const { signOut } = useClerk();
-  const convexClient = useConvex();
-  const redeemInvite = useMutation(api.access.redeemInvite);
-  const claimTargetedInvite = useMutation(api.access.claimTargetedInvite);
-  const createOrganization = useMutation(api.orgs.create);
-  const [invite, setInvite] = useState("");
-  const [state, setState] = useState<InviteActivationState>("idle");
-  const [organizationName, setOrganizationName] = useState("");
-  const [organizationSlug, setOrganizationSlug] = useState("");
-  const [slugEdited, setSlugEdited] = useState(false);
-  const [organizationState, setOrganizationState] = useState<
-    "idle" | "creating" | "error"
-  >("idle");
-  const [organizationError, setOrganizationError] = useState<string>();
-  const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
-  const signOutGuard = useRef(false);
-  const signOutCancellationGuard = useRef(false);
-  const activationGuard = useRef(false);
-  const redemptionLock = useRef<Promise<unknown> | null>(null);
-  const [signOutState, setSignOutState] = useState<ActivationSignOutState>("idle");
-
-  useEffect(() => {
-    let cancelled = false;
-    claimTargetedInvite({})
-      .then((result) => {
-        if (!cancelled && !result.activated) setAutoClaim("none");
-      })
-      .catch(() => {
-        if (!cancelled) setAutoClaim("none");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [claimTargetedInvite]);
-
-  useEffect(() => {
-    const storedInvite = window.localStorage.getItem("postwork.inviteCode") ?? "";
-    if (storedInvite) setInvite(storedInvite);
-  }, []);
-
-  const normalizedInvite = inviteCodeFromInput(invite);
-
-  const activate = async () => {
-    await activateInvite({
-      code: normalizedInvite,
-      signOutGuard,
-      signOutCancellationGuard,
-      activationGuard,
-      redemptionLock,
-      checkInvite: async (code) => {
-        const result = await convexClient.query(api.access.checkInvite, { code });
-        return result.valid;
-      },
-      redeemInvite: (code) => redeemInvite({ code }),
-      setState,
-      onRedeemed: () => window.localStorage.removeItem("postwork.inviteCode"),
-    });
-  };
-
-  const createOrg = async () => {
-    const name = organizationName.trim();
-    if (!name || organizationState === "creating") return;
-
-    setOrganizationState("creating");
-    setOrganizationError(undefined);
-    try {
-      await createOrganization({ name, slug: organizationSlug.trim() || undefined });
-    } catch (error) {
-      setOrganizationState("error");
-      const data =
-        error instanceof ConvexError ? (error.data as { message?: string }) : null;
-      setOrganizationError(
-        data?.message ?? "we couldn't create your organization. try again.",
-      );
-    }
-  };
-
-  if (autoClaim === "checking") return <GateLoading label="Checking account invites" />;
-
-  if (signOutState === "waitingForRedemption") {
-    return <GateLoading label="Finishing activation" />;
-  }
-
-  if (signOutState === "signingOut") {
-    return <GateLoading label="Signing out" />;
-  }
-
-  return (
-    <AuthFrame
-      title={needsOrg ? "Set up your workspace" : "Activate your invite"}
-      description={
-        needsOrg
-          ? "Join an existing organization with an invite, or create your own."
-          : "Enter the code an admin sent you. You will finish your profile after activation."
-      }
-    >
-      <div className="rounded-lg border border-border bg-surface-2 p-4 sm:p-5">
-        {signOutState === "error" ? (
-          <p role="alert" className="ui-error mb-3">
-            Couldn't sign out. Try again.
-          </p>
-        ) : null}
-        {needsOrg ? (
-          <p className="mb-3 text-sm font-medium text-fg">join with an invite</p>
-        ) : null}
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <FormField
-            label="Invite code"
-            required
-            error={
-              state === "invalid"
-                ? "This invite code is no longer valid."
-                : state === "error"
-                  ? "We couldn't activate this invite. Check the code and try again."
-                  : undefined
-            }
-          >
-            <input
-              value={invite}
-              onChange={(event) => {
-                setInvite(event.target.value);
-                setState("idle");
-              }}
-              placeholder="Example: pw-1234"
-              className="ui-field font-mono"
-              disabled={signOutGuard.current}
-            />
-          </FormField>
-          <Button
-            onClick={() => void activate()}
-            disabled={!normalizedInvite || signOutGuard.current}
-            loading={state === "checking" || state === "redeeming"}
-            loadingLabel="activating…"
-            className="w-full sm:w-auto"
-          >
-            activate
-          </Button>
-        </div>
-        {needsOrg ? (
-          <form
-            className="mt-6 border-t border-border pt-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void createOrg();
-            }}
-          >
-            <p className="text-sm font-medium text-fg">create your own organization</p>
-            <p className="mt-1 text-xs leading-5 text-muted">
-              start a new organization for your team.
-            </p>
-            <div className="mt-3 grid gap-3">
-              <FormField
-                label="organization name"
-                required
-                error={organizationState === "error" ? organizationError : undefined}
-              >
-                <input
-                  value={organizationName}
-                  onChange={(event) => {
-                    setOrganizationName(event.target.value);
-                    if (!slugEdited) {
-                      setOrganizationSlug(event.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32));
-                    }
-                    setOrganizationState("idle");
-                    setOrganizationError(undefined);
-                  }}
-                  placeholder="Acme Inc"
-                  className="ui-field"
-                  disabled={organizationState === "creating"}
-                />
-              </FormField>
-              <FormField label="workspace slug" required>
-                <input
-                  value={organizationSlug}
-                  onChange={(event) => {
-                    setOrganizationSlug(event.target.value.toLowerCase());
-                    setSlugEdited(true);
-                    setOrganizationState("idle");
-                    setOrganizationError(undefined);
-                  }}
-                  placeholder="acme"
-                  className="ui-field font-mono"
-                  disabled={organizationState === "creating"}
-                />
-              </FormField>
-              <p className="-mt-1 text-xs text-muted"><span className="font-mono">{organizationSlug || "your-team"}.postwork.pcstyle.dev</span> will be your workspace URL.</p>
-              <Button
-                type="submit"
-                disabled={!organizationName.trim() || !organizationSlug.trim()}
-                loading={organizationState === "creating"}
-                loadingLabel="creating…"
-                className="w-full sm:w-auto"
-              >
-                create organization
-              </Button>
-            </div>
-          </form>
-        ) : null}
-        <div className="mt-6 border-t border-border pt-5">
-          <AccessOnboarding />
-        </div>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-          <p className="text-xs text-muted">signed in with the wrong account?</p>
-          <Button
-            variant="quiet"
-            size="sm"
-            onClick={() => void signOutFromActivation(
-              signOut,
-              signOutGuard,
-              setSignOutState,
-              signOutCancellationGuard,
-              redemptionLock,
-            )}
-          >
-            sign out
-          </Button>
-        </div>
-      </div>
-    </AuthFrame>
-  );
-}
-
-function SignInScreen() {
-  // Keep deep links working: signing in (or up) from a protected URL like
-  // /app/settings must land back on that URL, not Clerk's default "/".
-  const redirectTarget = `${window.location.pathname}${window.location.search}`;
-  return (
-    <AuthFrame
-      title="Sign in to Postwork"
-      description="Sign in to join a team or create a workspace. New accounts continue into workspace setup."
-      sidebar={<AccessOnboarding />}
-    >
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <SignIn
-          appearance={clerkAppearance}
-          forceRedirectUrl={redirectTarget}
-          signUpForceRedirectUrl={redirectTarget}
-        />
-        <p className="border-t border-border px-4 py-3 text-center text-xs text-muted">new here? sign up above, then choose <span className="text-fg">create your own organization</span>.</p>
-      </div>
-    </AuthFrame>
-  );
-}
-
-function AuthFrame({
-  title,
-  description,
-  sidebar,
-  children,
-}: {
-  title: string;
-  description: string;
-  sidebar?: ReactNode;
-  children: ReactNode;
-}) {
-  // Mobile order: title → main card → secondary actions. On md+ the left
-  // column holds title + sidebar and the card spans both rows on the right.
-  return (
-    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-bg px-4 py-8 sm:px-6 sm:py-10">
-      <div className="grid w-full max-w-4xl gap-6 rounded-lg border border-border bg-surface p-5 sm:p-7 md:grid-cols-[0.85fr_1.15fr] md:grid-rows-[auto_1fr] md:gap-x-8 md:p-8">
-        <div className="flex min-w-0 flex-col md:col-start-1 md:row-start-1">
-          <p className="text-label font-medium lowercase text-accent-soft">postwork</p>
-          <h1 className="mt-3 max-w-sm text-3xl font-semibold leading-tight tracking-[-0.04em] text-fg sm:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-4 max-w-sm text-sm leading-6 text-muted">{description}</p>
-        </div>
-        <div className="min-w-0 md:col-start-2 md:row-span-2 md:row-start-1">{children}</div>
-        <div className="flex min-w-0 flex-col md:col-start-1 md:row-start-2">
-          {sidebar}
-          <Link to="/" className="mt-8 inline-flex min-h-11 items-center text-xs text-accent-soft hover:text-fg">
-            <span aria-hidden="true" className="mr-1.5">←</span>
-            back to the landing page
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function AccessOnboarding() {
-  const convexClient = useConvex();
-  const requestAccess = useMutation(api.access.requestAccess);
-  const [invite, setInvite] = useState("");
-  const [inviteState, setInviteState] = useState<
-    "idle" | "checking" | "valid" | "invalid"
-  >("idle");
-  const [email, setEmail] = useState("");
-  const [requestState, setRequestState] = useState<
-    "idle" | "sending" | "sent" | "error"
-  >("idle");
-
-  const normalizedInvite = inviteCodeFromInput(invite);
-
-  const checkInvite = async () => {
-    if (!normalizedInvite) return;
-    setInviteState("checking");
-    try {
-      const result = await convexClient.query(api.access.checkInvite, {
-        code: normalizedInvite,
-      });
-      setInviteState(result.valid ? "valid" : "invalid");
-    } catch {
-      setInviteState("invalid");
-    }
-  };
-
-  const sendRequest = async () => {
-    if (!email.trim()) return;
-    setRequestState("sending");
-    try {
-      await requestAccess({ email });
-      setRequestState("sent");
-    } catch {
-      setRequestState("error");
-    }
-  };
-
-  return (
-    <div className="mt-6 space-y-5 text-sm">
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <FormField
-          label="Invite code"
-          error={inviteState === "invalid" ? "This invite code is no longer valid." : undefined}
-          help={inviteState === "valid" ? "This code works. Sign in to activate it." : undefined}
-        >
-          <input
-            value={invite}
-            onChange={(event) => {
-              setInvite(event.target.value);
-              setInviteState("idle");
-            }}
-            placeholder="Example: pw-1234"
-            className="ui-field font-mono"
-          />
-        </FormField>
-        <Button
-          variant="secondary"
-          onClick={() => void checkInvite()}
-          disabled={!normalizedInvite}
-          loading={inviteState === "checking"}
-          loadingLabel="checking…"
-          className="w-full sm:w-auto"
-        >
-          check
-        </Button>
-      </div>
-
-      {requestState === "sent" ? (
-        <p className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent-soft" role="status">
-          Request sent. An admin can approve it and send you an invite.
-        </p>
-      ) : (
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <FormField
-            label="Work email"
-            help="Use this to request access without an invite."
-            error={requestState === "error" ? "We couldn't send the request. Check the address and try again." : undefined}
-          >
-            <input
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setRequestState("idle");
-              }}
-              placeholder="you@company.com"
-              type="email"
-              className="ui-field"
-            />
-          </FormField>
-          <Button
-            variant="secondary"
-            onClick={() => void sendRequest()}
-            disabled={!email.trim()}
-            loading={requestState === "sending"}
-            loadingLabel="sending…"
-            className="w-full sm:w-auto"
-          >
-            request access
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function inviteCodeFromInput(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  const joinMatch = trimmed.match(/\/join\/([^/?#]+)/i);
-  return decodeURIComponent(joinMatch?.[1] ?? trimmed).trim();
 }
 
 export function RequireAdmin({ children }: { children: ReactNode }) {
@@ -472,20 +82,27 @@ function AdminGate({ children }: { children: ReactNode }) {
   const isAdmin = demoPolicy.productAuth ? serverIsAdmin : false;
 
   if (isAdmin === undefined) {
-    return <GateLoading label="Checking admin access" />;
+    return <AuthLoading label="Checking admin access" />;
   }
 
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg px-6 text-center">
-        <h1 className="text-lg font-semibold text-fg">Admin access required</h1>
-        <p className="max-w-sm text-sm text-muted">
+        <h1 className="text-title font-semibold lowercase text-fg">
+          admin access required
+        </h1>
+        <p className="max-w-sm text-body text-muted">
           {demoPolicy.productAuth
             ? "Ask an existing admin if you need access to this area."
             : "Admin controls are available in product mode."}
         </p>
-        <Link to="/app" className="inline-flex min-h-11 items-center text-sm text-accent-soft hover:text-fg">
-          <span aria-hidden="true" className="mr-1.5">←</span>
+        <Link
+          to="/app"
+          className="inline-flex min-h-11 items-center text-body text-accent-soft hover:text-fg"
+        >
+          <span aria-hidden="true" className="mr-1.5">
+            &larr;
+          </span>
           back to the app
         </Link>
       </div>

@@ -54,7 +54,7 @@ export function PriorityPicker({
 }) {
   return (
     <SelectionGroup
-      label="Priority"
+      label="priority"
       value={priority}
       onChange={onChange}
       options={PRIORITIES.map((value) => ({
@@ -75,10 +75,10 @@ export function PostForm({
   autoFocusBody = false,
   titleRef,
   textareaRef,
-  titlePlaceholder = "Example: Release checklist update",
-  bodyPlaceholder = "Add the context, decision, or question.",
-  titleHelp = "Summarize the post in one line.",
-  bodyHelp = "Add the context, decision, or question.",
+  titlePlaceholder = "example: release checklist update",
+  bodyPlaceholder = "add the context, decision, or question.",
+  titleHelp = "summarize the post in one line.",
+  bodyHelp = "add the context, decision, or question.",
   submitLabel = "create post",
   submittingLabel = "posting…",
   resetOnSubmit = false,
@@ -236,7 +236,7 @@ export function PostForm({
       setFormError(
         caught instanceof Error
           ? caught.message
-          : "Couldn't create the post. Check your connection and try again.",
+          : "couldn't create the post. check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -259,9 +259,9 @@ export function PostForm({
           setFormError(null);
         }}
         titleRef={resolvedTitleRef}
-        titleLabel="Title"
+        titleLabel="title"
         titleHelp={titleHelp}
-        titleError={titleTouched && titleMissing ? "Add a title." : undefined}
+        titleError={titleTouched && titleMissing ? "add a title." : undefined}
         titlePlaceholder={titlePlaceholder}
         titleAutoFocus={autoFocusTitle}
         titleRequired={requireTitle}
@@ -272,9 +272,9 @@ export function PostForm({
           setFormError(null);
         }}
         textareaRef={bodyRef}
-        bodyLabel="Post"
+        bodyLabel="post"
         bodyHelp={bodyHelp}
-        bodyError={bodyTouched && bodyMissing ? "Add context, a decision, or a question." : undefined}
+        bodyError={bodyTouched && bodyMissing ? "add context, a decision, or a question." : undefined}
         placeholder={bodyPlaceholder}
         rows={bodyRows}
         autoFocus={autoFocusBody}
@@ -297,7 +297,7 @@ export function PostForm({
         afterBody={
           <div className="grid gap-5">
             {showSpace ? (
-              <FormField label="Space" required error={spaceMissing ? "Choose a space." : undefined}>
+              <FormField label="space" required error={spaceMissing ? "choose a space." : undefined}>
                 <select
                   value={selectedSpace ? selectedSpace.id ?? selectedSpace.label : ""}
                   onChange={(event) => setSpaceKey(event.target.value)}
@@ -312,8 +312,8 @@ export function PostForm({
               </FormField>
             ) : fixedSpace ? (
               <div>
-                <p className="text-sm font-medium text-fg">Space</p>
-                <p className="mt-1.5 rounded-md border border-border bg-bg px-3 py-2.5 text-sm text-muted">
+                <p className="text-body font-medium text-fg">space</p>
+                <p className="mt-1.5 rounded-md border border-border bg-bg px-3 py-2.5 text-body text-muted">
                   {fixedSpace.label}
                 </p>
               </div>
@@ -323,13 +323,13 @@ export function PostForm({
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
               <GifPicker onSelect={onGif} />
-              {hasUploading ? <span className="text-xs text-accent-soft">Optimizing and uploading media…</span> : null}
+              {hasUploading ? <span className="text-label text-accent-soft">optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
-                <span className="ui-error">{attachmentError ?? "Couldn't upload a media attachment. Remove it or try again."}</span>
+                <span className="ui-error">{attachmentError ?? "couldn't upload a media attachment. remove it or try again."}</span>
               ) : null}
-              {attachmentWarning ? <span className="text-xs text-urgent">{attachmentWarning}</span> : null}
+              {attachmentWarning ? <span className="text-label text-urgent">{attachmentWarning}</span> : null}
               {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
-                <span className="text-xs text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
+                <span className="text-label text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
               ) : null}
             </div>
           </div>
@@ -345,8 +345,8 @@ export function PostForm({
         hint={
           <span>
             {canSubmit
-              ? "Press Cmd or Ctrl + Enter to post."
-              : "Complete the required fields before posting."}
+              ? "press cmd or ctrl + enter to post."
+              : "complete the required fields before posting."}
           </span>
         }
         submitLabel={submitLabel}

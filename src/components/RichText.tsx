@@ -41,7 +41,7 @@ function renderInlineCode(text: string): ReactNode[] {
       return (
         <code
           key={index}
-          className="rounded-sm bg-surface-2 px-1 py-0.5 text-[0.85em]"
+          className="rounded-sm bg-surface-2 px-1 py-0.5 text-code"
         >
           {part.slice(1, -1)}
         </code>
