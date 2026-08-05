@@ -353,4 +353,10 @@ dialog.sheet-panel[open] {
   dialog[open]::backdrop {
     transition: none;
   }
+
+  /* No press-scale motion for reduced-motion users. */
+  .ui-button:active:not(:disabled),
+  .ui-interactive-media:active {
+    scale: none;
+  }
 }

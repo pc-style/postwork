@@ -25,6 +25,33 @@ describe("extractBodyUrls", () => {
     const body = "https://a.example https://b.example https://c.example";
     expect(extractBodyUrls(body, 2)).toHaveLength(2);
   });
+
+  test("keeps balanced closing parens but trims unbalanced ones", () => {
+    expect(extractBodyUrls("see https://en.wikipedia.org/wiki/Foo_(bar)", 1)).toEqual([
+      "https://en.wikipedia.org/wiki/Foo_(bar)",
+    ]);
+    expect(extractBodyUrls("(see https://example.com/a)", 1)).toEqual([
+      "https://example.com/a",
+    ]);
+  });
+
+  test("stays linear on a pathological run of trailing close-parens", () => {
+    const body = `https://example.com/a${")".repeat(20_000)}`;
+    const start = performance.now();
+    expect(extractBodyUrls(body, 1)).toEqual(["https://example.com/a"]);
+    // Quadratic rescanning of a 20k-char tail takes seconds; the linear
+    // count-once pass finishes in milliseconds.
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+
+  test("rejects credential- and port-bearing urls like the sibling parsers", () => {
+    expect(extractBodyUrls("https://user:pass@example.com/a", 3)).toEqual([]);
+    expect(extractBodyUrls("https://user@example.com/a", 3)).toEqual([]);
+    expect(extractBodyUrls("https://example.com:8080/a", 3)).toEqual([]);
+    expect(extractBodyUrls("https://example.com/a", 3)).toEqual([
+      "https://example.com/a",
+    ]);
+  });
 });
 
 describe("youtubeThumbnailUrl", () => {

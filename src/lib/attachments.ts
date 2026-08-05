@@ -3,6 +3,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { isDemo } from "./demoMode";
 import {
+  clampFilename,
   decideMediaFile,
   formatMediaSize,
   getMediaKind,
@@ -10,6 +11,8 @@ import {
   MEDIA_WEBP_CONTENT_TYPE,
   MEDIA_WEBP_QUALITY,
   pickSmallerEncoding,
+  pngFilename,
+  readJpegOrientation,
   targetImageDimensions,
   UNSUPPORTED_MEDIA_MESSAGE,
   webpFilename,
@@ -79,14 +82,21 @@ type DecodedImage = {
   source: CanvasImageSource;
   width: number;
   height: number;
+  /** EXIF orientation (1-8) still to be applied when drawing; 1 = none. */
+  orientation: number;
   cleanup: () => void;
 };
 
+/** Only the header segments matter for the orientation tag. */
+const EXIF_SCAN_BYTES = 128 * 1024;
+
 /**
  * Decode with EXIF orientation applied so the canvas re-encode never rotates
- * photos. `createImageBitmap` bakes the orientation into the pixel data;
- * the `<img>` fallback relies on browsers' default `image-orientation:
- * from-image` handling, which every canvas-capable browser now applies.
+ * photos. `createImageBitmap` bakes the orientation into the pixel data. The
+ * `<img>` fallback only runs on browsers without `createImageBitmap` - the
+ * same older browsers (notably older iOS Safari) where canvas `drawImage`
+ * ignores EXIF orientation - so there we read the JPEG orientation tag
+ * ourselves and report it for the draw step to apply as a canvas transform.
  */
 async function decodeStillImage(file: File): Promise<DecodedImage> {
   if (typeof createImageBitmap === "function") {
@@ -96,10 +106,22 @@ async function decodeStillImage(file: File): Promise<DecodedImage> {
         source: bitmap,
         width: bitmap.width,
         height: bitmap.height,
+        orientation: 1,
         cleanup: () => bitmap.close(),
       };
     } catch {
       // Fall through to the <img> decode path.
+    }
+  }
+  // Orientation only exists in JPEG EXIF; other formats are always upright.
+  let orientation = 1;
+  if (file.type === "image/jpeg") {
+    try {
+      orientation = readJpegOrientation(
+        await file.slice(0, EXIF_SCAN_BYTES).arrayBuffer(),
+      );
+    } catch {
+      // Unreadable header; treat as upright.
     }
   }
   const sourceUrl = URL.createObjectURL(file);
@@ -114,11 +136,49 @@ async function decodeStillImage(file: File): Promise<DecodedImage> {
       source: image,
       width: image.naturalWidth,
       height: image.naturalHeight,
+      orientation,
       cleanup: () => URL.revokeObjectURL(sourceUrl),
     };
   } catch (error) {
     URL.revokeObjectURL(sourceUrl);
     throw error;
+  }
+}
+
+/**
+ * Set the canvas transform that maps a raw (unrotated) decode onto an
+ * upright canvas of `width` x `height` for the given EXIF orientation.
+ */
+function applyOrientationTransform(
+  context: CanvasRenderingContext2D,
+  orientation: number,
+  width: number,
+  height: number,
+): void {
+  switch (orientation) {
+    case 2:
+      context.setTransform(-1, 0, 0, 1, width, 0);
+      break;
+    case 3:
+      context.setTransform(-1, 0, 0, -1, width, height);
+      break;
+    case 4:
+      context.setTransform(1, 0, 0, -1, 0, height);
+      break;
+    case 5:
+      context.setTransform(0, 1, 1, 0, 0, 0);
+      break;
+    case 6:
+      context.setTransform(0, 1, -1, 0, width, 0);
+      break;
+    case 7:
+      context.setTransform(0, -1, -1, 0, width, height);
+      break;
+    case 8:
+      context.setTransform(0, -1, 1, 0, 0, height);
+      break;
+    default:
+      break;
   }
 }
 
@@ -135,13 +195,24 @@ async function optimizeStillImage(
 ): Promise<{ file: File; metadata: MediaMetadata }> {
   const decoded = await decodeStillImage(file);
   try {
-    const target = targetImageDimensions(decoded.width, decoded.height);
+    // Orientations 5-8 rotate by 90 degrees, so the upright image swaps axes.
+    const swapAxes = decoded.orientation >= 5;
+    const uprightWidth = swapAxes ? decoded.height : decoded.width;
+    const uprightHeight = swapAxes ? decoded.width : decoded.height;
+    const target = targetImageDimensions(uprightWidth, uprightHeight);
     const canvas = document.createElement("canvas");
     canvas.width = target.width;
     canvas.height = target.height;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Image optimization is unavailable in this browser.");
-    context.drawImage(decoded.source, 0, 0, target.width, target.height);
+    applyOrientationTransform(context, decoded.orientation, target.width, target.height);
+    context.drawImage(
+      decoded.source,
+      0,
+      0,
+      swapAxes ? target.height : target.width,
+      swapAxes ? target.width : target.height,
+    );
     const encoded = await canvasToBlob(canvas, MEDIA_WEBP_CONTENT_TYPE, MEDIA_WEBP_QUALITY);
 
     const choice = pickSmallerEncoding({
@@ -153,14 +224,19 @@ async function optimizeStillImage(
       return { file, metadata };
     }
     // Browsers without WebP encode support fall back to PNG in toBlob; trust
-    // the blob's actual type so the upload content type stays accurate.
+    // the blob's actual type so the upload content type and extension stay
+    // accurate instead of shipping PNG bytes under a .jpg name.
     const encodedType = encoded.type || MEDIA_WEBP_CONTENT_TYPE;
+    const encodedName = encodedType === MEDIA_WEBP_CONTENT_TYPE
+      ? webpFilename(file.name)
+      : encodedType === "image/png"
+        ? pngFilename(file.name)
+        : file.name;
     return {
-      file: new File(
-        [encoded],
-        encodedType === MEDIA_WEBP_CONTENT_TYPE ? webpFilename(file.name) : file.name,
-        { type: encodedType, lastModified: file.lastModified },
-      ),
+      file: new File([encoded], encodedName, {
+        type: encodedType,
+        lastModified: file.lastModified,
+      }),
       metadata: { width: target.width, height: target.height },
     };
   } finally {
@@ -231,7 +307,9 @@ export function useAttachmentUpload() {
     return {
       storageId: payload.storageId,
       uploadToken,
-      filename: optimized.file.name,
+      // Clamp unconditionally: an over-long original name would upload fine
+      // and then fail schema validation when the post or reply is created.
+      filename: clampFilename(optimized.file.name),
       contentType: finalContentType,
       mediaKind: finalDecision.kind,
       size: optimized.file.size,

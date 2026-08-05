@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 
-const TABBABLE_SELECTOR = [
+export const TABBABLE_SELECTOR = [
   "a[href]",
   "area[href]",
   "button",

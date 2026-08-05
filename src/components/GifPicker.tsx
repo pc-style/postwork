@@ -24,7 +24,10 @@ export function GifPicker({
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
+  // Single dismiss path (outside click, focus-out, Escape). Guarded so a
+  // stray global event while the picker is closed never steals focus.
   usePopoverDismiss(rootRef, () => {
+    if (!open) return;
     setOpen(false);
     // Restore focus to the trigger only when the dismissal would otherwise
     // drop focus to <body> (keyboard/screen-reader case). When the user
@@ -61,16 +64,7 @@ export function GifPicker({
   };
 
   return (
-    <div
-      ref={rootRef}
-      className="relative"
-      onKeyDown={(event) => {
-        if (open && event.key === "Escape") {
-          event.preventDefault();
-          close();
-        }
-      }}
-    >
+    <div ref={rootRef} className="relative">
       <Button
         ref={triggerRef}
         variant="secondary"
@@ -112,7 +106,7 @@ export function GifPicker({
                     }
                   }}
                   autoFocus
-                  placeholder="search GIFs"
+                  placeholder="Search GIFs"
                   className="ui-field min-w-0 flex-1"
                 />
                 <Button

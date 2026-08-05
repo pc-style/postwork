@@ -24,7 +24,7 @@ export function JoinPage() {
         description="it may have expired, been revoked, or already been used. you can still sign in and request access."
       >
         <Link
-          to="/app"
+          to={isDemo ? "/" : "/app"}
           className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
         >
           sign in and request access

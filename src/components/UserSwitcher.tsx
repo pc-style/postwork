@@ -15,7 +15,19 @@ export function UserSwitcher() {
   const panelId = useId();
   const headingId = useId();
 
-  usePopoverDismiss(rootRef, () => setOpen(false));
+  // Single close path for every dismissal (outside click, focus-out, Escape,
+  // selection). If closing would drop focus to <body> — e.g. the user clicked
+  // a non-focusable area — return it to the trigger; otherwise leave the
+  // user's focus alone.
+  const close = () => {
+    if (!open) return;
+    setOpen(false);
+    requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body) triggerRef.current?.focus();
+    });
+  };
+  usePopoverDismiss(rootRef, close);
 
   useEffect(() => {
     if (open) selectedRef.current?.focus();
@@ -49,8 +61,7 @@ export function UserSwitcher() {
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
-              setOpen(false);
-              requestAnimationFrame(() => triggerRef.current?.focus());
+              close();
             }
           }}
           className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
@@ -66,8 +77,7 @@ export function UserSwitcher() {
                   aria-current={selected ? "true" : undefined}
                   onClick={() => {
                     setCurrentUserId(user._id);
-                    setOpen(false);
-                    requestAnimationFrame(() => triggerRef.current?.focus());
+                    close();
                   }}
                   className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-2"
                 >
@@ -84,7 +94,7 @@ export function UserSwitcher() {
                 <Link
                   to="/app/u/$userId"
                   params={{ userId: user._id }}
-                  onClick={() => setOpen(false)}
+                  onClick={close}
                   className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-body text-muted transition-colors hover:bg-surface-2 hover:text-accent-soft"
                   aria-label={`Open ${user.name}'s wall`}
                 >

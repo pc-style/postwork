@@ -13,17 +13,19 @@ import { useUnreadNotifier } from "../lib/notifications";
 // "priority" is the urgent triage view of the same feed — a genuine shortcut,
 // not a duplicate of "home". Both point at "/" but carry different search.
 // "settings" appears exactly once in the shell, here in the nav.
+// "home" carries search={{}} (not undefined): TanStack Router preserves the
+// current search when the prop is undefined, and home must clear ?priority.
 const NAV: ReadonlyArray<{
   key: NavKey;
   label: string;
   to: "/app" | "/app/spaces" | "/app/agents" | "/app/settings";
-  search?: { priority: "urgent" };
+  search: { priority?: "urgent" };
 }> = [
-  { key: "home", label: "home", to: "/app" },
+  { key: "home", label: "home", to: "/app", search: {} },
   { key: "priority", label: "priority", to: "/app", search: { priority: "urgent" } },
-  { key: "spaces", label: "spaces", to: "/app/spaces" },
-  { key: "agents", label: "agents", to: "/app/agents" },
-  { key: "settings", label: "settings", to: "/app/settings" },
+  { key: "spaces", label: "spaces", to: "/app/spaces", search: {} },
+  { key: "agents", label: "agents", to: "/app/agents", search: {} },
+  { key: "settings", label: "settings", to: "/app/settings", search: {} },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -95,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </aside>
 
-        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-24 md:scroll-mt-4">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-56 md:scroll-mt-4">{children}</main>
 
         <aside aria-label="queue summary" className="hidden lg:block">
           <div className="sticky top-6 space-y-3">

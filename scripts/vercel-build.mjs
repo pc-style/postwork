@@ -14,13 +14,23 @@ const FRONTEND_BUILD = "bun run validate:deploy-env && bun run build";
 const hasDeployKey = Boolean(process.env.CONVEX_DEPLOY_KEY);
 
 let command;
-const env = { ...process.env };
+let env = process.env;
 if (hasDeployKey) {
-  // The beta branch ships the live site from Vercel's preview environment.
-  // The Convex CLI refuses a production deploy key when VERCEL_ENV is not
-  // "production", so mark the subprocess as production: having the key IS the
-  // deliberate deploy signal here.
-  env.VERCEL_ENV = "production";
+  const realVercelEnv = process.env.VERCEL_ENV;
+  let frontendCmd = FRONTEND_BUILD;
+  if (realVercelEnv !== "production") {
+    // The beta branch ships the live site from Vercel's preview environment.
+    // The Convex CLI refuses a production deploy key when VERCEL_ENV is not
+    // "production", so override it — but only for the `convex deploy`
+    // invocation itself (a dedicated env object, only when not already
+    // production). The frontend build runs via --cmd with the real label
+    // restored so it never sees a false production environment.
+    env = { ...process.env, VERCEL_ENV: "production" };
+    frontendCmd =
+      realVercelEnv === undefined
+        ? `env -u VERCEL_ENV bash -c ${JSON.stringify(FRONTEND_BUILD)}`
+        : `VERCEL_ENV=${JSON.stringify(realVercelEnv)} ${FRONTEND_BUILD}`;
+  }
   command = [
     "bunx",
     "convex",
@@ -28,7 +38,7 @@ if (hasDeployKey) {
     "--cmd-url-env-var-name",
     "VITE_CONVEX_URL",
     "--cmd",
-    FRONTEND_BUILD,
+    frontendCmd,
   ];
 } else {
   console.log(

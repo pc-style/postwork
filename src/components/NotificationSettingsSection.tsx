@@ -35,14 +35,29 @@ export function NotificationSettingsSection() {
               allow notifications
             </Button>
           ) : null}
-          <Button
-            variant="quiet"
-            size="sm"
-            aria-pressed={enabled}
-            onClick={() => setEnabled(!enabled)}
-          >
-            {enabled ? "turn off" : "turn on"}
-          </Button>
+          {permission !== "denied" ? (
+            <Button
+              variant="quiet"
+              size="sm"
+              aria-pressed={enabled}
+              onClick={async () => {
+                if (enabled) {
+                  setEnabled(false);
+                  return;
+                }
+                // "turn on" is only meaningful with browser permission: ask
+                // first when we haven't yet, and enable only on grant.
+                if (permission === "default") {
+                  await request();
+                  if (Notification.permission === "granted") setEnabled(true);
+                  return;
+                }
+                setEnabled(true);
+              }}
+            >
+              {enabled ? "turn off" : "turn on"}
+            </Button>
+          ) : null}
         </div>
       </div>
       {permission === "denied" ? (

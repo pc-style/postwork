@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Feed cover display preference. "compact" renders a small square thumbnail
- * on the card's right side; "regular" renders a wide banner. Persisted
- * locally — it is a per-device viewing preference, not backend state.
+ * Feed cover display preference. "compact" is text-only (no cover);
+ * "regular" renders the cover as a small thumbnail on the card's right side.
+ * Persisted locally — it is a per-device viewing preference, not backend
+ * state.
  */
 export type FeedCoverMode = "regular" | "compact";
 
@@ -21,6 +22,30 @@ function readStoredMode(): FeedCoverMode {
 let mode: FeedCoverMode = typeof window === "undefined" ? DEFAULT_MODE : readStoredMode();
 const listeners = new Set<() => void>();
 
+// Cross-tab sync: another tab changing (or clearing) the stored preference
+// fires "storage" here. `key === null` means localStorage.clear(); a removed
+// key rereads as the default. Attached only while subscribers exist.
+function handleStorageEvent(event: StorageEvent) {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  const next = readStoredMode();
+  if (next === mode) return;
+  mode = next;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(onStoreChange: () => void) {
+  if (listeners.size === 0) {
+    window.addEventListener("storage", handleStorageEvent);
+  }
+  listeners.add(onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+    if (listeners.size === 0) {
+      window.removeEventListener("storage", handleStorageEvent);
+    }
+  };
+}
+
 export function setFeedCoverMode(next: FeedCoverMode) {
   mode = next;
   try {
@@ -31,12 +56,14 @@ export function setFeedCoverMode(next: FeedCoverMode) {
   for (const listener of listeners) listener();
 }
 
+/** Non-reactive read of the current mode, for use outside render (prefetch). */
+export function readFeedCoverMode(): FeedCoverMode {
+  return mode;
+}
+
 export function useFeedCoverMode(): FeedCoverMode {
   return useSyncExternalStore(
-    (onStoreChange) => {
-      listeners.add(onStoreChange);
-      return () => listeners.delete(onStoreChange);
-    },
+    subscribe,
     () => mode,
     () => DEFAULT_MODE,
   );

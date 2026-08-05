@@ -18,17 +18,33 @@ function withoutCode(text: string): string {
 }
 
 function trimUrlPunctuation(value: string): string {
-  let result = value.replace(/[.,!?;:]+$/g, "");
-  while (result.endsWith(")")) {
-    const opens = (result.match(/\(/g) ?? []).length;
-    const closes = (result.match(/\)/g) ?? []).length;
-    if (closes <= opens) break;
-    result = result.slice(0, -1);
+  const result = value.replace(/[.,!?;:]+$/g, "");
+  // Count parentheses once and decrement the close count while trimming, so a
+  // crafted body ending in thousands of ")" stays linear instead of rescanning
+  // the whole string per trimmed character.
+  let opens = 0;
+  let closes = 0;
+  for (const ch of result) {
+    if (ch === "(") opens += 1;
+    else if (ch === ")") closes += 1;
   }
-  return result;
+  let end = result.length;
+  while (end > 0 && result[end - 1] === ")" && closes > opens) {
+    end -= 1;
+    closes -= 1;
+  }
+  return end === result.length ? result : result.slice(0, end);
 }
 
-/** First few http(s) URLs in a post body, code spans excluded, deduped. */
+/**
+ * First few http(s) URLs in a post body, code spans excluded, deduped.
+ *
+ * Keep in sync with the sibling body-URL parsers: `extractUrls` /
+ * `normalizeRichUrl` in `src/lib/richEmbeds.ts` (the post-body preview parser)
+ * and `normalizePreviewUrl` in `convex/linkPreviews.ts`. They can't share code
+ * directly — richEmbeds is client-bundle code — so this mirrors their safety
+ * checks: http(s) only, and no credential- or port-bearing URLs.
+ */
 export function extractBodyUrls(text: string, max: number): string[] {
   const matches = withoutCode(text).match(URL_PATTERN) ?? [];
   const unique = new Set<string>();
@@ -38,6 +54,7 @@ export function extractBodyUrls(text: string, max: number): string[] {
     try {
       const parsed = new URL(candidate);
       if (parsed.protocol !== "https:" && parsed.protocol !== "http:") continue;
+      if (parsed.username || parsed.password || parsed.port) continue;
       unique.add(parsed.toString());
     } catch {
       // Malformed URLs stay plain body text.

@@ -97,10 +97,27 @@ export function ComposerShell({
     if (!autoGrow) return;
     const node = textareaRef?.current;
     if (!node) return;
-    // Let CSS min/max-height clamp the measured content height. Resetting to
-    // "auto" first makes scrollHeight shrink again when text is deleted.
-    node.style.height = "auto";
-    node.style.height = `${node.scrollHeight + 2}px`;
+    const measure = () => {
+      // Let CSS min/max-height clamp the measured content height. Resetting to
+      // "auto" first makes scrollHeight shrink again when text is deleted.
+      node.style.height = "auto";
+      node.style.height = `${node.scrollHeight + 2}px`;
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    // Wrapped text reflows when the textarea narrows or widens (window
+    // resize, rotation, sidebar drag), so remeasure on width changes. Ignore
+    // height-only notifications: our own height writes retrigger the observer
+    // and would otherwise loop.
+    let lastWidth = node.clientWidth;
+    const observer = new ResizeObserver(() => {
+      const width = node.clientWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      measure();
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
   }, [autoGrow, body, textareaRef]);
 
   const handleKeyDown = (

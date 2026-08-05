@@ -61,9 +61,11 @@ const NAV: ReadonlyArray<{
   key: NavKey;
   label: string;
   to: "/app" | "/app/catch-up" | "/app/spaces" | "/app/agents" | "/app/settings";
-  search?: { priority: "urgent" };
+  search?: { priority?: "urgent" };
 }> = [
-  { key: "home", label: "home", to: "/app" },
+  // Home carries an explicit empty `search` so clicking it clears filter
+  // params (?priority=urgent, ?unread) instead of preserving them.
+  { key: "home", label: "home", to: "/app", search: {} },
   { key: "catch-up", label: "catch up", to: "/app/catch-up" },
   { key: "priority", label: "priority", to: "/app", search: { priority: "urgent" } },
   { key: "spaces", label: "spaces", to: "/app/spaces" },

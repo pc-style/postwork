@@ -252,6 +252,7 @@ export const postsForSpace = query({
   args: {
     spaceId: v.id("spaces"),
     viewerId: v.optional(v.id("users")),
+    includeCovers: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const viewer = (await resolveReadScope(ctx, args.viewerId)).viewer;
@@ -259,6 +260,11 @@ export const postsForSpace = query({
       return [];
     }
 
-    return await listPostsBySpaceId(ctx, args.spaceId, viewer?._id);
+    return await listPostsBySpaceId(
+      ctx,
+      args.spaceId,
+      viewer?._id,
+      args.includeCovers ?? false,
+    );
   },
 });

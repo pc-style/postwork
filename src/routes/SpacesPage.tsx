@@ -136,7 +136,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
               setName(event.target.value);
               setError(null);
             }}
-            placeholder="example: launch planning"
+            placeholder="Example: Launch planning"
             className="ui-field text-body placeholder:text-muted/60"
           />
         </FormField>
@@ -149,7 +149,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
               setDescription(event.target.value);
               setError(null);
             }}
-            placeholder="what belongs in this space?"
+            placeholder="What belongs in this space?"
             className="ui-field resize-y text-body leading-6 placeholder:text-muted/60"
           />
         </FormField>

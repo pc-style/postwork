@@ -5,7 +5,11 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { trapDialogFocus } from "../lib/dialogFocus";
+import {
+  isEffectivelyTabbable,
+  TABBABLE_SELECTOR,
+  trapDialogFocus,
+} from "../lib/dialogFocus";
 import { Button } from "./Button";
 
 export function Dialog({
@@ -48,10 +52,8 @@ export function Dialog({
     const focusFrame = requestAnimationFrame(() => {
       const firstTabbable = dialog
         ? Array.from(
-            dialog.querySelectorAll<HTMLElement>(
-              "input:not([type='hidden']):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
-            ),
-          ).find((element) => element.checkVisibility?.() ?? true)
+            dialog.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR),
+          ).find(isEffectivelyTabbable)
         : undefined;
       const target =
         initialFocusRefRef.current?.current ??

@@ -19,6 +19,7 @@ import type {
   RepliesResult,
 } from "./types";
 import { isDemo } from "./demoMode";
+import { readFeedCoverMode, useFeedCoverMode } from "./feedDisplay";
 import { prefetchQuery } from "./prefetch";
 import { useSession } from "./session";
 import { isSummaryStale } from "../../convex/lib/summaryStaleness";
@@ -848,29 +849,37 @@ function useFeedDemo(args: {
     space: args.space,
     priority: args.priority,
     // onlyUnread is applied client-side so session activity can flip it.
+    // Covers cost bounded backend reads, so only the "regular" (cover-showing)
+    // mode requests them; flipping the mode swaps to the other cached query.
+    includeCovers: useFeedCoverMode() === "regular",
   });
 
-  if (backend === undefined) return undefined;
-
   const { posts, applyOverlay, enrichSessionPost } = store.overlay;
+  const { space, priority, onlyUnread } = args;
 
-  const sessionMatched = posts
-    .filter(
-      (p) =>
-        !p.wallOwnerId &&
-        (!args.space || p.space === args.space) &&
-        (!args.priority || p.priority === args.priority),
-    )
-    .map(enrichSessionPost);
+  // Memoized so post object identities are stable across unrelated renders
+  // (search keystrokes, router state) — the FeedRow memo depends on it.
+  return useMemo(() => {
+    if (backend === undefined) return undefined;
 
-  // Wall posts live on user walls, not in the global feed.
-  const merged = [
-    ...sessionMatched,
-    ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
-  ];
-  merged.sort(sortPosts);
-  const result = args.onlyUnread ? merged.filter((p) => p.unread) : merged;
-  return { posts: result, status: "Exhausted", loadMore: null };
+    const sessionMatched = posts
+      .filter(
+        (p) =>
+          !p.wallOwnerId &&
+          (!space || p.space === space) &&
+          (!priority || p.priority === priority),
+      )
+      .map(enrichSessionPost);
+
+    // Wall posts live on user walls, not in the global feed.
+    const merged = [
+      ...sessionMatched,
+      ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
+    ];
+    merged.sort(sortPosts);
+    const result = onlyUnread ? merged.filter((p) => p.unread) : merged;
+    return { posts: result, status: "Exhausted" as const, loadMore: null };
+  }, [backend, posts, applyOverlay, enrichSessionPost, space, priority, onlyUnread]);
 }
 
 function useFeedProduct(args: {
@@ -885,6 +894,8 @@ function useFeedProduct(args: {
       viewerId: store.currentUserId,
       space: args.space,
       priority: args.priority,
+      // Only the cover-showing display mode pays for cover resolution.
+      includeCovers: useFeedCoverMode() === "regular",
     },
     { initialNumItems: FEED_PAGE_SIZE },
   );
@@ -906,7 +917,10 @@ function useFeedProduct(args: {
 // Group C — wall feed: a user's own posts plus posts left on their wall.
 export function useWall(userId: Id<"users">) {
   const store = useStore();
-  const backend = useQuery(api.posts.feed, { viewerId: store.currentUserId });
+  const backend = useQuery(api.posts.feed, {
+    viewerId: store.currentUserId,
+    includeCovers: useFeedCoverMode() === "regular",
+  });
   if (backend === undefined) return undefined;
   if (store.mode === "product") {
     return backend.filter(
@@ -935,12 +949,14 @@ export function useSpaceFeed(
     | undefined,
 ) {
   const store = useStore();
+  const includeCovers = useFeedCoverMode() === "regular";
   const backend = useQuery(
     api.spaces.postsForSpace,
     args && !isLocalId(args.spaceId)
       ? {
           spaceId: args.spaceId,
           viewerId: store.currentUserId,
+          includeCovers,
         }
       : "skip",
   );
@@ -970,9 +986,12 @@ export function useSpaceFeed(
 
 export function useSearch(term: string) {
   const store = useStore();
+  const includeCovers = useFeedCoverMode() === "regular";
   const backend = useQuery(
     api.posts.search,
-    term.trim() ? { term, viewerId: store.currentUserId } : "skip",
+    term.trim()
+      ? { term, viewerId: store.currentUserId, includeCovers }
+      : "skip",
   );
   const t = term.trim().toLowerCase();
   if (!t) return undefined;
@@ -996,7 +1015,11 @@ export function useSearch(term: string) {
  * on hover/focus/touch of a nav link). Each case prefetches the exact
  * query+args the destination page mounts with, so it renders without a
  * loading state. Destinations whose data is already live (home reuses the
- * feed subscription) or form-driven (settings) have nothing to warm.
+ * feed subscription) or form-driven (settings) have nothing to warm. Demo
+ * mode skips destinations backed by local demo data: catch-up composes from
+ * the already-live feed subscription and agent tasks are session-local, so
+ * prefetching their product queries would only issue unauthenticated calls
+ * the demo pages never read.
  */
 export function usePrefetchNav() {
   const store = useStore();
@@ -1005,13 +1028,13 @@ export function usePrefetchNav() {
     (key: string) => {
       switch (key) {
         case "catch-up":
-          prefetchQuery(api.posts.catchUpDigest, {});
+          if (!isDemo) prefetchQuery(api.posts.catchUpDigest, {});
           break;
         case "spaces":
           prefetchQuery(api.spaces.list, { viewerId });
           break;
         case "agents":
-          prefetchQuery(api.agentTasks.list, {});
+          if (!isDemo) prefetchQuery(api.agentTasks.list, {});
           break;
         default:
           break;
@@ -1033,7 +1056,13 @@ export function usePrefetchSpace() {
     (space: { slug: string; _id: Id<"spaces"> }) => {
       if (isLocalId(space._id)) return;
       prefetchQuery(api.spaces.getBySlug, { slug: space.slug, viewerId });
-      prefetchQuery(api.spaces.postsForSpace, { spaceId: space._id, viewerId });
+      prefetchQuery(api.spaces.postsForSpace, {
+        spaceId: space._id,
+        viewerId,
+        // Non-reactive read: the prefetch must match the exact args
+        // useSpaceFeed will mount with, at the moment of the hover.
+        includeCovers: readFeedCoverMode() === "regular",
+      });
     },
     [viewerId],
   );

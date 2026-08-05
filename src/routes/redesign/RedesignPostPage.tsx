@@ -55,20 +55,22 @@ export function RedesignPostPage() {
   const [editing, setEditing] = useState(false);
   const showSkeleton = useDeferredFlag(150);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(AGENT_SIDEBAR_DEFAULT);
+  // Lazy initializer: the saved width applies on first paint (no jump from
+  // the default); readSidebarWidth already guards `typeof window`.
+  const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
   const [resizing, setResizing] = useState(false);
   const resizeRef = useRef<{ startX: number; startWidth: number; currentWidth: number } | null>(
     null,
   );
 
-  useEffect(() => {
-    setSidebarWidth(readSidebarWidth());
-  }, []);
-
   const onResizePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!sidebarOpen) return;
+      // preventDefault stops text selection during the drag, but also
+      // suppresses the default pointerdown focus — refocus explicitly so the
+      // separator keeps its keyboard-resize affordance after a drag.
       event.preventDefault();
+      event.currentTarget.focus();
       resizeRef.current = {
         startX: event.clientX,
         startWidth: sidebarWidth,

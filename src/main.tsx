@@ -14,8 +14,13 @@ async function start() {
   if (import.meta.env.DEV) {
     // react-scan highlights unnecessary re-renders. Dev-only dynamic import:
     // it must instrument before the first render but never ships to prod.
-    const { scan } = await import("react-scan");
-    scan({ enabled: true });
+    // Dev tooling must never block mounting, so failures only log.
+    try {
+      const { scan } = await import("react-scan");
+      scan({ enabled: true });
+    } catch (error) {
+      console.error("react-scan failed to initialize; continuing without it", error);
+    }
   }
 
   createRoot(document.getElementById("root")!).render(
@@ -27,4 +32,6 @@ async function start() {
   );
 }
 
-void start();
+start().catch((error: unknown) => {
+  console.error("app failed to start", error);
+});

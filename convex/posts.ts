@@ -77,25 +77,35 @@ export type EnrichedPost = Doc<"posts"> & {
 
 // Cover resolution is read-time work, so it is strictly bounded per query
 // invocation rather than per post:
+// - covers resolve at all only when the caller opts in (`includeCovers`);
+//   the persisted default display mode hides covers, so the hot path skips
+//   every attachment scan / storage URL / preview lookup,
 // - only the leading COVER_POST_LIMIT posts of a result set resolve covers
 //   (three paginated pages; deeper rows return `cover: null`),
 // - each post's attachment scan reads at most the per-post attachment cap —
 //   post-level rows are inserted at creation, before any reply media, so they
 //   always sort first within the (orgId, postId) index range,
-// - all linkPreviews point reads share one budget across the whole page, so
-//   link-heavy bodies cannot multiply lookups. YouTube/Giphy thumbnails are
-//   derived without any read and stay outside the budget.
+// - all linkPreviews point reads share one budget across the whole page, spent
+//   strictly in display order, so link-heavy bodies cannot multiply lookups
+//   and a later row can never starve an earlier one. YouTube/Giphy thumbnails
+//   are derived without any read and stay outside the budget.
 const COVER_POST_LIMIT = 60;
 const COVER_BODY_URLS = 3;
 const COVER_PREVIEW_LOOKUP_BUDGET = 30;
 
-type CoverBudget = { previewLookups: number };
+/**
+ * Everything about a post's cover that can be resolved without touching the
+ * shared preview-lookup budget: a final attachment cover, or the ordered
+ * linkPreviews candidates to try plus the derived (YouTube/Giphy) cover to
+ * fall back to when they miss.
+ */
+type CoverPlan = {
+  cover: PostCover | null;
+  pendingPreviews: string[];
+  fallback: PostCover | null;
+};
 
-async function resolveCover(
-  ctx: QueryCtx,
-  post: Doc<"posts">,
-  budget: CoverBudget,
-): Promise<PostCover | null> {
+async function planCover(ctx: QueryCtx, post: Doc<"posts">): Promise<CoverPlan> {
   const attachments = await ctx.db
     .query("postAttachments")
     .withIndex("by_org_id_and_post_id", (q) =>
@@ -109,55 +119,86 @@ async function resolveCover(
     const url = await ctx.storage.getUrl(att.storageId);
     if (!url) continue;
     return {
-      kind: "attachment",
-      url,
-      alt: att.filename,
-      width: att.width,
-      height: att.height,
+      cover: {
+        kind: "attachment",
+        url,
+        alt: att.filename,
+        width: att.width,
+        height: att.height,
+      },
+      pendingPreviews: [],
+      fallback: null,
     };
   }
 
+  const pendingPreviews: string[] = [];
+  let fallback: PostCover | null = null;
   for (const raw of extractBodyUrls(post.body, COVER_BODY_URLS)) {
     const direct = directImageCoverUrl(raw);
-    if (direct) return { kind: "embed", url: direct, alt: "gif" };
+    if (direct) {
+      fallback = { kind: "embed", url: direct, alt: "giphy image" };
+      break;
+    }
     const youtube = youtubeThumbnailUrl(raw);
-    if (youtube) return { kind: "embed", url: youtube, alt: "youtube video" };
-    if (budget.previewLookups <= 0) continue;
-    const normalized = normalizePreviewUrl(raw);
-    if (!normalized) continue;
-    budget.previewLookups -= 1;
+    if (youtube) {
+      fallback = { kind: "embed", url: youtube, alt: "youtube video" };
+      break;
+    }
     // Same normalized key the thread view writes when it requests previews,
     // so the feed reuses the cache instead of fetching anything itself.
-    const preview = await ctx.db
-      .query("linkPreviews")
-      .withIndex("by_url", (q) => q.eq("url", normalized))
-      .unique();
-    if (preview?.status === "ok" && preview.imageUrl) {
-      return {
-        kind: "embed",
-        url: preview.imageUrl,
-        alt: preview.title ?? preview.siteName ?? "link preview",
-      };
-    }
+    const normalized = normalizePreviewUrl(raw);
+    if (normalized) pendingPreviews.push(normalized);
   }
-  return null;
+  return { cover: null, pendingPreviews, fallback };
 }
 
 /**
  * Attach covers to an already-enriched, already-ordered result set. Callers
  * pass posts in display order so the bounded budget spends itself on the rows
  * the viewer actually sees first.
+ *
+ * Two phases keep the budget deterministic without serializing the heavy work:
+ * attachment scans, storage URLs, and derived thumbnails resolve in parallel
+ * (no shared state), then the preview-needing subset spends the shared
+ * linkPreviews budget sequentially in display order — at most
+ * COVER_PREVIEW_LOOKUP_BUDGET point reads.
  */
 async function attachCovers(
   ctx: QueryCtx,
   posts: EnrichedPost[],
+  includeCovers: boolean,
 ): Promise<EnrichedPost[]> {
-  const budget: CoverBudget = { previewLookups: COVER_PREVIEW_LOOKUP_BUDGET };
-  const covers = await Promise.all(
-    posts
-      .slice(0, COVER_POST_LIMIT)
-      .map((post) => resolveCover(ctx, post, budget)),
+  if (!includeCovers) return posts;
+  const plans = await Promise.all(
+    posts.slice(0, COVER_POST_LIMIT).map((post) => planCover(ctx, post)),
   );
+
+  let previewLookups = COVER_PREVIEW_LOOKUP_BUDGET;
+  const covers: (PostCover | null)[] = [];
+  for (const plan of plans) {
+    if (plan.cover) {
+      covers.push(plan.cover);
+      continue;
+    }
+    let cover: PostCover | null = null;
+    for (const normalized of plan.pendingPreviews) {
+      if (previewLookups <= 0) break;
+      previewLookups -= 1;
+      const preview = await ctx.db
+        .query("linkPreviews")
+        .withIndex("by_url", (q) => q.eq("url", normalized))
+        .unique();
+      if (preview?.status === "ok" && preview.imageUrl) {
+        cover = {
+          kind: "embed",
+          url: preview.imageUrl,
+          alt: preview.title ?? preview.siteName ?? "link preview",
+        };
+        break;
+      }
+    }
+    covers.push(cover ?? plan.fallback);
+  }
   return posts.map((post, index) => ({
     ...post,
     cover: covers[index] ?? null,
@@ -262,6 +303,7 @@ export async function listPostsBySpaceId(
   ctx: QueryCtx,
   spaceId: Id<"spaces">,
   viewerId: Id<"users"> | undefined,
+  includeCovers: boolean,
 ): Promise<EnrichedPost[]> {
   const space = await ctx.db.get(spaceId);
   if (!space?.orgId) return [];
@@ -281,7 +323,7 @@ export async function listPostsBySpaceId(
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return b.lastActivityAt - a.lastActivityAt;
   });
-  return await attachCovers(ctx, enriched);
+  return await attachCovers(ctx, enriched, includeCovers);
 }
 
 /** Activity-bumped feed with optional space / priority / unread filtering. */
@@ -291,6 +333,9 @@ export const feed = query({
     space: v.optional(v.string()),
     priority: v.optional(priority),
     onlyUnread: v.optional(v.boolean()),
+    // Cover resolution is opt-in: the default display mode hides covers, so
+    // clients (and older callers that omit the arg) skip the work entirely.
+    includeCovers: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const scope = await resolveReadScope(ctx, args.viewerId);
@@ -333,12 +378,14 @@ export const feed = query({
       return b.lastActivityAt - a.lastActivityAt;
     });
 
-    let enriched = await attachCovers(
-      ctx,
-      await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id))),
+    // Filter before attaching covers so the bounded cover budget spends
+    // itself on the rows actually displayed (unread posts beyond the first
+    // COVER_POST_LIMIT candidates would otherwise lose their covers).
+    let enriched = await Promise.all(
+      allowed.map((p) => enrich(ctx, p, viewer?._id)),
     );
     if (args.onlyUnread) enriched = enriched.filter((p) => p.unread);
-    return enriched;
+    return await attachCovers(ctx, enriched, args.includeCovers ?? false);
   },
 });
 
@@ -353,6 +400,7 @@ export const feedPaginated = query({
     viewerId: v.optional(v.id("users")),
     space: v.optional(v.string()),
     priority: v.optional(priority),
+    includeCovers: v.optional(v.boolean()),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
@@ -387,6 +435,7 @@ export const feedPaginated = query({
     const enriched = await attachCovers(
       ctx,
       await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id))),
+      args.includeCovers ?? false,
     );
     return { ...result, page: enriched };
   },
@@ -441,7 +490,11 @@ export const counts = query({
 
 /** Full-text search across post titles and bodies. */
 export const search = query({
-  args: { term: v.string(), viewerId: v.optional(v.id("users")) },
+  args: {
+    term: v.string(),
+    viewerId: v.optional(v.id("users")),
+    includeCovers: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     const scope = await resolveReadScope(ctx, args.viewerId);
     const viewer = scope.viewer;
@@ -482,6 +535,7 @@ export const search = query({
     return await attachCovers(
       ctx,
       await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id))),
+      args.includeCovers ?? false,
     );
   },
 });

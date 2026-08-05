@@ -27,7 +27,6 @@ export function Composer({
   autoFocus = false,
   compact = false,
   onDone,
-  onSubmitted,
 }: {
   postId: Id<"posts">;
   parentId?: Id<"replies">;
@@ -36,8 +35,6 @@ export function Composer({
   compact?: boolean;
   /** Called on submit success AND when the user cancels. */
   onDone?: () => void;
-  /** Called only after a reply is successfully created. */
-  onSubmitted?: () => void;
 }) {
   const { currentUser, currentUserId, users } = useSession();
   const store = useStore();
@@ -107,7 +104,6 @@ export function Composer({
       });
       setBody("");
       clearAttachments();
-      onSubmitted?.();
       onDone?.();
 
       for (const handle of parseAgentMentions(text)) {
@@ -126,7 +122,7 @@ export function Composer({
       setError(
         caught instanceof Error
           ? caught.message
-          : "Couldn't add the reply. Check your connection and try again.",
+          : "couldn't add the reply. check your connection and try again.",
       );
     } finally {
       setBusy(false);

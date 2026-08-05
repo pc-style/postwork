@@ -20,12 +20,12 @@ type Choice = "invite" | "request" | "create";
 
 // The saved request is scoped to the Clerk user who sent it, so signing out
 // and back in with a different account never shows someone else's request.
-function readStoredRequest(userId: string | undefined): string | null {
+function readStoredRequest(userId: string): string | null {
   const raw = window.localStorage.getItem(REQUEST_STORAGE_KEY);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as { email?: string; userId?: string };
-    if (parsed.email && userId && parsed.userId === userId) return parsed.email;
+    if (parsed.email && parsed.userId === userId) return parsed.email;
   } catch {
     // Legacy plain-email values (no user scope) fall through and are cleared.
   }
@@ -37,7 +37,28 @@ export function inviteCodeFromInput(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
   const joinMatch = trimmed.match(/\/join\/([^/?#]+)/i);
-  return decodeURIComponent(joinMatch?.[1] ?? trimmed).trim();
+  const segment = joinMatch?.[1] ?? trimmed;
+  try {
+    return decodeURIComponent(segment).trim();
+  } catch {
+    // Malformed percent escapes (e.g. a truncated "%2") throw; keep the raw
+    // segment so the server can reject it instead of crashing the screen.
+    return segment.trim();
+  }
+}
+
+// Mirrors defaultOrgSlug in convex/orgs.ts so every valid organization name
+// produces a slug the server accepts (3-32 chars, no leading/trailing or
+// repeated hyphens).
+export function slugFromOrganizationName(name: string) {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32)
+    .replace(/-+$/g, "");
+  if (!slug) return "org";
+  return slug.length < 3 ? `${slug}-org` : slug;
 }
 
 /**
@@ -75,6 +96,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
     "idle" | "creating" | "error"
   >("idle");
   const [organizationError, setOrganizationError] = useState<string>();
+  const [organizationSlugError, setOrganizationSlugError] = useState<string>();
 
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
   const signOutGuard = useRef(false);
@@ -105,7 +127,11 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
   // present request is always the newer decision); otherwise an invite code
   // from a /join link jumps straight to the prefilled invite form.
   useEffect(() => {
-    const storedRequest = readStoredRequest(user?.id);
+    // useUser() can briefly report no user while Clerk hydrates; reading the
+    // stored request then would treat the missing id as a mismatch and delete
+    // it. Wait until the id exists.
+    if (!user?.id) return;
+    const storedRequest = readStoredRequest(user.id);
     const storedInvite = window.localStorage.getItem(INVITE_STORAGE_KEY) ?? "";
     if (storedRequest) {
       setRequestedEmail(storedRequest);
@@ -172,6 +198,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
     if (!name || organizationState === "creating") return;
     setOrganizationState("creating");
     setOrganizationError(undefined);
+    setOrganizationSlugError(undefined);
     try {
       await createOrganization({
         name,
@@ -183,9 +210,15 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
         error instanceof ConvexError
           ? (error.data as { message?: string })
           : null;
-      setOrganizationError(
-        data?.message ?? "we couldn't create your organization. try again.",
-      );
+      const message =
+        data?.message ?? "we couldn't create your organization. try again.";
+      // Server slug validation messages all mention the slug; show them on
+      // the slug field instead of the organization name field.
+      if (/slug/i.test(message)) {
+        setOrganizationSlugError(message);
+      } else {
+        setOrganizationError(message);
+      }
     }
   };
 
@@ -310,15 +343,12 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
                   setOrganizationName(value);
                   if (!slugEdited) {
                     setOrganizationSlug(
-                      value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, "-")
-                        .replace(/^-+|-+$/g, "")
-                        .slice(0, 32),
+                      value.trim() ? slugFromOrganizationName(value) : "",
                     );
                   }
                   setOrganizationState("idle");
                   setOrganizationError(undefined);
+                  setOrganizationSlugError(undefined);
                 }}
                 slug={organizationSlug}
                 setSlug={(value) => {
@@ -326,10 +356,16 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
                   setSlugEdited(true);
                   setOrganizationState("idle");
                   setOrganizationError(undefined);
+                  setOrganizationSlugError(undefined);
                 }}
                 creating={organizationState === "creating"}
                 error={
                   organizationState === "error" ? organizationError : undefined
+                }
+                slugError={
+                  organizationState === "error"
+                    ? organizationSlugError
+                    : undefined
                 }
                 onSubmit={() => void createOrg()}
               />
@@ -537,6 +573,7 @@ function CreatePanel({
   setSlug,
   creating,
   error,
+  slugError,
   onSubmit,
 }: {
   name: string;
@@ -545,6 +582,7 @@ function CreatePanel({
   setSlug: (value: string) => void;
   creating: boolean;
   error?: string;
+  slugError?: string;
   onSubmit: () => void;
 }) {
   return (
@@ -567,6 +605,7 @@ function CreatePanel({
       <FormField
         label="workspace slug"
         required
+        error={slugError}
         help={
           <>
             <span className="font-mono">{slug || "your-team"}</span>
