@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "4 August 2026",
+    title: "the compiler owns memoization",
+    note: "removed manual useMemo and useCallback usage from the source tree now that React Compiler is enabled, without changing component behavior or types.",
+  },
+  {
+    date: "4 August 2026",
     title: "forms move with the action",
     note: "reply and post-edit submissions now use React 19 action state and form status, notification preferences update optimistically while Convex confirms them, and pending controls use restrained motion that respects reduced-motion settings.",
   },

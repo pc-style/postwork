@@ -1,6 +1,6 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Button } from "../components/Button";
+import { Button, FormSubmitButton } from "../components/Button";
 import { Dialog } from "../components/Dialog";
 import { EmptyState } from "../components/EmptyState";
 import { FormField } from "../components/FormField";
@@ -89,36 +89,31 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
   const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!name.trim() || saving) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      const created = await store.createSpace({
-        name,
-        description: description.trim() || undefined,
-        existingSlugs: spaces.map((space) => space.slug),
-      });
-      onClose();
-      await navigate({
-        to: "/app/spaces/$slug",
-        params: { slug: created.slug },
-      });
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "couldn't create the space. check your connection and try again.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  const [submitState, submitAction] = useActionState(
+    async (_previous: { error: string | null }, formData: FormData) => {
+      const nextName = String(formData.get("name") ?? "").trim();
+      const nextDescription = String(formData.get("description") ?? "").trim();
+      if (!nextName) return { error: "add a name for the space." };
+      try {
+        const created = await store.createSpace({
+          name: nextName,
+          description: nextDescription || undefined,
+          existingSlugs: spaces.map((space) => space.slug),
+        });
+        onClose();
+        await navigate({ to: "/app/spaces/$slug", params: { slug: created.slug } });
+        return { error: null };
+      } catch (caught) {
+        return {
+          error:
+            caught instanceof Error
+              ? caught.message
+              : "couldn't create the space. check your connection and try again.",
+        };
+      }
+    },
+    { error: null },
+  );
 
   return (
     <Dialog
@@ -126,18 +121,16 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
       description="start a focused place for a team, project, or area of work."
       onClose={onClose}
       initialFocusRef={nameRef}
-      dismissible={!saving}
+      dismissible
     >
-      <form className="grid gap-4" onSubmit={submit}>
+      <form action={submitAction} className="grid gap-4">
         <FormField label="name" required>
           <input
             ref={nameRef}
+            name="name"
             value={name}
             maxLength={80}
-            onChange={(event) => {
-              setName(event.target.value);
-              setError(null);
-            }}
+            onChange={(event) => setName(event.target.value)}
             placeholder="example: launch planning"
             className="ui-field text-body placeholder:text-muted/60"
           />
@@ -145,28 +138,26 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
         <FormField label="description" optional help={`${description.length}/240 characters`}>
           <textarea
             value={description}
+            name="description"
             maxLength={240}
             rows={4}
-            onChange={(event) => {
-              setDescription(event.target.value);
-              setError(null);
-            }}
+            onChange={(event) => setDescription(event.target.value)}
             placeholder="what belongs in this space?"
             className="ui-field resize-y text-body leading-6 placeholder:text-muted/60"
           />
         </FormField>
-        {error ? (
+        {submitState.error ? (
           <p role="alert" className="ui-error">
-            {error}
+            {submitState.error}
           </p>
         ) : null}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="secondary" disabled={saving} onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             cancel
           </Button>
-          <Button type="submit" loading={saving} loadingLabel="creating…" disabled={!name.trim()}>
+          <FormSubmitButton loadingLabel="creating…" disabled={!name.trim()}>
             create space
-          </Button>
+          </FormSubmitButton>
         </div>
       </form>
     </Dialog>

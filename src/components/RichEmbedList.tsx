@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
@@ -8,29 +8,21 @@ const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
 export const MAX_RICH_PREVIEWS_PER_BODY = 3;
 
 export function RichEmbedList({ text }: { text: string }) {
-  const previews = useMemo(
-    () =>
-      [
-        ...new Map(
-          extractUrls(text)
-            .map(buildRichPreview)
-            .filter((preview) => preview !== null)
-            .map((preview) => [preview.sourceUrl, preview]),
-        ).values(),
-      ].slice(0, MAX_RICH_PREVIEWS_PER_BODY),
-    [text],
-  );
-  const genericUrls = useMemo(
-    () =>
-      previews
-        .filter((preview) => preview.kind === "link")
-        .map((preview) => {
-          const url = new URL(preview.sourceUrl);
-          url.hash = "";
-          return url.toString();
-        }),
-    [previews],
-  );
+  const previews = [
+    ...new Map(
+      extractUrls(text)
+        .map(buildRichPreview)
+        .filter((preview) => preview !== null)
+        .map((preview) => [preview.sourceUrl, preview]),
+    ).values(),
+  ].slice(0, MAX_RICH_PREVIEWS_PER_BODY);
+  const genericUrls = previews
+    .filter((preview) => preview.kind === "link")
+    .map((preview) => {
+      const url = new URL(preview.sourceUrl);
+      url.hash = "";
+      return url.toString();
+    });
   const storedPreviews = useQuery(api.linkPreviews.get, { urls: genericUrls });
   const requestPreviews = useMutation(api.linkPreviews.request);
   const requestedKey = useRef("");

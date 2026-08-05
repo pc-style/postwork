@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { PRIORITIES, SPACES, priorityStyles } from "../lib/format";
 import { insertContentUrl } from "../lib/insertContentUrl";
@@ -96,7 +96,7 @@ export function PostForm({
   draftKey?: string;
   onSubmit: (fields: PostFormFields) => Promise<void> | void;
 }) {
-  const draft = useMemo(() => readDraft(draftKey), [draftKey]);
+  const draft = readDraft(draftKey);
   const spaces = useSpacesList();
   const [title, setTitle] = useState(draft?.title ?? "");
   const [body, setBody] = useState(draft?.body ?? "");
@@ -125,24 +125,25 @@ export function PostForm({
     attachmentWarning,
   } = useAttachmentPicker();
 
-  const fallbackSpaces = useMemo<SpaceOption[]>(() => SPACES.map((label) => ({ label })), []);
-  const spaceOptions = useMemo<SpaceOption[]>(
-    () =>
-      fixedSpace
-        ? [fixedSpace]
-        : spaces.length > 0
-          ? spaces.map((space) => ({ id: space._id, label: space.name }))
-          : fallbackSpaces,
-    [fallbackSpaces, fixedSpace, spaces],
-  );
+  const fallbackSpaces: SpaceOption[] = SPACES.map((label) => ({ label }));
+  const spaceOptions: SpaceOption[] = fixedSpace
+    ? [fixedSpace]
+    : spaces.length > 0
+      ? spaces.map((space) => ({ id: space._id, label: space.name }))
+      : fallbackSpaces;
 
   useEffect(() => {
     if (!showSpace && !fixedSpace) return;
-    const hasMatch = spaceOptions.some((option) => (option.id ?? option.label) === spaceKey);
-    if (!hasMatch && spaceOptions[0]) {
-      setSpaceKey(spaceOptions[0].id ?? spaceOptions[0].label);
+    const options: SpaceOption[] = fixedSpace
+      ? [fixedSpace]
+      : spaces.length > 0
+        ? spaces.map((space) => ({ id: space._id, label: space.name }))
+        : SPACES.map((label) => ({ label }));
+    const hasMatch = options.some((option) => (option.id ?? option.label) === spaceKey);
+    if (!hasMatch && options[0]) {
+      setSpaceKey(options[0].id ?? options[0].label);
     }
-  }, [fixedSpace, showSpace, spaceKey, spaceOptions]);
+  }, [fixedSpace, showSpace, spaceKey, spaces]);
 
   useEffect(() => {
     if (!draftKey) return;

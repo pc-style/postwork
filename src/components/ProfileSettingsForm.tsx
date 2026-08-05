@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Button } from "./Button";
+import { Button, FormSubmitButton } from "./Button";
 import { FormField } from "./FormField";
 
 type AvatarAction =
@@ -26,8 +26,6 @@ export function ProfileSettingsForm() {
   const [avatarDraft, setAvatarDraft] = useState<AvatarDraft>("unchanged");
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,14 +43,14 @@ export function ProfileSettingsForm() {
     [localPreview],
   );
 
-  const preview = useMemo(() => {
+  const preview = (() => {
     if (avatarDraft === "upload") return localPreview;
     if (avatarDraft === "provider") return user?.providerAvatarUrl ?? null;
     if (avatarDraft === "remove") return null;
     return user?.avatarUrl ?? null;
-  }, [avatarDraft, localPreview, user]);
+  })();
 
-  const dirty = useMemo(() => {
+  const dirty = (() => {
     if (!user) return false;
     if (avatarDraft !== "unchanged") return true;
     const savedTitle = user.title === "member" ? "" : user.title;
@@ -61,11 +59,10 @@ export function ProfileSettingsForm() {
       title.trim() !== savedTitle ||
       normalizeInitials(initials) !== user.initials
     );
-  }, [user, avatarDraft, name, title, initials]);
+  })();
 
   const changeName = (next: string) => {
     setName(next);
-    setSaved(false);
     if (!initialsOverridden) setInitials(deriveInitials(next));
   };
 
@@ -91,7 +88,6 @@ export function ProfileSettingsForm() {
       setLocalPreview(URL.createObjectURL(file));
       setAvatarAction({ type: "upload", storageId: body.storageId });
       setAvatarDraft("upload");
-      setSaved(false);
     } catch {
       setError("couldn't upload that image. choose another image and try again.");
     } finally {
@@ -100,41 +96,41 @@ export function ProfileSettingsForm() {
     }
   };
 
-  const save = async () => {
-    const normalizedInitials = normalizeInitials(initials || name);
-    if (!name.trim() || !normalizedInitials) return;
-    setIsSaving(true);
-    setError(null);
-    setSaved(false);
-    try {
-      await updateProfile({
-        name: name.trim(),
-        title: title.trim(),
-        initials: normalizedInitials,
-        avatar: avatarAction,
-      });
-      setAvatarAction(undefined);
-      setAvatarDraft("unchanged");
-      setSaved(true);
-    } catch (caught) {
-      setError(
-        errorMessage(caught, "couldn't save your profile. review the fields and try again."),
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const [submitState, submitAction] = useActionState(
+    async (_previous: { error: string | null; saved: boolean }, formData: FormData) => {
+      const nextName = String(formData.get("name") ?? "").trim();
+      const nextTitle = String(formData.get("title") ?? "").trim();
+      const nextInitials = normalizeInitials(String(formData.get("initials") ?? "") || nextName);
+      if (!nextName || !nextInitials) {
+        return { error: "add your name and initials before saving.", saved: false };
+      }
+      try {
+        await updateProfile({
+          name: nextName,
+          title: nextTitle,
+          initials: nextInitials,
+          avatar: avatarAction,
+        });
+        setAvatarAction(undefined);
+        setAvatarDraft("unchanged");
+        return { error: null, saved: true };
+      } catch (caught) {
+        return {
+          error: errorMessage(
+            caught,
+            "couldn't save your profile. review the fields and try again.",
+          ),
+          saved: false,
+        };
+      }
+    },
+    { error: null, saved: false },
+  );
 
   if (!user) return <p className="text-body text-muted">loading profile…</p>;
 
   return (
-    <form
-      className="max-w-xl space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void save();
-      }}
-    >
+    <form className="max-w-xl space-y-5" action={submitAction}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div
           className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-display font-semibold text-fg"
@@ -171,7 +167,6 @@ export function ProfileSettingsForm() {
               onClick={() => {
                 setAvatarAction({ type: "remove" });
                 setAvatarDraft("remove");
-                setSaved(false);
               }}
             >
               remove image
@@ -183,7 +178,6 @@ export function ProfileSettingsForm() {
                 onClick={() => {
                   setAvatarAction({ type: "useProvider" });
                   setAvatarDraft("provider");
-                  setSaved(false);
                 }}
               >
                 use sign-in photo
@@ -196,6 +190,7 @@ export function ProfileSettingsForm() {
       <FormField label="name" required>
         <input
           value={name}
+          name="name"
           onChange={(event) => changeName(event.target.value)}
           className="ui-field"
         />
@@ -203,9 +198,9 @@ export function ProfileSettingsForm() {
       <FormField label="job title" optional>
         <input
           value={title}
+          name="title"
           onChange={(event) => {
             setTitle(event.target.value);
-            setSaved(false);
           }}
           className="ui-field"
         />
@@ -213,31 +208,26 @@ export function ProfileSettingsForm() {
       <FormField label="initials" required help="use up to two letters.">
         <input
           value={initials}
+          name="initials"
           maxLength={2}
           onChange={(event) => {
             setInitialsOverridden(true);
             setInitials(normalizeInitials(event.target.value));
-            setSaved(false);
           }}
           className="ui-field max-w-28"
         />
       </FormField>
-      {error ? (
+      {error || submitState.error ? (
         <p role="alert" className="ui-error">
-          {error}
+          {error ?? submitState.error}
         </p>
       ) : null}
       <div className="flex items-center gap-3">
-        <Button
-          type="submit"
-          disabled={!dirty || !name.trim() || isUploading}
-          loading={isSaving}
-          loadingLabel="saving…"
-        >
+        <FormSubmitButton disabled={!dirty || !name.trim() || isUploading} loadingLabel="saving…">
           save profile
-        </Button>
+        </FormSubmitButton>
         <output className="text-label text-muted">
-          {saved && !dirty ? "profile saved." : dirty ? "unsaved changes" : ""}
+          {submitState.saved && !dirty ? "profile saved." : dirty ? "unsaved changes" : ""}
         </output>
       </div>
     </form>

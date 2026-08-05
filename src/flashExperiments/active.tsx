@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { demoPolicy } from "../lib/demoMode";
 import { getFlashExperiment } from "./registry";
 import { NO_SLOTS } from "./slots";
@@ -46,7 +38,7 @@ function readInitialSlug(): string | null {
 export function ExperimentProvider({ children }: { children: ReactNode }) {
   const [slug, setSlugState] = useState<string | null>(() => readInitialSlug());
 
-  const setSlug = useCallback((next: string | null) => {
+  const setSlug = (next: string | null) => {
     if (!demoPolicy.flashExperimentsLab) {
       setSlugState(null);
       return;
@@ -63,7 +55,7 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
       // sessionStorage may be unavailable (private mode, quota); silently
       // degrade to in-memory only.
     }
-  }, []);
+  };
 
   // Cross-tab/cross-window sync: clearing or switching in one tab should
   // immediately reflect in any other tab on the same session.
@@ -83,7 +75,7 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const value = useMemo(() => ({ slug, setSlug }), [slug, setSlug]);
+  const value = { slug, setSlug };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

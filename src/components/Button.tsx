@@ -1,4 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 
 type ButtonVariant = "primary" | "secondary" | "quiet" | "danger" | "icon";
 type ButtonSize = "sm" | "md" | "lg";
@@ -66,3 +67,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   );
 });
+
+export function FormSubmitButton({ loadingLabel = "working…", children, ...props }: ButtonProps) {
+  const { pending } = useFormStatus();
+  return (
+    <Button {...props} type="submit" loading={pending} loadingLabel={loadingLabel}>
+      {children}
+    </Button>
+  );
+}

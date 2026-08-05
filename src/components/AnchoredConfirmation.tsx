@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type RefObject } from "react";
 import { Button } from "./Button";
 
 export function AnchoredConfirmation({
@@ -38,19 +30,19 @@ export function AnchoredConfirmation({
   const titleId = useId();
   const descriptionId = useId();
 
-  const restoreFocus = useCallback(() => {
+  const restoreFocus = () => {
     requestAnimationFrame(() => {
       if (triggerRef.current?.isConnected) triggerRef.current.focus();
       else fallbackFocusRef?.current?.focus();
     });
-  }, [fallbackFocusRef]);
+  };
 
-  const close = useCallback(() => {
+  const close = () => {
     if (busy) return;
     setOpen(false);
     setError(null);
     restoreFocus();
-  }, [busy, restoreFocus]);
+  };
   const closeFromEffect = useEffectEvent(close);
 
   useEffect(() => {

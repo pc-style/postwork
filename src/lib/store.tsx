@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useRef, useState, type ReactNode } from "react";
 import { useAction, useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id, TableNames } from "../../convex/_generated/dataModel";
@@ -141,340 +133,305 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
   const replyCounter = useRef(0);
   const spaceCounter = useRef(0);
 
-  const userById = useMemo(() => {
-    const m = new Map<string, Doc<"users">>();
-    for (const u of users) m.set(u._id, u);
-    return m;
-  }, [users]);
+  const userById = new Map<string, Doc<"users">>();
+  for (const u of users) userById.set(u._id, u);
 
   const readKey = (userId: Id<"users"> | undefined, postId: string) =>
     userId ? `${userId}:${postId}` : null;
 
   // Effective per-viewer read timestamp: max of session per-post read, session
   // mark-all-read, and the backend's recorded read.
-  const effReadAt = useCallback(
-    (postId: string, backendLastReadAt: number) => {
-      if (!currentUserId) return 0;
-      const k = readKey(currentUserId, postId);
-      const perPost = k ? (reads[k] ?? 0) : 0;
-      const all = readAllAt[currentUserId] ?? 0;
-      return Math.max(perPost, all, backendLastReadAt);
-    },
-    [currentUserId, reads, readAllAt],
-  );
+  const effReadAt = (postId: string, backendLastReadAt: number) => {
+    if (!currentUserId) return 0;
+    const k = readKey(currentUserId, postId);
+    const perPost = k ? (reads[k] ?? 0) : 0;
+    const all = readAllAt[currentUserId] ?? 0;
+    return Math.max(perPost, all, backendLastReadAt);
+  };
 
-  const resolveParticipants = useCallback(
-    (ids: Id<"users">[]): Doc<"users">[] =>
-      ids.map((id) => userById.get(id)).filter((u): u is Doc<"users"> => !!u),
-    [userById],
-  );
+  const resolveParticipants = (ids: Id<"users">[]): Doc<"users">[] =>
+    ids.map((id) => userById.get(id)).filter((u): u is Doc<"users"> => !!u);
 
   // Merge the session overlay onto a backend-enriched post.
-  const applyOverlay = useCallback(
-    (p: EnrichedPost): EnrichedPost => {
-      const bump = postBumps[p._id];
-      const summary = summaries[p._id];
-      const lastActivityAt = bump?.lastActivityAt ?? p.lastActivityAt;
-      const summaryUpdatedAt = summary?.updatedAt ?? p.summaryUpdatedAt;
-      const readAt = effReadAt(p._id, p.lastReadAt);
-      // Dedupe across backend + session: the replier may already be a backend
-      // participant (duplicates would double their avatar and collide keys).
-      const participantIds = bump
-        ? [...new Set([...p.participantIds, ...bump.addedParticipantIds])]
-        : p.participantIds;
-      return {
-        ...p,
-        lastActivityAt,
-        replyCount: p.replyCount + (bump?.replyCountDelta ?? 0),
-        participantIds,
-        participants: bump ? resolveParticipants(participantIds) : p.participants,
-        summary: summary?.summary ?? p.summary,
-        summaryModel: summary?.model ?? p.summaryModel,
-        summaryUpdatedAt,
-        unread: lastActivityAt > readAt,
-        isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
-      };
-    },
-    [postBumps, summaries, effReadAt, resolveParticipants],
-  );
+  const applyOverlay = (p: EnrichedPost): EnrichedPost => {
+    const bump = postBumps[p._id];
+    const summary = summaries[p._id];
+    const lastActivityAt = bump?.lastActivityAt ?? p.lastActivityAt;
+    const summaryUpdatedAt = summary?.updatedAt ?? p.summaryUpdatedAt;
+    const readAt = effReadAt(p._id, p.lastReadAt);
+    // Dedupe across backend + session: the replier may already be a backend
+    // participant (duplicates would double their avatar and collide keys).
+    const participantIds = bump
+      ? [...new Set([...p.participantIds, ...bump.addedParticipantIds])]
+      : p.participantIds;
+    return {
+      ...p,
+      lastActivityAt,
+      replyCount: p.replyCount + (bump?.replyCountDelta ?? 0),
+      participantIds,
+      participants: bump ? resolveParticipants(participantIds) : p.participants,
+      summary: summary?.summary ?? p.summary,
+      summaryModel: summary?.model ?? p.summaryModel,
+      summaryUpdatedAt,
+      unread: lastActivityAt > readAt,
+      isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
+    };
+  };
 
   // Build an EnrichedPost from a session-created post.
-  const enrichSessionPost = useCallback(
-    (sp: SessionPost): EnrichedPost => {
-      const bump = postBumps[sp._id];
-      const summary = summaries[sp._id];
-      const lastActivityAt = bump?.lastActivityAt ?? sp.lastActivityAt;
-      const summaryUpdatedAt = summary?.updatedAt ?? sp.summaryUpdatedAt;
-      const participantIds = bump
-        ? [...new Set([...sp.participantIds, ...bump.addedParticipantIds])]
-        : sp.participantIds;
-      const readAt = effReadAt(sp._id, 0);
-      return {
-        ...sp,
-        lastActivityAt,
-        replyCount: sp.replyCount + (bump?.replyCountDelta ?? 0),
-        participantIds,
-        author: userById.get(sp.authorId) ?? null,
-        participants: resolveParticipants(participantIds),
-        summary: summary?.summary ?? sp.summary,
-        summaryModel: summary?.model ?? sp.summaryModel,
-        summaryUpdatedAt,
-        unread: lastActivityAt > readAt,
-        isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
-        lastReadAt: readAt,
-      };
-    },
-    [postBumps, summaries, effReadAt, userById, resolveParticipants],
-  );
+  const enrichSessionPost = (sp: SessionPost): EnrichedPost => {
+    const bump = postBumps[sp._id];
+    const summary = summaries[sp._id];
+    const lastActivityAt = bump?.lastActivityAt ?? sp.lastActivityAt;
+    const summaryUpdatedAt = summary?.updatedAt ?? sp.summaryUpdatedAt;
+    const participantIds = bump
+      ? [...new Set([...sp.participantIds, ...bump.addedParticipantIds])]
+      : sp.participantIds;
+    const readAt = effReadAt(sp._id, 0);
+    return {
+      ...sp,
+      lastActivityAt,
+      replyCount: sp.replyCount + (bump?.replyCountDelta ?? 0),
+      participantIds,
+      author: userById.get(sp.authorId) ?? null,
+      participants: resolveParticipants(participantIds),
+      summary: summary?.summary ?? sp.summary,
+      summaryModel: summary?.model ?? sp.summaryModel,
+      summaryUpdatedAt,
+      unread: lastActivityAt > readAt,
+      isStale: isSummaryStale(lastActivityAt, summaryUpdatedAt),
+      lastReadAt: readAt,
+    };
+  };
 
-  const applyReplyOverlay = useCallback(
-    (reply: EnrichedReply): EnrichedReply => {
-      const lastReadAt = effReadAt(reply.postId, reply.lastReadAt);
-      return {
-        ...reply,
-        unread: reply.createdAt > lastReadAt,
-        lastReadAt,
-      };
-    },
-    [effReadAt],
-  );
+  const applyReplyOverlay = (reply: EnrichedReply): EnrichedReply => {
+    const lastReadAt = effReadAt(reply.postId, reply.lastReadAt);
+    return {
+      ...reply,
+      unread: reply.createdAt > lastReadAt,
+      lastReadAt,
+    };
+  };
 
-  const enrichSessionReply = useCallback(
-    (r: SessionReply): EnrichedReply => {
-      const lastReadAt = effReadAt(r.postId, 0);
-      return {
-        ...r,
-        author: userById.get(r.authorId) ?? null,
-        unread: r.createdAt > lastReadAt,
-        lastReadAt,
-      };
-    },
-    [effReadAt, userById],
-  );
+  const enrichSessionReply = (r: SessionReply): EnrichedReply => {
+    const lastReadAt = effReadAt(r.postId, 0);
+    return {
+      ...r,
+      author: userById.get(r.authorId) ?? null,
+      unread: r.createdAt > lastReadAt,
+      lastReadAt,
+    };
+  };
 
   // ---- session-only mutations --------------------------------------------
 
-  const markRead = useCallback(
-    (postId: Id<"posts">) => {
-      if (!currentUserId) return;
-      const k = readKey(currentUserId, postId);
-      if (!k) return;
-      setReads((prev) => ({ ...prev, [k]: Date.now() }));
-    },
-    [currentUserId],
-  );
+  const markRead = (postId: Id<"posts">) => {
+    if (!currentUserId) return;
+    const k = readKey(currentUserId, postId);
+    if (!k) return;
+    setReads((prev) => ({ ...prev, [k]: Date.now() }));
+  };
 
-  const markAllRead = useCallback(() => {
+  const markAllRead = () => {
     if (!currentUserId) return;
     setReadAllAt((prev) => ({ ...prev, [currentUserId]: Date.now() }));
-  }, [currentUserId]);
+  };
 
-  const createReply = useCallback(
-    async (args: {
-      postId: Id<"posts">;
-      authorId?: Id<"users">;
-      body: string;
-      parentId?: Id<"replies">;
-      attachments?: AttachmentInput[];
-    }) => {
-      const authorId = args.authorId ?? currentUserId;
-      if (!authorId) {
-        throw new Error("No current user.");
-      }
-      replyCounter.current += 1;
-      const id = makeLocalId("replies", replyCounter.current);
-      const now = Date.now();
-      const author = userById.get(authorId);
-      if (!author) {
-        throw new Error("Unknown author.");
-      }
-      const reply: SessionReply = {
-        _id: id,
-        _creationTime: now,
-        orgId: author.orgId,
-        postId: args.postId,
-        parentId: args.parentId,
-        authorId,
-        body: args.body,
-        createdAt: now,
+  const createReply = async (args: {
+    postId: Id<"posts">;
+    authorId?: Id<"users">;
+    body: string;
+    parentId?: Id<"replies">;
+    attachments?: AttachmentInput[];
+  }) => {
+    const authorId = args.authorId ?? currentUserId;
+    if (!authorId) {
+      throw new Error("No current user.");
+    }
+    replyCounter.current += 1;
+    const id = makeLocalId("replies", replyCounter.current);
+    const now = Date.now();
+    const author = userById.get(authorId);
+    if (!author) {
+      throw new Error("Unknown author.");
+    }
+    const reply: SessionReply = {
+      _id: id,
+      _creationTime: now,
+      orgId: author.orgId,
+      postId: args.postId,
+      parentId: args.parentId,
+      authorId,
+      body: args.body,
+      createdAt: now,
+    };
+    setReplies((prev) => ({
+      ...prev,
+      [args.postId]: [...(prev[args.postId] ?? []), reply],
+    }));
+    // Bump the post: activity timestamp, reply count, participants.
+    setPostBumps((prev) => {
+      const existing = prev[args.postId] ?? {
+        lastActivityAt: 0,
+        replyCountDelta: 0,
+        addedParticipantIds: [],
       };
-      setReplies((prev) => ({
+      return {
         ...prev,
-        [args.postId]: [...(prev[args.postId] ?? []), reply],
-      }));
-      // Bump the post: activity timestamp, reply count, participants.
-      setPostBumps((prev) => {
-        const existing = prev[args.postId] ?? {
-          lastActivityAt: 0,
-          replyCountDelta: 0,
-          addedParticipantIds: [],
-        };
-        return {
-          ...prev,
-          [args.postId]: {
-            lastActivityAt: now,
-            replyCountDelta: existing.replyCountDelta + 1,
-            addedParticipantIds: existing.addedParticipantIds.includes(authorId)
-              ? existing.addedParticipantIds
-              : [...existing.addedParticipantIds, authorId],
-          },
-        };
-      });
-      // The replier has implicitly read up to now.
-      const k = readKey(authorId, args.postId);
-      if (k) setReads((prev) => ({ ...prev, [k]: now }));
-      return id;
-    },
-    [currentUserId, userById],
-  );
-
-  const createPost = useCallback(
-    async (args: {
-      title: string;
-      body: string;
-      space: string;
-      spaceId?: Id<"spaces">;
-      priority: Priority;
-      wallOwnerId?: Id<"users">;
-      attachments?: AttachmentInput[];
-    }) => {
-      if (!currentUserId) {
-        throw new Error("No current user.");
-      }
-      postCounter.current += 1;
-      const id = makeLocalId("posts", postCounter.current);
-      const now = Date.now();
-      const author = userById.get(currentUserId);
-      if (!author) {
-        throw new Error("Unknown author.");
-      }
-      const sp: SessionPost = {
-        _id: id,
-        _creationTime: now,
-        orgId: author.orgId,
-        authorId: currentUserId,
-        title: args.title,
-        body: args.body,
-        space: args.space,
-        spaceId: args.spaceId,
-        priority: args.priority,
-        pinned: false,
-        createdAt: now,
-        lastActivityAt: now,
-        replyCount: 0,
-        participantIds: [currentUserId],
-        wallOwnerId: args.wallOwnerId,
-      };
-      setPosts((prev) => [sp, ...prev]);
-      // Author has read their own new post.
-      const k = readKey(currentUserId, id);
-      if (k) setReads((prev) => ({ ...prev, [k]: now }));
-      return id;
-    },
-    [currentUserId, userById],
-  );
-
-  const createSpace = useCallback(
-    async (args: { name: string; description?: string; existingSlugs?: string[] }) => {
-      if (!currentUserId) throw new Error("No current user.");
-      const creator = userById.get(currentUserId);
-      if (!creator) throw new Error("Unknown creator.");
-
-      const limit = creator.role === "admin" ? null : creator.role === "tester" ? 3 : 1;
-      const createdCount = spaces.filter((space) => space.createdBy === currentUserId).length;
-      if (limit !== null && createdCount >= limit) {
-        throw new Error(`Your role can create up to ${limit} ${limit === 1 ? "space" : "spaces"}.`);
-      }
-
-      const name = args.name.trim();
-      const description = args.description?.trim() || undefined;
-      if (!name || name.length > 80) {
-        throw new Error("Space name must be between 1 and 80 characters.");
-      }
-      if (description && description.length > 240) {
-        throw new Error("Space description must be 240 characters or fewer.");
-      }
-
-      const slugBase =
-        name
-          .toLowerCase()
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .slice(0, 64)
-          .replace(/-+$/g, "") || "space";
-      const usedSlugs = new Set([
-        ...(args.existingSlugs ?? []),
-        ...spaces.map((space) => space.slug),
-      ]);
-      let slug = slugBase;
-      let suffix = 2;
-      while (usedSlugs.has(slug)) {
-        slug = `${slugBase}-${suffix}`;
-        suffix += 1;
-      }
-
-      spaceCounter.current += 1;
-      const spaceId = makeLocalId("spaces", spaceCounter.current);
-      const now = Date.now();
-      setSpaces((current) => [
-        {
-          _id: spaceId,
-          _creationTime: now,
-          orgId: creator.orgId,
-          name,
-          slug,
-          description,
-          createdBy: currentUserId,
-          createdAt: now,
-          memberCount: 1,
-          postCount: 0,
-          latestActivityAt: now,
+        [args.postId]: {
+          lastActivityAt: now,
+          replyCountDelta: existing.replyCountDelta + 1,
+          addedParticipantIds: existing.addedParticipantIds.includes(authorId)
+            ? existing.addedParticipantIds
+            : [...existing.addedParticipantIds, authorId],
         },
-        ...current,
-      ]);
-      return { spaceId, slug };
-    },
-    [currentUserId, spaces, userById],
-  );
+      };
+    });
+    // The replier has implicitly read up to now.
+    const k = readKey(authorId, args.postId);
+    if (k) setReads((prev) => ({ ...prev, [k]: now }));
+    return id;
+  };
+
+  const createPost = async (args: {
+    title: string;
+    body: string;
+    space: string;
+    spaceId?: Id<"spaces">;
+    priority: Priority;
+    wallOwnerId?: Id<"users">;
+    attachments?: AttachmentInput[];
+  }) => {
+    if (!currentUserId) {
+      throw new Error("No current user.");
+    }
+    postCounter.current += 1;
+    const id = makeLocalId("posts", postCounter.current);
+    const now = Date.now();
+    const author = userById.get(currentUserId);
+    if (!author) {
+      throw new Error("Unknown author.");
+    }
+    const sp: SessionPost = {
+      _id: id,
+      _creationTime: now,
+      orgId: author.orgId,
+      authorId: currentUserId,
+      title: args.title,
+      body: args.body,
+      space: args.space,
+      spaceId: args.spaceId,
+      priority: args.priority,
+      pinned: false,
+      createdAt: now,
+      lastActivityAt: now,
+      replyCount: 0,
+      participantIds: [currentUserId],
+      wallOwnerId: args.wallOwnerId,
+    };
+    setPosts((prev) => [sp, ...prev]);
+    // Author has read their own new post.
+    const k = readKey(currentUserId, id);
+    if (k) setReads((prev) => ({ ...prev, [k]: now }));
+    return id;
+  };
+
+  const createSpace = async (args: {
+    name: string;
+    description?: string;
+    existingSlugs?: string[];
+  }) => {
+    if (!currentUserId) throw new Error("No current user.");
+    const creator = userById.get(currentUserId);
+    if (!creator) throw new Error("Unknown creator.");
+
+    const limit = creator.role === "admin" ? null : creator.role === "tester" ? 3 : 1;
+    const createdCount = spaces.filter((space) => space.createdBy === currentUserId).length;
+    if (limit !== null && createdCount >= limit) {
+      throw new Error(`Your role can create up to ${limit} ${limit === 1 ? "space" : "spaces"}.`);
+    }
+
+    const name = args.name.trim();
+    const description = args.description?.trim() || undefined;
+    if (!name || name.length > 80) {
+      throw new Error("Space name must be between 1 and 80 characters.");
+    }
+    if (description && description.length > 240) {
+      throw new Error("Space description must be 240 characters or fewer.");
+    }
+
+    const slugBase =
+      name
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 64)
+        .replace(/-+$/g, "") || "space";
+    const usedSlugs = new Set([
+      ...(args.existingSlugs ?? []),
+      ...spaces.map((space) => space.slug),
+    ]);
+    let slug = slugBase;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) {
+      slug = `${slugBase}-${suffix}`;
+      suffix += 1;
+    }
+
+    spaceCounter.current += 1;
+    const spaceId = makeLocalId("spaces", spaceCounter.current);
+    const now = Date.now();
+    setSpaces((current) => [
+      {
+        _id: spaceId,
+        _creationTime: now,
+        orgId: creator.orgId,
+        name,
+        slug,
+        description,
+        createdBy: currentUserId,
+        createdAt: now,
+        memberCount: 1,
+        postCount: 0,
+        latestActivityAt: now,
+      },
+      ...current,
+    ]);
+    return { spaceId, slug };
+  };
 
   const summarizeAction = useAction(api.ai.summarizePost);
-  const summarize = useCallback(
-    async (postId: Id<"posts">) => {
-      if (isLocalId(postId)) return; // no backend context to summarize from
-      const res = await summarizeAction({ postId });
-      setSummaries((prev) => ({
-        ...prev,
-        [postId]: {
-          summary: res.summary,
-          model: res.model,
-          updatedAt: Date.now(),
-        },
-      }));
-    },
-    [summarizeAction],
-  );
+  const summarize = async (postId: Id<"posts">) => {
+    if (isLocalId(postId)) return; // no backend context to summarize from
+    const res = await summarizeAction({ postId });
+    setSummaries((prev) => ({
+      ...prev,
+      [postId]: {
+        summary: res.summary,
+        model: res.model,
+        updatedAt: Date.now(),
+      },
+    }));
+  };
 
   // Moderation: the demo overlay is read-only for seeded content. Editing or
   // deleting your own session-created posts/replies is supported so the demo
   // flow stays honest; backend (seeded) content surfaces a friendly error.
-  const editPost = useCallback(
-    async (args: { postId: Id<"posts">; title: string; body: string }) => {
-      if (!isLocalId(args.postId)) {
-        throw new Error("Editing isn't available in the public demo.");
-      }
-      const now = Date.now();
-      setPosts((prev) =>
-        prev.map((p) =>
-          p._id === args.postId ? { ...p, title: args.title, body: args.body, editedAt: now } : p,
-        ),
-      );
-    },
-    [],
-  );
+  const editPost = async (args: { postId: Id<"posts">; title: string; body: string }) => {
+    if (!isLocalId(args.postId)) {
+      throw new Error("Editing isn't available in the public demo.");
+    }
+    const now = Date.now();
+    setPosts((prev) =>
+      prev.map((p) =>
+        p._id === args.postId ? { ...p, title: args.title, body: args.body, editedAt: now } : p,
+      ),
+    );
+  };
 
-  const deletePost = useCallback(async (args: { postId: Id<"posts"> }) => {
+  const deletePost = async (args: { postId: Id<"posts"> }) => {
     if (!isLocalId(args.postId)) {
       throw new Error("Deleting isn't available in the public demo.");
     }
@@ -489,9 +446,9 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       delete next[args.postId];
       return next;
     });
-  }, []);
+  };
 
-  const editReply = useCallback(async (args: { replyId: Id<"replies">; body: string }) => {
+  const editReply = async (args: { replyId: Id<"replies">; body: string }) => {
     if (!isLocalId(args.replyId)) {
       throw new Error("Editing isn't available in the public demo.");
     }
@@ -505,109 +462,79 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, []);
+  };
 
-  const deleteReply = useCallback(
-    async (args: { replyId: Id<"replies"> }) => {
-      if (!isLocalId(args.replyId)) {
-        throw new Error("Deleting isn't available in the public demo.");
-      }
-      // Cascade-collect this reply + its descendants from the current overlay
-      // state, then drop them and decrement the owning post's reply-count bump.
-      let ownerPostId: string | null = null;
-      const toDelete = new Set<string>([args.replyId]);
-      for (const [pid, list] of Object.entries(replies)) {
-        if (!list.some((r) => r._id === args.replyId)) continue;
-        ownerPostId = pid;
-        const frontier: string[] = [args.replyId];
-        while (frontier.length > 0) {
-          const nextFrontier: string[] = [];
-          for (const id of frontier) {
-            for (const r of list) {
-              if (r.parentId === id && !toDelete.has(r._id)) {
-                toDelete.add(r._id);
-                nextFrontier.push(r._id);
-              }
+  const deleteReply = async (args: { replyId: Id<"replies"> }) => {
+    if (!isLocalId(args.replyId)) {
+      throw new Error("Deleting isn't available in the public demo.");
+    }
+    // Cascade-collect this reply + its descendants from the current overlay
+    // state, then drop them and decrement the owning post's reply-count bump.
+    let ownerPostId: string | null = null;
+    const toDelete = new Set<string>([args.replyId]);
+    for (const [pid, list] of Object.entries(replies)) {
+      if (!list.some((r) => r._id === args.replyId)) continue;
+      ownerPostId = pid;
+      const frontier: string[] = [args.replyId];
+      while (frontier.length > 0) {
+        const nextFrontier: string[] = [];
+        for (const id of frontier) {
+          for (const r of list) {
+            if (r.parentId === id && !toDelete.has(r._id)) {
+              toDelete.add(r._id);
+              nextFrontier.push(r._id);
             }
           }
-          frontier.splice(0, frontier.length, ...nextFrontier);
         }
-        break;
+        frontier.splice(0, frontier.length, ...nextFrontier);
       }
-      if (!ownerPostId) return;
-      const pid = ownerPostId;
-      setReplies((prev) => ({
+      break;
+    }
+    if (!ownerPostId) return;
+    const pid = ownerPostId;
+    setReplies((prev) => ({
+      ...prev,
+      [pid]: (prev[pid] ?? []).filter((r) => !toDelete.has(r._id)),
+    }));
+    const removedCount = toDelete.size;
+    setPostBumps((prev) => {
+      const bump = prev[pid];
+      if (!bump) return prev;
+      return {
         ...prev,
-        [pid]: (prev[pid] ?? []).filter((r) => !toDelete.has(r._id)),
-      }));
-      const removedCount = toDelete.size;
-      setPostBumps((prev) => {
-        const bump = prev[pid];
-        if (!bump) return prev;
-        return {
-          ...prev,
-          [pid]: {
-            ...bump,
-            replyCountDelta: Math.max(0, bump.replyCountDelta - removedCount),
-          },
-        };
-      });
-    },
-    [replies],
-  );
+        [pid]: {
+          ...bump,
+          replyCountDelta: Math.max(0, bump.replyCountDelta - removedCount),
+        },
+      };
+    });
+  };
 
-  const overlay = useMemo<OverlayState>(
-    () => ({
-      posts,
-      replies,
-      spaces,
-      applyOverlay,
-      applyReplyOverlay,
-      enrichSessionPost,
-      enrichSessionReply,
-    }),
-    [
-      posts,
-      replies,
-      spaces,
-      applyOverlay,
-      applyReplyOverlay,
-      enrichSessionPost,
-      enrichSessionReply,
-    ],
-  );
+  const overlay: OverlayState = {
+    posts,
+    replies,
+    spaces,
+    applyOverlay,
+    applyReplyOverlay,
+    enrichSessionPost,
+    enrichSessionReply,
+  };
 
-  const value: StoreValue = useMemo(
-    () => ({
-      mode: "demo",
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      createSpace,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    }),
-    [
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      createSpace,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    ],
-  );
+  const value: StoreValue = {
+    mode: "demo",
+    overlay,
+    currentUserId,
+    markRead,
+    markAllRead,
+    createReply,
+    createPost,
+    createSpace,
+    summarize,
+    editPost,
+    deletePost,
+    editReply,
+    deleteReply,
+  };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -625,166 +552,118 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
   const editReplyMutation = useMutation(api.replies.edit);
   const deleteReplyMutation = useMutation(api.replies.remove);
 
-  const overlay = useMemo<OverlayState>(
-    () => ({
-      posts: [],
-      replies: {},
-      spaces: [],
-      applyOverlay: (post) => post,
-      applyReplyOverlay: (reply) => reply,
-      enrichSessionPost: (post) => ({
-        ...post,
-        author: null,
-        participants: [],
-        unread: false,
-        isStale: false,
-        lastReadAt: 0,
-      }),
-      enrichSessionReply: (reply) => ({
-        ...reply,
-        author: null,
-        unread: false,
-        lastReadAt: 0,
-      }),
+  const overlay: OverlayState = {
+    posts: [],
+    replies: {},
+    spaces: [],
+    applyOverlay: (post) => post,
+    applyReplyOverlay: (reply) => reply,
+    enrichSessionPost: (post) => ({
+      ...post,
+      author: null,
+      participants: [],
+      unread: false,
+      isStale: false,
+      lastReadAt: 0,
     }),
-    [],
-  );
+    enrichSessionReply: (reply) => ({
+      ...reply,
+      author: null,
+      unread: false,
+      lastReadAt: 0,
+    }),
+  };
 
-  const markRead = useCallback(
-    (postId: Id<"posts">) => {
-      if (!currentUserId) return;
-      void markReadMutation({ postId }).catch((error) => {
-        console.error("Failed to mark post read", error);
-      });
-    },
-    [currentUserId, markReadMutation],
-  );
+  const markRead = (postId: Id<"posts">) => {
+    if (!currentUserId) return;
+    void markReadMutation({ postId }).catch((error) => {
+      console.error("Failed to mark post read", error);
+    });
+  };
 
-  const markAllRead = useCallback(() => {
+  const markAllRead = () => {
     if (!currentUserId) return;
     void markAllReadMutation({}).catch((error) => {
       console.error("Failed to mark all posts read", error);
     });
-  }, [currentUserId, markAllReadMutation]);
+  };
 
-  const createReply = useCallback(
-    async (args: {
-      postId: Id<"posts">;
-      authorId?: Id<"users">;
-      body: string;
-      parentId?: Id<"replies">;
-      attachments?: AttachmentInput[];
-    }) =>
-      await createReplyMutation({
-        postId: args.postId,
-        body: args.body,
-        parentId: args.parentId,
-        attachments: args.attachments,
-      }),
-    [createReplyMutation],
-  );
+  const createReply = async (args: {
+    postId: Id<"posts">;
+    authorId?: Id<"users">;
+    body: string;
+    parentId?: Id<"replies">;
+    attachments?: AttachmentInput[];
+  }) =>
+    createReplyMutation({
+      postId: args.postId,
+      body: args.body,
+      parentId: args.parentId,
+      attachments: args.attachments,
+    });
 
-  const createPost = useCallback(
-    async (args: {
-      title: string;
-      body: string;
-      space: string;
-      spaceId?: Id<"spaces">;
-      priority: Priority;
-      wallOwnerId?: Id<"users">;
-      attachments?: AttachmentInput[];
-    }) =>
-      await createPostMutation({
-        title: args.title,
-        body: args.body,
-        space: args.space,
-        spaceId: args.spaceId,
-        priority: args.priority,
-        wallOwnerId: args.wallOwnerId,
-        attachments: args.attachments,
-      }),
-    [createPostMutation],
-  );
+  const createPost = async (args: {
+    title: string;
+    body: string;
+    space: string;
+    spaceId?: Id<"spaces">;
+    priority: Priority;
+    wallOwnerId?: Id<"users">;
+    attachments?: AttachmentInput[];
+  }) =>
+    createPostMutation({
+      title: args.title,
+      body: args.body,
+      space: args.space,
+      spaceId: args.spaceId,
+      priority: args.priority,
+      wallOwnerId: args.wallOwnerId,
+      attachments: args.attachments,
+    });
 
-  const createSpace = useCallback(
-    async (args: { name: string; description?: string }) =>
-      await createSpaceMutation({
-        name: args.name,
-        description: args.description,
-      }),
-    [createSpaceMutation],
-  );
+  const createSpace = (args: { name: string; description?: string }) =>
+    createSpaceMutation({
+      name: args.name,
+      description: args.description,
+    });
 
-  const summarize = useCallback(
-    async (postId: Id<"posts">) => {
-      await summarizeAction({ postId });
-    },
-    [summarizeAction],
-  );
+  const summarize = (postId: Id<"posts">) => summarizeAction({ postId }).then(() => undefined);
 
-  const editPost = useCallback(
-    async (args: { postId: Id<"posts">; title: string; body: string }) => {
-      await editPostMutation({
-        postId: args.postId,
-        title: args.title,
-        body: args.body,
-      });
-    },
-    [editPostMutation],
-  );
+  const editPost = async (args: { postId: Id<"posts">; title: string; body: string }) => {
+    await editPostMutation({
+      postId: args.postId,
+      title: args.title,
+      body: args.body,
+    });
+  };
 
-  const deletePost = useCallback(
-    async (args: { postId: Id<"posts"> }) => {
-      await deletePostMutation({ postId: args.postId });
-    },
-    [deletePostMutation],
-  );
+  const deletePost = async (args: { postId: Id<"posts"> }) => {
+    await deletePostMutation({ postId: args.postId });
+  };
 
-  const editReply = useCallback(
-    async (args: { replyId: Id<"replies">; body: string }) => {
-      await editReplyMutation({ replyId: args.replyId, body: args.body });
-    },
-    [editReplyMutation],
-  );
+  const editReply = async (args: { replyId: Id<"replies">; body: string }) => {
+    await editReplyMutation({ replyId: args.replyId, body: args.body });
+  };
 
-  const deleteReply = useCallback(
-    async (args: { replyId: Id<"replies"> }) => {
-      await deleteReplyMutation({ replyId: args.replyId });
-    },
-    [deleteReplyMutation],
-  );
+  const deleteReply = async (args: { replyId: Id<"replies"> }) => {
+    await deleteReplyMutation({ replyId: args.replyId });
+  };
 
-  const value = useMemo<StoreValue>(
-    () => ({
-      mode: "product",
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      createSpace,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    }),
-    [
-      overlay,
-      currentUserId,
-      markRead,
-      markAllRead,
-      createReply,
-      createPost,
-      createSpace,
-      summarize,
-      editPost,
-      deletePost,
-      editReply,
-      deleteReply,
-    ],
-  );
+  const value: StoreValue = {
+    mode: "product",
+    overlay,
+    currentUserId,
+    markRead,
+    markAllRead,
+    createReply,
+    createPost,
+    createSpace,
+    summarize,
+    editPost,
+    deletePost,
+    editReply,
+    deleteReply,
+  };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -969,16 +848,13 @@ export function useSearch(term: string) {
 export function usePrefetchPost() {
   const store = useStore();
   const viewerId = store.currentUserId;
-  return useCallback(
-    (postId: Id<"posts">) => {
-      if (isLocalId(postId)) return;
-      prefetchQuery(api.posts.get, { postId, viewerId });
-      if (isDemo) {
-        prefetchQuery(api.replies.listForPost, { postId });
-      }
-    },
-    [viewerId],
-  );
+  return (postId: Id<"posts">) => {
+    if (isLocalId(postId)) return;
+    prefetchQuery(api.posts.get, { postId, viewerId });
+    if (isDemo) {
+      prefetchQuery(api.replies.listForPost, { postId });
+    }
+  };
 }
 
 export function usePost(postId: Id<"posts">) {

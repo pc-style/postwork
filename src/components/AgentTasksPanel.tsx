@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useActionState, useOptimistic, useState } from "react";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { useAgentTasks } from "../lib/agentTasks";
 import { timeAgo } from "../lib/format";
@@ -6,7 +6,7 @@ import { useSession } from "../lib/session";
 import { usePost, useReplies } from "../lib/store";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
-import { Button } from "./Button";
+import { FormSubmitButton } from "./Button";
 import { FormField } from "./FormField";
 import { Markdown } from "./Markdown";
 import { StatusChip } from "./StatusChip";
@@ -37,10 +37,9 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
   const agents = users.filter((user) => user.isAgent);
   const [agentId, setAgentId] = useState<Id<"users"> | "">(agents[0]?._id ?? "");
   const [prompt, setPrompt] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(tasks.length > 0);
   const [previousTaskCount, setPreviousTaskCount] = useState(tasks.length);
+  const [optimisticPrompt, setOptimisticPrompt] = useOptimistic<string | null>(null);
 
   if (tasks.length !== previousTaskCount) {
     setPreviousTaskCount(tasks.length);
@@ -48,32 +47,35 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
   }
 
   const selectedAgent = agents.find((agent) => agent._id === agentId) ?? agents[0];
-  const contextText = useMemo(
-    () => (post ? buildContextText({ post, replies, users }) : ""),
-    [post, replies, users],
-  );
+  const contextText = post ? buildContextText({ post, replies, users }) : "";
 
-  const send = async () => {
-    if (!selectedAgent || !post || !prompt.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await dispatch({
-        postId,
-        agentId: selectedAgent._id,
-        agentName: selectedAgent.name,
-        prompt: prompt.trim(),
-        contextText,
-      });
-      setPrompt("");
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "We couldn't send the agent task. Try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [submitState, submitAction] = useActionState(
+    async (_previous: { error: string | null }, formData: FormData) => {
+      if (!selectedAgent || !post) return { error: "choose an agent and add a task." };
+      const nextPrompt = String(formData.get("prompt") ?? "").trim();
+      if (!nextPrompt) return { error: "add a task for the agent." };
+      setOptimisticPrompt(nextPrompt);
+      try {
+        await dispatch({
+          postId,
+          agentId: selectedAgent._id,
+          agentName: selectedAgent.name,
+          prompt: nextPrompt,
+          contextText,
+        });
+        setPrompt("");
+        return { error: null };
+      } catch (caught) {
+        return {
+          error:
+            caught instanceof Error
+              ? caught.message
+              : "We couldn't send the agent task. Try again.",
+        };
+      }
+    },
+    { error: null },
+  );
 
   return (
     <section className="border-y border-border py-1">
@@ -102,7 +104,10 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
         </summary>
 
         <div className="ui-reveal px-2 pb-3 pt-2">
-          <div className="rounded-lg border border-border bg-surface p-3 sm:p-4">
+          <form
+            action={submitAction}
+            className="rounded-lg border border-border bg-surface p-3 sm:p-4"
+          >
             <div className="grid gap-3">
               <FormField label="Agent">
                 <select
@@ -120,10 +125,8 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
               <FormField label="Task">
                 <textarea
                   value={prompt}
-                  onChange={(event) => {
-                    setPrompt(event.target.value);
-                    setError(null);
-                  }}
+                  name="prompt"
+                  onChange={(event) => setPrompt(event.target.value)}
                   rows={4}
                   placeholder="Example: Check the release risks and report back."
                   className="ui-field min-h-28 resize-none"
@@ -134,21 +137,24 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
               <p className="text-label text-muted">
                 Ask for a focused investigation of this thread.
               </p>
-              <Button
-                onClick={() => void send()}
+              <FormSubmitButton
                 disabled={!selectedAgent || !post || !prompt.trim()}
-                loading={busy}
                 loadingLabel="sending…"
               >
                 send
-              </Button>
+              </FormSubmitButton>
             </div>
-            {error ? (
+            {submitState.error ? (
               <p role="alert" className="ui-error mt-3">
-                {error}
+                {submitState.error}
               </p>
             ) : null}
-          </div>
+            {optimisticPrompt ? (
+              <p className="ui-action-pending mt-3 rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-label text-accent-soft">
+                sending “{optimisticPrompt}”
+              </p>
+            ) : null}
+          </form>
 
           {tasks.length > 0 ? (
             <div

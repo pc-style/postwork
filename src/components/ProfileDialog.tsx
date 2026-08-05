@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionArgs } from "convex/server";
 import { api } from "../../convex/_generated/api";
@@ -105,12 +105,12 @@ function ProfileDialogBody({
     };
   }, [localPreview]);
 
-  const effectivePreview = useMemo(() => {
+  const effectivePreview = (() => {
     if (avatarDraft === "upload") return localPreview;
     if (avatarDraft === "provider") return user?.providerAvatarUrl ?? null;
     if (avatarDraft === "remove") return null;
     return user?.avatarUrl ?? null;
-  }, [avatarDraft, localPreview, user?.avatarUrl, user?.providerAvatarUrl]);
+  })();
 
   const showingProvider = !!user?.providerAvatarUrl && effectivePreview === user.providerAvatarUrl;
 

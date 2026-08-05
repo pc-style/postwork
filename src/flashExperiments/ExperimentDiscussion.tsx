@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { FunctionReturnType } from "convex/server";
@@ -94,7 +94,7 @@ function Thread({
 }) {
   const addMessage = useMutation(api.discussions.addMessage);
   const [replyingTo, setReplyingTo] = useState<Id<"replies"> | null>(null);
-  const tree = useMemo(() => buildReplyTree(thread.replies), [thread.replies]);
+  const tree = buildReplyTree(thread.replies);
 
   const post = async (body: string, parentId?: Id<"replies">) => {
     if (isLoading) return false;

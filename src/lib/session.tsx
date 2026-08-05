@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -46,7 +38,7 @@ function DemoSessionProvider({ children }: { children: ReactNode }) {
     }
   }, [users, currentUserId]);
 
-  const value = useMemo<SessionValue>(() => {
+  const value: SessionValue = (() => {
     const currentUser = users?.find((u) => u._id === currentUserId);
     return {
       users: users ?? [],
@@ -54,7 +46,7 @@ function DemoSessionProvider({ children }: { children: ReactNode }) {
       currentUserId: currentUser?._id,
       setCurrentUserId: setCurrentUserIdState,
     };
-  }, [users, currentUserId]);
+  })();
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
@@ -85,12 +77,12 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
     });
   }, [ensureViewer, isLoaded, isSignedIn, viewer]);
 
-  const authDisplayName = useMemo(() => {
+  const authDisplayName = (() => {
     const email = user?.primaryEmailAddress?.emailAddress;
     return (
       user?.fullName?.trim() || user?.username?.trim() || (email ? email.split("@")[0] : undefined)
     );
-  }, [user]);
+  })();
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !viewer) return;
@@ -124,7 +116,7 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
     });
   }, [authDisplayName, isLoaded, isSignedIn, syncViewerProfile, user, viewer]);
 
-  const value = useMemo<SessionValue>(() => {
+  const value: SessionValue = (() => {
     const currentUser = viewer ?? undefined;
     return {
       users: users ?? (viewer ? [viewer] : []),
@@ -132,7 +124,7 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
       currentUserId: currentUser?._id,
       setCurrentUserId: () => {},
     };
-  }, [users, viewer]);
+  })();
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

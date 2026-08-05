@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAttachmentUpload } from "../lib/attachments";
 import {
   getMediaKind,
@@ -52,87 +52,81 @@ export function useAttachmentPicker() {
     [],
   );
 
-  const addFiles = useCallback(
-    async (files: FileList | File[]) => {
-      const selected = Array.from(files);
-      const supported = selected.filter(
-        (file) => getMediaKind(file.type || "application/octet-stream") !== null,
-      );
-      const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
-      const accepted = supported.slice(0, available);
-      setLimitError(
-        supported.length > available
-          ? `maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
-          : null,
-      );
-      setSelectionWarning(
-        supported.length !== selected.length
-          ? `unsupported files were not added. ${UNSUPPORTED_MEDIA_MESSAGE}`
-          : null,
-      );
-      for (const file of accepted) {
-        counter.current += 1;
-        const key = `att-${counter.current}`;
-        const mediaKind = getMediaKind(file.type || "application/octet-stream");
-        const previewUrl = mediaKind === "file" ? "" : URL.createObjectURL(file);
-        setPending((prev) => [
-          ...prev,
-          {
-            key,
-            previewUrl,
-            filename: file.name,
-            mediaKind,
-            uploading: true,
-          },
-        ]);
-        try {
-          const input = await upload(file);
-          setPending((prev) =>
-            prev.map((p) => (p.key === key ? { ...p, uploading: false, input } : p)),
-          );
-        } catch (err) {
-          setPending((prev) =>
-            prev.map((p) =>
-              p.key === key
-                ? {
-                    ...p,
-                    uploading: false,
-                    error: err instanceof Error ? err.message : String(err),
-                  }
-                : p,
-            ),
-          );
-        }
+  const addFiles = async (files: FileList | File[]) => {
+    const selected = Array.from(files);
+    const supported = selected.filter(
+      (file) => getMediaKind(file.type || "application/octet-stream") !== null,
+    );
+    const available = Math.max(0, MEDIA_MAX_PER_MESSAGE - pending.length);
+    const accepted = supported.slice(0, available);
+    setLimitError(
+      supported.length > available
+        ? `maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
+        : null,
+    );
+    setSelectionWarning(
+      supported.length !== selected.length
+        ? `unsupported files were not added. ${UNSUPPORTED_MEDIA_MESSAGE}`
+        : null,
+    );
+    for (const file of accepted) {
+      counter.current += 1;
+      const key = `att-${counter.current}`;
+      const mediaKind = getMediaKind(file.type || "application/octet-stream");
+      const previewUrl = mediaKind === "file" ? "" : URL.createObjectURL(file);
+      setPending((prev) => [
+        ...prev,
+        {
+          key,
+          previewUrl,
+          filename: file.name,
+          mediaKind,
+          uploading: true,
+        },
+      ]);
+      try {
+        const input = await upload(file);
+        setPending((prev) =>
+          prev.map((p) => (p.key === key ? { ...p, uploading: false, input } : p)),
+        );
+      } catch (err) {
+        setPending((prev) =>
+          prev.map((p) =>
+            p.key === key
+              ? {
+                  ...p,
+                  uploading: false,
+                  error: err instanceof Error ? err.message : String(err),
+                }
+              : p,
+          ),
+        );
       }
-    },
-    [pending.length, upload],
-  );
+    }
+  };
 
-  const removeAttachment = useCallback((key: string) => {
+  const removeAttachment = (key: string) => {
     setLimitError(null);
     setPending((prev) => {
       const entry = prev.find((p) => p.key === key);
       if (entry?.previewUrl) URL.revokeObjectURL(entry.previewUrl);
       return prev.filter((p) => p.key !== key);
     });
-  }, []);
+  };
 
-  const getReadyAttachments = useCallback(
-    (): AttachmentInput[] =>
-      pending
-        .filter((p): p is PendingMedia & { input: AttachmentInput } => !!p.input && !p.error)
-        .map((p) => p.input),
-    [pending],
-  );
+  const getReadyAttachments = (): AttachmentInput[] =>
+    pending
+      .filter((p): p is PendingMedia & { input: AttachmentInput } => !!p.input && !p.error)
+      .map((p) => p.input);
 
-  const clear = useCallback(() => {
+  const clear = () => {
     setPending((prev) => {
       for (const p of prev) if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
       return [];
     });
     setLimitError(null);
     setSelectionWarning(null);
-  }, []);
+  };
 
   const hasUploading = pending.some((p) => p.uploading);
   const attachmentError = pending.find((p) => p.error)?.error ?? null;

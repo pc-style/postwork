@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
@@ -60,12 +60,12 @@ export function AdminModelsPage() {
     };
   }, [loadFreeModels]);
 
-  const freeModels = useMemo(() => {
+  const freeModels = (() => {
     const byId = new Map<string, FreeModel>();
     byId.set(DEFAULT_FREE_MODEL.id, DEFAULT_FREE_MODEL);
     for (const model of fetchedModels) byId.set(model.id, model);
     return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [fetchedModels]);
+  })();
 
   return (
     <AdminPage
