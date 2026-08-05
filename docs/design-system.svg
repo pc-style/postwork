@@ -74,29 +74,26 @@
 
   <!-- ===== column 2: type + radius ===== -->
   <g transform="translate(600 176)">
-    <text x="0" y="0" fill="#e8e6e3" font-size="19" font-weight="600">type scale &#183; exactly 5 sizes</text>
+    <text x="0" y="0" fill="#e8e6e3" font-size="19" font-weight="600">type scale &#183; exactly 4 sizes</text>
 
     <g transform="translate(0 40)">
-      <text x="0" y="0" fill="#e8e6e3" font-size="11">text-label &#183; chips, tags, meta rows</text>
-      <text x="432" y="0" fill="#5c5956" font-size="12" class="mono" text-anchor="end">11px</text>
+      <text x="0" y="0" fill="#e8e6e3" font-size="14">text-body &#183; the default for almost everything: ui, chips, meta</text>
+      <text x="432" y="0" fill="#5c5956" font-size="12" class="mono" text-anchor="end">14px</text>
 
-      <text x="0" y="34" fill="#e8e6e3" font-size="14">text-body &#183; default ui and content</text>
-      <text x="432" y="34" fill="#5c5956" font-size="12" class="mono" text-anchor="end">14px</text>
+      <text x="0" y="38" fill="#e8e6e3" font-size="15" font-weight="500">text-title &#183; card titles, section headers</text>
+      <text x="432" y="38" fill="#5c5956" font-size="12" class="mono" text-anchor="end">15px</text>
 
-      <text x="0" y="70" fill="#e8e6e3" font-size="15" font-weight="500">text-title &#183; card titles, section headers</text>
-      <text x="432" y="70" fill="#5c5956" font-size="12" class="mono" text-anchor="end">15px</text>
+      <text x="0" y="80" fill="#e8e6e3" font-size="20" font-weight="600">text-display &#183; page headings</text>
+      <text x="432" y="80" fill="#5c5956" font-size="12" class="mono" text-anchor="end">20px</text>
 
-      <text x="0" y="110" fill="#e8e6e3" font-size="20" font-weight="600">text-display &#183; page headings</text>
-      <text x="432" y="110" fill="#5c5956" font-size="12" class="mono" text-anchor="end">20px</text>
-
-      <text x="0" y="146" fill="#e8e6e3" font-size="13" class="mono">text-code &#183; code and mono data</text>
-      <text x="432" y="146" fill="#5c5956" font-size="12" class="mono" text-anchor="end">13px</text>
+      <text x="0" y="118" fill="#e8e6e3" font-size="13" class="mono">text-code &#183; code and mono data</text>
+      <text x="432" y="118" fill="#5c5956" font-size="12" class="mono" text-anchor="end">13px</text>
     </g>
 
     <g transform="translate(0 220)">
       <rect x="0" y="0" width="432" height="64" rx="8" fill="#121014" stroke="#302d32"/>
-      <text x="16" y="26" fill="#e8e6e3" font-size="13" font-weight="600">hierarchy comes from color and spacing.</text>
-      <text x="16" y="46" fill="#a19d98" font-size="13">never a new size. all chrome lowercase; user content untouched.</text>
+      <text x="16" y="26" fill="#e8e6e3" font-size="13" font-weight="600">one size for almost everything.</text>
+      <text x="16" y="46" fill="#a19d98" font-size="13">hierarchy from color and spacing, never from shrinking the font.</text>
     </g>
 
     <text x="0" y="348" fill="#e8e6e3" font-size="19" font-weight="600">radius roles</text>
@@ -155,8 +152,8 @@
       <text x="100" y="19" fill="#e8e6e3" font-size="13" font-weight="500" text-anchor="middle">save workspace address</text>
       <rect x="212" y="0" width="88" height="30" rx="6" fill="#0a0a0b" stroke="#302d32"/>
       <text x="256" y="19" fill="#a19d98" font-size="13" text-anchor="middle">cancel</text>
-      <rect x="312" y="4" width="52" height="22" rx="2" fill="#18151a"/>
-      <text x="338" y="19" fill="#a19d98" font-size="11" text-anchor="middle">agent</text>
+      <rect x="312" y="2" width="56" height="24" rx="2" fill="#18151a"/>
+      <text x="340" y="19" fill="#a19d98" font-size="13" text-anchor="middle">agent</text>
       <rect x="374" y="4" width="46" height="22" rx="2" fill="#18151a"/>
       <text x="397" y="19" fill="#a19d98" font-size="11" text-anchor="middle">done</text>
     </g>

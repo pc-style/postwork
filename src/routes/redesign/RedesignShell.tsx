@@ -83,7 +83,7 @@ function MobileHeader({ onOpen }: { onOpen: () => void }) {
       <Link to="/app" className="text-title font-semibold tracking-tight">
         post<span className="text-accent-soft">work</span>
       </Link>
-      <div className="ml-auto flex items-center gap-2 text-label text-muted" aria-label="Your queue">
+      <div className="ml-auto flex items-center gap-2 text-body text-muted" aria-label="Your queue">
         <Link
           to="/app"
           search={{ unread: true }}
@@ -134,7 +134,7 @@ function Sidebar() {
 function Queue({ onSelect }: { onSelect?: () => void }) {
   const counts = useCounts();
   return (
-    <div className="mt-4 flex shrink-0 flex-wrap gap-4 border-y border-border px-5 py-3 text-label text-muted" aria-label="Your queue">
+    <div className="mt-4 flex shrink-0 flex-wrap gap-4 border-y border-border px-5 py-3 text-body text-muted" aria-label="Your queue">
       <Link
         to="/app"
         search={{ unread: true }}

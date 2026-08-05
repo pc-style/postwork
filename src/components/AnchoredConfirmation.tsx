@@ -112,7 +112,7 @@ export function AnchoredConfirmation({
         ref={triggerRef}
         variant="quiet"
         size="sm"
-        className="min-h-11 text-label hover:border-urgent/50 hover:text-urgent sm:min-h-9"
+        className="min-h-11 text-body hover:border-urgent/50 hover:text-urgent sm:min-h-9"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => {
@@ -135,7 +135,7 @@ export function AnchoredConfirmation({
           <strong id={titleId} className="block text-body font-semibold text-fg">
             {title}
           </strong>
-          <span id={descriptionId} className="mt-1 block text-label leading-5 text-muted">
+          <span id={descriptionId} className="mt-1 block text-body leading-5 text-muted">
             {description}
           </span>
           {error ? (

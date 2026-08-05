@@ -32,7 +32,7 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
             <p className="text-body text-muted">{agent.title}</p>
           </div>
         </div>
-        <div className="rounded-sm border border-accent/30 bg-accent/10 px-2 py-1 text-label text-accent-soft">
+        <div className="rounded-sm border border-accent/30 bg-accent/10 px-2 py-1 text-body text-accent-soft">
           {agentTasks.length} {agentTasks.length === 1 ? "task" : "tasks"}
         </div>
       </div>
@@ -45,14 +45,14 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
             <div key={task._id} className="rounded-md border border-border bg-bg p-3">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 <StatusChip status={task.status} />
-                <span className="text-label text-muted">{timeAgo(task.createdAt)}</span>
+                <span className="text-body text-muted">{timeAgo(task.createdAt)}</span>
                 {isLocalId(task.postId) ? (
-                  <span className="text-label text-muted">session post</span>
+                  <span className="text-body text-muted">session post</span>
                 ) : (
                   <Link
                     to="/app/posts/$postId"
                     params={{ postId: task.postId }}
-                    className="ms-auto inline-flex min-h-11 items-center text-label text-accent-soft transition-colors hover:text-fg sm:min-h-9"
+                    className="ms-auto inline-flex min-h-11 items-center text-body text-accent-soft transition-colors hover:text-fg sm:min-h-9"
                     onMouseEnter={() => prefetchPost(task.postId)}
                     onFocus={() => prefetchPost(task.postId)}
                     onTouchStart={() => prefetchPost(task.postId)}
@@ -63,7 +63,7 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
               </div>
               <p className="break-words text-body text-fg">{truncate(task.prompt, 120)}</p>
               {task.status === "done" && task.result ? (
-                <p className="mt-1.5 break-words text-label text-muted">{truncate(task.result.replace(/\s+/g, " ").trim(), 160)}</p>
+                <p className="mt-1.5 break-words text-body text-muted">{truncate(task.result.replace(/\s+/g, " ").trim(), 160)}</p>
               ) : null}
             </div>
           ))}

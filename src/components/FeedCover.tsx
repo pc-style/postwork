@@ -39,7 +39,7 @@ export function FeedCoverModeToggle() {
   const mode = useFeedCoverMode();
   return (
     <div className="flex items-center gap-1" role="group" aria-label="media display">
-      <span className="text-label lowercase text-muted" aria-hidden="true">
+      <span className="text-body lowercase text-muted" aria-hidden="true">
         media
       </span>
       {MODES.map((item) => (
@@ -48,7 +48,7 @@ export function FeedCoverModeToggle() {
           type="button"
           aria-pressed={mode === item}
           onClick={() => setFeedCoverMode(item)}
-          className={`inline-flex min-h-11 items-center rounded-md px-2 text-label lowercase transition-colors sm:min-h-9 ${
+          className={`inline-flex min-h-11 items-center rounded-md px-2 text-body lowercase transition-colors sm:min-h-9 ${
             mode === item ? "bg-surface-2 text-fg" : "text-muted hover:text-fg"
           }`}
         >

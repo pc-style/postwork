@@ -20,7 +20,7 @@ export function AuthShell({
   return (
     <div className="theme-ink flex min-h-screen justify-center bg-bg px-4 py-10 sm:items-center sm:py-14">
       <div className="w-full max-w-sm self-start sm:self-auto">
-        <p className="text-label font-medium lowercase text-accent-soft">
+        <p className="text-body font-medium lowercase text-accent-soft">
           postwork
         </p>
         <h1 className="mt-2 text-display font-semibold lowercase tracking-[-0.02em] text-fg [text-wrap:balance]">

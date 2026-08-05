@@ -63,7 +63,7 @@ export function FeedPage() {
           <button
             type="button"
             onClick={() => setSearch({ q: undefined })}
-            className="ui-button absolute end-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center rounded-md px-3 text-label text-muted hover:bg-surface hover:text-fg sm:min-h-9"
+            className="ui-button absolute end-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center rounded-md px-3 text-body text-muted hover:bg-surface hover:text-fg sm:min-h-9"
           >
             clear
           </button>

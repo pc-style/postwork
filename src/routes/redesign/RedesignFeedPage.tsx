@@ -194,7 +194,7 @@ const FeedRow = memo(function FeedRow({ post }: { post: EnrichedPost }) {
                 <span className="sr-only">Unread: </span>
               </>
             ) : null}
-            {post.pinned ? <span className="mr-2 text-label font-medium text-accent-soft">pinned</span> : null}
+            {post.pinned ? <span className="mr-2 text-body font-medium text-accent-soft">pinned</span> : null}
             {post.title}
           </h2>
           {post.body.trim() ? (
@@ -205,7 +205,7 @@ const FeedRow = memo(function FeedRow({ post }: { post: EnrichedPost }) {
         </div>
         {cover && coverMode === "regular" ? <FeedCover cover={cover} /> : null}
       </div>
-      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-muted">
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-muted">
         <span className="text-fg/85">{post.author?.name ?? "unknown"}</span>
         <span>{post.space}</span>
         <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>

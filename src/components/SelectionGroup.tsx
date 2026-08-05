@@ -63,7 +63,7 @@ export function ToggleButton({
       type="button"
       aria-pressed={pressed}
       onClick={() => onPressedChange(!pressed)}
-      className={`inline-flex min-h-11 items-center rounded-md border px-3 py-2 text-label font-medium lowercase transition-colors duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft ${
+      className={`inline-flex min-h-11 items-center rounded-md border px-3 py-2 text-body font-medium lowercase transition-colors duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft ${
         pressed
           ? "border-accent/60 bg-surface-2 text-fg"
           : "border-border bg-transparent text-muted hover:border-accent/40 hover:bg-surface hover:text-fg"

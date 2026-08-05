@@ -52,12 +52,12 @@ export function AdminOverviewPage() {
 
           <div className="mt-10">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-label font-medium lowercase text-muted">
+              <h2 className="text-body font-medium lowercase text-muted">
                 recent activity
               </h2>
               <Link
                 to="/admin/audit-log"
-                className="inline-flex min-h-11 items-center rounded-md px-2 text-label text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="inline-flex min-h-11 items-center rounded-md px-2 text-body text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
                 view details
               </Link>
@@ -73,10 +73,10 @@ export function AdminOverviewPage() {
                     key={entry._id}
                     className="flex items-baseline justify-between gap-4 rounded-md border border-border bg-surface px-4 py-2.5 text-body"
                   >
-                    <span className="font-mono text-label text-fg">
+                    <span className="font-mono text-body text-fg">
                       {entry.action}
                     </span>
-                    <span className="shrink-0 text-label text-muted tabular-nums">
+                    <span className="shrink-0 text-body text-muted tabular-nums">
                       {timeAgo(entry.createdAt)}
                     </span>
                   </li>
@@ -116,7 +116,7 @@ function Stat({
       >
         {value}
       </div>
-      <div className="mt-0.5 text-label font-medium lowercase text-muted">
+      <div className="mt-0.5 text-body font-medium lowercase text-muted">
         {label}
       </div>
     </Link>

@@ -35,9 +35,7 @@
   --radius-md: 6px;
   --radius-lg: 8px;
 
-  /* type scale - the only 5 sizes; see docs/design-system.md */
-  --text-label: 0.6875rem;
-  --text-label--line-height: 1.2;
+  /* type scale - the only 4 sizes; body is the default for almost everything; see docs/design-system.md */
   --text-body: 0.875rem;
   --text-body--line-height: 1.6;
   --text-title: 0.9375rem;

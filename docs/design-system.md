@@ -16,17 +16,21 @@ the polish sweep and has stale chip/selection rules).
 
 ## type scale
 
-Exactly 5 sizes, used via Tailwind text utilities:
+Exactly 4 sizes, used via Tailwind text utilities:
 
-- `text-label` 11px: chips, tags, meta rows, small buttons.
-- `text-body` 14px: default UI and content text.
+- `text-body` 14px: the default for almost everything - UI text, content, chips,
+  tags, meta rows, and buttons of every size.
 - `text-title` 15px: card titles, section headers, wordmark.
 - `text-display` 20px: page-level headings.
-- `text-code` 13px: code and mono data.
+- `text-code` 13px: code and mono data only.
 
-The only exceptions are the two landing-hero sizes on the marketing page. Everywhere
-else, build hierarchy with color (`fg` vs `muted` vs `faint`) and spacing, never with
-a new font size. Casing: all UI chrome (nav, buttons, headers, labels, errors, empty
+The only exceptions are the two landing-hero sizes on the marketing page. Rule of
+thumb: one font size for almost everything; header/footer/sidebar chrome may use
+`text-title`/`text-display`, but never invent a smaller size to make something feel
+secondary. Hierarchy comes from color (`fg` vs `muted` vs `faint`) and spacing -
+shrinking the font is a bandaid on the element's importance, not hierarchy. Chips
+and tags stay compact through tight padding (`px-1.5 py-px`) and `leading-tight`,
+not a smaller size. Casing: all UI chrome (nav, buttons, headers, labels, errors, empty
 states) is lowercase; user-generated content is never transformed. Use `…` not `...`;
 `·` separates meta items and document titles (`page · postwork`).
 

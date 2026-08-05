@@ -107,7 +107,7 @@ export function FlashExperimentsPage() {
     <div className="min-h-screen bg-bg px-4 py-6 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:28px_28px] [background-position:center] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="relative overflow-hidden rounded-lg border border-dashed border-accent/50 bg-surface/90 p-5 backdrop-blur">
-          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-body font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             flow lab, work in progress
           </div>
@@ -124,7 +124,7 @@ export function FlashExperimentsPage() {
           to="/app"
           className="group relative block overflow-hidden rounded-lg border border-accent/40 bg-surface/90 p-5 backdrop-blur transition hover:border-accent/70"
         >
-          <div className="flex items-center gap-2 font-mono text-label font-medium text-accent-soft">
+          <div className="flex items-center gap-2 font-mono text-body font-medium text-accent-soft">
             <span className="size-1.5 rounded-full bg-accent-soft" />
             current app design
           </div>
@@ -152,7 +152,7 @@ export function FlashExperimentsPage() {
                     ({items.length})
                   </span>
                 </h2>
-                <p className="text-right text-label text-muted">
+                <p className="text-right text-body text-muted">
                   {meta.blurb}
                 </p>
               </div>
@@ -183,7 +183,7 @@ export function FlashExperimentsPage() {
                   ({implementedExperiments.length})
                 </span>
               </h2>
-              <p className="text-right text-label text-muted">
+              <p className="text-right text-body text-muted">
                 Community suggestions that are now part of the app.
               </p>
             </div>
@@ -222,7 +222,7 @@ function ExperimentCard({
         params={{ slug: experiment.slug }}
         className="block p-4"
       >
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 font-mono text-label font-medium text-muted">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 font-mono text-body font-medium text-muted">
           <span
             className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
           >
@@ -245,14 +245,14 @@ function ExperimentCard({
           {experiment.summary}
         </p>
         {suggestion ? null : (
-          <p className="mt-3 text-label text-muted">
+          <p className="mt-3 text-body text-muted">
             requested by {experiment.requestedBy}
           </p>
         )}
       </Link>
 
       {suggestion ? (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-label">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-body">
           <span className="text-muted">suggested by</span>
           <span className="text-fg">{suggestion.name}</span>
           <span className="rounded-md border border-border bg-bg px-1.5 py-0.5 font-mono text-accent-soft">
@@ -352,7 +352,7 @@ function VoteButton({
 
 function ImplementedBadge() {
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-label font-medium lowercase text-accent-soft">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-body font-medium lowercase text-accent-soft">
       <svg viewBox="0 0 24 24" fill="none" className="size-2.5" aria-hidden="true">
         <path
           d="M5 13l4 4L19 7"
@@ -381,7 +381,7 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
         {experiment.title}
       </span>
       {suggestion && (
-        <span className="hidden shrink-0 text-label text-muted sm:inline">
+        <span className="hidden shrink-0 text-body text-muted sm:inline">
           {suggestion.name}
         </span>
       )}

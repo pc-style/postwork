@@ -85,7 +85,7 @@ function RedeemInvite({
       description="a calmer place for team decisions to live as posts, not channels."
     >
       <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-        <p className="text-label font-medium lowercase text-muted">
+        <p className="text-body font-medium lowercase text-muted">
           your invite code
         </p>
         <p className="mt-2 inline-flex rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-code text-fg">

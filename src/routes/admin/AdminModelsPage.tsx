@@ -88,7 +88,7 @@ export function AdminModelsPage() {
               <p className="mt-1">
                 model choices are saved here, but generation needs
                 {" "}
-                <code className="font-mono text-label text-fg">OPENROUTER_API_KEY</code>
+                <code className="font-mono text-body text-fg">OPENROUTER_API_KEY</code>
                 {" "}
                 in the Convex environment before these OpenRouter settings can run.
               </p>
@@ -193,7 +193,7 @@ function ModelSettingCard({
         </StatusPill>
       </div>
 
-      <dl className="mt-4 grid gap-2 rounded-md border border-border bg-bg px-3 py-2 text-label">
+      <dl className="mt-4 grid gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body">
         <div className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
           <dt className="text-muted">effective model</dt>
           <dd className="break-all font-mono text-fg">{setting.effectiveModelId}</dd>
@@ -210,7 +210,7 @@ function ModelSettingCard({
 
       <div className="mt-4 grid gap-3">
         <label className="block">
-          <span className="text-label font-medium lowercase text-muted">
+          <span className="text-body font-medium lowercase text-muted">
             free model preset
           </span>
           <select
@@ -243,7 +243,7 @@ function ModelSettingCard({
 
         {mode === "custom" ? (
           <label className="block">
-            <span className="text-label font-medium lowercase text-muted">
+            <span className="text-body font-medium lowercase text-muted">
               custom model id
             </span>
             <input
@@ -252,7 +252,7 @@ function ModelSettingCard({
               placeholder="provider/model:free"
               className="ui-field mt-1 font-mono text-body placeholder:text-muted/60"
             />
-            <p className="mt-1.5 text-label leading-5 text-muted">
+            <p className="mt-1.5 text-body leading-5 text-muted">
               use this for a newly released free model, an OpenRouter alias, or a
               router id that is not in the fetched list.
             </p>
@@ -260,10 +260,10 @@ function ModelSettingCard({
         ) : null}
       </div>
 
-      {error ? <p role="alert" className="mt-3 text-label text-urgent">{error}</p> : null}
+      {error ? <p role="alert" className="mt-3 text-body text-urgent">{error}</p> : null}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-label text-muted">
+        <p className="text-body text-muted">
           {modelsLoading ? "loading free OpenRouter models…" : `${freeModels.length} free presets`}
         </p>
         <div className="flex flex-wrap items-center gap-2">

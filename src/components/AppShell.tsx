@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside aria-label="queue summary" className="hidden lg:block">
           <div className="sticky top-6 space-y-3">
             <div className="rounded-lg border border-border bg-surface p-4 text-body">
-              <div className="mb-2 text-label font-medium text-muted">
+              <div className="mb-2 text-body font-medium text-muted">
                 your queue
               </div>
               {counts ? (
@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            <div className="rounded-lg border border-dashed border-border p-4 text-label text-muted">
+            <div className="rounded-lg border border-dashed border-border p-4 text-body text-muted">
               posts stay centered for reading; navigation and queue context stay
               close at hand.
             </div>

@@ -54,7 +54,7 @@ export function AdminUsersPage() {
             key={label}
             to="/admin/users"
             search={value ? { filter: value } : {}}
-            className={`inline-flex min-h-11 items-center rounded-md border px-2.5 py-1 text-label lowercase transition-colors sm:min-h-9 ${
+            className={`inline-flex min-h-11 items-center rounded-md border px-2.5 py-1 text-body lowercase transition-colors sm:min-h-9 ${
               filter === value
                 ? "border-border bg-surface-2 text-fg"
                 : "border-border text-muted hover:text-fg"
@@ -111,7 +111,7 @@ export function AdminUsersPage() {
             },
             {
               label: "joined",
-              className: "text-label text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (user) => timeAgo(user._creationTime),
             },
           ]}
@@ -216,7 +216,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       <div className="divide-y divide-border/60">
         <div className="py-2.5">
           <label htmlFor="admin-user-title" className="block">
-            <span className="text-label font-medium lowercase text-muted">
+            <span className="text-body font-medium lowercase text-muted">
               job title
             </span>
             <input
@@ -228,7 +228,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
             />
           </label>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-label text-muted">
+            <p className="text-body text-muted">
               permissions are controlled by role.
             </p>
             <ActionButton
@@ -255,7 +255,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           {user._id}
         </SheetField>
       </div>
-      {error && <p className="mt-4 text-label text-urgent">{error}</p>}
+      {error && <p className="mt-4 text-body text-urgent">{error}</p>}
     </Sheet>
   );
 }

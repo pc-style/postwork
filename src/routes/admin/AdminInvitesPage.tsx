@@ -77,7 +77,7 @@ export function AdminInvitesPage() {
                 if (e.key === "Enter" && !creating) void mint();
               }}
               placeholder="@github-handle or email (optional)"
-              className="ui-field min-w-0 max-w-56 flex-1 font-mono text-label placeholder:font-sans"
+              className="ui-field min-w-0 max-w-56 flex-1 font-mono text-body placeholder:font-sans"
             />
             <Button
               onClick={() => void mint()}
@@ -88,7 +88,7 @@ export function AdminInvitesPage() {
             </Button>
           </div>
           {targetError && (
-            <p className="text-label text-urgent">{targetError}</p>
+            <p className="text-body text-urgent">{targetError}</p>
           )}
         </div>
       }
@@ -108,12 +108,12 @@ export function AdminInvitesPage() {
             {
               label: "code",
               primary: true,
-              className: "font-mono text-label text-fg",
+              className: "font-mono text-body text-fg",
               render: (invite) => invite.code,
             },
             {
               label: "for",
-              className: "max-w-[12rem] truncate font-mono text-label text-accent-soft",
+              className: "max-w-[12rem] truncate font-mono text-body text-accent-soft",
               render: (invite) => formatTarget(invite) ?? <span className="text-muted">none</span>,
             },
             {
@@ -123,7 +123,7 @@ export function AdminInvitesPage() {
             },
             {
               label: "uses",
-              className: "text-label text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (invite) => `${invite.usedCount}/${invite.maxUses === 0 ? "unlimited" : invite.maxUses}`,
             },
             {
@@ -135,7 +135,7 @@ export function AdminInvitesPage() {
             },
             {
               label: "created",
-              className: "text-label text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (invite) => timeAgo(invite.createdAt),
             },
           ]}

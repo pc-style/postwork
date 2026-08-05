@@ -323,13 +323,13 @@ export function PostForm({
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
               <GifPicker onSelect={onGif} />
-              {hasUploading ? <span className="text-label text-accent-soft">optimizing and uploading media…</span> : null}
+              {hasUploading ? <span className="text-body text-accent-soft">optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
                 <span className="ui-error">{attachmentError ?? "couldn't upload a media attachment. remove it or try again."}</span>
               ) : null}
-              {attachmentWarning ? <span className="text-label text-urgent">{attachmentWarning}</span> : null}
+              {attachmentWarning ? <span className="text-body text-urgent">{attachmentWarning}</span> : null}
               {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
-                <span className="text-label text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
+                <span className="text-body text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
               ) : null}
             </div>
           </div>

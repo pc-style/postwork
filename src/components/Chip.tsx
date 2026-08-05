@@ -12,7 +12,7 @@ const toneClasses: Record<ChipTone, string> = {
 };
 
 /**
- * One tag spec for every badge in the app: rounded-sm, text-label, lowercase,
+ * One tag spec for every badge in the app: rounded-sm, text-body, lowercase,
  * subtle background tint, no borders. Status is conveyed through the tone's
  * text color and tint only, so `size` and `dot` are accepted for call-site
  * compatibility but no longer change the rendering.
@@ -32,7 +32,7 @@ export function Chip({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-label lowercase ${toneClasses[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-px text-body leading-tight lowercase ${toneClasses[tone]} ${className}`}
     >
       {children}
     </span>

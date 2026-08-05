@@ -99,8 +99,8 @@ function ReplyNode({
               </span>
               {node.author?.isAgent ? <AgentTag /> : null}
               <UserRoleTag role={node.author?.role} />
-              <span className="type-numeric text-label text-muted">{timeAgo(node.createdAt)}</span>
-              {node.editedAt ? <span className="text-label text-muted">edited</span> : null}
+              <span className="type-numeric text-body text-muted">{timeAgo(node.createdAt)}</span>
+              {node.editedAt ? <span className="text-body text-muted">edited</span> : null}
             </div>
 
             <div className="mt-1">
@@ -155,7 +155,7 @@ function ReplyNode({
                 <Button
                   variant="quiet"
                   size="sm"
-                  className="min-h-11 text-label sm:min-h-9"
+                  className="min-h-11 text-body sm:min-h-9"
                   onClick={() => setReplying((value) => !value)}
                   aria-controls={replying ? `reply-composer-${node._id}` : undefined}
                   aria-expanded={replying}
@@ -167,7 +167,7 @@ function ReplyNode({
                     <Button
                       variant="quiet"
                       size="sm"
-                      className="min-h-11 text-label sm:min-h-9"
+                      className="min-h-11 text-body sm:min-h-9"
                       onClick={() => {
                         setEditBody(node.body);
                         setError(null);

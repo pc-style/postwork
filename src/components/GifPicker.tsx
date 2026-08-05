@@ -94,7 +94,7 @@ export function GifPicker({
             <Button variant="quiet" size="sm" onClick={() => close()}>close</Button>
           </div>
           {!provider.configured ? (
-            <p role="status" className="rounded-md border border-border bg-bg px-3 py-2.5 text-label leading-relaxed text-muted">
+            <p role="status" className="rounded-md border border-border bg-bg px-3 py-2.5 text-body leading-relaxed text-muted">
               GIF search needs a Giphy key. set <code>VITE_GIPHY_API_KEY</code> locally to enable it.
             </p>
           ) : (
@@ -126,7 +126,7 @@ export function GifPicker({
                   search
                 </Button>
               </div>
-              {error ? <p role="status" className="mt-2 text-label text-muted">{error}</p> : null}
+              {error ? <p role="status" className="mt-2 text-body text-muted">{error}</p> : null}
               {results.length > 0 ? (
                 <div className="mt-3 grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto" aria-label="GIF results">
                   {results.map((gif) => (
@@ -145,7 +145,7 @@ export function GifPicker({
                   ))}
                 </div>
               ) : null}
-              <p className="mt-2 text-label text-muted">powered by Giphy</p>
+              <p className="mt-2 text-body text-muted">powered by Giphy</p>
             </>
           )}
         </div>

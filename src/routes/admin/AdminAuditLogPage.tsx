@@ -34,7 +34,7 @@ export function AdminAuditLogPage() {
             {
               label: "action",
               primary: true,
-              className: "font-mono text-label text-fg",
+              className: "font-mono text-body text-fg",
               render: (entry) => entry.action,
             },
             {
@@ -53,7 +53,7 @@ export function AdminAuditLogPage() {
             },
             {
               label: "when",
-              className: "text-label text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (entry) => timeAgo(entry.createdAt),
             },
           ]}
@@ -103,10 +103,10 @@ function AuditSheet({
       </div>
       {metadata && (
         <div className="mt-4">
-          <div className="text-label font-medium lowercase text-muted">
+          <div className="text-body font-medium lowercase text-muted">
             metadata
           </div>
-          <pre className="mt-1.5 overflow-x-auto rounded-md border border-border bg-bg p-3 text-label text-fg">
+          <pre className="mt-1.5 overflow-x-auto rounded-md border border-border bg-bg p-3 text-body text-fg">
             {metadata}
           </pre>
         </div>

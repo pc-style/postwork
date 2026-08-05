@@ -276,7 +276,7 @@ export function RedesignPostPage() {
           {sidebarOpen ? (
             <>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="shrink-0 text-label font-semibold text-muted">agents</span>
+                <span className="shrink-0 text-body font-semibold text-muted">agents</span>
                 <Button
                   variant="quiet"
                   size="sm"
@@ -293,7 +293,7 @@ export function RedesignPostPage() {
             <Button
               variant="quiet"
               size="sm"
-              className="w-full text-label"
+              className="w-full text-body"
               onClick={() => setSidebarOpen(true)}
               aria-expanded={false}
             >

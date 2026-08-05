@@ -55,7 +55,7 @@ export function UserSwitcher() {
           }}
           className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
         >
-          <p id={headingId} className="px-3 py-2 text-label font-medium text-muted">view as teammate</p>
+          <p id={headingId} className="px-3 py-2 text-body font-medium text-muted">view as teammate</p>
           {users.map((user) => {
             const selected = user._id === currentUser._id;
             return (
@@ -77,15 +77,15 @@ export function UserSwitcher() {
                       <span className="truncate text-body text-fg">{user.name}</span>
                       {user.isAgent ? <AgentTag /> : null}
                     </span>
-                    <span className="mt-0.5 block truncate text-label text-muted">{user.title}</span>
+                    <span className="mt-0.5 block truncate text-body text-muted">{user.title}</span>
                   </span>
-                  {selected ? <span className="text-label text-accent-soft">selected</span> : null}
+                  {selected ? <span className="text-body text-accent-soft">selected</span> : null}
                 </button>
                 <Link
                   to="/app/u/$userId"
                   params={{ userId: user._id }}
                   onClick={() => setOpen(false)}
-                  className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-label text-muted transition-colors hover:bg-surface-2 hover:text-accent-soft"
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-body text-muted transition-colors hover:bg-surface-2 hover:text-accent-soft"
                   aria-label={`Open ${user.name}'s wall`}
                 >
                   wall

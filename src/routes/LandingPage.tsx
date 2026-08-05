@@ -31,13 +31,13 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <nav aria-label="Public navigation" className="flex items-center gap-5">
           <Link
             to="/changelog"
-            className="text-label text-muted transition-colors hover:text-fg"
+            className="text-body text-muted transition-colors hover:text-fg"
           >
             changelog
           </Link>
           <Link
             to="/app"
-            className="ui-button rounded-md border border-border px-3 py-1.5 text-label text-muted hover:border-muted hover:text-fg"
+            className="ui-button rounded-md border border-border px-3 py-1.5 text-body text-muted hover:border-muted hover:text-fg"
           >
             {signedIn ? "open app" : "sign in"}
           </Link>
@@ -62,7 +62,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
             {signedIn ? "open app" : "sign in"}
           </Link>
           {!signedIn && (
-            <Link to="/app" className="text-label text-accent-soft hover:text-fg">
+            <Link to="/app" className="text-body text-accent-soft hover:text-fg">
               create a workspace →
             </Link>
           )}
@@ -97,7 +97,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         </section>
       </main>
 
-      <footer className="mt-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-border pt-6 text-label text-faint sm:mt-24">
+      <footer className="mt-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-border pt-6 text-body text-faint sm:mt-24">
         <span>postwork</span>
         <div className="flex items-center gap-5">
           <Link to="/changelog" className="hover:text-muted">
@@ -115,7 +115,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
 function Point({ k, title, body }: { k: string; title: string; body: string }) {
   return (
     <div>
-      <div className="text-label font-medium lowercase text-accent-soft">{k}</div>
+      <div className="text-body font-medium lowercase text-accent-soft">{k}</div>
       <h2 className="mt-2 max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
         {title}
       </h2>

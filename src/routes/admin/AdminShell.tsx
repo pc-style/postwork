@@ -22,7 +22,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-bg/95 px-4 backdrop-blur md:hidden">
           <Link to="/admin" className="text-title font-semibold tracking-tight">
             post<span className="text-accent-soft">work</span>
-            <span className="ml-2 text-label font-medium text-muted">admin</span>
+            <span className="ml-2 text-body font-medium text-muted">admin</span>
           </Link>
           <Button variant="icon" aria-label="Open admin navigation" onClick={() => setMobileNavOpen(true)}>
             <MenuIcon />
@@ -35,7 +35,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <Link to="/" className="text-title font-semibold tracking-tight">
                 post<span className="text-accent-soft">work</span>
               </Link>
-              <div className="mt-1 text-label font-medium text-muted">admin</div>
+              <div className="mt-1 text-body font-medium text-muted">admin</div>
             </div>
             <AdminNav />
             <div className="mt-auto px-5 pb-2">
@@ -91,7 +91,7 @@ function BackToApp({ onSelect }: { onSelect?: () => void }) {
   return (
     <Link
       to="/app"
-      className="inline-flex min-h-11 items-center text-label text-muted transition-colors hover:text-fg"
+      className="inline-flex min-h-11 items-center text-body text-muted transition-colors hover:text-fg"
       onClick={onSelect}
     >
       <span aria-hidden="true" className="mr-1.5">←</span>
@@ -148,7 +148,7 @@ export function AdminRecordList<T extends { _id: string }>({
       <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
         <table className="w-full min-w-[44rem] text-left text-body">
           <thead>
-            <tr className="border-b border-border bg-surface text-label font-medium text-muted">
+            <tr className="border-b border-border bg-surface text-body font-medium text-muted">
               {columns.map((column) => (
                 <th key={column.label} className="px-4 py-3 font-medium">{column.label}</th>
               ))}
@@ -186,7 +186,7 @@ export function AdminRecordList<T extends { _id: string }>({
             <dl className="grid gap-3">
               {columns.map((column) => (
                 <div key={column.label} className={column.primary ? "border-b border-border pb-3" : "grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3"}>
-                  <dt className={column.primary ? "sr-only" : "text-label font-medium text-muted"}>{column.label}</dt>
+                  <dt className={column.primary ? "sr-only" : "text-body font-medium text-muted"}>{column.label}</dt>
                   <dd className={`min-w-0 break-words text-body ${column.primary ? "text-fg" : "text-fg/90"}`}>
                     {column.render(item)}
                   </dd>
@@ -217,7 +217,7 @@ export function StatusPill({
     muted: "border-border bg-surface-2 text-muted",
   } as const;
   return (
-    <span className={`inline-flex rounded-sm border px-2 py-0.5 text-label ${tones[tone]}`}>
+    <span className={`inline-flex rounded-sm border px-2 py-px text-body leading-tight ${tones[tone]}`}>
       {children}
     </span>
   );

@@ -59,7 +59,7 @@ export function SpacePage() {
               <p className="type-description mt-1.5 text-body text-muted">{space.description}</p>
             ) : null}
           </div>
-          <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-label text-muted sm:block sm:text-end">
+          <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-body text-muted sm:block sm:text-end">
             <div>{space.memberCount} members</div>
             <div className="sm:mt-1">{feed.length} posts</div>
           </div>
@@ -68,7 +68,7 @@ export function SpacePage() {
         {memberUsers.length > 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Space members">
             {memberUsers.map((user) => (
-              <div key={user._id} className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-label text-muted">
+              <div key={user._id} className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body text-muted">
                 <Avatar user={user} size={20} />
                 <span className="text-fg">{user.name}</span>
               </div>

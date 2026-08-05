@@ -90,19 +90,19 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
           className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-body text-fg transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-0.5 text-label lowercase text-accent-soft">
+            <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-px text-body leading-tight lowercase text-accent-soft">
               agents
             </span>
-            <span className="shrink-0 whitespace-nowrap text-label lowercase text-accent-soft">
+            <span className="shrink-0 whitespace-nowrap text-body lowercase text-accent-soft">
               ask an agent
             </span>
-            <span className="min-w-0 truncate text-label font-normal text-muted">
+            <span className="min-w-0 truncate text-body font-normal text-muted">
               {tasks.length === 0
                 ? "investigate this post"
                 : `${tasks.length} ${tasks.length === 1 ? "investigation" : "investigations"}`}
             </span>
           </span>
-          <span className="shrink-0 text-label text-muted">{expanded ? "hide" : "open"}</span>
+          <span className="shrink-0 text-body text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
         <div className="ui-reveal px-2 pb-3 pt-2">
@@ -135,7 +135,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
               </FormField>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-label text-muted">
+              <p className="text-body text-muted">
                 Ask for a focused investigation of this thread.
               </p>
               <Button
@@ -164,7 +164,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                             <span>{agent?.name ?? "Agent"}</span>
                             {agent?.isAgent ? <AgentTag /> : null}
                           </div>
-                          <p className="text-label text-muted">{timeAgo(task.createdAt)}</p>
+                          <p className="text-body text-muted">{timeAgo(task.createdAt)}</p>
                         </div>
                       </div>
                       <StatusChip status={task.status} />

@@ -30,7 +30,7 @@ export function AttachmentMedia({
 
   if (failed) {
     return (
-      <div className="flex min-h-20 min-w-40 items-center rounded-md border border-border bg-surface px-3 text-label text-muted">
+      <div className="flex min-h-20 min-w-40 items-center rounded-md border border-border bg-surface px-3 text-body text-muted">
         media is no longer available
       </div>
     );
@@ -129,7 +129,7 @@ function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
         <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
       <span className="min-w-0 truncate">{attachment.filename}</span>
-      <span className={`shrink-0 text-label ${errored ? "text-urgent" : "text-muted"}`}>
+      <span className={`shrink-0 text-body ${errored ? "text-urgent" : "text-muted"}`}>
         {downloading
           ? "downloading…"
           : errored

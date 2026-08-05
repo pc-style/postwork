@@ -69,7 +69,7 @@ export function Sheet({
             {title}
           </h2>
           {subtitle ? (
-            <p id={subtitleId} className="mt-1 break-words text-label leading-5 text-muted">
+            <p id={subtitleId} className="mt-1 break-words text-body leading-5 text-muted">
               {subtitle}
             </p>
           ) : null}
@@ -101,10 +101,10 @@ export function SheetField({
 }) {
   return (
     <div className="py-3">
-      <div className="text-label font-medium text-muted">{label}</div>
+      <div className="text-body font-medium text-muted">{label}</div>
       <div
         className={`mt-1 break-words text-body text-fg ${
-          mono ? "overflow-x-auto font-mono text-label" : ""
+          mono ? "overflow-x-auto font-mono text-body" : ""
         }`}
       >
         {children}

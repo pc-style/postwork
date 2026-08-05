@@ -84,7 +84,7 @@ function WorkspaceSection() {
       {!demoPolicy.productAuth ? <p className="text-body text-muted">workspace settings are available on the product deployment.</p> : me === undefined ? <p className="text-body text-muted">loading workspace…</p> : (
         <div className="max-w-xl rounded-lg border border-border bg-surface p-4">
           <h3 className="text-title font-medium">{me?.org?.name ?? "workspace"}</h3>
-          <p className="mt-2 text-label text-muted">{slug ? workspaceUrl(slug) : "this workspace still needs a slug."}</p>
+          <p className="mt-2 text-body text-muted">{slug ? workspaceUrl(slug) : "this workspace still needs a slug."}</p>
           {currentUser?.role === "admin" ? (
             <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(); }}>
               <FormField label="workspace slug" error={error}>
@@ -176,7 +176,7 @@ function AgentsSection() {
             <div className="flex min-w-0 items-center gap-2">
               <h3 className="text-title font-medium">x cross-posting</h3>
               {status !== undefined ? (
-                <span className="rounded-sm bg-surface-2 px-1.5 py-0.5 text-label text-muted">
+                <span className="rounded-sm bg-surface-2 px-1.5 py-px text-body leading-tight text-muted">
                   {status.configured ? "connected" : "not configured"}
                 </span>
               ) : null}

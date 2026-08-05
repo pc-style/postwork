@@ -156,7 +156,7 @@ export function ComposerShell({
       </FormField>
       {afterBody}
       <div className={footerClassName}>
-        <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-muted">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-body text-muted">
           {hint}
         </div>
         <div className="ml-auto flex flex-wrap justify-end gap-2">

@@ -21,7 +21,7 @@ export function NotificationSettingsSection() {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-title font-medium">browser notifications</h3>
-            <span className="rounded-sm bg-surface-2 px-1.5 py-0.5 text-label text-muted">
+            <span className="rounded-sm bg-surface-2 px-1.5 py-px text-body leading-tight text-muted">
               {PERMISSION_LABELS[permission]}
             </span>
           </div>
@@ -46,7 +46,7 @@ export function NotificationSettingsSection() {
         </div>
       </div>
       {permission === "denied" ? (
-        <p className="mt-3 text-label text-muted">
+        <p className="mt-3 text-body text-muted">
           notifications are blocked. allow postwork notifications in your browser settings, then reload this page.
         </p>
       ) : null}

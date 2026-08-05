@@ -225,16 +225,16 @@ export function AttachmentThumbnails({
               <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
                 <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
               </svg>
-              <span className="max-w-full truncate text-label">{p.filename}</span>
+              <span className="max-w-full truncate text-body">{p.filename}</span>
             </div>
           )}
           {p.uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-label text-muted">
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-body text-muted">
               uploading…
             </div>
           )}
           {p.error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg/90 p-1 text-center text-label leading-tight text-urgent">
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/90 p-1 text-center text-body leading-tight text-urgent">
               upload failed
             </div>
           )}

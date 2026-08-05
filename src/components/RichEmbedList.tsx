@@ -106,14 +106,14 @@ export function RichEmbedList({ text }: { text: string }) {
             rel="noopener noreferrer"
             className="group block w-fit min-w-0 max-w-md overflow-hidden rounded-md border border-border border-l-2 border-l-accent bg-bg px-3 py-2.5 transition-colors hover:border-accent/50 hover:border-l-accent-soft hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
           >
-            <span className="block font-mono text-label text-accent-soft">
+            <span className="block font-mono text-body text-accent-soft">
               {hasMetadata && metadata.siteName ? metadata.siteName : preview.hostname}
             </span>
             <span className={`mt-0.5 block text-body group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}>
               {hasMetadata ? metadata.title ?? preview.label : preview.label}
             </span>
             {hasMetadata && metadata.description ? (
-              <span className="mt-1 line-clamp-3 block text-label leading-5 text-muted">{metadata.description}</span>
+              <span className="mt-1 line-clamp-3 block text-body leading-5 text-muted">{metadata.description}</span>
             ) : null}
             {hasMetadata && metadata.imageUrl ? (
               <img

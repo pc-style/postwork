@@ -22,7 +22,7 @@ function CompactCard({ post }: { post: EnrichedPost }) {
         {post.title}
       </span>
 
-      <span className="hidden shrink-0 rounded-md border border-border px-1.5 py-0.5 text-label text-muted sm:inline">
+      <span className="hidden shrink-0 rounded-md border border-border px-1.5 py-0.5 text-body text-muted sm:inline">
         {post.space}
       </span>
 

@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "5 August 2026",
+    title: "one font size, hierarchy from color",
+    note: "beta feedback said the 11px meta text was too small, and the fix went deeper than a bump: the small label size is gone from the type scale entirely. chips, tags, meta rows, and small buttons now share the same 14px body size as everything else, with hierarchy carried by color and spacing instead of shrinking the font. tags stay compact through tighter padding, not tinier text.",
+  },
+  {
+    date: "5 August 2026",
     title: "feed cards show media, images travel lighter, the app loads faster",
     note: "posts with images or link embeds now surface a cover on the feed card, with a persisted compact/regular toggle in the feed header. image attachments are re-encoded to webp (2000px cap, smaller-file-wins) at upload, so photos land around 8-15x lighter. the main js bundle was split from 929kb to under 400kb with route-level chunks that prefetch on hover, and the design system is now codified in docs/design-system.md.",
   },
@@ -199,10 +204,10 @@ export function ChangelogPage() {
             post<span className="text-accent">work</span>
           </Link>
           <nav aria-label="Public navigation" className="flex items-center gap-5">
-            <Link to="/" className="text-label text-muted transition-colors hover:text-fg">
+            <Link to="/" className="text-body text-muted transition-colors hover:text-fg">
               home
             </Link>
-            <Link to="/app" className="text-label text-muted transition-colors hover:text-fg">
+            <Link to="/app" className="text-body text-muted transition-colors hover:text-fg">
               open app
             </Link>
           </nav>
@@ -222,7 +227,7 @@ export function ChangelogPage() {
                 key={`${change.date}-${change.title}`}
                 className="grid gap-4 border-b border-border py-10 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-8"
               >
-                <time className="text-label leading-6 text-faint">{change.date}</time>
+                <time className="text-body leading-6 text-faint">{change.date}</time>
                 <div>
                   <h2 className="max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
                     {change.title}
@@ -236,7 +241,7 @@ export function ChangelogPage() {
           </div>
         </main>
 
-        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-label text-faint">
+        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-body text-faint">
           <span>postwork</span>
           <Link to="/app" className="transition-colors hover:text-muted">
             open app

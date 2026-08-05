@@ -137,7 +137,7 @@ export function ProfileSettingsForm() {
               <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "useProvider" }); setAvatarDraft("provider"); setSaved(false); }}>use sign-in photo</Button>
             ) : null}
           </div>
-          <p className="text-label text-muted">use a square image, or keep your initials.</p>
+          <p className="text-body text-muted">use a square image, or keep your initials.</p>
         </div>
       </div>
       <FormField label="name" required><input value={name} onChange={(event) => changeName(event.target.value)} className="ui-field" /></FormField>
@@ -146,7 +146,7 @@ export function ProfileSettingsForm() {
       {error ? <p role="alert" className="ui-error">{error}</p> : null}
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!dirty || !name.trim() || isUploading} loading={isSaving} loadingLabel="saving…">save profile</Button>
-        <p role="status" className="text-label text-muted">
+        <p role="status" className="text-body text-muted">
           {saved && !dirty ? "profile saved." : dirty ? "unsaved changes" : ""}
         </p>
       </div>

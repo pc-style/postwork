@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-bg px-6 text-center">
         <div className="max-w-sm">
-          <p className="text-label font-medium text-accent-soft">page error</p>
+          <p className="text-body font-medium text-accent-soft">page error</p>
           <h1 className="mt-2 text-display font-semibold tracking-tight text-fg">
             we couldn't show this page
           </h1>

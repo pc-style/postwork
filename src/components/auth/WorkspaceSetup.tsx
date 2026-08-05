@@ -368,7 +368,7 @@ function ChoiceButton({
     >
       <span className="min-w-0">
         <span className="block text-body text-fg">{label}</span>
-        <span className="mt-0.5 block text-label text-muted">{detail}</span>
+        <span className="mt-0.5 block text-body text-muted">{detail}</span>
       </span>
       <span
         aria-hidden="true"

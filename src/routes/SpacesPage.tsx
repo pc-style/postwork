@@ -34,7 +34,7 @@ export function SpacesPage() {
       />
 
       {creationStatus && !creationStatus.canCreate ? (
-        <p className="type-numeric mb-4 text-label text-muted">
+        <p className="type-numeric mb-4 text-body text-muted">
           you’ve created {creationStatus.createdCount} of {creationStatus.limit} available spaces.
         </p>
       ) : null}
@@ -64,12 +64,12 @@ export function SpacesPage() {
                     <p className="type-description mt-1 text-body text-muted">{space.description}</p>
                   ) : null}
                 </div>
-                <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-label text-muted sm:block sm:text-end">
+                <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-body text-muted sm:block sm:text-end">
                   <div>{space.memberCount} members</div>
                   <div className="sm:mt-1">{space.postCount} posts</div>
                 </div>
               </div>
-              <div className="type-numeric mt-3 text-label text-muted">active {timeAgo(space.latestActivityAt)}</div>
+              <div className="type-numeric mt-3 text-body text-muted">active {timeAgo(space.latestActivityAt)}</div>
             </Link>
           ))}
         </div>

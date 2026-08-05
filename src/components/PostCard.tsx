@@ -32,7 +32,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <PostMetaChips post={post} quiet />
             {post.summary ? (
-              <span className="text-label text-accent-soft transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              <span className="text-body text-accent-soft transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                 ai summary
               </span>
             ) : null}
@@ -50,7 +50,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
           </div>
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-muted">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-body text-muted">
               <Avatar user={post.author} size={20} />
               <span className="text-fg/85">{post.author?.name ?? "unknown"}</span>
               {post.author?.isAgent ? <AgentTag /> : null}
@@ -58,7 +58,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
               <span className="type-numeric">{timeAgo(post.createdAt)}</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-label text-muted">
+            <div className="flex flex-wrap items-center gap-2.5 text-body text-muted">
               {post.participants.length > 0 ? (
                 <div className="flex -space-x-1.5" aria-label={`${post.participants.length} participants`}>
                   {post.participants.slice(0, 4).map((user) => (

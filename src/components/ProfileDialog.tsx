@@ -273,7 +273,7 @@ function ProfileDialogBody({
               </Button>
             ) : null}
           </div>
-          <p className="text-label leading-5 text-muted">use a square image, or keep your initials.</p>
+          <p className="text-body leading-5 text-muted">use a square image, or keep your initials.</p>
         </div>
       </div>
 
@@ -302,7 +302,7 @@ function ProfileDialogBody({
           disabled={!notificationDraft || isSaving}
         >
           <legend className="text-body font-medium text-fg">notifications</legend>
-          <p className="text-label leading-5 text-muted">
+          <p className="text-body leading-5 text-muted">
             in-app unread state always stays on. outbound delivery is off by default.
           </p>
 
@@ -390,7 +390,7 @@ function ProfileDialogBody({
                         className="ui-field"
                       />
                     </FormField>
-                    <p className="col-span-2 text-label leading-5 text-muted">
+                    <p className="col-span-2 text-body leading-5 text-muted">
                       times use {notificationDraft.quietHoursTimeZone}.
                     </p>
                   </div>
@@ -398,7 +398,7 @@ function ProfileDialogBody({
               </div>
             </>
           ) : (
-            <p className="text-label text-muted">loading notification preferences…</p>
+            <p className="text-body text-muted">loading notification preferences…</p>
           )}
         </fieldset>
       ) : null}
@@ -453,7 +453,7 @@ function PreferenceCheckbox({
       />
       <span>
         <span className="block font-medium">{label}</span>
-        <span className="mt-0.5 block text-label leading-5 text-muted">{help}</span>
+        <span className="mt-0.5 block text-body leading-5 text-muted">{help}</span>
       </span>
     </label>
   );
