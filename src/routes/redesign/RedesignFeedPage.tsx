@@ -3,6 +3,7 @@ import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { FeedCover, FeedCoverModeToggle } from "../../components/FeedCover";
 import { LoadingState } from "../../components/LoadingState";
+import { memo } from "react";
 import type { ReactNode } from "react";
 import { useFeedCoverMode } from "../../lib/feedDisplay";
 import { PRIORITIES, SPACES, priorityStyles, timeAgo } from "../../lib/format";
@@ -166,7 +167,9 @@ export function RedesignFeedPage() {
   );
 }
 
-function FeedRow({ post }: { post: EnrichedPost }) {
+// Memoized: rows only rerender when their post changes (or the shared cover
+// mode flips), not on every search keystroke / router-state render above.
+const FeedRow = memo(function FeedRow({ post }: { post: EnrichedPost }) {
   const showPriority = post.priority !== "normal";
   const priority = priorityStyles[post.priority];
   const prefetchPost = usePrefetchPost();
@@ -185,7 +188,7 @@ function FeedRow({ post }: { post: EnrichedPost }) {
     >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
+          <h2 className={`text-title font-medium leading-snug tracking-tight ${post.unread ? "text-fg" : "text-fg/75"}`}>
             {post.unread ? (
               <>
                 <span className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle" aria-hidden="true" />
@@ -217,7 +220,7 @@ function FeedRow({ post }: { post: EnrichedPost }) {
       </p>
     </Link>
   );
-}
+});
 
 function FilterText({
   pressed,
@@ -233,10 +236,8 @@ function FilterText({
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center lowercase transition-colors sm:min-h-9 ${
-        pressed
-          ? "font-medium text-fg"
-          : "text-muted hover:text-fg"
+      className={`inline-flex min-h-11 items-center font-medium lowercase transition-colors duration-150 ease-out sm:min-h-9 ${
+        pressed ? "text-fg" : "text-muted hover:text-fg"
       }`}
     >
       {children}
