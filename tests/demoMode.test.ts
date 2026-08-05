@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  DEMO_BANNER_MESSAGE,
-  getDemoPolicy,
-  parseDemoFlag,
-} from "../src/lib/demoMode";
+import { DEMO_BANNER_MESSAGE, getDemoPolicy, parseDemoFlag } from "../src/lib/demoMode";
 
 describe("demo mode policy", () => {
   test("defaults to the public demo", () => {
@@ -19,9 +15,7 @@ describe("demo mode policy", () => {
     expect(policy.userSwitcher).toBe(true);
     expect(policy.sessionOverlay).toBe(true);
     expect(policy.productAuth).toBe(false);
-    expect(DEMO_BANNER_MESSAGE).toBe(
-      "public demo: data resets, pick a teammate",
-    );
+    expect(DEMO_BANNER_MESSAGE).toBe("public demo: data resets, pick a teammate");
   });
 
   test("keeps demo-only surfaces out of product mode", () => {

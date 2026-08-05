@@ -3,13 +3,7 @@ import { Chip } from "./Chip";
 
 type UserRole = Doc<"users">["role"];
 
-export function UserRoleTag({
-  role,
-  className = "",
-}: {
-  role: UserRole;
-  className?: string;
-}) {
+export function UserRoleTag({ role, className = "" }: { role: UserRole; className?: string }) {
   if (role !== "admin" && role !== "tester") return null;
 
   return (

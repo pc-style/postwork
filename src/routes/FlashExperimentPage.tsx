@@ -18,9 +18,7 @@ export function FlashExperimentPage() {
   const { setSlug } = useActiveExperiment();
   const experiment = getFlashExperiment(slug);
 
-  useDocumentTitle(
-    experiment ? `${experiment.title} · postwork` : "flash experiments · postwork",
-  );
+  useDocumentTitle(experiment ? `${experiment.title} · postwork` : "flash experiments · postwork");
 
   useEffect(() => {
     setSlug(slug);
@@ -35,7 +33,9 @@ export function FlashExperimentPage() {
             to="/app/flash-experiments"
             className="mt-3 inline-flex min-h-11 items-center text-sm text-accent-soft"
           >
-            <span aria-hidden="true" className="mr-1.5">←</span>
+            <span aria-hidden="true" className="mr-1.5">
+              ←
+            </span>
             back to experiments
           </Link>
         </div>

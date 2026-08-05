@@ -125,12 +125,8 @@ describe("shared deployment tenant isolation", () => {
       await ctx.db.patch(state.productUserId, { status: "pending" });
     });
 
-    await expect(
-      state.authed.query(api.users.list, {}),
-    ).resolves.toEqual([]);
-    await expect(
-      state.authed.query(api.posts.feed, {}),
-    ).resolves.toEqual([]);
+    await expect(state.authed.query(api.users.list, {})).resolves.toEqual([]);
+    await expect(state.authed.query(api.posts.feed, {})).resolves.toEqual([]);
   });
 
   test("demo seed preserves product rows", async () => {

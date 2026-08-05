@@ -1,19 +1,13 @@
 import { ConvexError } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
-import {
-  attachmentMaxBytes,
-  type attachmentInputSchema,
-} from "./validation";
+import { attachmentMaxBytes, type attachmentInputSchema } from "./validation";
 import type { z } from "zod";
 
 type AttachmentInput = z.infer<typeof attachmentInputSchema>;
 
 /** Reject storage already owned by a durable post or reply attachment. */
-export async function assertStorageUnattached(
-  ctx: MutationCtx,
-  storageId: Id<"_storage">,
-) {
+export async function assertStorageUnattached(ctx: MutationCtx, storageId: Id<"_storage">) {
   const existingAttachment = await ctx.db
     .query("postAttachments")
     .withIndex("by_storage_id", (q) => q.eq("storageId", storageId))

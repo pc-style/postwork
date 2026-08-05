@@ -63,7 +63,9 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
               </div>
               <p className="break-words text-body text-fg">{truncate(task.prompt, 120)}</p>
               {task.status === "done" && task.result ? (
-                <p className="mt-1.5 break-words text-label text-muted">{truncate(task.result.replace(/\s+/g, " ").trim(), 160)}</p>
+                <p className="mt-1.5 break-words text-label text-muted">
+                  {truncate(task.result.replace(/\s+/g, " ").trim(), 160)}
+                </p>
               ) : null}
             </div>
           ))}
@@ -97,7 +99,11 @@ export function AgentsPage() {
       ) : (
         <div className="grid gap-4">
           {agents.map((agent) => (
-            <AgentCard key={agent._id} agent={agent} agentTasks={tasks.filter((task) => task.agentId === agent._id)} />
+            <AgentCard
+              key={agent._id}
+              agent={agent}
+              agentTasks={tasks.filter((task) => task.agentId === agent._id)}
+            />
           ))}
         </div>
       )}

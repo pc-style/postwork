@@ -60,20 +60,12 @@ export function AdminAuditLogPage() {
         />
       )}
 
-      {selected && (
-        <AuditSheet entry={selected} onClose={() => setSelectedId(null)} />
-      )}
+      {selected && <AuditSheet entry={selected} onClose={() => setSelectedId(null)} />}
     </AdminPage>
   );
 }
 
-function AuditSheet({
-  entry,
-  onClose,
-}: {
-  entry: AuditEntry;
-  onClose: () => void;
-}) {
+function AuditSheet({ entry, onClose }: { entry: AuditEntry; onClose: () => void }) {
   let metadata: string | null = null;
   if (entry.metadata) {
     try {
@@ -103,9 +95,7 @@ function AuditSheet({
       </div>
       {metadata && (
         <div className="mt-4">
-          <div className="text-label font-medium lowercase text-muted">
-            metadata
-          </div>
+          <div className="text-label font-medium lowercase text-muted">metadata</div>
           <pre className="mt-1.5 overflow-x-auto rounded-md border border-border bg-bg p-3 text-label text-fg">
             {metadata}
           </pre>

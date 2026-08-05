@@ -23,8 +23,7 @@ export function PostModeration({
   const local = isLocalId(post._id);
   const canEdit = isAuthor && (store.mode === "product" || local);
   const canDelete =
-    (store.mode === "product" || local) &&
-    (isAuthor || (isAdmin && store.mode === "product"));
+    (store.mode === "product" || local) && (isAuthor || (isAdmin && store.mode === "product"));
 
   if (!canEdit && !canDelete) return null;
 

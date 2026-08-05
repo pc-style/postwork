@@ -13,19 +13,11 @@ export function timeAgo(ts: number): string {
   return `${wk}w ago`;
 }
 
-export const SPACES = [
-  "Engineering",
-  "Product",
-  "Design",
-  "Company",
-] as const;
+export const SPACES = ["Engineering", "Product", "Design", "Company"] as const;
 
 export const PRIORITIES = ["urgent", "high", "normal"] as const;
 
-export const priorityStyles: Record<
-  Priority,
-  { label: string; className: string; dot: string }
-> = {
+export const priorityStyles: Record<Priority, { label: string; className: string; dot: string }> = {
   urgent: {
     label: "Urgent",
     className: "bg-urgent/10 text-urgent border-urgent/30",

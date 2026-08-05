@@ -62,7 +62,7 @@ function sleep(ms) {
 
 async function ensureLabel(name, color, teamId = TEAM_ID) {
   // Check team labels
-  const data = await gql(
+  await gql(
     `query($teamId: String!) {
       team(id: $teamId) {
         labels(filter: { name: { eq: $name } }) {
@@ -116,7 +116,7 @@ async function createProject() {
   }`);
   if (existing.projects.nodes.length) {
     const p = existing.projects.nodes[0];
-    const count = await gql(
+    await gql(
       `{ issues(filter: { project: { id: { eq: "${p.id}" } } }, first: 1) { nodes { id } } }`,
     ).catch(() => null);
     console.error(
@@ -268,9 +268,7 @@ async function createIssue({
         { input },
       );
       const issue = data.issueCreate.issue;
-      process.stdout.write(
-        `  ${issue.identifier} [${issue.state.name}] ${issue.title}\n`,
-      );
+      process.stdout.write(`  ${issue.identifier} [${issue.state.name}] ${issue.title}\n`);
       await sleep(120); // gentle rate limit
       return issue;
     } catch (e) {
@@ -319,7 +317,8 @@ Default public demo to demo=true so later work lands on the correct side of the 
           children: [
             {
               title: "Add src/lib/demoMode.ts helper",
-              description: "Single frontend module; never scatter raw `import.meta.env.VITE_DEMO` reads.",
+              description:
+                "Single frontend module; never scatter raw `import.meta.env.VITE_DEMO` reads.",
               status: "done",
               labels: [L.phase0, L.Frontend],
             },
@@ -482,7 +481,8 @@ store.tsx becomes thin interface with two implementations selected by demo mode.
             },
             {
               title: "Demo path: keep session overlay as-is",
-              description: "Visitor writes vanish on refresh; backend stays read-only for visitors.",
+              description:
+                "Visitor writes vanish on refresh; backend stays read-only for visitors.",
               status: "done",
               labels: [L.phase1, L.Frontend],
             },
@@ -577,7 +577,8 @@ Cannot use product without redeeming invite. After activation, blocking profile 
             },
             {
               title: "Provider photo import + remove/useProvider actions",
-              description: "Avatar amendment 2026-07-08: default provider pfp; user can remove to initials.",
+              description:
+                "Avatar amendment 2026-07-08: default provider pfp; user can remove to initials.",
               status: "done",
               labels: [L.phase1, L.Frontend, L.Backend],
             },
@@ -628,7 +629,8 @@ Open: true multi-org product flow (see \`docs/organizations.md\`).`,
       children: [
         {
           title: "orgs table + orgId columns + indexes",
-          description: "posts, spaces, users, postReads carry orgId; org-prefixed indexes including search filterFields.",
+          description:
+            "posts, spaces, users, postReads carry orgId; org-prefixed indexes including search filterFields.",
           status: "done",
           labels: [L.phase2, L.Backend],
         },
@@ -683,7 +685,8 @@ Non-goals for first milestone: billing, org branding, cross-org. First milestone
             },
             {
               title: "Org switcher / org-scoped routing",
-              description: "Either /o/$orgSlug/app/... or session-selected org. Needed only when multi-membership exists.",
+              description:
+                "Either /o/$orgSlug/app/... or session-selected org. Needed only when multi-membership exists.",
               status: "backlog",
               labels: [L.phase2, L.Frontend],
             },
@@ -730,7 +733,8 @@ Open: external error reporting, priority-aware outbound notifications, deployed 
         },
         {
           title: "Image attachments via Convex storage (product mode)",
-          description: "Decision Q5=b: images only in v1. Paste/drop screenshots; size limits. Generic files deferred. Disabled in demo (overlay can't hold files).",
+          description:
+            "Decision Q5=b: images only in v1. Paste/drop screenshots; size limits. Generic files deferred. Disabled in demo (overlay can't hold files).",
           status: "done",
           labels: [L.phase3, L.Feature, L.Frontend, L.Backend],
           children: [
@@ -925,7 +929,8 @@ Areas: convex/ai.ts, posts.ts, replies.ts, AgentSummary.tsx.
           children: [
             {
               title: "Compute isStale from lastActivityAt vs summaryUpdatedAt",
-              description: "Backend projection or client derive; include in post feed/detail payloads.",
+              description:
+                "Backend projection or client derive; include in post feed/detail payloads.",
               status: "todo",
               priority: 1,
               labels: [L.phase4, L.Backend],
@@ -940,7 +945,8 @@ Areas: convex/ai.ts, posts.ts, replies.ts, AgentSummary.tsx.
             },
             {
               title: "Manual regenerate path remains clear + rate-limited",
-              description: "Generate/Regenerate button; friendly configure-provider message without key.",
+              description:
+                "Generate/Regenerate button; friendly configure-provider message without key.",
               status: "todo",
               labels: [L.phase4, L.Frontend, L.Backend],
             },
@@ -1063,7 +1069,7 @@ Open: banner, reseed cadence, feature-flag/lab policy.
         {
           title: "Quiet public-demo banner",
           description:
-            "On-brand: \"public demo — data resets, pick a teammate\". Lowercase chrome, wine accent, no hype. App chrome only when isDemo.",
+            'On-brand: "public demo — data resets, pick a teammate". Lowercase chrome, wine accent, no hype. App chrome only when isDemo.',
           status: "todo",
           priority: 2,
           labels: [L.phase5, L.Frontend, L.UX],
@@ -1134,7 +1140,8 @@ Open: banner, reseed cadence, feature-flag/lab policy.
         },
         {
           title: "README + live-doc synchronization",
-          description: "Split run-the-demo vs run-the-product docs; fix drifted schema claims. Done 2026-07-10 cleanup.",
+          description:
+            "Split run-the-demo vs run-the-product docs; fix drifted schema claims. Done 2026-07-10 cleanup.",
           status: "done",
           labels: [L.phase5, L.Improvement],
         },
@@ -1160,7 +1167,8 @@ Builds: \`bun run build\` and \`VITE_DEMO=false bun run build\` green as of 2026
       children: [
         {
           title: "Record bun run build green after each implementation change",
-          description: "Canonical check: tsc -b && vite build. Covers convex via generated api.d.ts.",
+          description:
+            "Canonical check: tsc -b && vite build. Covers convex via generated api.d.ts.",
           status: "todo",
           labels: [L.qa, L.DevOps],
         },
@@ -1285,8 +1293,7 @@ Branch policy: beta is active main; do not touch main until demo→product compl
         },
         {
           title: "Protect against dual convex dev on anonymous deployment",
-          description:
-            "Known footgun documented in AGENTS.md. Ops note only unless tooling added.",
+          description: "Known footgun documented in AGENTS.md. Ops note only unless tooling added.",
           status: "done",
           labels: [L.DevOps],
         },

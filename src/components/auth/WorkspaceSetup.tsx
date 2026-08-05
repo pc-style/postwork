@@ -62,18 +62,14 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
   const [inviteState, setInviteState] = useState<InviteActivationState>("idle");
 
   const [requestEmail, setRequestEmail] = useState("");
-  const [requestState, setRequestState] = useState<
-    "idle" | "sending" | "error"
-  >("idle");
+  const [requestState, setRequestState] = useState<"idle" | "sending" | "error">("idle");
   const [requestError, setRequestError] = useState<string>();
   const [requestedEmail, setRequestedEmail] = useState<string | null>(null);
 
   const [organizationName, setOrganizationName] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
-  const [organizationState, setOrganizationState] = useState<
-    "idle" | "creating" | "error"
-  >("idle");
+  const [organizationState, setOrganizationState] = useState<"idle" | "creating" | "error">("idle");
   const [organizationError, setOrganizationError] = useState<string>();
 
   const [autoClaim, setAutoClaim] = useState<"checking" | "none">("checking");
@@ -81,8 +77,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
   const signOutCancellationGuard = useRef(false);
   const activationGuard = useRef(false);
   const redemptionLock = useRef<Promise<unknown> | null>(null);
-  const [signOutState, setSignOutState] =
-    useState<ActivationSignOutState>("idle");
+  const [signOutState, setSignOutState] = useState<ActivationSignOutState>("idle");
 
   // Targeted invites (sent to this account's email) activate without any
   // typing at all.
@@ -144,10 +139,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
     setRequestError(undefined);
     try {
       await requestAccess({ email });
-      window.localStorage.setItem(
-        REQUEST_STORAGE_KEY,
-        JSON.stringify({ email, userId: user?.id }),
-      );
+      window.localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify({ email, userId: user?.id }));
       // Newest decision wins: a fresh access request replaces any invite code
       // saved earlier from a /join link, so a reload shows the request state
       // instead of resurrecting the stale invite.
@@ -155,13 +147,9 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
       setRequestedEmail(email);
       setRequestState("idle");
     } catch (error) {
-      const data =
-        error instanceof ConvexError
-          ? (error.data as { message?: string })
-          : null;
+      const data = error instanceof ConvexError ? (error.data as { message?: string }) : null;
       setRequestError(
-        data?.message ??
-          "we couldn't send the request. check the address and try again.",
+        data?.message ?? "we couldn't send the request. check the address and try again.",
       );
       setRequestState("error");
     }
@@ -179,13 +167,8 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
       });
     } catch (error) {
       setOrganizationState("error");
-      const data =
-        error instanceof ConvexError
-          ? (error.data as { message?: string })
-          : null;
-      setOrganizationError(
-        data?.message ?? "we couldn't create your organization. try again.",
-      );
+      const data = error instanceof ConvexError ? (error.data as { message?: string }) : null;
+      setOrganizationError(data?.message ?? "we couldn't create your organization. try again.");
     }
   };
 
@@ -262,9 +245,8 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
               />
             ) : null}
             <p className="mt-2 text-body text-muted">
-              already joined on another device? sign out here and sign back in
-              with the exact same email or provider you used there. a different
-              method creates a separate account.
+              already joined on another device? sign out here and sign back in with the exact same
+              email or provider you used there. a different method creates a separate account.
             </p>
           </div>
         ) : (
@@ -328,9 +310,7 @@ export function WorkspaceSetup({ needsOrg }: { needsOrg: boolean }) {
                   setOrganizationError(undefined);
                 }}
                 creating={organizationState === "creating"}
-                error={
-                  organizationState === "error" ? organizationError : undefined
-                }
+                error={organizationState === "error" ? organizationError : undefined}
                 onSubmit={() => void createOrg()}
               />
             ) : null}
@@ -370,10 +350,7 @@ function ChoiceButton({
         <span className="block text-body text-fg">{label}</span>
         <span className="mt-0.5 block text-label text-muted">{detail}</span>
       </span>
-      <span
-        aria-hidden="true"
-        className="text-muted transition-colors group-hover:text-fg"
-      >
+      <span aria-hidden="true" className="text-muted transition-colors group-hover:text-fg">
         &rarr;
       </span>
     </button>
@@ -466,19 +443,13 @@ function RequestPanel({
     return (
       <div className="grid gap-3">
         <StatusNote>
-          request sent for <span className="text-fg">{requestedEmail}</span>.
-          an admin reviews it and sends you an invite code. when your code
-          arrives, come back here and enter it to join.
+          request sent for <span className="text-fg">{requestedEmail}</span>. an admin reviews it
+          and sends you an invite code. when your code arrives, come back here and enter it to join.
         </StatusNote>
         <Button variant="secondary" onClick={onEnterInvite} className="w-full">
           have your code? enter it
         </Button>
-        <Button
-          variant="quiet"
-          size="sm"
-          onClick={onReset}
-          className="justify-self-start"
-        >
+        <Button variant="quiet" size="sm" onClick={onReset} className="justify-self-start">
           send a different request
         </Button>
       </div>
@@ -599,11 +570,8 @@ function CreatePanel({
 
 function StatusNote({ children }: { children: ReactNode }) {
   return (
-    <p
-      role="status"
-      className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-body text-muted"
-    >
+    <output className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-body text-muted">
       {children}
-    </p>
+    </output>
   );
 }

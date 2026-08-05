@@ -2,28 +2,18 @@ import { useState } from "react";
 import type { AttachmentWithUrl } from "../lib/types";
 import { formatFileSize } from "../lib/media";
 
-export function AttachmentGallery({
-  attachments,
-}: {
-  attachments: AttachmentWithUrl[];
-}) {
+export function AttachmentGallery({ attachments }: { attachments: AttachmentWithUrl[] }) {
   if (attachments.length === 0) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {attachments.map((attachment) =>
-        attachment.url ? (
-          <AttachmentMedia key={attachment._id} attachment={attachment} />
-        ) : null,
+        attachment.url ? <AttachmentMedia key={attachment._id} attachment={attachment} /> : null,
       )}
     </div>
   );
 }
 
-export function AttachmentMedia({
-  attachment,
-}: {
-  attachment: AttachmentWithUrl;
-}) {
+export function AttachmentMedia({ attachment }: { attachment: AttachmentWithUrl }) {
   const [failed, setFailed] = useState(false);
 
   if (!attachment.url) return null;
@@ -47,6 +37,7 @@ export function AttachmentMedia({
         className="ui-media-outline max-h-80 max-w-full rounded-md bg-black"
       >
         <source src={attachment.url} type={attachment.contentType} />
+        <track kind="captions" src="data:text/vtt,WEBVTT" />
         <a href={attachment.url}>open {attachment.filename}</a>
       </video>
     );
@@ -95,9 +86,7 @@ function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
       const response = await fetch(attachment.url);
       if (!response.ok) throw new Error("Download failed.");
       const bytes = await response.arrayBuffer();
-      const blobUrl = URL.createObjectURL(
-        new Blob([bytes], { type: "application/octet-stream" }),
-      );
+      const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
       try {
         const anchor = document.createElement("a");
         anchor.href = blobUrl;
@@ -120,8 +109,18 @@ function FileDownloadChip({ attachment }: { attachment: AttachmentWithUrl }) {
       disabled={downloading}
       className="ui-button flex max-w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-left text-body hover:border-accent/40 hover:bg-surface-2 disabled:cursor-progress disabled:opacity-70"
     >
-      <svg viewBox="0 0 24 24" fill="none" className="size-5 shrink-0 text-muted" aria-hidden="true">
-        <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className="size-5 shrink-0 text-muted"
+        aria-hidden="true"
+      >
+        <path
+          d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
       </svg>
       <span className="min-w-0 truncate">{attachment.filename}</span>
       <span className={`shrink-0 text-label ${errored ? "text-urgent" : "text-muted"}`}>

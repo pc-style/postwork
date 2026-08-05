@@ -1,4 +1,4 @@
-import { useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { buildReplyTree, type ReplyTreeNode } from "../lib/replyTree";
 import { timeAgo } from "../lib/format";
@@ -50,17 +50,19 @@ function ReplyNode({
   const [editBody, setEditBody] = useState(node.body);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const replyAttachments = attachments.filter(
-    (attachment) => attachment.replyId === node._id,
-  );
+  const editRef = useRef<HTMLTextAreaElement>(null);
+  const replyAttachments = attachments.filter((attachment) => attachment.replyId === node._id);
+
+  useEffect(() => {
+    if (editing) requestAnimationFrame(() => editRef.current?.focus());
+  }, [editing]);
 
   const local = isLocalId(node._id);
   const isAuthor = currentUserId === node.authorId;
   const isAdmin = currentUser?.role === "admin";
   const canEdit = isAuthor && (store.mode === "product" || local);
   const canDelete =
-    (store.mode === "product" || local) &&
-    (isAuthor || (isAdmin && store.mode === "product"));
+    (store.mode === "product" || local) && (isAuthor || (isAdmin && store.mode === "product"));
 
   const saveEdit = async () => {
     if (!editBody.trim() || busy) return;
@@ -70,11 +72,7 @@ function ReplyNode({
       await store.editReply({ replyId: node._id, body: editBody.trim() });
       setEditing(false);
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "We couldn't save the reply. Try again.",
-      );
+      setError(caught instanceof Error ? caught.message : "We couldn't save the reply. Try again.");
     } finally {
       setBusy(false);
     }
@@ -113,7 +111,7 @@ function ReplyNode({
                         setEditBody(event.target.value);
                         setError(null);
                       }}
-                      autoFocus
+                      ref={editRef}
                       rows={4}
                       className="ui-field min-h-28 resize-none"
                     />
@@ -204,7 +202,7 @@ function ReplyNode({
               postId={postId}
               parentId={node._id}
               compact
-              autoFocus
+              focusBodyOnMount
               placeholder={`Reply to ${node.author?.name ?? "this reply"}.`}
               onDone={() => setReplying(false)}
             />
@@ -213,10 +211,7 @@ function ReplyNode({
       </article>
 
       {node.children.length > 0 ? (
-        <div
-          role="group"
-          aria-label={`Replies to ${node.author?.name ?? "this reply"}`}
-        >
+        <section aria-label={`Replies to ${node.author?.name ?? "this reply"}`}>
           {node.children.map((child) => (
             <ReplyNode
               key={child._id}
@@ -227,7 +222,7 @@ function ReplyNode({
               fallbackFocusRef={fallbackFocusRef}
             />
           ))}
-        </div>
+        </section>
       ) : null}
     </div>
   );

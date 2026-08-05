@@ -30,20 +30,23 @@ function attachmentContext(
   let ticketExists = true;
   const ctx = {
     db: {
-      get: async () => (ticketExists
-        ? {
-            _id: uploadToken,
-            userId: ownerId,
-            orgId: undefined,
-            storageId: ticketStorageId,
-            expiresAt: Date.now() + 60_000,
-          }
-        : null),
+      get: async () =>
+        ticketExists
+          ? {
+              _id: uploadToken,
+              userId: ownerId,
+              orgId: undefined,
+              storageId: ticketStorageId,
+              expiresAt: Date.now() + 60_000,
+            }
+          : null,
       system: {
         get: async () => ({ contentType: "image/png", size: 12 }),
       },
       query: () => ({
-        withIndex: () => ({ unique: async () => (existingAttachment ? { _id: "attachment-1" } : null) }),
+        withIndex: () => ({
+          unique: async () => (existingAttachment ? { _id: "attachment-1" } : null),
+        }),
       }),
       delete: async () => {
         ticketExists = false;
@@ -80,9 +83,9 @@ describe("attachment upload tickets", () => {
       return { ticketId };
     });
 
-    await expect(
-      t.mutation(internal.attachments.cleanupExpiredUploadTickets, {}),
-    ).resolves.toEqual({ deleted: 1 });
+    await expect(t.mutation(internal.attachments.cleanupExpiredUploadTickets, {})).resolves.toEqual(
+      { deleted: 1 },
+    );
     await expect(t.run(async (ctx) => await ctx.db.get(ticketId))).resolves.toBeNull();
   });
 
@@ -91,7 +94,10 @@ describe("attachment upload tickets", () => {
     const ctx = attachmentContext(storageId);
 
     await expect(
-      validateStoredAttachment(ctx, ownerId, undefined, { ...attachment, storageId: mismatchedStorageId }),
+      validateStoredAttachment(ctx, ownerId, undefined, {
+        ...attachment,
+        storageId: mismatchedStorageId,
+      }),
     ).rejects.toBeInstanceOf(ConvexError);
   });
 
@@ -104,7 +110,11 @@ describe("attachment upload tickets", () => {
   test("consumes a claimed ticket exactly once", async () => {
     const ctx = attachmentContext(storageId);
 
-    await expect(validateStoredAttachment(ctx, ownerId, undefined, attachment)).resolves.toMatchObject({ storageId });
-    await expect(validateStoredAttachment(ctx, ownerId, undefined, attachment)).rejects.toBeInstanceOf(ConvexError);
+    await expect(
+      validateStoredAttachment(ctx, ownerId, undefined, attachment),
+    ).resolves.toMatchObject({ storageId });
+    await expect(
+      validateStoredAttachment(ctx, ownerId, undefined, attachment),
+    ).rejects.toBeInstanceOf(ConvexError);
   });
 });

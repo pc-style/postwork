@@ -15,11 +15,7 @@ const TABBABLE_SELECTOR = [
 export function isEffectivelyTabbable(element: HTMLElement): boolean {
   if (element.matches(":disabled") || element.tabIndex < 0) return false;
 
-  for (
-    let current: HTMLElement | null = element;
-    current;
-    current = current.parentElement
-  ) {
+  for (let current: HTMLElement | null = element; current; current = current.parentElement) {
     if (
       current.inert ||
       current.hasAttribute("inert") ||
@@ -54,11 +50,7 @@ export function trapDialogFocus(event: KeyboardEvent<HTMLDialogElement>) {
     event.currentTarget.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR),
   ).filter(isEffectivelyTabbable);
 
-  const target = dialogFocusTarget(
-    elements,
-    document.activeElement,
-    event.shiftKey,
-  );
+  const target = dialogFocusTarget(elements, document.activeElement, event.shiftKey);
   if (target === null) {
     event.preventDefault();
     return;

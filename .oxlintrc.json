@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "unicorn",
+    "typescript",
+    "oxc",
+    "react",
+    "jsx-a11y",
+    "react-perf",
+    "promise",
+    "node",
+    "vitest"
+  ],
+  "ignorePatterns": ["dist/**", "node_modules/**", "convex/_generated/**"]
+}

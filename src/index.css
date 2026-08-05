@@ -18,11 +18,10 @@
   --color-normal: #a19d98;
 
   --font-sans:
-    "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
   --font-mono:
-    ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas,
-    monospace;
+    ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -177,7 +176,9 @@ samp {
     background: var(--color-bg);
     color: var(--color-fg);
     padding: 0.625rem 0.75rem;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
   }
 
   .ui-field:hover:not(:disabled) {
@@ -316,6 +317,34 @@ dialog.sheet-panel[open] {
 
 .ui-reveal {
   animation: ui-reveal 150ms ease-out;
+}
+
+@keyframes ui-action-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-soft) 0%, transparent);
+  }
+  45% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent-soft) 14%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-soft) 0%, transparent);
+  }
+}
+
+.ui-action-pending {
+  animation: ui-action-pulse 900ms var(--ease-spring) infinite;
+}
+
+.ui-optimistic-toggle {
+  transition:
+    background-color 180ms var(--ease-spring),
+    border-color 180ms ease-out,
+    color 180ms ease-out,
+    scale 180ms var(--ease-spring);
+}
+
+.ui-optimistic-toggle[aria-pressed="true"] {
+  scale: 1.03;
 }
 
 @keyframes ui-spin {

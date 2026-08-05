@@ -16,9 +16,7 @@ describe("attachment metadata validation", () => {
   });
 
   test("rejects a mismatched media kind", () => {
-    expect(
-      attachmentInputSchema.safeParse({ ...base, mediaKind: "image" }).success,
-    ).toBe(false);
+    expect(attachmentInputSchema.safeParse({ ...base, mediaKind: "image" }).success).toBe(false);
   });
 
   test("applies image and video size limits independently", () => {

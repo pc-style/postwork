@@ -1,9 +1,10 @@
-export type ReplyTreeNode<T extends { _id: string; parentId?: string | null }> =
-  T & { children: ReplyTreeNode<T>[] };
+export type ReplyTreeNode<T extends { _id: string; parentId?: string | null }> = T & {
+  children: ReplyTreeNode<T>[];
+};
 
-export function buildReplyTree<
-  T extends { _id: string; parentId?: string | null },
->(items: readonly T[]): ReplyTreeNode<T>[] {
+export function buildReplyTree<T extends { _id: string; parentId?: string | null }>(
+  items: readonly T[],
+): ReplyTreeNode<T>[] {
   const byId = new Map<string, ReplyTreeNode<T>>();
   const roots: ReplyTreeNode<T>[] = [];
 

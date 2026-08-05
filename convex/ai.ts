@@ -48,9 +48,10 @@ type OpenRouterModel = {
  * Pioneer (OpenAI-compatible, https://docs.pioneer.ai):
  *   PIONEER_API_KEY, PIONEER_MODEL, PIONEER_BASE_URL?
  */
-export function resolveModel(
-  options: ResolveModelOptions = {},
-): { model: LanguageModel; modelId: string } {
+export function resolveModel(options: ResolveModelOptions = {}): {
+  model: LanguageModel;
+  modelId: string;
+} {
   if (options.openRouterModelId) {
     const modelId = normalizeModelId(options.openRouterModelId);
     return resolveOpenRouterModel(modelId);
@@ -140,8 +141,7 @@ export function aiConfigured(options: ResolveModelOptions = {}): boolean {
   const provider = (process.env.AI_PROVIDER ?? "openrouter").toLowerCase();
   if (provider === "gateway") return !!process.env.AI_GATEWAY_API_KEY;
   if (provider === "openrouter") return !!process.env.OPENROUTER_API_KEY;
-  if (provider === "pioneer")
-    return !!process.env.PIONEER_API_KEY && !!process.env.PIONEER_MODEL;
+  if (provider === "pioneer") return !!process.env.PIONEER_API_KEY && !!process.env.PIONEER_MODEL;
   if (provider === "openai") return !!process.env.OPENAI_API_KEY;
   return false;
 }
@@ -155,9 +155,7 @@ export const getGenerationModelSetting = internalQuery({
     const orgId = args.orgId;
     const setting = await ctx.db
       .query("aiGenerationSettings")
-      .withIndex("by_org_id_and_kind", (q) =>
-        q.eq("orgId", orgId).eq("kind", args.kind),
-      )
+      .withIndex("by_org_id_and_kind", (q) => q.eq("orgId", orgId).eq("kind", args.kind))
       .first();
     return setting?.modelId ?? null;
   },
@@ -192,18 +190,10 @@ function isAllowedOpenRouterModel(model: OpenRouterModel): boolean {
 
   const id = model.id.toLowerCase();
   const name = model.name?.toLowerCase() ?? "";
-  if (
-    id.startsWith("liquid/") ||
-    id.startsWith("meta-llama/") ||
-    id.includes("nemotron")
-  ) {
+  if (id.startsWith("liquid/") || id.startsWith("meta-llama/") || id.includes("nemotron")) {
     return false;
   }
-  if (
-    /channel[-_ ]?rating|content[-_ ]?safety|moderation|guardrail/.test(
-      `${id} ${name}`,
-    )
-  ) {
+  if (/channel[-_ ]?rating|content[-_ ]?safety|moderation|guardrail/.test(`${id} ${name}`)) {
     return false;
   }
 
@@ -219,9 +209,7 @@ function isAllowedOpenRouterModel(model: OpenRouterModel): boolean {
 
 export const listOpenRouterFreeModels = action({
   args: {},
-  handler: async (): Promise<
-    { id: string; name: string; contextLength?: number }[]
-  > => {
+  handler: async (): Promise<{ id: string; name: string; contextLength?: number }[]> => {
     const response = await fetch(
       `${DEFAULT_OPENROUTER_BASE_URL}/models?output_modalities=text&sort=pricing-low-to-high`,
     );
@@ -234,10 +222,7 @@ export const listOpenRouterFreeModels = action({
     const payload = (await response.json()) as { data?: OpenRouterModel[] };
     const models = payload.data ?? [];
     const free = models
-      .filter(
-        (model) =>
-          isFreeOpenRouterModel(model) && isAllowedOpenRouterModel(model),
-      )
+      .filter((model) => isFreeOpenRouterModel(model) && isAllowedOpenRouterModel(model))
       .map((model) => ({
         id: model.id,
         name: model.name ?? model.id,
@@ -322,7 +307,11 @@ export const summarizePost = action({
     ].join("\n");
 
     const openRouterModelId = await ctx.runQuery(internal.ai.getGenerationModelSetting, {
-      orgId: accessiblePost.orgId ?? (() => { throw new Error("Post missing orgId"); })(),
+      orgId:
+        accessiblePost.orgId ??
+        (() => {
+          throw new Error("Post missing orgId");
+        })(),
       kind: "postSummary",
     });
     const { model, modelId } = resolveModel({ openRouterModelId });

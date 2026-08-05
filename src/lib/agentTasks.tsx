@@ -47,9 +47,7 @@ function DemoAgentTasksProvider({ children }: { children: ReactNode }) {
   const counter = useRef(0);
 
   const patchTask = useCallback((id: string, patch: Partial<AgentTask>) => {
-    setTasks((prev) =>
-      prev.map((task) => (task._id === id ? { ...task, ...patch } : task)),
-    );
+    setTasks((prev) => prev.map((task) => (task._id === id ? { ...task, ...patch } : task)));
   }, []);
 
   const dispatch = useCallback(
@@ -102,11 +100,7 @@ function DemoAgentTasksProvider({ children }: { children: ReactNode }) {
     [tasks, tasksForPost, dispatch],
   );
 
-  return (
-    <AgentTasksContext.Provider value={value}>
-      {children}
-    </AgentTasksContext.Provider>
-  );
+  return <AgentTasksContext.Provider value={value}>{children}</AgentTasksContext.Provider>;
 }
 
 function ProductAgentTasksProvider({ children }: { children: ReactNode }) {
@@ -136,11 +130,7 @@ function ProductAgentTasksProvider({ children }: { children: ReactNode }) {
     [tasks, tasksForPost, dispatch],
   );
 
-  return (
-    <AgentTasksContext.Provider value={value}>
-      {children}
-    </AgentTasksContext.Provider>
-  );
+  return <AgentTasksContext.Provider value={value}>{children}</AgentTasksContext.Provider>;
 }
 
 export function useAgentTasks() {

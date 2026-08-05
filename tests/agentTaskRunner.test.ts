@@ -31,7 +31,11 @@ function json(value: unknown, status = 200): Response {
 
 describe("agent task runner", () => {
   test("claims work, passes context on stdin, and submits a successful result", async () => {
-    const requests: Array<{ url: string; authorization: string | null; body: Record<string, unknown> }> = [];
+    const requests: Array<{
+      url: string;
+      authorization: string | null;
+      body: Record<string, unknown>;
+    }> = [];
     let commandInput = "";
     const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
       requests.push({
@@ -124,11 +128,10 @@ describe("agent task runner", () => {
     );
     expect(bounded).toMatchObject({ stdout: "abcde", stdoutTruncated: true, timedOut: false });
 
-    const timedOut = await executeCommand(
-      [process.execPath, "-e", "await Bun.sleep(500)"],
-      "",
-      { timeoutMs: 20, maxOutputBytes: 100 },
-    );
+    const timedOut = await executeCommand([process.execPath, "-e", "await Bun.sleep(500)"], "", {
+      timeoutMs: 20,
+      maxOutputBytes: 100,
+    });
     expect(timedOut.timedOut).toBe(true);
   });
 
@@ -223,20 +226,23 @@ describe("agent task runner", () => {
       return json({ status: "done", replyId: "reply-1" });
     }) as typeof fetch;
 
-    await runAgentTask({ ...config, requestAttempts: 4 }, {
-      fetch: fetchImpl,
-      sleep: async (delayMs) => {
-        delays.push(delayMs);
+    await runAgentTask(
+      { ...config, requestAttempts: 4 },
+      {
+        fetch: fetchImpl,
+        sleep: async (delayMs) => {
+          delays.push(delayMs);
+        },
+        execute: async () => ({
+          exitCode: 0,
+          stdout: "Stable result",
+          stderr: "",
+          stdoutTruncated: false,
+          stderrTruncated: false,
+          timedOut: false,
+        }),
       },
-      execute: async () => ({
-        exitCode: 0,
-        stdout: "Stable result",
-        stderr: "",
-        stdoutTruncated: false,
-        stderrTruncated: false,
-        timedOut: false,
-      }),
-    });
+    );
 
     expect(delays).toEqual([100, 2_000]);
     expect(resultBodies).toHaveLength(3);
@@ -252,28 +258,35 @@ describe("agent task runner", () => {
 
     for (const malformedReply of malformedReplies) {
       let executed = false;
-      await expect(runAgentTask(config, {
-        fetch: (async () => json({ ...claim, replies: [malformedReply] })) as typeof fetch,
-        execute: async () => {
-          executed = true;
-          throw new Error("Malformed claims must not execute commands.");
-        },
-      })).rejects.toThrow("invalid task claim");
+      await expect(
+        runAgentTask(config, {
+          fetch: (async () => json({ ...claim, replies: [malformedReply] })) as typeof fetch,
+          execute: async () => {
+            executed = true;
+            throw new Error("Malformed claims must not execute commands.");
+          },
+        }),
+      ).rejects.toThrow("invalid task claim");
       expect(executed).toBe(false);
     }
   });
 
   test("rejects output limits above the backend-safe maximum", async () => {
     let calls = 0;
-    await expect(runAgentTask({ ...config, maxOutputBytes: 9_501 }, {
-      fetch: (async () => {
-        calls += 1;
-        return json(claim);
-      }) as typeof fetch,
-      execute: async () => {
-        throw new Error("Oversized configuration must fail before execution.");
-      },
-    })).rejects.toThrow("Maximum output bytes must be at most 9500");
+    await expect(
+      runAgentTask(
+        { ...config, maxOutputBytes: 9_501 },
+        {
+          fetch: (async () => {
+            calls += 1;
+            return json(claim);
+          }) as typeof fetch,
+          execute: async () => {
+            throw new Error("Oversized configuration must fail before execution.");
+          },
+        },
+      ),
+    ).rejects.toThrow("Maximum output bytes must be at most 9500");
     expect(calls).toBe(0);
   });
 
@@ -284,12 +297,14 @@ describe("agent task runner", () => {
       return json({ error: "claim_rejected" }, 409);
     }) as typeof fetch;
 
-    await expect(runAgentTask(config, {
-      fetch: fetchImpl,
-      execute: async () => {
-        throw new Error("Command must not run after a rejected claim.");
-      },
-    })).rejects.toThrow("HTTP 409");
+    await expect(
+      runAgentTask(config, {
+        fetch: fetchImpl,
+        execute: async () => {
+          throw new Error("Command must not run after a rejected claim.");
+        },
+      }),
+    ).rejects.toThrow("HTTP 409");
     expect(calls).toBe(1);
   });
 });

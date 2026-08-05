@@ -3,10 +3,7 @@ import { env, httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { hashConnectorSecret, parseConnectorToken } from "./connectors";
-import {
-  connectorSecretKeyring,
-  decryptConnectorSecret,
-} from "./lib/connectorSecrets";
+import { connectorSecretKeyring, decryptConnectorSecret } from "./lib/connectorSecrets";
 import {
   GITHUB_WEBHOOK_MAX_BYTES,
   githubExternalEventId,
@@ -92,18 +89,12 @@ http.route({
 
     let secret: string;
     try {
-      secret = (await decryptConnectorSecret(
-        material.encryptedSecret,
-        connectorSecretKeyring(env),
-      )).secret;
+      secret = (await decryptConnectorSecret(material.encryptedSecret, connectorSecretKeyring(env)))
+        .secret;
     } catch {
       return json({ error: "connector_unavailable" }, 503);
     }
-    if (!(await verifyGitHubSignature(
-      bytes,
-      request.headers.get("x-hub-signature-256"),
-      secret,
-    ))) {
+    if (!(await verifyGitHubSignature(bytes, request.headers.get("x-hub-signature-256"), secret))) {
       return json({ error: "invalid_signature" }, 401);
     }
 
@@ -138,11 +129,7 @@ http.route({
     const credential = parseConnectorToken(request.headers.get("authorization"));
     if (!credential) return json({ error: "unauthorized" }, 401);
     const body = objectBody(await request.json().catch(() => null));
-    if (
-      !body ||
-      typeof body.taskId !== "string" ||
-      typeof body.externalRunId !== "string"
-    ) {
+    if (!body || typeof body.taskId !== "string" || typeof body.externalRunId !== "string") {
       return json({ error: "invalid_request" }, 400);
     }
     try {
@@ -210,17 +197,18 @@ http.route({
     ) {
       return json({ error: "invalid_request" }, 400);
     }
-    const outcome = body.status === "done"
-      ? typeof body.body === "string"
-        ? {
-            status: "done" as const,
-            body: body.body,
-            model: typeof body.model === "string" ? body.model : undefined,
-          }
-        : null
-      : typeof body.error === "string"
-        ? { status: "failed" as const, error: body.error }
-        : null;
+    const outcome =
+      body.status === "done"
+        ? typeof body.body === "string"
+          ? {
+              status: "done" as const,
+              body: body.body,
+              model: typeof body.model === "string" ? body.model : undefined,
+            }
+          : null
+        : typeof body.error === "string"
+          ? { status: "failed" as const, error: body.error }
+          : null;
     if (!outcome) return json({ error: "invalid_request" }, 400);
     try {
       const result = await ctx.runMutation(internal.connectors.finishAgentTask, {

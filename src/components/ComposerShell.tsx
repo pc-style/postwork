@@ -1,9 +1,11 @@
 import {
   type KeyboardEvent,
+  type ComponentProps,
   type ReactNode,
   type RefObject,
   useEffect,
 } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "./Button";
 import { FormField } from "./FormField";
 
@@ -11,24 +13,26 @@ export function ComposerShell({
   title,
   setTitle,
   titleRef,
+  titleName = "title",
   titleLabel = "Title",
   titleHelp,
   titleError,
   titlePlaceholder,
   titleClassName = "ui-field",
-  titleAutoFocus = false,
+  focusTitleOnMount = false,
   titleRequired = false,
   titleOptional = false,
   body,
   setBody,
   textareaRef,
+  bodyName = "body",
   bodyLabel = "Reply",
   bodyHelp,
   bodyError,
   srOnlyBodyLabel = false,
   placeholder,
   rows,
-  autoFocus = false,
+  focusBodyOnMount = false,
   autoGrow = false,
   textareaClassName = "ui-field resize-y",
   onFieldKeyDown,
@@ -48,24 +52,26 @@ export function ComposerShell({
   title?: string;
   setTitle?: (title: string) => void;
   titleRef?: RefObject<HTMLInputElement | null>;
+  titleName?: string;
   titleLabel?: string;
   titleHelp?: ReactNode;
   titleError?: ReactNode;
   titlePlaceholder?: string;
   titleClassName?: string;
-  titleAutoFocus?: boolean;
+  focusTitleOnMount?: boolean;
   titleRequired?: boolean;
   titleOptional?: boolean;
   body: string;
   setBody: (body: string) => void;
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
+  bodyName?: string;
   bodyLabel?: string;
   bodyHelp?: ReactNode;
   bodyError?: ReactNode;
   srOnlyBodyLabel?: boolean;
   placeholder: string;
   rows: number;
-  autoFocus?: boolean;
+  focusBodyOnMount?: boolean;
   /**
    * Grow the textarea to fit its content (capped by the max-height in
    * `textareaClassName`, which then scrolls internally). Replaces manual
@@ -73,9 +79,7 @@ export function ComposerShell({
    */
   autoGrow?: boolean;
   textareaClassName?: string;
-  onFieldKeyDown?: (
-    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => void;
+  onFieldKeyDown?: (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   beforeBody?: ReactNode;
   afterBody?: ReactNode;
@@ -87,11 +91,12 @@ export function ComposerShell({
   submitting: boolean;
   disabled: boolean;
   submitType?: "button" | "submit";
-  onSubmit: () => void;
+  onSubmit?: () => void;
 }) {
   useEffect(() => {
-    if (autoFocus) textareaRef?.current?.focus();
-  }, [autoFocus, textareaRef]);
+    if (focusTitleOnMount) titleRef?.current?.focus();
+    if (focusBodyOnMount) textareaRef?.current?.focus();
+  }, [focusBodyOnMount, focusTitleOnMount, titleRef, textareaRef]);
 
   useEffect(() => {
     if (!autoGrow) return;
@@ -103,14 +108,16 @@ export function ComposerShell({
     node.style.height = `${node.scrollHeight + 2}px`;
   }, [autoGrow, body, textareaRef]);
 
-  const handleKeyDown = (
-    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onFieldKeyDown?.(event);
     if (event.defaultPrevented) return;
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault();
-      onSubmit();
+      if (onSubmit) {
+        event.preventDefault();
+        onSubmit();
+      } else {
+        event.currentTarget.form?.requestSubmit();
+      }
     }
   };
 
@@ -126,10 +133,10 @@ export function ComposerShell({
         >
           <input
             ref={titleRef}
+            name={titleName}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={handleKeyDown}
-            autoFocus={titleAutoFocus}
             placeholder={titlePlaceholder}
             className={titleClassName}
           />
@@ -145,6 +152,7 @@ export function ComposerShell({
       >
         <textarea
           ref={textareaRef}
+          name={bodyName}
           value={body}
           onChange={(event) => setBody(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -161,17 +169,30 @@ export function ComposerShell({
         </div>
         <div className="ml-auto flex flex-wrap justify-end gap-2">
           {actions}
-          <Button
+          <SubmitButton
             type={submitType}
             onClick={submitType === "button" ? onSubmit : undefined}
             disabled={disabled}
-            loading={submitting}
-            loadingLabel={submittingLabel}
+            submitting={submitting}
+            submittingLabel={submittingLabel}
+            className={submitting ? "ui-action-pending" : undefined}
           >
             {submitLabel}
-          </Button>
+          </SubmitButton>
         </div>
       </div>
     </>
   );
+}
+
+function SubmitButton({
+  submitting,
+  submittingLabel,
+  ...props
+}: ComponentProps<typeof Button> & {
+  submitting: boolean;
+  submittingLabel: ReactNode;
+}) {
+  const { pending } = useFormStatus();
+  return <Button {...props} loading={submitting || pending} loadingLabel={submittingLabel} />;
 }

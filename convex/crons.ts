@@ -14,11 +14,6 @@ crons.interval(
 
 // X → Postwork cross-posting. A no-op until X_SYNC_HANDLE and
 // X_SYNC_CONNECTOR_ID are set on the deployment.
-crons.interval(
-  "mirror new x posts into postwork",
-  { minutes: 30 },
-  internal.xSync.run,
-  {},
-);
+crons.interval("mirror new x posts into postwork", { minutes: 30 }, internal.xSync.run, {});
 
 export default crons;

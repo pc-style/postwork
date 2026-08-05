@@ -3,11 +3,7 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import {
-  ensureActiveViewerUser,
-  canAccessPost,
-  resolveReadScope,
-} from "./authUsers";
+import { ensureActiveViewerUser, canAccessPost, resolveReadScope } from "./authUsers";
 import { rateLimiter } from "./lib/rateLimit";
 import { logInfo } from "./lib/observability";
 import { attachmentMediaKind, type AttachmentMediaKind } from "./lib/validation";
@@ -167,20 +163,14 @@ export const listForPost = query({
     if (scope.authenticated && !scope.viewer) return [];
     const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (
-      !post ||
-      post.orgId !== scope.orgId ||
-      !(await canAccessPost(ctx, post, viewer?._id))
-    ) {
+    if (!post || post.orgId !== scope.orgId || !(await canAccessPost(ctx, post, viewer?._id))) {
       return [];
     }
 
     const orgId = post.orgId;
     const attachments = await ctx.db
       .query("postAttachments")
-      .withIndex("by_org_id_and_post_id", (q) =>
-        q.eq("orgId", orgId).eq("postId", args.postId),
-      )
+      .withIndex("by_org_id_and_post_id", (q) => q.eq("orgId", orgId).eq("postId", args.postId))
       .order("asc")
       .collect();
 

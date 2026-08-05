@@ -12,7 +12,9 @@ import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function SpacesPage() {
   useDocumentTitle("spaces · postwork");
-  const spaces = useSpacesList().slice().sort((a, b) => b.latestActivityAt - a.latestActivityAt);
+  const spaces = useSpacesList()
+    .slice()
+    .sort((a, b) => b.latestActivityAt - a.latestActivityAt);
   const creationStatus = useSpaceCreationStatus();
   const [creating, setCreating] = useState(false);
 
@@ -57,7 +59,9 @@ export function SpacesPage() {
                 <div className="min-w-0">
                   <h2 className="type-heading text-title font-semibold text-fg">{space.name}</h2>
                   {space.description ? (
-                    <p className="type-description mt-1 text-body text-muted">{space.description}</p>
+                    <p className="type-description mt-1 text-body text-muted">
+                      {space.description}
+                    </p>
                   ) : null}
                 </div>
                 <div className="type-numeric flex shrink-0 flex-wrap gap-3 text-label text-muted sm:block sm:text-end">
@@ -65,7 +69,9 @@ export function SpacesPage() {
                   <div className="sm:mt-1">{space.postCount} posts</div>
                 </div>
               </div>
-              <div className="type-numeric mt-3 text-label text-muted">active {timeAgo(space.latestActivityAt)}</div>
+              <div className="type-numeric mt-3 text-label text-muted">
+                active {timeAgo(space.latestActivityAt)}
+              </div>
             </Link>
           ))}
         </div>
@@ -149,7 +155,11 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
             className="ui-field resize-y text-body leading-6 placeholder:text-muted/60"
           />
         </FormField>
-        {error ? <p role="alert" className="ui-error">{error}</p> : null}
+        {error ? (
+          <p role="alert" className="ui-error">
+            {error}
+          </p>
+        ) : null}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" disabled={saving} onClick={onClose}>
             cancel

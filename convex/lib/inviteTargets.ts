@@ -68,7 +68,5 @@ export function formatInviteTarget(
   invite: Pick<Doc<"invites">, "targetKind" | "targetValue">,
 ): string | undefined {
   if (!invite.targetKind || !invite.targetValue) return undefined;
-  return invite.targetKind === "github"
-    ? `@${invite.targetValue}`
-    : invite.targetValue;
+  return invite.targetKind === "github" ? `@${invite.targetValue}` : invite.targetValue;
 }

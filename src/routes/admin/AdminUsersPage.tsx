@@ -118,9 +118,7 @@ export function AdminUsersPage() {
         />
       )}
 
-      {selected && (
-        <UserSheet user={selected} onClose={() => setSelectedId(null)} />
-      )}
+      {selected && <UserSheet user={selected} onClose={() => setSelectedId(null)} />}
     </AdminPage>
   );
 }
@@ -159,10 +157,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           {!demoPolicy.sessionOverlay && user.role !== "member" ? (
             <ActionButton
               onClick={() =>
-                run(
-                  () => setRole({ userId: user._id, role: "member" }),
-                  "change the role",
-                )
+                run(() => setRole({ userId: user._id, role: "member" }), "change the role")
               }
             >
               make member
@@ -171,10 +166,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           {!demoPolicy.sessionOverlay && user.role !== "tester" ? (
             <ActionButton
               onClick={() =>
-                run(
-                  () => setRole({ userId: user._id, role: "tester" }),
-                  "change the role",
-                )
+                run(() => setRole({ userId: user._id, role: "tester" }), "change the role")
               }
             >
               make tester
@@ -183,10 +175,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           {!demoPolicy.sessionOverlay && user.role !== "admin" ? (
             <ActionButton
               onClick={() =>
-                run(
-                  () => setRole({ userId: user._id, role: "admin" }),
-                  "change the role",
-                )
+                run(() => setRole({ userId: user._id, role: "admin" }), "change the role")
               }
             >
               make admin
@@ -194,18 +183,14 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           ) : null}
           {user.deactivatedAt ? (
             <ActionButton
-              onClick={() =>
-                run(() => reactivate({ userId: user._id }), "reactivate this user")
-              }
+              onClick={() => run(() => reactivate({ userId: user._id }), "reactivate this user")}
             >
               reactivate
             </ActionButton>
           ) : (
             <ActionButton
               danger
-              onClick={() =>
-                run(() => deactivate({ userId: user._id }), "deactivate this user")
-              }
+              onClick={() => run(() => deactivate({ userId: user._id }), "deactivate this user")}
             >
               deactivate
             </ActionButton>
@@ -216,9 +201,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       <div className="divide-y divide-border/60">
         <div className="py-2.5">
           <label htmlFor="admin-user-title" className="block">
-            <span className="text-label font-medium lowercase text-muted">
-              job title
-            </span>
+            <span className="text-label font-medium lowercase text-muted">job title</span>
             <input
               id="admin-user-title"
               value={title}
@@ -228,15 +211,10 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
             />
           </label>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-label text-muted">
-              permissions are controlled by role.
-            </p>
+            <p className="text-label text-muted">permissions are controlled by role.</p>
             <ActionButton
               onClick={() =>
-                run(
-                  () => setTitle({ userId: user._id, title: title.trim() }),
-                  "save the job title",
-                )
+                run(() => setTitle({ userId: user._id, title: title.trim() }), "save the job title")
               }
             >
               save
@@ -246,9 +224,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
         <SheetField label="role">{user.role ?? "member"}</SheetField>
         <SheetField label="type">{user.isAgent ? "coding agent" : "human"}</SheetField>
         <SheetField label="status">
-          {user.deactivatedAt
-            ? `deactivated ${timeAgo(user.deactivatedAt)}`
-            : "active"}
+          {user.deactivatedAt ? `deactivated ${timeAgo(user.deactivatedAt)}` : "active"}
         </SheetField>
         <SheetField label="joined">{timeAgo(user._creationTime)}</SheetField>
         <SheetField label="user id" mono>

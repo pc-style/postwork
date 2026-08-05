@@ -9,7 +9,12 @@ function teaserFrom(summary?: string) {
   if (!summary) return "Generate a summary of key decisions and open questions.";
   const line = summary
     .split("\n")
-    .map((part) => part.replace(/^[#>\-*\s]+/, "").replace(/\*\*/g, "").trim())
+    .map((part) =>
+      part
+        .replace(/^[#>\-*\s]+/, "")
+        .replace(/\*\*/g, "")
+        .trim(),
+    )
     .find((part) => part.length > 0 && !/^tl;?dr:?$/i.test(part));
   return line ?? "Summary available.";
 }
@@ -69,10 +74,7 @@ export function AgentSummary({
               agent summary
             </span>
             {!expanded && summary && isStale ? (
-              <span
-                className="size-1.5 shrink-0 rounded-full bg-accent-soft"
-                aria-hidden="true"
-              />
+              <span className="size-1.5 shrink-0 rounded-full bg-accent-soft" aria-hidden="true" />
             ) : null}
             {!expanded ? (
               <span className="hidden truncate text-label text-muted sm:inline">
@@ -87,7 +89,9 @@ export function AgentSummary({
         </summary>
 
         <div className="ui-reveal px-4 pb-4">
-          {summary ? <Markdown text={summary} /> : (
+          {summary ? (
+            <Markdown text={summary} />
+          ) : (
             <p className="text-body text-muted">
               Generate a summary of key decisions and open questions.
             </p>

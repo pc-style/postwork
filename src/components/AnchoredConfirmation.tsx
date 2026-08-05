@@ -144,13 +144,7 @@ export function AnchoredConfirmation({
             </span>
           ) : null}
           <span className="mt-3 flex justify-end gap-2">
-            <Button
-              ref={cancelRef}
-              variant="secondary"
-              size="sm"
-              disabled={busy}
-              onClick={close}
-            >
+            <Button ref={cancelRef} variant="secondary" size="sm" disabled={busy} onClick={close}>
               cancel
             </Button>
             <Button

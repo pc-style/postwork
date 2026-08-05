@@ -22,11 +22,13 @@ import { preferenceArgs, savePreferences } from "./notificationPreferences";
 
 export type PublicUser = Omit<Doc<"users">, "tokenIdentifier" | "subject">;
 
-const avatarActionValidator = v.optional(v.union(
-  v.object({ type: v.literal("upload"), storageId: v.id("_storage") }),
-  v.object({ type: v.literal("remove") }),
-  v.object({ type: v.literal("useProvider") }),
-));
+const avatarActionValidator = v.optional(
+  v.union(
+    v.object({ type: v.literal("upload"), storageId: v.id("_storage") }),
+    v.object({ type: v.literal("remove") }),
+    v.object({ type: v.literal("useProvider") }),
+  ),
+);
 
 type ProfileUpdateArgs = {
   name: string;
@@ -39,11 +41,7 @@ export function publicUser(user: Doc<"users">): PublicUser;
 export function publicUser(user: Doc<"users"> | null): PublicUser | null;
 export function publicUser(user: Doc<"users"> | null): PublicUser | null {
   if (!user) return null;
-  const {
-    tokenIdentifier: _tokenIdentifier,
-    subject: _subject,
-    ...rest
-  } = user;
+  const { tokenIdentifier: _tokenIdentifier, subject: _subject, ...rest } = user;
   return rest;
 }
 
@@ -94,7 +92,7 @@ export const me = query({
     return {
       user: publicUser(user),
       org: org ? { name: org.name, slug: org.slug } : null,
-      status: user.status ?? "active" as const,
+      status: user.status ?? ("active" as const),
       needsProfileSetup:
         user.profileCompletedAt === undefined && user.tokenIdentifier !== undefined,
       needsOrg: user.orgId === undefined,
@@ -232,9 +230,8 @@ async function updateProfileFields(
   });
 
   const name = parse(profileNameSchema, args.name, "name");
-  const title = args.title === undefined
-    ? undefined
-    : parse(profileTitleSchema, args.title, "title");
+  const title =
+    args.title === undefined ? undefined : parse(profileTitleSchema, args.title, "title");
   const initials = parse(profileInitialsSchema, args.initials, "initials");
   const avatarPatch = await applyAvatarAction(ctx, user, args.avatar);
   await ctx.db.patch(user._id, {
@@ -249,11 +246,7 @@ async function updateProfileFields(
 export const setRole = mutation({
   args: {
     userId: v.id("users"),
-    role: v.union(
-      v.literal("admin"),
-      v.literal("tester"),
-      v.literal("member"),
-    ),
+    role: v.union(v.literal("admin"), v.literal("tester"), v.literal("member")),
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);

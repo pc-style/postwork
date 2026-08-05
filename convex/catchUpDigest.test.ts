@@ -217,16 +217,16 @@ describe("posts.catchUpDigest", () => {
   test("requires authentication and rejects pending viewers", async () => {
     const state = await setup();
 
-    await expect(
-      state.t.query(api.posts.catchUpDigest, {}),
-    ).rejects.toThrow("Sign in to view your catch-up digest.");
+    await expect(state.t.query(api.posts.catchUpDigest, {})).rejects.toThrow(
+      "Sign in to view your catch-up digest.",
+    );
 
     await state.t.run(async (ctx) => {
       await ctx.db.patch(state.viewerId, { status: "pending" });
     });
-    await expect(
-      state.authed.query(api.posts.catchUpDigest, {}),
-    ).rejects.toThrow("Your account cannot access the catch-up digest.");
+    await expect(state.authed.query(api.posts.catchUpDigest, {})).rejects.toThrow(
+      "Your account cannot access the catch-up digest.",
+    );
 
     await state.t.run(async (ctx) => {
       await ctx.db.patch(state.viewerId, {
@@ -234,8 +234,8 @@ describe("posts.catchUpDigest", () => {
         deactivatedAt: 10,
       });
     });
-    await expect(
-      state.authed.query(api.posts.catchUpDigest, {}),
-    ).rejects.toThrow("Your account cannot access the catch-up digest.");
+    await expect(state.authed.query(api.posts.catchUpDigest, {})).rejects.toThrow(
+      "Your account cannot access the catch-up digest.",
+    );
   });
 });

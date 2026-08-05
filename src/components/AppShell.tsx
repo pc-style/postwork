@@ -95,24 +95,22 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </aside>
 
-        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-24 md:scroll-mt-4">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 scroll-mt-24 md:scroll-mt-4">
+          {children}
+        </main>
 
         <aside aria-label="queue summary" className="hidden lg:block">
           <div className="sticky top-6 space-y-3">
             <div className="rounded-lg border border-border bg-surface p-4 text-body">
-              <div className="mb-2 text-label font-medium text-muted">
-                your queue
-              </div>
+              <div className="mb-2 text-label font-medium text-muted">your queue</div>
               {counts ? (
                 <div className="space-y-1 text-muted">
                   <div>
-                    <span className="text-accent-soft">{counts.unread}</span>{" "}
-                    unread
+                    <span className="text-accent-soft">{counts.unread}</span> unread
                   </div>
                   {counts.urgent > 0 && (
                     <div>
-                      <span className="text-urgent">{counts.urgent}</span>{" "}
-                      urgent
+                      <span className="text-urgent">{counts.urgent}</span> urgent
                     </div>
                   )}
                 </div>
@@ -122,8 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="rounded-lg border border-dashed border-border p-4 text-label text-muted">
-              posts stay centered for reading; navigation and queue context stay
-              close at hand.
+              posts stay centered for reading; navigation and queue context stay close at hand.
             </div>
 
             {demoPolicy.productAuth && <ProductProfileCard />}
@@ -132,10 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {composing && (
-        <NewPostDialog
-          onClose={() => setComposing(false)}
-          returnFocusRef={composeTriggerRef}
-        />
+        <NewPostDialog onClose={() => setComposing(false)} returnFocusRef={composeTriggerRef} />
       )}
     </div>
   );

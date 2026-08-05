@@ -51,9 +51,7 @@ export function getSentryConfiguration(
 
   return {
     dsn,
-    environment:
-      getTrimmedValue(input.environment) ??
-      (input.isDemo ? "demo" : input.viteMode),
+    environment: getTrimmedValue(input.environment) ?? (input.isDemo ? "demo" : input.viteMode),
     release: getTrimmedValue(input.release),
     mode,
   };

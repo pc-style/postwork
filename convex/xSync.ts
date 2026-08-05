@@ -37,16 +37,11 @@ type RunResult =
   | { skipped: false; results: SyncResult[] }
   | { skipped: false; handle: string; created: number; duplicates: number };
 
-async function syncHandle(
-  ctx: ActionCtx,
-  handle: string,
-  connectorId: Id<"connectors">,
-) {
+async function syncHandle(ctx: ActionCtx, handle: string, connectorId: Id<"connectors">) {
   const base = process.env.X_SYNC_API_BASE?.trim() || DEFAULT_API_BASE;
-  const response = await fetch(
-    `${base}/${encodeURIComponent(handle)}?limit=${MAX_POSTS_PER_RUN}`,
-    { headers: { accept: "application/json" } },
-  );
+  const response = await fetch(`${base}/${encodeURIComponent(handle)}?limit=${MAX_POSTS_PER_RUN}`, {
+    headers: { accept: "application/json" },
+  });
   if (!response.ok) {
     throw new Error(`X proxy responded ${response.status} for @${handle}.`);
   }
@@ -68,13 +63,10 @@ async function syncHandle(
   let created = 0;
   let duplicates = 0;
   for (const post of candidates) {
-    const receipt = await ctx.runMutation(
-      internal.connectors.recordXCrossPostFromSync,
-      {
-        connectorId,
-        tweet: { id: post.id, handle, text: post.text, url: post.url },
-      },
-    );
+    const receipt = await ctx.runMutation(internal.connectors.recordXCrossPostFromSync, {
+      connectorId,
+      tweet: { id: post.id, handle, text: post.text, url: post.url },
+    });
     if (receipt.duplicate) duplicates++;
     else created++;
   }
@@ -113,11 +105,10 @@ export const run = internalAction({
       }
     }
 
-    const handle = (args.handle ?? process.env.X_SYNC_HANDLE)
-      ?.trim()
-      .replace(/^@/, "");
-    let connectorId = (args.connectorId ??
-      process.env.X_SYNC_CONNECTOR_ID) as Id<"connectors"> | undefined;
+    const handle = (args.handle ?? process.env.X_SYNC_HANDLE)?.trim().replace(/^@/, "");
+    let connectorId = (args.connectorId ?? process.env.X_SYNC_CONNECTOR_ID) as
+      | Id<"connectors">
+      | undefined;
     if (!connectorId) {
       const found = await ctx.runQuery(internal.connectors.findXSyncConnector, {});
       connectorId = found?.connectorId;
@@ -126,7 +117,7 @@ export const run = internalAction({
       return {
         skipped: true as const,
         reason:
-          "Set X_SYNC_HANDLE and provision an inboundEvents connector with slug \"x\" (or set X_SYNC_CONNECTOR_ID).",
+          'Set X_SYNC_HANDLE and provision an inboundEvents connector with slug "x" (or set X_SYNC_CONNECTOR_ID).',
       };
     }
 

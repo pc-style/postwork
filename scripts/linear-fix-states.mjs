@@ -76,7 +76,10 @@ function flattenTree(nodes, output = []) {
 }
 
 async function loadBuildTree() {
-  const setupSource = await readFile(new URL("./linear-setup-postwork.mjs", import.meta.url), "utf8");
+  const setupSource = await readFile(
+    new URL("./linear-setup-postwork.mjs", import.meta.url),
+    "utf8",
+  );
   const start = setupSource.indexOf("function buildTree(labels, milestones) {");
   const end = setupSource.indexOf("\nconst STATE_MAP =", start);
   if (start < 0 || end < 0) throw new Error("Could not extract buildTree from setup script");
@@ -90,7 +93,9 @@ async function main() {
   const expectedByTitle = new Map(expected.map((item) => [item.title, item.status]));
 
   if (expectedByTitle.size !== expected.length) {
-    throw new Error(`Issue tree contains ${expected.length - expectedByTitle.size} duplicate title(s)`);
+    throw new Error(
+      `Issue tree contains ${expected.length - expectedByTitle.size} duplicate title(s)`,
+    );
   }
 
   const data = await gql(
@@ -146,7 +151,10 @@ async function main() {
   console.log(`Already correct: ${alreadyCorrect}`);
   console.log(`Unmatched: ${unmatched.length}`);
   console.log(`Errors: ${errors.length}`);
-  if (unmatched.length) console.log(`Unmatched issues: ${unmatched.map((issue) => `${issue.identifier} (${issue.title})`).join(", ")}`);
+  if (unmatched.length)
+    console.log(
+      `Unmatched issues: ${unmatched.map((issue) => `${issue.identifier} (${issue.title})`).join(", ")}`,
+    );
   if (errors.length) console.error(`Errors:\n${errors.join("\n")}`);
   if (errors.length) process.exitCode = 1;
 }

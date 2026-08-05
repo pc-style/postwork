@@ -69,9 +69,7 @@ function outputLimit(value: string | undefined): number {
     "POSTWORK_AGENT_MAX_OUTPUT_BYTES",
   );
   if (parsed > DEFAULT_MAX_OUTPUT_BYTES) {
-    throw new Error(
-      `POSTWORK_AGENT_MAX_OUTPUT_BYTES must be at most ${DEFAULT_MAX_OUTPUT_BYTES}.`,
-    );
+    throw new Error(`POSTWORK_AGENT_MAX_OUTPUT_BYTES must be at most ${DEFAULT_MAX_OUTPUT_BYTES}.`);
   }
   return parsed;
 }
@@ -83,7 +81,8 @@ function configuredCommand(args: string[], value: string | undefined): string[] 
     if (command.length === 0) throw new Error("A command must follow --.");
     return command;
   }
-  if (!value) throw new Error("Pass the coding-agent command after -- or set POSTWORK_AGENT_COMMAND_JSON.");
+  if (!value)
+    throw new Error("Pass the coding-agent command after -- or set POSTWORK_AGENT_COMMAND_JSON.");
   const parsed: unknown = JSON.parse(value);
   if (
     !Array.isArray(parsed) ||
@@ -162,9 +161,12 @@ function isClaim(value: unknown): value is AgentTaskClaim {
 
 export function formatAgentInput(claim: AgentTaskClaim): string {
   const replies = claim.replies.length
-    ? claim.replies.map((reply) =>
-      `- reply ${reply.id} by ${reply.authorId}${reply.parentId ? ` to ${reply.parentId}` : ""}: ${reply.body}`
-    ).join("\n")
+    ? claim.replies
+        .map(
+          (reply) =>
+            `- reply ${reply.id} by ${reply.authorId}${reply.parentId ? ` to ${reply.parentId}` : ""}: ${reply.body}`,
+        )
+        .join("\n")
     : "(no replies)";
   const truncation = claim.repliesTruncated
     ? "\nThe reply window was truncated. Base the response on the available context."
@@ -370,9 +372,10 @@ export async function runAgentTask(
         }
       : {
           status: "failed",
-          error: output.length === 0 && commandResult.exitCode === 0 && !commandResult.timedOut
-            ? "Coding-agent command returned no output."
-            : boundedFailure(commandResult, timeoutMs),
+          error:
+            output.length === 0 && commandResult.exitCode === 0 && !commandResult.timedOut
+              ? "Coding-agent command returned no output."
+              : boundedFailure(commandResult, timeoutMs),
         };
   } catch (error) {
     outcome = { status: "failed", error: launchFailure(error) };

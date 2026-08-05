@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode, type RefObject } from "react";
 import { trapDialogFocus } from "../lib/dialogFocus";
 import { Button } from "./Button";
 
@@ -28,15 +22,20 @@ export function Sheet({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
   const subtitleId = useId();
+  const closeFromEffect = useEffectEvent(onClose);
 
   useEffect(() => {
     triggerRef.current ??=
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    ref.current?.showModal();
-    requestAnimationFrame(() =>
-      (initialFocusRef?.current ?? headingRef.current)?.focus(),
-    );
+    const dialog = ref.current;
+    dialog?.showModal();
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target === dialog) closeFromEffect();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    requestAnimationFrame(() => (initialFocusRef?.current ?? headingRef.current)?.focus());
     return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
       const target = triggerRef.current;
       window.setTimeout(() => target?.isConnected && target.focus(), 0);
     };
@@ -53,9 +52,6 @@ export function Sheet({
         onClose();
       }}
       onKeyDown={trapDialogFocus}
-      onClick={(event) => {
-        if (event.target === ref.current) onClose();
-      }}
       className="sheet-panel fixed inset-0 m-0 flex h-dvh max-h-none w-full max-w-none flex-col border-0 bg-surface p-0 text-fg backdrop:bg-black/70 sm:inset-y-0 sm:right-0 sm:left-auto sm:w-[min(30rem,100vw)] sm:border-l sm:border-border"
     >
       <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-6">
@@ -78,9 +74,7 @@ export function Sheet({
           <CloseIcon />
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-        {children}
-      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">{children}</div>
       {footer ? (
         <div className="border-t border-border bg-surface px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
           {footer}

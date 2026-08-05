@@ -17,9 +17,7 @@ export function SpacePage() {
   const space = useSpaceBySlug(slug);
   const memberships = useSpaceMemberships(space?._id);
   const feed = useSpaceFeed(
-    space
-      ? { spaceId: space._id as Id<"spaces">, spaceLabel: space.name }
-      : undefined,
+    space ? { spaceId: space._id as Id<"spaces">, spaceLabel: space.name } : undefined,
   );
   const { currentUserId } = useSession();
   const store = useStore();
@@ -38,7 +36,10 @@ export function SpacePage() {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center text-body text-muted sm:px-6">
         <p>we couldn't find this space.</p>
-        <Link to="/app/spaces" className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg">
+        <Link
+          to="/app/spaces"
+          className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg"
+        >
           back to spaces
         </Link>
       </div>
@@ -68,7 +69,10 @@ export function SpacePage() {
         {memberUsers.length > 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Space members">
             {memberUsers.map((user) => (
-              <div key={user._id} className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-label text-muted">
+              <div
+                key={user._id}
+                className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-label text-muted"
+              >
                 <Avatar user={user} size={20} />
                 <span className="text-fg">{user.name}</span>
               </div>
@@ -78,15 +82,24 @@ export function SpacePage() {
       </header>
 
       {feed.length === 0 ? (
-        <EmptyState>this space has no posts yet. use the form below to create the first post.</EmptyState>
+        <EmptyState>
+          this space has no posts yet. use the form below to create the first post.
+        </EmptyState>
       ) : (
         <div className="space-y-3">
-          {feed.map((post) => <PostCard key={post._id} post={post} />)}
+          {feed.map((post) => (
+            <PostCard key={post._id} post={post} />
+          ))}
         </div>
       )}
 
-      <section className="mt-6 rounded-lg border border-border bg-surface p-4" aria-labelledby="space-post-heading">
-        <h2 id="space-post-heading" className="type-heading mb-4 text-title font-semibold text-fg">new post in {space.name}</h2>
+      <section
+        className="mt-6 rounded-lg border border-border bg-surface p-4"
+        aria-labelledby="space-post-heading"
+      >
+        <h2 id="space-post-heading" className="type-heading mb-4 text-title font-semibold text-fg">
+          new post in {space.name}
+        </h2>
         <PostForm
           fixedSpace={{ id: space._id, label: space.name }}
           titlePlaceholder="example: release plan update"

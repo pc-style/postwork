@@ -99,9 +99,7 @@ describe("connector secret key rotation", () => {
       CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY: ACTIVE_ENCRYPTION_KEY,
     });
 
-    await expect(decryptConnectorSecret(oldCiphertext, activeOnly)).rejects.toThrow(
-      "unavailable",
-    );
+    await expect(decryptConnectorSecret(oldCiphertext, activeOnly)).rejects.toThrow("unavailable");
   });
 });
 
@@ -118,7 +116,7 @@ describe("connector agent task boundary", () => {
         role: "member",
         status: "active",
         isAgent: true,
-      })
+      }),
     );
     const connected = await state.t.mutation(internal.connectors.provisionRecord, {
       adminTokenIdentifier: ADMIN_TOKEN,
@@ -141,7 +139,7 @@ describe("connector agent task boundary", () => {
       prompt: "Wait for the connector.",
     });
     const scheduled = await state.t.run(async (ctx) =>
-      ctx.db.system.query("_scheduled_functions").take(10)
+      ctx.db.system.query("_scheduled_functions").take(10),
     );
     const tasks = await state.t.run(async (ctx) => ({
       demo: await ctx.db.get(demoTaskId),
@@ -170,13 +168,9 @@ describe("connector agent task boundary", () => {
     expect(provisioned.token).toMatch(/^pwc\.[a-f0-9]{16}\.[a-f0-9]{64}$/);
     const credential = parseConnectorToken(`Bearer ${provisioned.token}`);
     expect(credential).not.toBeNull();
-    const stored = await state.t.run(async (ctx) =>
-      ctx.db.get(provisioned.connectorId),
-    );
+    const stored = await state.t.run(async (ctx) => ctx.db.get(provisioned.connectorId));
     expect(stored?.credentialId).toBe(credential?.credentialId);
-    expect(stored?.secretHash).toBe(
-      await hashConnectorSecret(credential?.secret ?? ""),
-    );
+    expect(stored?.secretHash).toBe(await hashConnectorSecret(credential?.secret ?? ""));
     expect(JSON.stringify(stored)).not.toContain(credential?.secret);
   });
 
@@ -576,9 +570,7 @@ describe("x cross-posting", () => {
     const stored = await state.t.run(async (ctx) => {
       const connector = await ctx.db
         .query("connectors")
-        .withIndex("by_org_id_and_slug", (q) =>
-          q.eq("orgId", state.orgId).eq("slug", "x"),
-        )
+        .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", state.orgId).eq("slug", "x"))
         .unique();
       return {
         connector,
@@ -620,9 +612,7 @@ describe("x cross-posting", () => {
     const connector = await state.t.run(async (ctx) =>
       ctx.db
         .query("connectors")
-        .withIndex("by_org_id_and_slug", (q) =>
-          q.eq("orgId", state.orgId).eq("slug", "x"),
-        )
+        .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", state.orgId).eq("slug", "x"))
         .unique(),
     );
     expect(connector?.xSyncHandle).toBeUndefined();
@@ -675,7 +665,9 @@ describe("x cross-posting", () => {
       space: "Growth",
       title: "@pronsh on x: wrec 3.0 is live. threads, agents, the lot.",
     });
-    expect(post?.body).toContain("Cross-posted from https://x.com/pronsh/status/2080000000000000001");
+    expect(post?.body).toContain(
+      "Cross-posted from https://x.com/pronsh/status/2080000000000000001",
+    );
 
     const retry = await state.t.mutation(internal.connectors.recordXCrossPostFromSync, {
       connectorId: connector.connectorId,

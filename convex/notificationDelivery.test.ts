@@ -78,9 +78,7 @@ describe("notification provider plan", () => {
     "https://postwork.example/app",
     "https://user:secret@postwork.example",
   ])("rejects a non-origin POSTWORK_APP_URL: %s", (appUrl) => {
-    expect(
-      planProviderDispatch(candidates, false, { ...config, appUrl }),
-    ).toEqual({
+    expect(planProviderDispatch(candidates, false, { ...config, appUrl })).toEqual({
       status: "provider_configuration_invalid",
       candidateCount: 1,
       variable: "POSTWORK_APP_URL",
@@ -209,10 +207,10 @@ describe("Resend adapter", () => {
 
   test("classifies provider throttling as observable and retryable", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(
-        JSON.stringify({ name: "rate_limit_exceeded", message: "Try later." }),
-        { status: 429, headers: { "Content-Type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ name: "rate_limit_exceeded", message: "Try later." }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      }),
     );
 
     await expect(
@@ -235,10 +233,7 @@ describe("Resend adapter", () => {
   test.each([
     ["concurrent_idempotent_requests", true],
     ["invalid_idempotent_request", false],
-  ] as const)("classifies Resend conflict %s with retryable=%s", async (
-    code,
-    retryable,
-  ) => {
+  ] as const)("classifies Resend conflict %s with retryable=%s", async (code, retryable) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify({ name: code, message: "Conflict." }), {
         status: 409,
@@ -307,8 +302,6 @@ describe("Resend adapter", () => {
     expect(content.html).toContain("Urgent &lt;release&gt;");
     expect(content.html).not.toContain("attacker.example");
     expect(content.html).not.toContain("javascript:");
-    expect(content.html).toContain(
-      'href="https://postwork.example/posts/post-1"',
-    );
+    expect(content.html).toContain('href="https://postwork.example/posts/post-1"');
   });
 });

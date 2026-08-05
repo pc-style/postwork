@@ -24,8 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    const path =
-      typeof window !== "undefined" ? window.location.pathname : "unknown";
+    const path = typeof window !== "undefined" ? window.location.pathname : "unknown";
     console.error(
       JSON.stringify({
         event: "ui.renderError",
@@ -50,8 +49,8 @@ export class ErrorBoundary extends Component<Props, State> {
             we couldn't show this page
           </h1>
           <p className="mt-3 text-body text-muted">
-            reload the page to try again. if the error continues, share the
-            details below with an admin.
+            reload the page to try again. if the error continues, share the details below with an
+            admin.
           </p>
         </div>
         <pre className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface px-4 py-3 text-left text-code text-muted sm:max-w-lg">

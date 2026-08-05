@@ -1,14 +1,5 @@
-export type ActivationSignOutState =
-  | "idle"
-  | "waitingForRedemption"
-  | "signingOut"
-  | "error";
-export type InviteActivationState =
-  | "idle"
-  | "checking"
-  | "invalid"
-  | "redeeming"
-  | "error";
+export type ActivationSignOutState = "idle" | "waitingForRedemption" | "signingOut" | "error";
+export type InviteActivationState = "idle" | "checking" | "invalid" | "redeeming" | "error";
 
 type SignOutGuard = { current: boolean };
 type ActivationGuard = { current: boolean };

@@ -47,13 +47,7 @@ function ProductInvite({ code }: { code: string }) {
   return <RedeemInvite code={code} canRedeem={!!isSignedIn} />;
 }
 
-function RedeemInvite({
-  code,
-  canRedeem,
-}: {
-  code: string;
-  canRedeem: boolean;
-}) {
+function RedeemInvite({ code, canRedeem }: { code: string; canRedeem: boolean }) {
   const navigate = useNavigate();
   const redeemInvite = useMutation(api.access.redeemInvite);
   const [state, setState] = useState<"idle" | "redeeming" | "error">("idle");
@@ -85,9 +79,7 @@ function RedeemInvite({
       description="a calmer place for team decisions to live as posts, not channels."
     >
       <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-        <p className="text-label font-medium lowercase text-muted">
-          your invite code
-        </p>
+        <p className="text-label font-medium lowercase text-muted">your invite code</p>
         <p className="mt-2 inline-flex rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-code text-fg">
           {code}
         </p>
@@ -104,8 +96,7 @@ function RedeemInvite({
             </Button>
             {state === "error" ? (
               <p role="alert" className="ui-error">
-                couldn't redeem this invite. try again; if it still fails, ask
-                for a new invite.
+                couldn't redeem this invite. try again; if it still fails, ask for a new invite.
               </p>
             ) : null}
           </div>
@@ -118,8 +109,8 @@ function RedeemInvite({
               sign in to accept
             </Link>
             <p className="text-body text-muted">
-              we saved your code. sign in or create an account and the code
-              will be filled in for you on the next step.
+              we saved your code. sign in or create an account and the code will be filled in for
+              you on the next step.
             </p>
           </div>
         )}

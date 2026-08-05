@@ -13,9 +13,7 @@ type Invite = FunctionReturnType<typeof api.admin.listInvites>[number];
 
 function formatTarget(invite: Invite): string | null {
   if (!invite.targetKind || !invite.targetValue) return null;
-  return invite.targetKind === "github"
-    ? `@${invite.targetValue}`
-    : invite.targetValue;
+  return invite.targetKind === "github" ? `@${invite.targetValue}` : invite.targetValue;
 }
 
 function inviteStatus(invite: Invite): {
@@ -79,26 +77,18 @@ export function AdminInvitesPage() {
               placeholder="@github-handle or email (optional)"
               className="ui-field min-w-0 max-w-56 flex-1 font-mono text-label placeholder:font-sans"
             />
-            <Button
-              onClick={() => void mint()}
-              loading={creating}
-              loadingLabel="minting…"
-            >
+            <Button onClick={() => void mint()} loading={creating} loadingLabel="minting…">
               {target.trim() ? "invite" : "new invite"}
             </Button>
           </div>
-          {targetError && (
-            <p className="text-label text-urgent">{targetError}</p>
-          )}
+          {targetError && <p className="text-label text-urgent">{targetError}</p>}
         </div>
       }
     >
       {invites === undefined ? (
         <Skeleton preset="table" count={5} label="loading invites" />
       ) : invites.length === 0 ? (
-        <p className="text-body text-muted">
-          no invites yet. mint one and share the code.
-        </p>
+        <p className="text-body text-muted">no invites yet. mint one and share the code.</p>
       ) : (
         <AdminRecordList
           items={invites}
@@ -124,7 +114,8 @@ export function AdminInvitesPage() {
             {
               label: "uses",
               className: "text-label text-muted tabular-nums",
-              render: (invite) => `${invite.usedCount}/${invite.maxUses === 0 ? "unlimited" : invite.maxUses}`,
+              render: (invite) =>
+                `${invite.usedCount}/${invite.maxUses === 0 ? "unlimited" : invite.maxUses}`,
             },
             {
               label: "status",
@@ -142,20 +133,12 @@ export function AdminInvitesPage() {
         />
       )}
 
-      {selected && (
-        <InviteSheet invite={selected} onClose={() => setSelectedId(null)} />
-      )}
+      {selected && <InviteSheet invite={selected} onClose={() => setSelectedId(null)} />}
     </AdminPage>
   );
 }
 
-function InviteSheet({
-  invite,
-  onClose,
-}: {
-  invite: Invite;
-  onClose: () => void;
-}) {
+function InviteSheet({ invite, onClose }: { invite: Invite; onClose: () => void }) {
   const revoke = useMutation(api.admin.revokeInvite);
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const status = inviteStatus(invite);
@@ -183,10 +166,7 @@ function InviteSheet({
             {copied === "link" ? "copied" : "copy link"}
           </ActionButton>
           {!invite.revokedAt && (
-            <ActionButton
-              danger
-              onClick={() => void revoke({ inviteId: invite._id })}
-            >
+            <ActionButton danger onClick={() => void revoke({ inviteId: invite._id })}>
               revoke
             </ActionButton>
           )}

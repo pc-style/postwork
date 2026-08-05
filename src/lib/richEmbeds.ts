@@ -1,9 +1,4 @@
-export type TrustedEmbedProvider =
-  | "youtube"
-  | "vimeo"
-  | "loom"
-  | "figma"
-  | "spotify";
+export type TrustedEmbedProvider = "youtube" | "vimeo" | "loom" | "figma" | "spotify";
 
 export type TrustedEmbed = {
   kind: "embed";
@@ -42,9 +37,7 @@ const SPOTIFY_ID = /^[A-Za-z0-9]{10,32}$/;
 const FIGMA_KEY = /^[A-Za-z0-9]{8,128}$/;
 
 function withoutCode(text: string): string {
-  return text
-    .replace(/```[\s\S]*?(?:```|$)/g, " ")
-    .replace(/`[^`\n]*`/g, " ");
+  return text.replace(/```[\s\S]*?(?:```|$)/g, " ").replace(/`[^`\n]*`/g, " ");
 }
 
 export function trimUrlPunctuation(value: string): string {
@@ -195,11 +188,7 @@ export function matchTrustedEmbed(value: string): TrustedEmbed | null {
   const url = trustedUrl(value);
   if (!url) return null;
   return (
-    youtubeEmbed(url) ??
-    vimeoEmbed(url) ??
-    loomEmbed(url) ??
-    figmaEmbed(url) ??
-    spotifyEmbed(url)
+    youtubeEmbed(url) ?? vimeoEmbed(url) ?? loomEmbed(url) ?? figmaEmbed(url) ?? spotifyEmbed(url)
   );
 }
 

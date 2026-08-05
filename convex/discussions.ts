@@ -26,7 +26,8 @@ async function ensureThreadDoc(
   viewerId: Id<"users">,
 ): Promise<Id<"posts">> {
   const viewer = await ctx.db.get(viewerId);
-  if (!viewer?.orgId) throw new ConvexError({ code: "FORBIDDEN", message: "Product identity required." });
+  if (!viewer?.orgId)
+    throw new ConvexError({ code: "FORBIDDEN", message: "Product identity required." });
   const orgId = viewer.orgId;
   const existing = await ctx.db
     .query("posts")
@@ -102,7 +103,8 @@ export const listCounts = query({
   args: { slugs: v.array(v.string()) },
   handler: async (ctx, { slugs }) => {
     const { orgId, viewer, authenticated } = await resolveReadScope(ctx);
-    if (authenticated && !viewer) return slugs.map((slug) => ({ slug, replyCount: 0, exists: false }));
+    if (authenticated && !viewer)
+      return slugs.map((slug) => ({ slug, replyCount: 0, exists: false }));
     return await Promise.all(
       slugs.map(async (slug) => {
         const post = await ctx.db

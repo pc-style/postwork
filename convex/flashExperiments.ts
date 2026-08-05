@@ -22,8 +22,7 @@ export const listVotes = query({
           viewerVote:
             identity === null
               ? null
-              : (votes.find((vote) => vote.voterSubject === identity.subject)
-                  ?.vote ?? null),
+              : (votes.find((vote) => vote.voterSubject === identity.subject)?.vote ?? null),
         };
       }),
     );
@@ -43,9 +42,7 @@ export const setVote = mutation({
 
     const existing = await ctx.db
       .query("flashExperimentVotes")
-      .withIndex("by_slug_voter", (q) =>
-        q.eq("slug", slug).eq("voterSubject", identity.subject),
-      )
+      .withIndex("by_slug_voter", (q) => q.eq("slug", slug).eq("voterSubject", identity.subject))
       .unique();
 
     if (vote === null) {

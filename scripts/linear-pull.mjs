@@ -21,9 +21,7 @@ if (!KEY) {
   console.error(
     "LINEAR_API_KEY is required. Get one at https://linear.app/settings/account/security",
   );
-  console.error(
-    "Store it in .env as LINEAR_API_KEY=lin_api_... (the file is gitignored).",
-  );
+  console.error("Store it in .env as LINEAR_API_KEY=lin_api_... (the file is gitignored).");
   process.exit(1);
 }
 
@@ -144,7 +142,6 @@ async function main() {
   const allLabels = [...labelMap.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   // Build issue lookup for dependency resolution
-  const issueMap = new Map(issues.map((i) => [i.id, i]));
 
   // Build children map from parent field
   const childrenMap = new Map(); // parentId -> [issue, ...]
@@ -183,9 +180,7 @@ async function main() {
         priority: i.priorityLabel,
         assignee: i.assignee?.name,
         milestone: i.projectMilestone?.name,
-        parent: i.parent
-          ? `${i.parent.identifier} — ${i.parent.title}`
-          : null,
+        parent: i.parent ? `${i.parent.identifier} — ${i.parent.title}` : null,
         children: (childrenMap.get(i.id) || []).map((c) => ({
           identifier: c.identifier,
           title: c.title,
@@ -216,7 +211,9 @@ async function main() {
   lines.push(`> Pulled from [Linear](${project.url}) on ${new Date().toISOString().split("T")[0]}`);
   lines.push(`> Live source of truth: ${project.url}`);
   lines.push("");
-  lines.push(`**State:** ${project.state} | **Target:** ${project.targetDate || "unset"} | **Issues:** ${issues.length}`);
+  lines.push(
+    `**State:** ${project.state} | **Target:** ${project.targetDate || "unset"} | **Issues:** ${issues.length}`,
+  );
   lines.push("");
 
   // Summary counts
@@ -252,9 +249,7 @@ async function main() {
 
   // Issues grouped by milestone
   const filterMs = MILESTONE_FILTER
-    ? milestones.find((m) =>
-        m.name.toLowerCase().includes(MILESTONE_FILTER.toLowerCase()),
-      )
+    ? milestones.find((m) => m.name.toLowerCase().includes(MILESTONE_FILTER.toLowerCase()))
     : null;
 
   if (filterMs) {
@@ -264,7 +259,7 @@ async function main() {
       .filter((i) => i.projectMilestone?.id === filterMs.id)
       .sort((a, b) => a.identifier.localeCompare(b.identifier));
     for (const issue of msIssues.filter((i) => !i.parent)) {
-      lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
+      lines.push(formatIssue(issue, childrenMap, 0));
     }
   } else {
     for (const m of milestones) {
@@ -276,7 +271,7 @@ async function main() {
       lines.push("");
       const roots = msIssues.filter((i) => !i.parent);
       for (const issue of roots) {
-        lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
+        lines.push(formatIssue(issue, childrenMap, 0));
       }
       lines.push("");
     }
@@ -290,7 +285,7 @@ async function main() {
       lines.push("");
       const roots = noMs.filter((i) => !i.parent);
       for (const issue of roots) {
-        lines.push(formatIssue(issue, issueMap, childrenMap, 0, issues));
+        lines.push(formatIssue(issue, childrenMap, 0));
       }
       lines.push("");
     }
@@ -307,7 +302,7 @@ async function main() {
   console.log(lines.join("\n"));
 }
 
-function formatIssue(issue, issueMap, childrenMap, depth, allIssues) {
+function formatIssue(issue, childrenMap, depth) {
   const indent = "  ".repeat(depth);
   const stateBadge = issue.state?.name || "unknown";
   const priority =
@@ -315,9 +310,7 @@ function formatIssue(issue, issueMap, childrenMap, depth, allIssues) {
       ? ` **[${issue.priorityLabel}]**`
       : "";
   const labels =
-    issue.labels.nodes.length > 0
-      ? ` *${issue.labels.nodes.map((l) => l.name).join(", ")}*`
-      : "";
+    issue.labels.nodes.length > 0 ? ` *${issue.labels.nodes.map((l) => l.name).join(", ")}*` : "";
   const assignee = issue.assignee ? ` @${issue.assignee.name}` : "";
 
   let line = `${indent}- [${issue.identifier}](${issue.url}) [${stateBadge}]${priority}${labels}${assignee} — ${issue.title}`;
@@ -326,7 +319,7 @@ function formatIssue(issue, issueMap, childrenMap, depth, allIssues) {
   if (children?.length > 0) {
     const childLines = children
       .sort((a, b) => a.identifier.localeCompare(b.identifier))
-      .map((child) => formatIssue(child, issueMap, childrenMap, depth + 1, allIssues))
+      .map((child) => formatIssue(child, childrenMap, depth + 1))
       .join("\n");
     return line + "\n" + childLines;
   }

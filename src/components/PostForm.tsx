@@ -1,21 +1,10 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useMemo, useState, useRef, type ReactNode, type RefObject } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { PRIORITIES, SPACES, priorityStyles } from "../lib/format";
 import { insertContentUrl } from "../lib/insertContentUrl";
 import { useSpacesList } from "../lib/spaces";
 import type { AttachmentInput } from "../lib/types";
-import {
-  AttachmentButton,
-  AttachmentThumbnails,
-  useAttachmentPicker,
-} from "./AttachmentPicker";
+import { AttachmentButton, AttachmentThumbnails, useAttachmentPicker } from "./AttachmentPicker";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
 import { FormField } from "./FormField";
@@ -136,10 +125,7 @@ export function PostForm({
     attachmentWarning,
   } = useAttachmentPicker();
 
-  const fallbackSpaces = useMemo<SpaceOption[]>(
-    () => SPACES.map((label) => ({ label })),
-    [],
-  );
+  const fallbackSpaces = useMemo<SpaceOption[]>(() => SPACES.map((label) => ({ label })), []);
   const spaceOptions = useMemo<SpaceOption[]>(
     () =>
       fixedSpace
@@ -152,9 +138,7 @@ export function PostForm({
 
   useEffect(() => {
     if (!showSpace && !fixedSpace) return;
-    const hasMatch = spaceOptions.some(
-      (option) => (option.id ?? option.label) === spaceKey,
-    );
+    const hasMatch = spaceOptions.some((option) => (option.id ?? option.label) === spaceKey);
     if (!hasMatch && spaceOptions[0]) {
       setSpaceKey(spaceOptions[0].id ?? spaceOptions[0].label);
     }
@@ -176,11 +160,7 @@ export function PostForm({
   const bodyMissing = body.trim().length === 0;
   const spaceMissing = showSpace && !selectedSpace;
   const canSubmit =
-    !titleMissing &&
-    !bodyMissing &&
-    !spaceMissing &&
-    !hasUploading &&
-    !hasAttachmentErrors;
+    !titleMissing && !bodyMissing && !spaceMissing && !hasUploading && !hasAttachmentErrors;
 
   const reset = () => {
     setTitle("");
@@ -263,7 +243,7 @@ export function PostForm({
         titleHelp={titleHelp}
         titleError={titleTouched && titleMissing ? "add a title." : undefined}
         titlePlaceholder={titlePlaceholder}
-        titleAutoFocus={autoFocusTitle}
+        focusTitleOnMount={autoFocusTitle}
         titleRequired={requireTitle}
         titleOptional={!requireTitle}
         body={body}
@@ -274,10 +254,12 @@ export function PostForm({
         textareaRef={bodyRef}
         bodyLabel="post"
         bodyHelp={bodyHelp}
-        bodyError={bodyTouched && bodyMissing ? "add context, a decision, or a question." : undefined}
+        bodyError={
+          bodyTouched && bodyMissing ? "add context, a decision, or a question." : undefined
+        }
         placeholder={bodyPlaceholder}
         rows={bodyRows}
-        autoFocus={autoFocusBody}
+        focusBodyOnMount={autoFocusBody}
         textareaClassName="ui-field min-h-32 resize-y"
         onPaste={(event) => {
           if (!canUpload) return;
@@ -297,9 +279,13 @@ export function PostForm({
         afterBody={
           <div className="grid gap-5">
             {showSpace ? (
-              <FormField label="space" required error={spaceMissing ? "choose a space." : undefined}>
+              <FormField
+                label="space"
+                required
+                error={spaceMissing ? "choose a space." : undefined}
+              >
                 <select
-                  value={selectedSpace ? selectedSpace.id ?? selectedSpace.label : ""}
+                  value={selectedSpace ? (selectedSpace.id ?? selectedSpace.label) : ""}
                   onChange={(event) => setSpaceKey(event.target.value)}
                   className="ui-field"
                 >
@@ -323,13 +309,21 @@ export function PostForm({
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
               <GifPicker onSelect={onGif} />
-              {hasUploading ? <span className="text-label text-accent-soft">optimizing and uploading media…</span> : null}
-              {hasAttachmentErrors ? (
-                <span className="ui-error">{attachmentError ?? "couldn't upload a media attachment. remove it or try again."}</span>
+              {hasUploading ? (
+                <span className="text-label text-accent-soft">optimizing and uploading media…</span>
               ) : null}
-              {attachmentWarning ? <span className="text-label text-urgent">{attachmentWarning}</span> : null}
+              {hasAttachmentErrors ? (
+                <span className="ui-error">
+                  {attachmentError ?? "couldn't upload a media attachment. remove it or try again."}
+                </span>
+              ) : null}
+              {attachmentWarning ? (
+                <span className="text-label text-urgent">{attachmentWarning}</span>
+              ) : null}
               {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
-                <span className="text-label text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
+                <span className="text-label text-muted">
+                  images up to 10 MB; MP4/WebM up to 50 MB; 8 files max
+                </span>
               ) : null}
             </div>
           </div>
@@ -337,7 +331,12 @@ export function PostForm({
         footerClassName="mt-1 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end"
         actions={
           onCancel ? (
-            <Button variant="secondary" onClick={onCancel} disabled={busy} className="w-full sm:w-auto">
+            <Button
+              variant="secondary"
+              onClick={onCancel}
+              disabled={busy}
+              className="w-full sm:w-auto"
+            >
               cancel
             </Button>
           ) : undefined
@@ -356,7 +355,11 @@ export function PostForm({
         submitType="submit"
         onSubmit={() => void submit()}
       />
-      {formError ? <p role="alert" className="ui-error">{formError}</p> : null}
+      {formError ? (
+        <p role="alert" className="ui-error">
+          {formError}
+        </p>
+      ) : null}
     </form>
   );
 }

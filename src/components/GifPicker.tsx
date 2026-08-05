@@ -18,6 +18,7 @@ export function GifPicker({
   const controllerRef = useRef<AbortController | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const searchId = useId();
   const pickerId = useId();
   const titleId = useId();
@@ -34,6 +35,11 @@ export function GifPicker({
       if (!active || active === document.body) triggerRef.current?.focus();
     });
   });
+
+  useEffect(() => {
+    if (!open || !provider.configured) return;
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }, [open, provider.configured]);
 
   const close = (restoreFocus = true) => {
     setOpen(false);
@@ -61,16 +67,7 @@ export function GifPicker({
   };
 
   return (
-    <div
-      ref={rootRef}
-      className="relative"
-      onKeyDown={(event) => {
-        if (open && event.key === "Escape") {
-          event.preventDefault();
-          close();
-        }
-      }}
-    >
+    <div ref={rootRef} className="relative">
       <Button
         ref={triggerRef}
         variant="secondary"
@@ -83,25 +80,33 @@ export function GifPicker({
         add GIF
       </Button>
       {open ? (
-        <div
+        <dialog
+          open
           id={pickerId}
-          role="dialog"
           aria-labelledby={titleId}
           className="absolute bottom-full left-0 z-30 mb-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
         >
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p id={titleId} className="text-body font-medium text-fg">find a GIF</p>
-            <Button variant="quiet" size="sm" onClick={() => close()}>close</Button>
+            <p id={titleId} className="text-body font-medium text-fg">
+              find a GIF
+            </p>
+            <Button variant="quiet" size="sm" onClick={() => close()}>
+              close
+            </Button>
           </div>
           {!provider.configured ? (
-            <p role="status" className="rounded-md border border-border bg-bg px-3 py-2.5 text-label leading-relaxed text-muted">
-              GIF search needs a Giphy key. set <code>VITE_GIPHY_API_KEY</code> locally to enable it.
-            </p>
+            <output className="rounded-md border border-border bg-bg px-3 py-2.5 text-label leading-relaxed text-muted">
+              GIF search needs a Giphy key. set <code>VITE_GIPHY_API_KEY</code> locally to enable
+              it.
+            </output>
           ) : (
             <>
-              <div role="search" className="flex gap-2">
-                <label className="sr-only" htmlFor={searchId}>search GIFs</label>
+              <search className="flex gap-2">
+                <label className="sr-only" htmlFor={searchId}>
+                  search GIFs
+                </label>
                 <input
+                  ref={searchRef}
                   id={searchId}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -111,7 +116,6 @@ export function GifPicker({
                       void search();
                     }
                   }}
-                  autoFocus
                   placeholder="search GIFs"
                   className="ui-field min-w-0 flex-1"
                 />
@@ -125,10 +129,13 @@ export function GifPicker({
                 >
                   search
                 </Button>
-              </div>
-              {error ? <p role="status" className="mt-2 text-label text-muted">{error}</p> : null}
+              </search>
+              {error ? <output className="mt-2 block text-label text-muted">{error}</output> : null}
               {results.length > 0 ? (
-                <div className="mt-3 grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto" aria-label="GIF results">
+                <div
+                  className="mt-3 grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto"
+                  aria-label="GIF results"
+                >
                   {results.map((gif) => (
                     <button
                       key={gif.id}
@@ -140,7 +147,12 @@ export function GifPicker({
                       className="aspect-square overflow-hidden rounded-sm border border-border bg-bg transition-colors hover:border-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
                       aria-label={`Add ${gif.title}`}
                     >
-                      <img src={gif.previewUrl} alt="" loading="lazy" className="size-full object-cover" />
+                      <img
+                        src={gif.previewUrl}
+                        alt=""
+                        loading="lazy"
+                        className="size-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
@@ -148,7 +160,7 @@ export function GifPicker({
               <p className="mt-2 text-label text-muted">powered by Giphy</p>
             </>
           )}
-        </div>
+        </dialog>
       ) : null}
     </div>
   );

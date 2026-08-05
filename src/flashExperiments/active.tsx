@@ -97,9 +97,7 @@ function useExperimentCtx() {
 
 export function useActiveExperiment() {
   const { slug, setSlug } = useExperimentCtx();
-  const experiment = demoPolicy.flashExperimentsLab && slug
-    ? getFlashExperiment(slug)
-    : null;
+  const experiment = demoPolicy.flashExperimentsLab && slug ? getFlashExperiment(slug) : null;
   return {
     slug: demoPolicy.flashExperimentsLab ? slug : null,
     experiment,

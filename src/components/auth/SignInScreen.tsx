@@ -21,23 +21,16 @@ export function SignInScreen() {
       description="sign in or create your account. connecting to a workspace is the next step, right after this one."
       footer={
         <p className="text-body text-muted">
-          have an invite code? sign in first. you will enter the code on the
-          next screen.
+          have an invite code? sign in first. you will enter the code on the next screen.
         </p>
       }
     >
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="grid grid-cols-2 gap-1 border-b border-border bg-bg p-1">
-          <ModeButton
-            active={mode === "sign-in"}
-            onClick={() => setMode("sign-in")}
-          >
+          <ModeButton active={mode === "sign-in"} onClick={() => setMode("sign-in")}>
             sign in
           </ModeButton>
-          <ModeButton
-            active={mode === "create-account"}
-            onClick={() => setMode("create-account")}
-          >
+          <ModeButton active={mode === "create-account"} onClick={() => setMode("create-account")}>
             create account
           </ModeButton>
         </div>
@@ -74,9 +67,7 @@ function ModeButton({
       onClick={onClick}
       aria-pressed={active}
       className={`ui-button min-h-11 rounded-md px-3 text-body transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft ${
-        active
-          ? "bg-surface-2 text-fg"
-          : "bg-transparent text-muted hover:text-fg"
+        active ? "bg-surface-2 text-fg" : "bg-transparent text-muted hover:text-fg"
       }`}
     >
       {children}

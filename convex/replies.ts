@@ -13,12 +13,7 @@ import {
 } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
 import { rateLimiter } from "./lib/rateLimit";
-import {
-  parse,
-  replyBodySchema,
-  attachmentInputSchema,
-  LIMITS,
-} from "./lib/validation";
+import { parse, replyBodySchema, attachmentInputSchema, LIMITS } from "./lib/validation";
 import { logInfo } from "./lib/observability";
 import { validateStoredAttachment } from "./lib/attachmentStorage";
 
@@ -167,11 +162,7 @@ export const listForPostPaginated = query({
     }
     const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (
-      !post ||
-      post.orgId !== scope.orgId ||
-      !(await canAccessPost(ctx, post, viewer?._id))
-    ) {
+    if (!post || post.orgId !== scope.orgId || !(await canAccessPost(ctx, post, viewer?._id))) {
       return { page: [], isDone: true, continueCursor: "" };
     }
 
@@ -374,9 +365,7 @@ export const remove = mutation({
     for (const id of toDelete) {
       const atts = await ctx.db
         .query("postAttachments")
-        .withIndex("by_org_id_and_reply_id", (q) =>
-          q.eq("orgId", orgId).eq("replyId", id),
-        )
+        .withIndex("by_org_id_and_reply_id", (q) => q.eq("orgId", orgId).eq("replyId", id))
         .take(20);
       for (const att of atts) {
         await ctx.storage.delete(att.storageId);

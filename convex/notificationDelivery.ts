@@ -1,29 +1,19 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import {
-  env,
-  internalAction,
-  internalMutation,
-  type ActionCtx,
-} from "./_generated/server";
+import { env, internalAction, internalMutation, type ActionCtx } from "./_generated/server";
 import { logError, logInfo, logWarn } from "./lib/observability";
 import type { OutboundDeliveryCandidate } from "./notificationComposer";
 
 const RESEND_IDEMPOTENCY_RETENTION_MS = 24 * 60 * 60 * 1_000;
-export const DELIVERY_RETRY_WINDOW_MS =
-  RESEND_IDEMPOTENCY_RETENTION_MS - 60 * 60 * 1_000;
+export const DELIVERY_RETRY_WINDOW_MS = RESEND_IDEMPOTENCY_RETENTION_MS - 60 * 60 * 1_000;
 const DELIVERY_ATTEMPT_LEASE_MS = 60 * 1_000;
 export const RESEND_REQUEST_TIMEOUT_MS = 10 * 1_000;
 
 const notificationItem = v.object({
   postId: v.string(),
   title: v.string(),
-  priority: v.union(
-    v.literal("urgent"),
-    v.literal("high"),
-    v.literal("normal"),
-  ),
+  priority: v.union(v.literal("urgent"), v.literal("high"), v.literal("normal")),
   lastActivityAt: v.number(),
   unread: v.boolean(),
   space: v.optional(v.string()),
@@ -118,7 +108,7 @@ export const claimDelivery = internalMutation({
     const existing = await ctx.db
       .query("notificationDeliveries")
       .withIndex("by_org_id_and_idempotency_key", (q) =>
-        q.eq("orgId", args.orgId).eq("idempotencyKey", args.idempotencyKey)
+        q.eq("orgId", args.orgId).eq("idempotencyKey", args.idempotencyKey),
       )
       .unique();
 
@@ -186,7 +176,7 @@ export const recordDeliveryResult = internalMutation({
     const existing = await ctx.db
       .query("notificationDeliveries")
       .withIndex("by_org_id_and_idempotency_key", (q) =>
-        q.eq("orgId", args.orgId).eq("idempotencyKey", args.idempotencyKey)
+        q.eq("orgId", args.orgId).eq("idempotencyKey", args.idempotencyKey),
       )
       .unique();
     if (!existing || existing.status === "sent") return null;
@@ -270,9 +260,7 @@ export const dispatch = internalAction({
       if (claim.status !== "ready") {
         const retryable = claim.status === "in_progress";
         const code = retryable ? "delivery_in_progress" : claim.code;
-        const error = retryable
-          ? "Another delivery attempt is still in progress."
-          : claim.message;
+        const error = retryable ? "Another delivery attempt is still in progress." : claim.message;
         logWarn("notification.deliveryDeferred", {
           kind: candidate.kind,
           code,
@@ -293,13 +281,7 @@ export const dispatch = internalAction({
         candidate,
         idempotencyKey: providerIdempotencyKey,
       });
-      await recordResult(
-        ctx,
-        args.orgId,
-        providerIdempotencyKey,
-        attemptId,
-        result,
-      );
+      await recordResult(ctx, args.orgId, providerIdempotencyKey, attemptId, result);
       if (!result.ok) {
         const log = result.retryable ? logWarn : logError;
         log("notification.providerFailed", {
@@ -453,8 +435,7 @@ export async function sendResendEmail({
       ok: false,
       statusCode: response.status,
       code,
-      message:
-        getStringField(body, "message") ?? `Resend returned HTTP ${response.status}.`,
+      message: getStringField(body, "message") ?? `Resend returned HTTP ${response.status}.`,
       retryable: isRetryableResendFailure(response.status, code),
     };
   } catch (error) {
@@ -511,14 +492,14 @@ export function renderNotificationEmail(
   appUrl: string,
 ): { subject: string; html: string; text: string } {
   const count = candidate.items.length + candidate.omittedCount;
-  const subject = candidate.kind === "immediate"
-    ? count === 1
-      ? `urgent: ${candidate.items[0]?.title ?? "post needs attention"}`
-      : `${count} urgent posts need attention`
-    : `your Postwork digest: ${count} unread ${count === 1 ? "post" : "posts"}`;
-  const heading = candidate.kind === "immediate"
-    ? "urgent posts need attention"
-    : "your unread Postwork digest";
+  const subject =
+    candidate.kind === "immediate"
+      ? count === 1
+        ? `urgent: ${candidate.items[0]?.title ?? "post needs attention"}`
+        : `${count} urgent posts need attention`
+      : `your Postwork digest: ${count} unread ${count === 1 ? "post" : "posts"}`;
+  const heading =
+    candidate.kind === "immediate" ? "urgent posts need attention" : "your unread Postwork digest";
   const rows = candidate.items.map((item) => {
     const url = safeItemUrl(item.url, item.postId, appUrl);
     const label = `${item.priority}: ${item.title}`;
@@ -527,9 +508,10 @@ export function renderNotificationEmail(
       text: `- ${label}${item.space ? ` in ${item.space}` : ""}\n  ${url}`,
     };
   });
-  const omitted = candidate.omittedCount > 0
-    ? `${candidate.omittedCount} more unread ${candidate.omittedCount === 1 ? "post is" : "posts are"} waiting in Postwork.`
-    : "";
+  const omitted =
+    candidate.omittedCount > 0
+      ? `${candidate.omittedCount} more unread ${candidate.omittedCount === 1 ? "post is" : "posts are"} waiting in Postwork.`
+      : "";
   const settings = `${appUrl.replace(/\/$/, "")}/`;
 
   return {
@@ -549,7 +531,9 @@ export function renderNotificationEmail(
       "",
       `Open Postwork: ${settings}`,
       "Change outbound notifications in your Postwork profile.",
-    ].filter(Boolean).join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }
 
@@ -606,8 +590,11 @@ function parseHttpOrigin(value: string): string | null {
     const parsed = new URL(value);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
     if (
-      parsed.username || parsed.password || parsed.pathname !== "/" ||
-      parsed.search || parsed.hash
+      parsed.username ||
+      parsed.password ||
+      parsed.pathname !== "/" ||
+      parsed.search ||
+      parsed.hash
     ) {
       return null;
     }
@@ -618,13 +605,17 @@ function parseHttpOrigin(value: string): string | null {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[character] ?? character);
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character] ?? character,
+  );
 }
 
 function getStringField(value: unknown, field: string): string | undefined {

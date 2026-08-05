@@ -1,9 +1,4 @@
-import {
-  cloneElement,
-  useId,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { cloneElement, useId, type ReactElement, type ReactNode } from "react";
 
 type FieldControlProps = {
   id?: string;
@@ -36,9 +31,8 @@ export function FormField({
   const controlId = children.props.id ?? `${generatedId}-control`;
   const helpId = help ? `${generatedId}-help` : undefined;
   const errorId = error ? `${generatedId}-error` : undefined;
-  const describedBy = [children.props["aria-describedby"], helpId, errorId]
-    .filter(Boolean)
-    .join(" ") || undefined;
+  const describedBy =
+    [children.props["aria-describedby"], helpId, errorId].filter(Boolean).join(" ") || undefined;
 
   const control = cloneElement(children, {
     id: controlId,

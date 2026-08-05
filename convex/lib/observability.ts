@@ -42,10 +42,7 @@ export function logError(event: string, data?: Record<string, unknown>) {
  * ConvexError(s) (auth, validation, rate-limit, not-found) are re-thrown
  * as-is — they carry client-facing codes and should not be swallowed.
  */
-export function withLogging<T extends (...args: never[]) => unknown>(
-  event: string,
-  fn: T,
-): T {
+export function withLogging<T extends (...args: never[]) => unknown>(event: string, fn: T): T {
   return ((...args: never[]) => {
     try {
       const result = fn(...args);

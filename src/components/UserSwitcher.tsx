@@ -42,24 +42,22 @@ export function UserSwitcher() {
       </button>
 
       {open ? (
-        <div
+        <dialog
+          open
           id={panelId}
-          role="dialog"
           aria-labelledby={headingId}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              setOpen(false);
-              requestAnimationFrame(() => triggerRef.current?.focus());
-            }
-          }}
           className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
         >
-          <p id={headingId} className="px-3 py-2 text-label font-medium text-muted">view as teammate</p>
+          <p id={headingId} className="px-3 py-2 text-label font-medium text-muted">
+            view as teammate
+          </p>
           {users.map((user) => {
             const selected = user._id === currentUser._id;
             return (
-              <div key={user._id} className={`flex items-center gap-1 rounded-md ${selected ? "bg-surface-2" : ""}`}>
+              <div
+                key={user._id}
+                className={`flex items-center gap-1 rounded-md ${selected ? "bg-surface-2" : ""}`}
+              >
                 <button
                   ref={selected ? selectedRef : undefined}
                   type="button"
@@ -77,7 +75,9 @@ export function UserSwitcher() {
                       <span className="truncate text-body text-fg">{user.name}</span>
                       {user.isAgent ? <AgentTag /> : null}
                     </span>
-                    <span className="mt-0.5 block truncate text-label text-muted">{user.title}</span>
+                    <span className="mt-0.5 block truncate text-label text-muted">
+                      {user.title}
+                    </span>
                   </span>
                   {selected ? <span className="text-label text-accent-soft">selected</span> : null}
                 </button>
@@ -93,7 +93,7 @@ export function UserSwitcher() {
               </div>
             );
           })}
-        </div>
+        </dialog>
       ) : null}
     </div>
   );
@@ -102,7 +102,13 @@ export function UserSwitcher() {
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-4 shrink-0 text-muted" aria-hidden="true">
-      <path d="m8 10 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="m8 10 4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

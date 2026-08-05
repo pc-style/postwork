@@ -1,14 +1,18 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "./_generated/server";
-import {
-  ensureViewerUser,
-  forbidden,
-} from "./authUsers";
+import { ensureViewerUser, forbidden } from "./authUsers";
 import { logAudit } from "./admin";
 import { logInfo } from "./lib/observability";
 
 export const RESERVED_ORG_SLUGS = new Set([
-  "www", "app", "api", "demo", "admin", "postwork", "beta", "staging",
+  "www",
+  "app",
+  "api",
+  "demo",
+  "admin",
+  "postwork",
+  "beta",
+  "staging",
 ]);
 
 export function defaultOrgSlug(name: string) {
@@ -23,8 +27,10 @@ export function defaultOrgSlug(name: string) {
 }
 
 export function orgSlugError(value: string): string | null {
-  if (value.length < 3 || value.length > 32) return "Workspace slug must be between 3 and 32 characters.";
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) return "Workspace slug may only contain lowercase letters, numbers, and internal hyphens.";
+  if (value.length < 3 || value.length > 32)
+    return "Workspace slug must be between 3 and 32 characters.";
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value))
+    return "Workspace slug may only contain lowercase letters, numbers, and internal hyphens.";
   if (RESERVED_ORG_SLUGS.has(value)) return "That workspace slug is reserved.";
   return null;
 }
@@ -61,7 +67,12 @@ export const create = mutation({
     const slug = args.slug === undefined ? defaultOrgSlug(name) : args.slug.trim();
     const validationError = orgSlugError(slug);
     if (validationError) invalidInput(validationError);
-    if (await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", slug)).unique()) {
+    if (
+      await ctx.db
+        .query("orgs")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+    ) {
       invalidInput("That workspace slug is already in use.");
     }
 
@@ -92,14 +103,26 @@ export const setSlug = mutation({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
     const viewer = await ensureViewerUser(ctx);
-    if (!viewer.orgId || viewer.role !== "admin") forbidden("Only organization admins can change the workspace slug.");
+    if (!viewer.orgId || viewer.role !== "admin")
+      forbidden("Only organization admins can change the workspace slug.");
     const slug = args.slug.trim();
     const validationError = orgSlugError(slug);
     if (validationError) invalidInput(validationError);
-    const existing = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", slug)).unique();
-    if (existing && existing._id !== viewer.orgId) invalidInput("That workspace slug is already in use.");
+    const existing = await ctx.db
+      .query("orgs")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique();
+    if (existing && existing._id !== viewer.orgId)
+      invalidInput("That workspace slug is already in use.");
     await ctx.db.patch(viewer.orgId, { slug });
-    await logAudit(ctx, { orgId: viewer.orgId, actorId: viewer._id, action: "org.slug_updated", targetType: "org", targetId: viewer.orgId, metadata: { slug } });
+    await logAudit(ctx, {
+      orgId: viewer.orgId,
+      actorId: viewer._id,
+      action: "org.slug_updated",
+      targetType: "org",
+      targetId: viewer.orgId,
+      metadata: { slug },
+    });
     return { slug };
   },
 });

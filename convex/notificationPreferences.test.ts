@@ -11,9 +11,9 @@ describe("notification preferences API", () => {
   test("requires authentication", async () => {
     const t = convexTest(schema, modules);
 
-    await expect(
-      t.query(api.notificationPreferences.current, {}),
-    ).rejects.toThrow("Sign in to view notification preferences.");
+    await expect(t.query(api.notificationPreferences.current, {})).rejects.toThrow(
+      "Sign in to view notification preferences.",
+    );
   });
 
   test("returns safe defaults and upserts the current user's org-scoped row", async () => {
@@ -44,9 +44,7 @@ describe("notification preferences API", () => {
       issuer: "https://issuer.example",
     });
 
-    await expect(
-      authed.query(api.notificationPreferences.current, {}),
-    ).resolves.toMatchObject({
+    await expect(authed.query(api.notificationPreferences.current, {})).resolves.toMatchObject({
       browserEnabled: false,
       outboundEnabled: false,
       immediateUrgentEnabled: true,
@@ -80,9 +78,7 @@ describe("notification preferences API", () => {
       quietHoursTimeZone: "Europe/Warsaw",
     });
 
-    await expect(
-      authed.query(api.notificationPreferences.current, {}),
-    ).resolves.toMatchObject({
+    await expect(authed.query(api.notificationPreferences.current, {})).resolves.toMatchObject({
       browserEnabled: true,
       outboundEnabled: true,
       immediateUrgentEnabled: false,
@@ -92,9 +88,7 @@ describe("notification preferences API", () => {
     const stored = await t.run(async (ctx) =>
       ctx.db
         .query("notificationPreferences")
-        .withIndex("by_org_id_and_user_id", (q) =>
-          q.eq("orgId", orgId).eq("userId", userId),
-        )
+        .withIndex("by_org_id_and_user_id", (q) => q.eq("orgId", orgId).eq("userId", userId))
         .unique(),
     );
     expect(stored).toMatchObject({
@@ -145,8 +139,9 @@ describe("notification preferences API", () => {
       subject: "legacy-member",
       issuer: "https://issuer.example",
     });
-    await expect(
-      authed.query(api.notificationPreferences.current, {}),
-    ).resolves.toMatchObject({ browserEnabled: false, isDefault: false });
+    await expect(authed.query(api.notificationPreferences.current, {})).resolves.toMatchObject({
+      browserEnabled: false,
+      isDefault: false,
+    });
   });
 });

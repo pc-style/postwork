@@ -68,9 +68,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
       setPrompt("");
     } catch (caught) {
       setError(
-        caught instanceof Error
-          ? caught.message
-          : "We couldn't send the agent task. Try again.",
+        caught instanceof Error ? caught.message : "We couldn't send the agent task. Try again.",
       );
     } finally {
       setBusy(false);
@@ -79,9 +77,7 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
 
   return (
     <section className="border-y border-border py-1">
-      <details
-        open={expanded}
-      >
+      <details open={expanded}>
         <summary
           onClick={(event) => {
             event.preventDefault();
@@ -147,11 +143,18 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                 send
               </Button>
             </div>
-            {error ? <p role="alert" className="ui-error mt-3">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="ui-error mt-3">
+                {error}
+              </p>
+            ) : null}
           </div>
 
           {tasks.length > 0 ? (
-            <div className="mt-4 divide-y divide-border/60 border-y border-border/60" aria-live="polite">
+            <div
+              className="mt-4 divide-y divide-border/60 border-y border-border/60"
+              aria-live="polite"
+            >
               {tasks.map((task) => {
                 const agent = users.find((user) => user._id === task.agentId) ?? null;
                 return (
@@ -171,10 +174,14 @@ export function AgentTasksPanel({ postId }: { postId: Id<"posts"> }) {
                     </div>
                     <p className="mt-2 text-body text-muted">{task.prompt}</p>
                     {task.status === "done" && task.result ? (
-                      <div className="mt-3 text-fg"><Markdown text={task.result} /></div>
+                      <div className="mt-3 text-fg">
+                        <Markdown text={task.result} />
+                      </div>
                     ) : null}
                     {task.status === "failed" && task.error ? (
-                      <p role="alert" className="ui-error mt-2">{task.error}</p>
+                      <p role="alert" className="ui-error mt-2">
+                        {task.error}
+                      </p>
                     ) : null}
                   </article>
                 );

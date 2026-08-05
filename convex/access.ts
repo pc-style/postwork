@@ -34,7 +34,7 @@ export const checkInvite = query({
       .withIndex("by_code", (q) => q.eq("code", code))
       .unique();
     if (!invite || !inviteIsUsable(invite)) return { valid: false as const };
-    const orgId = invite.orgId ?? await getProductOrgId(ctx);
+    const orgId = invite.orgId ?? (await getProductOrgId(ctx));
     const org = await ctx.db.get(orgId);
     if (!org) return { valid: false as const };
     return { valid: true as const, note: invite.note, orgName: org.name };
@@ -61,7 +61,7 @@ export const redeemInvite = mutation({
         message: "That invite code is not valid anymore.",
       });
     }
-    const targetOrgId = invite.orgId ?? await getProductOrgId(ctx);
+    const targetOrgId = invite.orgId ?? (await getProductOrgId(ctx));
     if (viewer.orgId && viewer.orgId !== targetOrgId) {
       throw new ConvexError({
         code: "FORBIDDEN",
@@ -117,15 +117,13 @@ export const claimTargetedInvite = mutation({
         : await ctx.db
             .query("invites")
             .withIndex("by_target", (q) =>
-              q
-                .eq("targetKind", candidate.kind)
-                .eq("targetValue", candidate.value),
+              q.eq("targetKind", candidate.kind).eq("targetValue", candidate.value),
             )
             .collect();
       const invite = invites.find(inviteIsUsable);
       if (!invite) continue;
 
-      const orgId = invite.orgId ?? await getProductOrgId(ctx);
+      const orgId = invite.orgId ?? (await getProductOrgId(ctx));
       await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
       await ctx.db.patch(viewer._id, { orgId, status: "active" });
       await logAudit(ctx, {

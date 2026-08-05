@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode, type RefObject } from "react";
 import { trapDialogFocus } from "../lib/dialogFocus";
 import { Button } from "./Button";
 
@@ -31,6 +25,7 @@ export function Dialog({
   const returnFocusRefRef = useRef(returnFocusRef);
   const titleId = useId();
   const descriptionId = useId();
+  const closeFromEffect = useEffectEvent(onClose);
 
   useEffect(() => {
     initialFocusRefRef.current = initialFocusRef;
@@ -40,11 +35,14 @@ export function Dialog({
   useEffect(() => {
     triggerRef.current ??=
       returnFocusRefRef.current?.current ??
-      (document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null);
+      (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const dialog = ref.current;
+    const restoreTarget = returnFocusRefRef.current?.current ?? triggerRef.current;
     dialog?.showModal();
+    const onPointerDown = (event: PointerEvent) => {
+      if (dismissible && event.target === dialog) closeFromEffect();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
     const focusFrame = requestAnimationFrame(() => {
       const firstTabbable = dialog
         ? Array.from(
@@ -63,10 +61,10 @@ export function Dialog({
 
     return () => {
       cancelAnimationFrame(focusFrame);
-      const target = returnFocusRefRef.current?.current ?? triggerRef.current;
-      window.setTimeout(() => target?.isConnected && target.focus(), 0);
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.setTimeout(() => restoreTarget?.isConnected && restoreTarget.focus(), 0);
     };
-  }, []);
+  }, [dismissible]);
 
   return (
     <dialog
@@ -80,9 +78,6 @@ export function Dialog({
         if (dismissible) onClose();
       }}
       onKeyDown={trapDialogFocus}
-      onClick={(event) => {
-        if (dismissible && event.target === ref.current) onClose();
-      }}
       className="ui-dialog m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-0 text-fg backdrop:bg-black/70 sm:max-h-[85vh] sm:w-[calc(100%-2rem)]"
     >
       <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-4 sm:px-6">

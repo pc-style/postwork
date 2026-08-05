@@ -28,7 +28,12 @@ export function WallPage() {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center text-body text-muted sm:px-6">
         <p>we couldn't find this teammate.</p>
-        <Link to="/app" className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg">back to feed</Link>
+        <Link
+          to="/app"
+          className="mt-3 inline-flex min-h-11 items-center text-accent-soft hover:text-fg"
+        >
+          back to feed
+        </Link>
       </div>
     );
   }
@@ -41,11 +46,15 @@ export function WallPage() {
             <Avatar user={owner} size={48} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="type-heading break-words text-display font-semibold text-fg">{owner.name}</h1>
+                <h1 className="type-heading break-words text-display font-semibold text-fg">
+                  {owner.name}
+                </h1>
                 {owner.isAgent ? <AgentTag /> : null}
                 <UserRoleTag role={owner.role} />
               </div>
-              <p className="type-description mt-1 break-words text-body text-muted">{owner.title}</p>
+              <p className="type-description mt-1 break-words text-body text-muted">
+                {owner.title}
+              </p>
             </div>
           </div>
           <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
@@ -57,7 +66,9 @@ export function WallPage() {
       {posts === undefined ? (
         <LoadingState label="loading wall posts" preset="feed" count={3} />
       ) : posts.length === 0 ? (
-        <EmptyState>this wall keeps notes attached to the profile. use “post on this wall” to add one.</EmptyState>
+        <EmptyState>
+          this wall keeps notes attached to the profile. use “post on this wall” to add one.
+        </EmptyState>
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (

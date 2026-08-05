@@ -4,12 +4,7 @@ import type { ExperimentSlots } from "./slots";
 export type { ExperimentSlots } from "./slots";
 
 export type ExperimentSlot = keyof ExperimentSlots;
-export type ExperimentStatus =
-  | "new"
-  | "reviewing"
-  | "liked"
-  | "rejected"
-  | "shipped";
+export type ExperimentStatus = "new" | "reviewing" | "liked" | "rejected" | "shipped";
 
 /**
  * Which work-in-progress track an experiment lives in.
@@ -50,16 +45,10 @@ export const flashExperiments: FlashExperiment[] = [
 ];
 
 /** Order categories render in on the lab page. */
-export const EXPERIMENT_CATEGORY_ORDER: ExperimentCategory[] = [
-  "community",
-  "testing",
-  "vip",
-];
+export const EXPERIMENT_CATEGORY_ORDER: ExperimentCategory[] = ["community", "testing", "vip"];
 
 export function experimentsByCategory(category: ExperimentCategory) {
-  return flashExperiments.filter(
-    (experiment) => experiment.category === category,
-  );
+  return flashExperiments.filter((experiment) => experiment.category === category);
 }
 
 export function getFlashExperiment(slug: string) {

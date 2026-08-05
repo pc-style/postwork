@@ -87,18 +87,10 @@ describe("composeOutboundCandidates", () => {
       ],
     });
     expect(isWithinQuietHours(duringQuietHours, enabledPreferences)).toBe(true);
-    expect(
-      isWithinQuietHours(
-        new Date("2026-07-10T22:00:00.000Z"),
-        enabledPreferences,
-      ),
-    ).toBe(true);
-    expect(
-      isWithinQuietHours(
-        new Date("2026-07-11T08:00:00.000Z"),
-        enabledPreferences,
-      ),
-    ).toBe(false);
+    expect(isWithinQuietHours(new Date("2026-07-10T22:00:00.000Z"), enabledPreferences)).toBe(true);
+    expect(isWithinQuietHours(new Date("2026-07-11T08:00:00.000Z"), enabledPreferences)).toBe(
+      false,
+    );
   });
 
   test("digest composition includes urgent when immediate is off and remains bounded", () => {
@@ -106,11 +98,7 @@ describe("composeOutboundCandidates", () => {
       item(`normal-${index}`, "normal", index),
     );
     const candidates = composeOutboundCandidates({
-      items: [
-        item("urgent", "urgent", 100),
-        item("high", "high", 90),
-        ...extraNormalItems,
-      ],
+      items: [item("urgent", "urgent", 100), item("high", "high", 90), ...extraNormalItems],
       preferences: {
         ...enabledPreferences,
         immediateUrgentEnabled: false,
@@ -121,9 +109,10 @@ describe("composeOutboundCandidates", () => {
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.kind).toBe("digest");
     expect(candidates[0]?.items).toHaveLength(25);
-    expect(
-      candidates[0]?.items.slice(0, 2).map(({ postId }) => postId),
-    ).toEqual(["urgent", "high"]);
+    expect(candidates[0]?.items.slice(0, 2).map(({ postId }) => postId)).toEqual([
+      "urgent",
+      "high",
+    ]);
     expect(candidates[0]?.omittedCount).toBe(2);
   });
 });

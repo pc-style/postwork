@@ -31,20 +31,15 @@ export const current = query({
     if (!identity) unauthenticated("Sign in to view notification preferences.");
 
     const viewer = await getViewerFromAuth(ctx);
-    if (!viewer)
-      unauthenticated("Finish account setup to view notification preferences.");
+    if (!viewer) unauthenticated("Finish account setup to view notification preferences.");
     if (viewer.status === "pending" || viewer.deactivatedAt) {
-      forbidden(
-        "An active account is required to view notification preferences.",
-      );
+      forbidden("An active account is required to view notification preferences.");
     }
 
     const orgId = requireOrgId(viewer);
     const stored = await ctx.db
       .query("notificationPreferences")
-      .withIndex("by_org_id_and_user_id", (q) =>
-        q.eq("orgId", orgId).eq("userId", viewer._id),
-      )
+      .withIndex("by_org_id_and_user_id", (q) => q.eq("orgId", orgId).eq("userId", viewer._id))
       .unique();
 
     if (!stored) {
@@ -69,34 +64,30 @@ export async function savePreferences(
   viewer: Awaited<ReturnType<typeof ensureActiveViewerUser>>,
   args: NotificationPreferences,
 ) {
-    const orgId = requireOrgId(viewer);
-    const preferences = validatePreferences(args);
-    const existing = await ctx.db
-      .query("notificationPreferences")
-      .withIndex("by_org_id_and_user_id", (q) =>
-        q.eq("orgId", orgId).eq("userId", viewer._id),
-      )
-      .unique();
-    const now = Date.now();
+  const orgId = requireOrgId(viewer);
+  const preferences = validatePreferences(args);
+  const existing = await ctx.db
+    .query("notificationPreferences")
+    .withIndex("by_org_id_and_user_id", (q) => q.eq("orgId", orgId).eq("userId", viewer._id))
+    .unique();
+  const now = Date.now();
 
-    if (existing) {
-      await ctx.db.patch(existing._id, { ...preferences, updatedAt: now });
-    } else {
-      await ctx.db.insert("notificationPreferences", {
-        orgId,
-        userId: viewer._id,
-        ...preferences,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
+  if (existing) {
+    await ctx.db.patch(existing._id, { ...preferences, updatedAt: now });
+  } else {
+    await ctx.db.insert("notificationPreferences", {
+      orgId,
+      userId: viewer._id,
+      ...preferences,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
-    return { ...preferences, isDefault: false as const };
+  return { ...preferences, isDefault: false as const };
 }
 
-function toPublicPreferences(
-  stored: Doc<"notificationPreferences">,
-): NotificationPreferences {
+function toPublicPreferences(stored: Doc<"notificationPreferences">): NotificationPreferences {
   return {
     browserEnabled: stored.browserEnabled ?? false,
     outboundEnabled: stored.outboundEnabled,
@@ -109,19 +100,11 @@ function toPublicPreferences(
   };
 }
 
-function validatePreferences(
-  args: NotificationPreferences,
-): NotificationPreferences {
+function validatePreferences(args: NotificationPreferences): NotificationPreferences {
   validateTime(args.quietHoursStart, "quietHoursStart");
   validateTime(args.quietHoursEnd, "quietHoursEnd");
-  if (
-    args.quietHoursEnabled &&
-    args.quietHoursStart === args.quietHoursEnd
-  ) {
-    invalidPreference(
-      "quietHoursEnd",
-      "Quiet hours must have different start and end times.",
-    );
+  if (args.quietHoursEnabled && args.quietHoursStart === args.quietHoursEnd) {
+    invalidPreference("quietHoursEnd", "Quiet hours must have different start and end times.");
   }
   validateTimeZone(args.quietHoursTimeZone);
   return args;

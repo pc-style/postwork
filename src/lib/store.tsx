@@ -48,10 +48,7 @@ function makeLocalId<T extends TableNames>(table: T, n: number): Id<T> {
   return `${LOCAL_PREFIX}${table[0]}${n}` as unknown as Id<T>;
 }
 
-type SessionPost = Omit<
-  Doc<"posts">,
-  "summary" | "summaryModel" | "summaryUpdatedAt"
-> & {
+type SessionPost = Omit<Doc<"posts">, "summary" | "summaryModel" | "summaryUpdatedAt"> & {
   summary?: string;
   summaryModel?: string;
   summaryUpdatedAt?: number;
@@ -113,11 +110,7 @@ type StoreValue = {
   summarize: (postId: Id<"posts">) => Promise<void>;
   // Moderation (Phase 3.5). Product mode calls the Convex mutations; the
   // demo overlay is read-only so these surface a friendly error.
-  editPost: (args: {
-    postId: Id<"posts">;
-    title: string;
-    body: string;
-  }) => Promise<void>;
+  editPost: (args: { postId: Id<"posts">; title: string; body: string }) => Promise<void>;
   deletePost: (args: { postId: Id<"posts"> }) => Promise<void>;
   editReply: (args: { replyId: Id<"replies">; body: string }) => Promise<void>;
   deleteReply: (args: { replyId: Id<"replies"> }) => Promise<void>;
@@ -163,7 +156,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     (postId: string, backendLastReadAt: number) => {
       if (!currentUserId) return 0;
       const k = readKey(currentUserId, postId);
-      const perPost = k ? reads[k] ?? 0 : 0;
+      const perPost = k ? (reads[k] ?? 0) : 0;
       const all = readAllAt[currentUserId] ?? 0;
       return Math.max(perPost, all, backendLastReadAt);
     },
@@ -268,7 +261,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       if (!k) return;
       setReads((prev) => ({ ...prev, [k]: Date.now() }));
     },
-    [currentUserId, userById],
+    [currentUserId],
   );
 
   const markAllRead = useCallback(() => {
@@ -382,23 +375,15 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const createSpace = useCallback(
-    async (args: {
-      name: string;
-      description?: string;
-      existingSlugs?: string[];
-    }) => {
+    async (args: { name: string; description?: string; existingSlugs?: string[] }) => {
       if (!currentUserId) throw new Error("No current user.");
       const creator = userById.get(currentUserId);
       if (!creator) throw new Error("Unknown creator.");
 
       const limit = creator.role === "admin" ? null : creator.role === "tester" ? 3 : 1;
-      const createdCount = spaces.filter(
-        (space) => space.createdBy === currentUserId,
-      ).length;
+      const createdCount = spaces.filter((space) => space.createdBy === currentUserId).length;
       if (limit !== null && createdCount >= limit) {
-        throw new Error(
-          `Your role can create up to ${limit} ${limit === 1 ? "space" : "spaces"}.`,
-        );
+        throw new Error(`Your role can create up to ${limit} ${limit === 1 ? "space" : "spaces"}.`);
       }
 
       const name = args.name.trim();
@@ -482,53 +467,45 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
       const now = Date.now();
       setPosts((prev) =>
         prev.map((p) =>
-          p._id === args.postId
-            ? { ...p, title: args.title, body: args.body, editedAt: now }
-            : p,
+          p._id === args.postId ? { ...p, title: args.title, body: args.body, editedAt: now } : p,
         ),
       );
     },
     [],
   );
 
-  const deletePost = useCallback(
-    async (args: { postId: Id<"posts"> }) => {
-      if (!isLocalId(args.postId)) {
-        throw new Error("Deleting isn't available in the public demo.");
-      }
-      setPosts((prev) => prev.filter((p) => p._id !== args.postId));
-      setReplies((prev) => {
-        const next = { ...prev };
-        delete next[args.postId];
-        return next;
-      });
-      setPostBumps((prev) => {
-        const next = { ...prev };
-        delete next[args.postId];
-        return next;
-      });
-    },
-    [],
-  );
+  const deletePost = useCallback(async (args: { postId: Id<"posts"> }) => {
+    if (!isLocalId(args.postId)) {
+      throw new Error("Deleting isn't available in the public demo.");
+    }
+    setPosts((prev) => prev.filter((p) => p._id !== args.postId));
+    setReplies((prev) => {
+      const next = { ...prev };
+      delete next[args.postId];
+      return next;
+    });
+    setPostBumps((prev) => {
+      const next = { ...prev };
+      delete next[args.postId];
+      return next;
+    });
+  }, []);
 
-  const editReply = useCallback(
-    async (args: { replyId: Id<"replies">; body: string }) => {
-      if (!isLocalId(args.replyId)) {
-        throw new Error("Editing isn't available in the public demo.");
+  const editReply = useCallback(async (args: { replyId: Id<"replies">; body: string }) => {
+    if (!isLocalId(args.replyId)) {
+      throw new Error("Editing isn't available in the public demo.");
+    }
+    const now = Date.now();
+    setReplies((prev) => {
+      const next: Record<string, SessionReply[]> = {};
+      for (const [pid, list] of Object.entries(prev)) {
+        next[pid] = list.map((r) =>
+          r._id === args.replyId ? { ...r, body: args.body, editedAt: now } : r,
+        );
       }
-      const now = Date.now();
-      setReplies((prev) => {
-        const next: Record<string, SessionReply[]> = {};
-        for (const [pid, list] of Object.entries(prev)) {
-          next[pid] = list.map((r) =>
-            r._id === args.replyId ? { ...r, body: args.body, editedAt: now } : r,
-          );
-        }
-        return next;
-      });
-    },
-    [],
-  );
+      return next;
+    });
+  }, []);
 
   const deleteReply = useCallback(
     async (args: { replyId: Id<"replies"> }) => {
@@ -864,10 +841,7 @@ function useFeedDemo(args: {
     .map(enrichSessionPost);
 
   // Wall posts live on user walls, not in the global feed.
-  const merged = [
-    ...sessionMatched,
-    ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay),
-  ];
+  const merged = [...sessionMatched, ...backend.filter((p) => !p.wallOwnerId).map(applyOverlay)];
   merged.sort(sortPosts);
   const result = args.onlyUnread ? merged.filter((p) => p.unread) : merged;
   return { posts: result, status: "Exhausted", loadMore: null };
@@ -918,10 +892,7 @@ export function useWall(userId: Id<"users">) {
   const onWall = (p: { wallOwnerId?: Id<"users">; authorId: Id<"users"> }) =>
     p.wallOwnerId === userId || (!p.wallOwnerId && p.authorId === userId);
   const sessionMatched = posts.filter(onWall).map(enrichSessionPost);
-  const merged = [
-    ...sessionMatched,
-    ...backend.filter(onWall).map(applyOverlay),
-  ];
+  const merged = [...sessionMatched, ...backend.filter(onWall).map(applyOverlay)];
   merged.sort(sortPosts);
   return merged;
 }
@@ -958,8 +929,7 @@ export function useSpaceFeed(
     .filter(
       (post) =>
         !post.wallOwnerId &&
-        (post.spaceId === args.spaceId ||
-          (!post.spaceId && post.space === args.spaceLabel)),
+        (post.spaceId === args.spaceId || (!post.spaceId && post.space === args.spaceLabel)),
     )
     .map(enrichSessionPost);
 
@@ -982,10 +952,7 @@ export function useSearch(term: string) {
 
   const { posts, applyOverlay, enrichSessionPost } = store.overlay;
   const sessionMatched = posts
-    .filter(
-      (p) =>
-        p.title.toLowerCase().includes(t) || p.body.toLowerCase().includes(t),
-    )
+    .filter((p) => p.title.toLowerCase().includes(t) || p.body.toLowerCase().includes(t))
     .map(enrichSessionPost);
   if (backend === undefined) return undefined;
   return [...sessionMatched, ...backend.map(applyOverlay)].sort(sortPosts);

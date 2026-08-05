@@ -80,9 +80,7 @@ describe("space creation", () => {
     const state = await t.run(async (ctx) => ({
       users: await ctx.db
         .query("users")
-        .withIndex("by_token_identifier", (q) =>
-          q.eq("tokenIdentifier", tokenIdentifier),
-        )
+        .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", tokenIdentifier))
         .collect(),
       space: await ctx.db.get(created.spaceId),
       membership: await ctx.db
@@ -108,12 +106,14 @@ describe("space creation", () => {
       description: "Coordinate the launch.",
     });
 
-    await expect(
-      authed.mutation(api.spaces.create, { name: "Another space" }),
-    ).rejects.toThrow("Your role can create up to 1 space.");
-    await expect(
-      authed.query(api.spaces.creationStatus, {}),
-    ).resolves.toEqual({ limit: 1, createdCount: 1, canCreate: false });
+    await expect(authed.mutation(api.spaces.create, { name: "Another space" })).rejects.toThrow(
+      "Your role can create up to 1 space.",
+    );
+    await expect(authed.query(api.spaces.creationStatus, {})).resolves.toEqual({
+      limit: 1,
+      createdCount: 1,
+      canCreate: false,
+    });
 
     const membership = await t.run(async (ctx) =>
       ctx.db
@@ -133,12 +133,14 @@ describe("space creation", () => {
       await authed.mutation(api.spaces.create, { name: `Tester space ${index}` });
     }
 
-    await expect(
-      authed.mutation(api.spaces.create, { name: "Tester space 4" }),
-    ).rejects.toThrow("Your role can create up to 3 spaces.");
-    await expect(
-      authed.query(api.spaces.creationStatus, {}),
-    ).resolves.toEqual({ limit: 3, createdCount: 3, canCreate: false });
+    await expect(authed.mutation(api.spaces.create, { name: "Tester space 4" })).rejects.toThrow(
+      "Your role can create up to 3 spaces.",
+    );
+    await expect(authed.query(api.spaces.creationStatus, {})).resolves.toEqual({
+      limit: 3,
+      createdCount: 3,
+      canCreate: false,
+    });
   });
 
   test("lets admins create unlimited spaces and generates unique slugs", async () => {
@@ -152,8 +154,10 @@ describe("space creation", () => {
 
     expect(first.slug).toBe("roadmap");
     expect(second.slug).toBe("roadmap-2");
-    await expect(
-      authed.query(api.spaces.creationStatus, {}),
-    ).resolves.toEqual({ limit: null, createdCount: 0, canCreate: true });
+    await expect(authed.query(api.spaces.creationStatus, {})).resolves.toEqual({
+      limit: null,
+      createdCount: 0,
+      canCreate: true,
+    });
   });
 });

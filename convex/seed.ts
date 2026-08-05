@@ -23,13 +23,18 @@ export const run = internalMutation({
       throw new Error("Demo seed requires DEMO=true on the Convex deployment.");
     }
 
-    const existingDemoOrg = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", DEMO_ORG_SLUG)).unique();
+    const existingDemoOrg = await ctx.db
+      .query("orgs")
+      .withIndex("by_slug", (q) => q.eq("slug", DEMO_ORG_SLUG))
+      .unique();
     const now = Date.now();
-    const orgId = existingDemoOrg?._id ?? await ctx.db.insert("orgs", {
-      name: DEMO_ORG_NAME,
-      slug: DEMO_ORG_SLUG,
-      createdAt: now,
-    });
+    const orgId =
+      existingDemoOrg?._id ??
+      (await ctx.db.insert("orgs", {
+        name: DEMO_ORG_NAME,
+        slug: DEMO_ORG_SLUG,
+        createdAt: now,
+      }));
 
     // Reset only demo-owned rows. The order removes dependants before parents,
     // and deliberately preserves the demo org document and every product row.
@@ -123,8 +128,7 @@ export const run = internalMutation({
         key: "nw_globex_support",
         name: "northwind × globex — vendor support",
         slug: "northwind-globex-vendor-support",
-        description:
-          "Operational support lane for incidents, renewals, and account coordination.",
+        description: "Operational support lane for incidents, renewals, and account coordination.",
         createdAgo: 24 * 8 * HOUR,
         members: ["MC", "AK", "LW", "Cu"],
       },
@@ -139,8 +143,10 @@ export const run = internalMutation({
       },
     ] as const;
 
-    const spaceIds: Record<(typeof spaceDefs)[number]["key"], Id<"spaces">> =
-      {} as Record<(typeof spaceDefs)[number]["key"], Id<"spaces">>;
+    const spaceIds: Record<(typeof spaceDefs)[number]["key"], Id<"spaces">> = {} as Record<
+      (typeof spaceDefs)[number]["key"],
+      Id<"spaces">
+    >;
 
     for (const space of spaceDefs) {
       const spaceId = await ctx.db.insert("spaces", {

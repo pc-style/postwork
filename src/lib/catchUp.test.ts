@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { catchUpEmptyState, catchUpSummaryPreview, composeDemoCatchUp, groupCatchUpItems } from "./catchUp";
+import {
+  catchUpEmptyState,
+  catchUpSummaryPreview,
+  composeDemoCatchUp,
+  groupCatchUpItems,
+} from "./catchUp";
 import type { CatchUpDigest, CatchUpItem, EnrichedPost } from "./types";
 
 function item(priority: "urgent" | "high" | "normal"): CatchUpItem {
@@ -36,7 +41,9 @@ describe("catchUpSummaryPreview", () => {
   });
 
   test("stops at an immediate later bold section heading", () => {
-    expect(catchUpSummaryPreview("**TL;DR:** Decision made.\n**Action items**\n- Ship it")).toBe("Decision made.");
+    expect(catchUpSummaryPreview("**TL;DR:** Decision made.\n**Action items**\n- Ship it")).toBe(
+      "Decision made.",
+    );
   });
 
   test("stops before same-line section content", () => {
@@ -55,7 +62,9 @@ describe("catchUpSummaryPreview", () => {
   });
 
   test("stops at a later bold section heading after a blank line", () => {
-    expect(catchUpSummaryPreview("**TL;DR**\nDecision made.\n\n**Action items**\n- Ship it")).toBe("Decision made.");
+    expect(catchUpSummaryPreview("**TL;DR**\nDecision made.\n\n**Action items**\n- Ship it")).toBe(
+      "Decision made.",
+    );
   });
 
   test("keeps a plain summary and removes only bold markup", () => {

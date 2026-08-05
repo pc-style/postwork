@@ -37,16 +37,21 @@ function parseGiphyResponse(value: unknown): GifResult[] {
     const previewUrl = imageUrl(images?.fixed_width) ?? imageUrl(images?.downsized);
     const originalUrl = imageUrl(images?.original);
     if (typeof id !== "string" || !previewUrl || !originalUrl) return [];
-    return [{
-      id,
-      title: typeof title === "string" && title.trim() ? title : "GIF",
-      previewUrl,
-      originalUrl,
-    }];
+    return [
+      {
+        id,
+        title: typeof title === "string" && title.trim() ? title : "GIF",
+        previewUrl,
+        originalUrl,
+      },
+    ];
   });
 }
 
-export function createGiphyProvider(apiKey: string | undefined, fetcher: Fetcher = fetch): GifSearchProvider {
+export function createGiphyProvider(
+  apiKey: string | undefined,
+  fetcher: Fetcher = fetch,
+): GifSearchProvider {
   const key = apiKey?.trim() ?? "";
   return {
     name: "Giphy",

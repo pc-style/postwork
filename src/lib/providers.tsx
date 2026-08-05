@@ -3,11 +3,7 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProvider } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { convex } from "./convexClient";
-import {
-  demoPolicy,
-  getOptionalViteEnv,
-  getRequiredProductViteEnv,
-} from "./demoMode";
+import { demoPolicy, getOptionalViteEnv, getRequiredProductViteEnv } from "./demoMode";
 import { SessionProvider } from "./session";
 import { StoreProvider } from "./store";
 import { AgentTasksProvider } from "./agentTasks";

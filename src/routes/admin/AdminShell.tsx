@@ -24,7 +24,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             post<span className="text-accent-soft">work</span>
             <span className="ml-2 text-label font-medium text-muted">admin</span>
           </Link>
-          <Button variant="icon" aria-label="Open admin navigation" onClick={() => setMobileNavOpen(true)}>
+          <Button
+            variant="icon"
+            aria-label="Open admin navigation"
+            onClick={() => setMobileNavOpen(true)}
+          >
             <MenuIcon />
           </Button>
         </header>
@@ -94,7 +98,9 @@ function BackToApp({ onSelect }: { onSelect?: () => void }) {
       className="inline-flex min-h-11 items-center text-label text-muted transition-colors hover:text-fg"
       onClick={onSelect}
     >
-      <span aria-hidden="true" className="mr-1.5">←</span>
+      <span aria-hidden="true" className="mr-1.5">
+        ←
+      </span>
       back to the app
     </Link>
   );
@@ -116,7 +122,9 @@ export function AdminPage({
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-display font-semibold tracking-tight text-fg">{title}</h1>
-          {description ? <p className="mt-1 max-w-xl text-body leading-6 text-muted">{description}</p> : null}
+          {description ? (
+            <p className="mt-1 max-w-xl text-body leading-6 text-muted">{description}</p>
+          ) : null}
         </div>
         {actions ? <div className="w-full sm:w-auto">{actions}</div> : null}
       </div>
@@ -150,14 +158,19 @@ export function AdminRecordList<T extends { _id: string }>({
           <thead>
             <tr className="border-b border-border bg-surface text-label font-medium text-muted">
               {columns.map((column) => (
-                <th key={column.label} className="px-4 py-3 font-medium">{column.label}</th>
+                <th key={column.label} className="px-4 py-3 font-medium">
+                  {column.label}
+                </th>
               ))}
               <th className="px-4 py-3 text-right font-medium">actions</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item._id} className="border-b border-border/60 last:border-b-0 hover:bg-surface">
+              <tr
+                key={item._id}
+                className="border-b border-border/60 last:border-b-0 hover:bg-surface"
+              >
                 {columns.map((column) => (
                   <td key={column.label} className={`px-4 py-3 ${column.className ?? ""}`}>
                     {column.render(item)}
@@ -185,9 +198,20 @@ export function AdminRecordList<T extends { _id: string }>({
           <article key={item._id} className="rounded-lg border border-border bg-surface p-4">
             <dl className="grid gap-3">
               {columns.map((column) => (
-                <div key={column.label} className={column.primary ? "border-b border-border pb-3" : "grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3"}>
-                  <dt className={column.primary ? "sr-only" : "text-label font-medium text-muted"}>{column.label}</dt>
-                  <dd className={`min-w-0 break-words text-body ${column.primary ? "text-fg" : "text-fg/90"}`}>
+                <div
+                  key={column.label}
+                  className={
+                    column.primary
+                      ? "border-b border-border pb-3"
+                      : "grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3"
+                  }
+                >
+                  <dt className={column.primary ? "sr-only" : "text-label font-medium text-muted"}>
+                    {column.label}
+                  </dt>
+                  <dd
+                    className={`min-w-0 break-words text-body ${column.primary ? "text-fg" : "text-fg/90"}`}
+                  >
                     {column.render(item)}
                   </dd>
                 </div>
@@ -226,7 +250,12 @@ export function StatusPill({
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-      <path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M5 7h14M5 12h14M5 17h14"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

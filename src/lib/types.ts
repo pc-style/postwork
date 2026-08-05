@@ -3,9 +3,7 @@ import { api } from "../../convex/_generated/api";
 import { PRIORITIES } from "./format";
 
 export type EnrichedPost = FunctionReturnType<typeof api.posts.feed>[number];
-export type EnrichedReply = FunctionReturnType<
-  typeof api.replies.listForPost
->[number];
+export type EnrichedReply = FunctionReturnType<typeof api.replies.listForPost>[number];
 export type CatchUpDigest = FunctionReturnType<typeof api.posts.catchUpDigest>;
 export type CatchUpItem = CatchUpDigest["items"][number];
 
@@ -17,19 +15,13 @@ export type AttachmentInput = NonNullable<
 >[number];
 
 /** Attachment record with a live storage URL, from `api.attachments.listForPost`. */
-export type AttachmentWithUrl = FunctionReturnType<
-  typeof api.attachments.listForPost
->[number];
+export type AttachmentWithUrl = FunctionReturnType<typeof api.attachments.listForPost>[number];
 
 /**
  * Paginated query status from `usePaginatedQuery`. `"Exhausted"` is also used
  * for demo-mode hooks that return a complete (non-paginated) list.
  */
-export type PageStatus =
-  | "LoadingFirstPage"
-  | "CanLoadMore"
-  | "LoadingMore"
-  | "Exhausted";
+export type PageStatus = "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
 
 /** Result of `useFeed` — a page of posts + pagination controls. */
 export type FeedResult = {

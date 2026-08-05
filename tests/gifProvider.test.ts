@@ -42,7 +42,10 @@ describe("Giphy provider", () => {
   });
 
   test("surfaces provider failures without exposing response content", async () => {
-    const provider = createGiphyProvider("test-key", async () => new Response("secret", { status: 500 }));
+    const provider = createGiphyProvider(
+      "test-key",
+      async () => new Response("secret", { status: 500 }),
+    );
     await expect(provider.search("hello")).rejects.toThrow("unavailable");
   });
 

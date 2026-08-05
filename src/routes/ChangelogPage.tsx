@@ -9,6 +9,11 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "4 August 2026",
+    title: "forms move with the action",
+    note: "reply and post-edit submissions now use React 19 action state and form status, notification preferences update optimistically while Convex confirms them, and pending controls use restrained motion that respects reduced-motion settings.",
+  },
+  {
     date: "30 July 2026",
     title: "a six-discipline polish sweep plus a react checkup",
     note: "ran accessibility, layout, typography, ui-polish, writing, and color passes over the core app: skip link and named landmarks, real focus traps and escape/restore in pickers and the user switcher, semantic post form with inline errors, logical properties and calmer reply separators for layout, balanced headings, tabular numbers and 70ch prose measure, layered dialog shadows, avatar/media outlines and press feedback, empty states and errors that say what to do next, and accent colors nudged to pass contrast without leaving the wine palette. react doctor then cleared all six error-level findings: stable popover-dismiss listeners, module-scope notification-hook selection, and pure sidebar-width state updaters.",
@@ -217,9 +222,7 @@ export function ChangelogPage() {
                   <h2 className="max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
                     {change.title}
                   </h2>
-                  <p className="mt-3 max-w-xl text-body leading-6 text-muted">
-                    {change.note}
-                  </p>
+                  <p className="mt-3 max-w-xl text-body leading-6 text-muted">{change.note}</p>
                 </div>
               </article>
             ))}

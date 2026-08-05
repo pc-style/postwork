@@ -93,47 +93,53 @@ export const searchTermSchema = z
   .max(LIMITS.SEARCH_TERM_MAX, "Search term is too long.");
 
 /** Attachment metadata validated before storing a post attachment record. */
-export const attachmentInputSchema = z.object({
-  storageId: z.string().min(1),
-  uploadToken: z.string().min(1),
-  filename: z.string().min(1).max(200),
-  contentType: z.string().trim().min(1),
-  mediaKind: z.enum(["image", "video", "file"]),
-  size: z.number().positive(),
-  width: z.number().positive().optional(),
-  height: z.number().positive().optional(),
-  durationMs: z.number().positive().optional(),
-}).superRefine((attachment, ctx) => {
-  const expectedKind = attachmentMediaKind(attachment.contentType);
-  if (attachment.mediaKind !== expectedKind) {
-    ctx.addIssue({ code: "custom", message: "Media kind does not match its content type." });
-  }
-  const maxBytes = attachmentMaxBytes(attachment.contentType);
-  if (maxBytes !== null && attachment.size > maxBytes) {
-    ctx.addIssue({
-      code: "too_big",
-      maximum: maxBytes,
-      origin: "number",
-      inclusive: true,
-      message: attachment.mediaKind === "video"
-        ? `Videos must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_VIDEO_BYTES)} or smaller.`
-        : attachment.mediaKind === "image"
-          ? `Images must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_IMAGE_BYTES)} or smaller.`
-          : `Files must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_FILE_BYTES)} or smaller.`,
-    });
-  }
-  if (attachment.mediaKind === "image" && attachment.durationMs !== undefined) {
-    ctx.addIssue({ code: "custom", message: "Images cannot include a duration." });
-  }
-  if (
-    attachment.mediaKind === "file" &&
-    (attachment.width !== undefined ||
-      attachment.height !== undefined ||
-      attachment.durationMs !== undefined)
-  ) {
-    ctx.addIssue({ code: "custom", message: "Files cannot include media dimensions or duration." });
-  }
-});
+export const attachmentInputSchema = z
+  .object({
+    storageId: z.string().min(1),
+    uploadToken: z.string().min(1),
+    filename: z.string().min(1).max(200),
+    contentType: z.string().trim().min(1),
+    mediaKind: z.enum(["image", "video", "file"]),
+    size: z.number().positive(),
+    width: z.number().positive().optional(),
+    height: z.number().positive().optional(),
+    durationMs: z.number().positive().optional(),
+  })
+  .superRefine((attachment, ctx) => {
+    const expectedKind = attachmentMediaKind(attachment.contentType);
+    if (attachment.mediaKind !== expectedKind) {
+      ctx.addIssue({ code: "custom", message: "Media kind does not match its content type." });
+    }
+    const maxBytes = attachmentMaxBytes(attachment.contentType);
+    if (maxBytes !== null && attachment.size > maxBytes) {
+      ctx.addIssue({
+        code: "too_big",
+        maximum: maxBytes,
+        origin: "number",
+        inclusive: true,
+        message:
+          attachment.mediaKind === "video"
+            ? `Videos must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_VIDEO_BYTES)} or smaller.`
+            : attachment.mediaKind === "image"
+              ? `Images must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_IMAGE_BYTES)} or smaller.`
+              : `Files must be ${formatMediaSize(LIMITS.ATTACHMENT_MAX_FILE_BYTES)} or smaller.`,
+      });
+    }
+    if (attachment.mediaKind === "image" && attachment.durationMs !== undefined) {
+      ctx.addIssue({ code: "custom", message: "Images cannot include a duration." });
+    }
+    if (
+      attachment.mediaKind === "file" &&
+      (attachment.width !== undefined ||
+        attachment.height !== undefined ||
+        attachment.durationMs !== undefined)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Files cannot include media dimensions or duration.",
+      });
+    }
+  });
 
 /**
  * Parse a value through a zod schema, throwing a typed ConvexError on failure.

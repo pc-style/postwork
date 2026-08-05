@@ -13,9 +13,7 @@ export function RootLayout({ children }: { children?: React.ReactNode }) {
     return (
       <>
         {slots.shell({ children: content })}
-        {experiment && (
-          <ExperimentControl title={experiment.title} onExit={() => setSlug(null)} />
-        )}
+        {experiment && <ExperimentControl title={experiment.title} onExit={() => setSlug(null)} />}
       </>
     );
   }
@@ -23,9 +21,7 @@ export function RootLayout({ children }: { children?: React.ReactNode }) {
   return (
     <>
       <AppShell>{content}</AppShell>
-      {experiment && (
-        <ExperimentControl title={experiment.title} onExit={() => setSlug(null)} />
-      )}
+      {experiment && <ExperimentControl title={experiment.title} onExit={() => setSlug(null)} />}
     </>
   );
 }
@@ -35,13 +31,7 @@ export function RootLayout({ children }: { children?: React.ReactNode }) {
  * names the active experiment and lets you exit back to the lab. Deliberately
  * the only experiment chrome — the rest of the page is the real app + the change.
  */
-function ExperimentControl({
-  title,
-  onExit,
-}: {
-  title: string;
-  onExit: () => void;
-}) {
+function ExperimentControl({ title, onExit }: { title: string; onExit: () => void }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-accent/40 bg-surface/95 py-1.5 pr-3 pl-1.5 font-mono text-xs shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur">

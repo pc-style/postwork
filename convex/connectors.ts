@@ -1,12 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import {
-  action,
-  internalMutation,
-  internalQuery,
-  mutation,
-  query,
-  env,
-} from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query, env } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -122,9 +115,7 @@ export const xSyncStatus = query({
     const admin = await requireAdminForRead(ctx);
     const connector = await ctx.db
       .query("connectors")
-      .withIndex("by_org_id_and_slug", (q) =>
-        q.eq("orgId", admin.orgId).eq("slug", "x"),
-      )
+      .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", admin.orgId).eq("slug", "x"))
       .unique();
     if (!connector || connector.revokedAt) {
       return { configured: false, handle: null, agentName: null };
@@ -142,18 +133,15 @@ export const setXSyncHandle = mutation({
   args: { handle: v.union(v.string(), v.null()) },
   handler: async (ctx, args) => {
     const admin = await requireAdminForWrite(ctx);
-    const normalized = args.handle === null
-      ? null
-      : args.handle.trim().replace(/^@/, "").toLowerCase();
+    const normalized =
+      args.handle === null ? null : args.handle.trim().replace(/^@/, "").toLowerCase();
     if (normalized !== null && !/^[a-z0-9_]{1,15}$/.test(normalized)) {
       invalid("X handle must be 1–15 letters, numbers, or underscores.");
     }
 
     let connector = await ctx.db
       .query("connectors")
-      .withIndex("by_org_id_and_slug", (q) =>
-        q.eq("orgId", admin.orgId).eq("slug", "x"),
-      )
+      .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", admin.orgId).eq("slug", "x"))
       .unique();
     if (connector?.revokedAt) invalid("The X connector was revoked.");
     if (!connector && normalized !== null) {
@@ -217,7 +205,10 @@ export const provision = action({
     capability: connectorCapability,
     authStrategy: connectorAuthStrategy,
   },
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
     connectorId: Id<"connectors">;
     agentId: Id<"users">;
     token: string | null;
@@ -229,7 +220,8 @@ export const provision = action({
       // agentTasks connectors poll with a bearer token. inboundEvents accepts
       // either a provider signature (github) or a bearer token (the opt-in
       // browser-extension flow, e.g. the x digest).
-      args.capability === "agentTasks" && args.authStrategy !== "bearer"
+      args.capability === "agentTasks" &&
+      args.authStrategy !== "bearer"
     ) {
       invalid("That authentication strategy does not match the connector capability.");
     }
@@ -237,14 +229,13 @@ export const provision = action({
     const credentialId = args.authStrategy === "bearer" ? randomHex(8) : undefined;
     const secret = randomHex(32);
     const secretHash = secret ? await hashConnectorSecret(secret) : undefined;
-    const encryptedSecret = args.authStrategy === "providerSignature"
-      ? await encryptConnectorSecret(
-          secret,
-          connectorSecretKeyring(env),
-        )
-      : undefined;
-    const created: { connectorId: Id<"connectors">; agentId: Id<"users"> } =
-      await ctx.runMutation(internal.connectors.provisionRecord, {
+    const encryptedSecret =
+      args.authStrategy === "providerSignature"
+        ? await encryptConnectorSecret(secret, connectorSecretKeyring(env))
+        : undefined;
+    const created: { connectorId: Id<"connectors">; agentId: Id<"users"> } = await ctx.runMutation(
+      internal.connectors.provisionRecord,
+      {
         adminTokenIdentifier: identity.tokenIdentifier,
         name: args.name,
         slug: args.slug,
@@ -253,7 +244,8 @@ export const provision = action({
         credentialId,
         secretHash,
         encryptedSecret,
-      });
+      },
+    );
     return {
       ...created,
       token: credentialId ? `${TOKEN_PREFIX}.${credentialId}.${secret}` : null,
@@ -264,7 +256,10 @@ export const provision = action({
 
 export const rewrapGithubSecret = action({
   args: { connectorId: v.id("connectors") },
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
     connectorId: Id<"connectors">;
     keyId: string;
     rewrapped: boolean;
@@ -318,9 +313,7 @@ export const provisionRecord = internalMutation({
   handler: async (ctx, args) => {
     const admin = await ctx.db
       .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.adminTokenIdentifier))
       .unique();
     if (
       !admin?.orgId ||
@@ -439,9 +432,7 @@ export const getGithubSecretForRewrap = internalQuery({
   handler: async (ctx, args) => {
     const admin = await ctx.db
       .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.adminTokenIdentifier))
       .unique();
     if (
       !admin?.orgId ||
@@ -479,9 +470,7 @@ export const commitGithubSecretRewrap = internalMutation({
   handler: async (ctx, args) => {
     const admin = await ctx.db
       .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.adminTokenIdentifier))
       .unique();
     if (
       !admin?.orgId ||
@@ -576,10 +565,7 @@ async function authenticatedBearerConnector(
 }
 
 async function taskContext(ctx: MutationCtx, task: Doc<"agentTasks">) {
-  const [post, agent] = await Promise.all([
-    ctx.db.get(task.postId),
-    ctx.db.get(task.agentId),
-  ]);
+  const [post, agent] = await Promise.all([ctx.db.get(task.postId), ctx.db.get(task.agentId)]);
   if (!post || !agent || post.orgId !== task.orgId || agent.orgId !== task.orgId) {
     invalid("Task context could not be loaded.");
   }
@@ -615,11 +601,7 @@ export const claimAgentTask = internalMutation({
     externalRunId: v.string(),
   },
   handler: async (ctx, args) => {
-    const connector = await authenticatedBearerConnector(
-      ctx,
-      args.credentialId,
-      args.secretHash,
-    );
+    const connector = await authenticatedBearerConnector(ctx, args.credentialId, args.secretHash);
     if (connector.capability !== "agentTasks") forbidden("Connector cannot run tasks.");
     const task = await ctx.db.get(args.taskId);
     if (
@@ -672,11 +654,7 @@ export const finishAgentTask = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
-    const connector = await authenticatedBearerConnector(
-      ctx,
-      args.credentialId,
-      args.secretHash,
-    );
+    const connector = await authenticatedBearerConnector(ctx, args.credentialId, args.secretHash);
     const externalRunId = normalizeExternalRunId(args.externalRunId);
     const task = await ctx.db.get(args.taskId);
     if (
@@ -874,9 +852,7 @@ export const recordInboundEvent = internalMutation({
     await ctx.db.insert("auditLog", {
       orgId: connector.orgId,
       actorId: connector.agentId,
-      action: agentTaskId
-        ? "connector.github.agent_task.queued"
-        : "connector.github.post.created",
+      action: agentTaskId ? "connector.github.agent_task.queued" : "connector.github.post.created",
       targetType: agentTaskId ? "agentTask" : "post",
       targetId: agentTaskId ?? postId,
       metadata: JSON.stringify({ connectorId: connector._id, eventId, eventType }),
@@ -967,11 +943,7 @@ export const recordXCrossPost = internalMutation({
     }),
   },
   handler: async (ctx, args) => {
-    const connector = await authenticatedBearerConnector(
-      ctx,
-      args.credentialId,
-      args.secretHash,
-    );
+    const connector = await authenticatedBearerConnector(ctx, args.credentialId, args.secretHash);
     if (connector.capability !== "inboundEvents") {
       forbidden("Connector cannot record inbound events.");
     }
@@ -988,9 +960,7 @@ export const findXSyncConnector = internalQuery({
     const connectors = await ctx.db.query("connectors").take(500);
     const match = connectors.find(
       (connector) =>
-        connector.slug === "x" &&
-        connector.capability === "inboundEvents" &&
-        !connector.revokedAt,
+        connector.slug === "x" && connector.capability === "inboundEvents" && !connector.revokedAt,
     );
     return match ? { connectorId: match._id } : null;
   },
@@ -1029,11 +999,7 @@ export const recordXCrossPostFromSync = internalMutation({
   },
   handler: async (ctx, args) => {
     const connector = await ctx.db.get(args.connectorId);
-    if (
-      !connector ||
-      connector.capability !== "inboundEvents" ||
-      connector.revokedAt
-    ) {
+    if (!connector || connector.capability !== "inboundEvents" || connector.revokedAt) {
       forbidden("Inbound connector is unavailable.");
     }
     const agent = await ctx.db.get(connector.agentId);

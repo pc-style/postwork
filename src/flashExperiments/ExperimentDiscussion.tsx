@@ -41,10 +41,7 @@ export function ExperimentDiscussion({
   isLoading: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const thread = useQuery(
-    api.discussions.getThread,
-    open ? { slug } : "skip",
-  );
+  const thread = useQuery(api.discussions.getThread, open ? { slug } : "skip");
 
   return (
     <div className="border-t border-dashed border-border">
@@ -57,9 +54,7 @@ export function ExperimentDiscussion({
         <span>
           discussion
           {replyCount > 0 && (
-            <span className="ml-1.5 tabular-nums text-accent-soft">
-              {replyCount}
-            </span>
+            <span className="ml-1.5 tabular-nums text-accent-soft">{replyCount}</span>
           )}
         </span>
         <span className="text-accent-soft">{open ? "hide −" : "open +"}</span>
@@ -170,23 +165,13 @@ function ReplyItem({
 }) {
   const isReplying = replyingTo === node._id;
   return (
-    <li
-      className={
-        depth > 0
-          ? "border-l border-dashed border-border pl-3"
-          : ""
-      }
-    >
+    <li className={depth > 0 ? "border-l border-dashed border-border pl-3" : ""}>
       <div className="rounded-md border border-border bg-bg p-2.5">
         <div className="flex items-center gap-2">
           <Avatar user={node.author} size={20} />
-          <span className="text-xs text-fg">
-            {node.author?.name ?? "member"}
-          </span>
+          <span className="text-xs text-fg">{node.author?.name ?? "member"}</span>
           <UserRoleTag role={node.author?.role} />
-          <span className="text-label text-muted">
-            {timeAgo(node.createdAt)}
-          </span>
+          <span className="text-label text-muted">{timeAgo(node.createdAt)}</span>
         </div>
         <div className="mt-1.5 font-sans text-sm text-fg">
           <Markdown text={node.body} />
@@ -206,7 +191,7 @@ function ReplyItem({
         <div className="mt-2">
           <Composer
             placeholder={`Reply to ${node.author?.name ?? "member"}.`}
-            autoFocus
+            focusBodyOnMount
             isAuthenticated={isAuthenticated}
             isLoading={isLoading}
             onSubmit={async (body) => {
@@ -242,13 +227,13 @@ function Composer({
   placeholder,
   isAuthenticated,
   isLoading,
-  autoFocus,
+  focusBodyOnMount,
   onSubmit,
 }: {
   placeholder: string;
   isAuthenticated: boolean;
   isLoading: boolean;
-  autoFocus?: boolean;
+  focusBodyOnMount?: boolean;
   onSubmit: (body: string) => Promise<boolean>;
 }) {
   const [body, setBody] = useState("");
@@ -276,7 +261,7 @@ function Composer({
       <ComposerShell
         body={body}
         setBody={setBody}
-        autoFocus={autoFocus}
+        focusBodyOnMount={focusBodyOnMount}
         placeholder={placeholder}
         rows={2}
         bodyLabel="Discussion reply"

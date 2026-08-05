@@ -35,9 +35,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 function DemoSessionProvider({ children }: { children: ReactNode }) {
   const users = useQuery(api.users.list);
-  const [currentUserId, setCurrentUserIdState] = useState<
-    Id<"users"> | undefined
-  >();
+  const [currentUserId, setCurrentUserIdState] = useState<Id<"users"> | undefined>();
 
   useEffect(() => {
     if (!users || users.length === 0) return;
@@ -58,9 +56,7 @@ function DemoSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [users, currentUserId]);
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
 function ProductSessionProvider({ children }: { children: ReactNode }) {
@@ -92,9 +88,7 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
   const authDisplayName = useMemo(() => {
     const email = user?.primaryEmailAddress?.emailAddress;
     return (
-      user?.fullName?.trim() ||
-      user?.username?.trim() ||
-      (email ? email.split("@")[0] : undefined)
+      user?.fullName?.trim() || user?.username?.trim() || (email ? email.split("@")[0] : undefined)
     );
   }, [user]);
 
@@ -140,9 +134,7 @@ function ProductSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [users, viewer]);
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
 export function useSession() {

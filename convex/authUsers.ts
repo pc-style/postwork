@@ -14,17 +14,24 @@ export const DEFAULT_ORG_SLUG = DEMO_ORG_SLUG;
 export const DEFAULT_ORG_NAME = DEMO_ORG_NAME;
 
 async function getOrgIdBySlug(ctx: AuthCtx, slug: string, message: string) {
-  const org = await ctx.db.query("orgs").withIndex("by_slug", (q) => q.eq("slug", slug)).unique();
+  const org = await ctx.db
+    .query("orgs")
+    .withIndex("by_slug", (q) => q.eq("slug", slug))
+    .unique();
   if (!org) notFound(message);
   return org._id;
 }
 
-export const getDemoOrgId = (ctx: AuthCtx) => getOrgIdBySlug(ctx, DEMO_ORG_SLUG, "Demo organization not found. Run the demo seed first.");
-export const getProductOrgId = (ctx: AuthCtx) => getOrgIdBySlug(ctx, PRODUCT_ORG_SLUG, "Product organization not found. Run migrations:ensureProductOrg first.");
+export const getDemoOrgId = (ctx: AuthCtx) =>
+  getOrgIdBySlug(ctx, DEMO_ORG_SLUG, "Demo organization not found. Run the demo seed first.");
+export const getProductOrgId = (ctx: AuthCtx) =>
+  getOrgIdBySlug(
+    ctx,
+    PRODUCT_ORG_SLUG,
+    "Product organization not found. Run migrations:ensureProductOrg first.",
+  );
 
-export type AuthIdentity = NonNullable<
-  Awaited<ReturnType<AuthCtx["auth"]["getUserIdentity"]>>
->;
+export type AuthIdentity = NonNullable<Awaited<ReturnType<AuthCtx["auth"]["getUserIdentity"]>>>;
 
 export function initialsFrom(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -85,12 +92,7 @@ export async function applyAvatarAction(
         message: "That upload could not be found.",
       });
     }
-    const ALLOWED_AVATAR_TYPES = [
-      "image/png",
-      "image/jpeg",
-      "image/gif",
-      "image/webp",
-    ];
+    const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
     if (!meta.contentType || !ALLOWED_AVATAR_TYPES.includes(meta.contentType)) {
       throw new ConvexError({
         code: "INVALID_INPUT",
@@ -144,9 +146,7 @@ export async function findUserForIdentity(
   // authenticated member can be found in whichever org owns their user row.
   const byToken = await ctx.db
     .query("users")
-    .withIndex("by_token_identifier", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier),
-    )
+    .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
     .unique();
   if (byToken) return byToken;
 
@@ -173,7 +173,10 @@ export async function findUserForIdentity(
 }
 
 export async function countAdmins(ctx: AuthCtx, orgId: Id<"orgs">): Promise<number> {
-  const admins = await ctx.db.query("users").withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId).eq("role", "admin")).take(2);
+  const admins = await ctx.db
+    .query("users")
+    .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId).eq("role", "admin"))
+    .take(2);
   return admins.length;
 }
 
@@ -203,9 +206,7 @@ export function requireOrgId(user: Pick<Doc<"users">, "orgId">): Id<"orgs"> {
   return user.orgId;
 }
 
-export async function getViewerFromAuth(
-  ctx: AuthCtx,
-): Promise<Doc<"users"> | null> {
+export async function getViewerFromAuth(ctx: AuthCtx): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
   const legacyOrgId = await getProductOrgId(ctx);
@@ -214,13 +215,20 @@ export async function getViewerFromAuth(
 
 export type ReadScope = { orgId: Id<"orgs">; viewer: Doc<"users"> | null; authenticated: boolean };
 
-export async function resolveReadScope(ctx: QueryCtx, requestedViewerId?: Id<"users">): Promise<ReadScope> {
+export async function resolveReadScope(
+  ctx: QueryCtx,
+  requestedViewerId?: Id<"users">,
+): Promise<ReadScope> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity) {
     const productOrgId = await getProductOrgId(ctx);
     const viewer = await findUserForIdentity(ctx, identity, productOrgId);
     const orgId = viewer?.orgId ?? productOrgId;
-    return { orgId, viewer: viewer?.status === "active" && !viewer.deactivatedAt ? viewer : null, authenticated: true };
+    return {
+      orgId,
+      viewer: viewer?.status === "active" && !viewer.deactivatedAt ? viewer : null,
+      authenticated: true,
+    };
   }
   const orgId = await getDemoOrgId(ctx);
   const requested = requestedViewerId ? await ctx.db.get(requestedViewerId) : null;
@@ -273,9 +281,7 @@ export async function ensureViewerUser(
     if (!existing.avatarColor) patch.avatarColor = colorFor(identity.tokenIdentifier);
     if (!existing.role) {
       patch.role =
-        existing.orgId && (await countAdmins(ctx, existing.orgId)) === 0
-          ? "admin"
-          : "member";
+        existing.orgId && (await countAdmins(ctx, existing.orgId)) === 0 ? "admin" : "member";
     }
 
     if (Object.keys(patch).length > 0) {
@@ -362,7 +368,7 @@ export async function canAccessSpace(
 ): Promise<boolean> {
   const space = await ctx.db.get(spaceId);
   const viewer = viewerId ? await ctx.db.get(viewerId) : null;
-  const orgId = viewer?.orgId ?? await getDemoOrgId(ctx);
+  const orgId = viewer?.orgId ?? (await getDemoOrgId(ctx));
   if (!space || space.orgId !== orgId) {
     return false;
   }
@@ -371,7 +377,7 @@ export async function canAccessSpace(
     return await isSpaceMember(ctx, spaceId, viewerId);
   }
 
-  return orgId === await getDemoOrgId(ctx);
+  return orgId === (await getDemoOrgId(ctx));
 }
 
 export async function canAccessPost(

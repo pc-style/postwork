@@ -49,10 +49,7 @@ const aliases: Record<string, SupportedLang | undefined> = {
   md: "markdown",
 };
 
-const createHighlighter = createBundledHighlighter<
-  keyof typeof langs,
-  keyof typeof themes
->({
+const createHighlighter = createBundledHighlighter<keyof typeof langs, keyof typeof themes>({
   langs,
   themes,
   engine: () => createJavaScriptRegexEngine(),
@@ -68,10 +65,7 @@ export function isSupportedLang(lang: string): boolean {
   return normalizeLang(lang) !== undefined;
 }
 
-export async function highlight(
-  code: string,
-  lang: string,
-): Promise<string | null> {
+export async function highlight(code: string, lang: string): Promise<string | null> {
   const normalized = normalizeLang(lang);
   if (!normalized) return null;
 

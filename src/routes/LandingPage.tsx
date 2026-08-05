@@ -29,10 +29,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
           post<span className="text-accent-soft">work</span>
         </span>
         <nav aria-label="Public navigation" className="flex items-center gap-5">
-          <Link
-            to="/changelog"
-            className="text-label text-muted transition-colors hover:text-fg"
-          >
+          <Link to="/changelog" className="text-label text-muted transition-colors hover:text-fg">
             changelog
           </Link>
           <Link
@@ -49,9 +46,9 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
           your team's decisions keep dying in chat.
         </h1>
         <p className="mt-6 max-w-lg text-title leading-7 text-muted [text-wrap:pretty]">
-          someone asks a good question in a channel. twelve people reply. a
-          decision gets made. three weeks later nobody can find it, so someone
-          asks again. that loop is the whole reason postwork exists.
+          someone asks a good question in a channel. twelve people reply. a decision gets made.
+          three weeks later nobody can find it, so someone asks again. that loop is the whole reason
+          postwork exists.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -89,7 +86,10 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <section className="mt-24 border-t border-border pt-10">
           <p className="max-w-lg text-body leading-6 text-muted [text-wrap:pretty]">
             join a team with an invite, or{" "}
-            <Link to="/app" className="text-accent-soft underline decoration-accent/40 underline-offset-2 hover:text-fg">
+            <Link
+              to="/app"
+              className="text-accent-soft underline decoration-accent/40 underline-offset-2 hover:text-fg"
+            >
               create a workspace
             </Link>{" "}
             for your own team. each workspace gets its own address.
@@ -119,9 +119,7 @@ function Point({ k, title, body }: { k: string; title: string; body: string }) {
       <h2 className="mt-2 max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
         {title}
       </h2>
-      <p className="mt-3 max-w-lg text-body leading-6 text-muted [text-wrap:pretty]">
-        {body}
-      </p>
+      <p className="mt-3 max-w-lg text-body leading-6 text-muted [text-wrap:pretty]">{body}</p>
     </div>
   );
 }

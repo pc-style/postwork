@@ -28,10 +28,7 @@ const statusStyles: Record<ExperimentStatus, string> = {
   shipped: "border-accent/50 text-accent-soft",
 };
 
-const categoryMeta: Record<
-  ExperimentCategory,
-  { label: string; blurb: string }
-> = {
+const categoryMeta: Record<ExperimentCategory, { label: string; blurb: string }> = {
   community: {
     label: "community",
     blurb: "Suggestions from outside the team, with credit to the requester.",
@@ -55,9 +52,7 @@ type VoteState = {
 // Shipped experiments graduate out of the lab list into a compact "implemented"
 // archive row: no votes, no open discussion, and no slot chips. It keeps a title, an
 // implemented badge, and a link to still preview them.
-const activeExperiments = flashExperiments.filter(
-  (experiment) => experiment.status !== "shipped",
-);
+const activeExperiments = flashExperiments.filter((experiment) => experiment.status !== "shipped");
 const implementedExperiments = flashExperiments.filter(
   (experiment) => experiment.status === "shipped",
 );
@@ -113,8 +108,8 @@ export function FlashExperimentsPage() {
           </div>
           <h1 className="mt-2 text-xl font-semibold text-fg">Flash experiments</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Review isolated interface changes before they become part of the app.
-            Open an experiment to try it, then vote or add a reply.
+            Review isolated interface changes before they become part of the app. Open an experiment
+            to try it, then vote or add a reply.
           </p>
         </header>
 
@@ -138,9 +133,7 @@ export function FlashExperimentsPage() {
         </Link>
 
         {EXPERIMENT_CATEGORY_ORDER.map((category) => {
-          const items = activeExperiments.filter(
-            (experiment) => experiment.category === category,
-          );
+          const items = activeExperiments.filter((experiment) => experiment.category === category);
           const meta = categoryMeta[category];
           if (items.length === 0) return null;
           return (
@@ -148,13 +141,9 @@ export function FlashExperimentsPage() {
               <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-border pb-2">
                 <h2 className="text-sm font-semibold lowercase tracking-wide text-fg">
                   {meta.label}
-                  <span className="ml-2 text-muted">
-                    ({items.length})
-                  </span>
+                  <span className="ml-2 text-muted">({items.length})</span>
                 </h2>
-                <p className="text-right text-label text-muted">
-                  {meta.blurb}
-                </p>
+                <p className="text-right text-label text-muted">{meta.blurb}</p>
               </div>
 
               <div className="grid gap-3">
@@ -179,9 +168,7 @@ export function FlashExperimentsPage() {
             <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-border pb-2">
               <h2 className="flex items-center gap-2 text-sm font-semibold lowercase tracking-wide text-fg">
                 implemented
-                <span className="text-muted">
-                  ({implementedExperiments.length})
-                </span>
+                <span className="text-muted">({implementedExperiments.length})</span>
               </h2>
               <p className="text-right text-label text-muted">
                 Community suggestions that are now part of the app.
@@ -223,9 +210,7 @@ function ExperimentCard({
         className="block p-4"
       >
         <div className="mb-2 flex flex-wrap items-center gap-1.5 font-mono text-label font-medium text-muted">
-          <span
-            className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}
-          >
+          <span className={`rounded-md border px-1.5 py-0.5 ${statusStyles[experiment.status]}`}>
             {experiment.status}
           </span>
           <span className="sr-only">Slots:</span>
@@ -238,16 +223,10 @@ function ExperimentCard({
             </span>
           ))}
         </div>
-        <h3 className="text-base font-semibold lowercase text-fg">
-          {experiment.title}
-        </h3>
-        <p className="mt-1 text-sm text-muted">
-          {experiment.summary}
-        </p>
+        <h3 className="text-base font-semibold lowercase text-fg">{experiment.title}</h3>
+        <p className="mt-1 text-sm text-muted">{experiment.summary}</p>
         {suggestion ? null : (
-          <p className="mt-3 text-label text-muted">
-            requested by {experiment.requestedBy}
-          </p>
+          <p className="mt-3 text-label text-muted">requested by {experiment.requestedBy}</p>
         )}
       </Link>
 
@@ -284,9 +263,7 @@ function ExperimentCard({
             active={vote?.viewerVote === "up"}
             ariaLabel="Vote for this experiment"
             disabled={isLoading || !isAuthenticated}
-            title={
-              !isLoading && !isAuthenticated ? "sign in to vote" : undefined
-            }
+            title={!isLoading && !isAuthenticated ? "sign in to vote" : undefined}
             onClick={() => onVote(experiment.slug, "up")}
           >
             +{vote?.up ?? 0}
@@ -295,9 +272,7 @@ function ExperimentCard({
             active={vote?.viewerVote === "down"}
             ariaLabel="Vote against this experiment"
             disabled={isLoading || !isAuthenticated}
-            title={
-              !isLoading && !isAuthenticated ? "sign in to vote" : undefined
-            }
+            title={!isLoading && !isAuthenticated ? "sign in to vote" : undefined}
             onClick={() => onVote(experiment.slug, "down")}
           >
             -{vote?.down ?? 0}
@@ -381,9 +356,7 @@ function ImplementedRow({ experiment }: { experiment: FlashExperiment }) {
         {experiment.title}
       </span>
       {suggestion && (
-        <span className="hidden shrink-0 text-label text-muted sm:inline">
-          {suggestion.name}
-        </span>
+        <span className="hidden shrink-0 text-label text-muted sm:inline">{suggestion.name}</span>
       )}
       <span className="shrink-0 text-xs text-accent-soft transition group-hover:translate-x-0.5">
         →

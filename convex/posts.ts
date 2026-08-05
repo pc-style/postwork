@@ -60,9 +60,7 @@ async function enrich(
 ): Promise<EnrichedPost> {
   const orgId = post.orgId;
   const author = publicUser(await ctx.db.get(post.authorId));
-  const participants = (
-    await Promise.all(post.participantIds.map((id) => ctx.db.get(id)))
-  )
+  const participants = (await Promise.all(post.participantIds.map((id) => ctx.db.get(id))))
     .filter((u): u is Doc<"users"> => u !== null)
     .map((u) => publicUser(u));
 
@@ -104,9 +102,7 @@ export const catchUpDigest = query({
     // composer reports any eligible items omitted from its smaller UI payload.
     const posts = await ctx.db
       .query("posts")
-      .withIndex("by_org_id_and_last_activity_at", (q) =>
-        q.eq("orgId", viewer.orgId),
-      )
+      .withIndex("by_org_id_and_last_activity_at", (q) => q.eq("orgId", viewer.orgId))
       .order("desc")
       .take(CATCH_UP_SCAN_LIMIT);
 
@@ -115,9 +111,7 @@ export const catchUpDigest = query({
       if (await canAccessPost(ctx, post, viewer._id)) allowed.push(post);
     }
 
-    const enriched = await Promise.all(
-      allowed.map((post) => enrich(ctx, post, viewer._id)),
-    );
+    const enriched = await Promise.all(allowed.map((post) => enrich(ctx, post, viewer._id)));
 
     const digest = composeCatchUpDigest(
       enriched.map((post) => ({
@@ -220,9 +214,7 @@ export const feed = query({
       return b.lastActivityAt - a.lastActivityAt;
     });
 
-    let enriched = await Promise.all(
-      allowed.map((p) => enrich(ctx, p, viewer?._id)),
-    );
+    let enriched = await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id)));
     if (args.onlyUnread) enriched = enriched.filter((p) => p.unread);
     return enriched;
   },
@@ -246,17 +238,16 @@ export const feedPaginated = query({
     const viewer = scope.viewer;
     const orgId = scope.orgId;
 
-    const result = await (args.space
-      ? ctx.db
-          .query("posts")
-          .withIndex("by_org_id_and_space_and_last_activity_at", (q) =>
-            q.eq("orgId", orgId).eq("space", args.space!),
-          )
-      : ctx.db
-          .query("posts")
-          .withIndex("by_org_id_and_last_activity_at", (q) =>
-            q.eq("orgId", orgId),
-          )
+    const result = await (
+      args.space
+        ? ctx.db
+            .query("posts")
+            .withIndex("by_org_id_and_space_and_last_activity_at", (q) =>
+              q.eq("orgId", orgId).eq("space", args.space!),
+            )
+        : ctx.db
+            .query("posts")
+            .withIndex("by_org_id_and_last_activity_at", (q) => q.eq("orgId", orgId))
     )
       .order("desc")
       .paginate(args.paginationOpts);
@@ -270,9 +261,7 @@ export const feedPaginated = query({
       }
     }
 
-    const enriched = await Promise.all(
-      allowed.map((p) => enrich(ctx, p, viewer?._id)),
-    );
+    const enriched = await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id)));
     return { ...result, page: enriched };
   },
 });
@@ -302,9 +291,7 @@ export const counts = query({
           .take(200)
       : await ctx.db
           .query("posts")
-          .withIndex("by_org_id_and_last_activity_at", (q) =>
-            q.eq("orgId", orgId),
-          )
+          .withIndex("by_org_id_and_last_activity_at", (q) => q.eq("orgId", orgId))
           .order("desc")
           .take(200);
 
@@ -337,15 +324,11 @@ export const search = query({
     const [byBody, byTitle] = await Promise.all([
       ctx.db
         .query("posts")
-        .withSearchIndex("search_body", (q) =>
-          q.search("body", term).eq("orgId", orgId),
-        )
+        .withSearchIndex("search_body", (q) => q.search("body", term).eq("orgId", orgId))
         .take(40),
       ctx.db
         .query("posts")
-        .withSearchIndex("search_title", (q) =>
-          q.search("title", term).eq("orgId", orgId),
-        )
+        .withSearchIndex("search_title", (q) => q.search("title", term).eq("orgId", orgId))
         .take(40),
     ]);
 
@@ -625,9 +608,7 @@ export const remove = mutation({
     // so we scan by orgId and filter by postId in-memory.
     const allReads = await ctx.db
       .query("postReads")
-      .withIndex("by_org_id_and_user_id_and_post_id", (q) =>
-        q.eq("orgId", orgId),
-      )
+      .withIndex("by_org_id_and_user_id_and_post_id", (q) => q.eq("orgId", orgId))
       .take(1000);
     for (const read of allReads) {
       if (read.postId === args.postId) await ctx.db.delete(read._id);
@@ -636,9 +617,7 @@ export const remove = mutation({
     // Delete all attachments for this post.
     const attachments = await ctx.db
       .query("postAttachments")
-      .withIndex("by_org_id_and_post_id", (q) =>
-        q.eq("orgId", orgId).eq("postId", args.postId),
-      )
+      .withIndex("by_org_id_and_post_id", (q) => q.eq("orgId", orgId).eq("postId", args.postId))
       .take(100);
     for (const att of attachments) {
       await ctx.storage.delete(att.storageId);

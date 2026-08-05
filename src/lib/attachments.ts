@@ -30,9 +30,10 @@ function loadMediaMetadata(file: File, kind: MediaKind): Promise<MediaMetadata> 
         resolve({
           width: video.videoWidth || undefined,
           height: video.videoHeight || undefined,
-          durationMs: Number.isFinite(video.duration) && video.duration > 0
-            ? Math.round(video.duration * 1000)
-            : undefined,
+          durationMs:
+            Number.isFinite(video.duration) && video.duration > 0
+              ? Math.round(video.duration * 1000)
+              : undefined,
         });
         URL.revokeObjectURL(url);
       };
@@ -119,9 +120,8 @@ export function useAttachmentUpload() {
       size: originalFile.size,
     });
     if (!preliminaryDecision.accepted) throw new Error(preliminaryDecision.reason);
-    const initialMetadata = initialKind === "file"
-      ? {}
-      : await loadMediaMetadata(originalFile, initialKind);
+    const initialMetadata =
+      initialKind === "file" ? {} : await loadMediaMetadata(originalFile, initialKind);
     const initialDecision = decideMediaFile({
       contentType,
       size: originalFile.size,
@@ -145,7 +145,9 @@ export function useAttachmentUpload() {
       ...optimized.metadata,
     });
     if (!finalDecision.accepted || optimized.file.size > finalDecision.maxBytes) {
-      throw new Error(`The optimized image is still larger than ${formatMediaSize(MEDIA_MAX_IMAGE_BYTES)}.`);
+      throw new Error(
+        `The optimized image is still larger than ${formatMediaSize(MEDIA_MAX_IMAGE_BYTES)}.`,
+      );
     }
 
     const { postUrl, uploadToken } = await generateUploadUrl({});

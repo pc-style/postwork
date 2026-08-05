@@ -96,10 +96,7 @@ export function isWithinQuietHours(
   now: Date,
   preferences: Pick<
     NotificationPreferences,
-    | "quietHoursEnabled"
-    | "quietHoursStart"
-    | "quietHoursEnd"
-    | "quietHoursTimeZone"
+    "quietHoursEnabled" | "quietHoursStart" | "quietHoursEnd" | "quietHoursTimeZone"
   >,
 ): boolean {
   if (!preferences.quietHoursEnabled) return false;
@@ -113,9 +110,7 @@ export function isWithinQuietHours(
   return currentMinutes >= start || currentMinutes < end;
 }
 
-function deduplicateUnreadItems(
-  items: readonly NotificationItem[],
-): NotificationItem[] {
+function deduplicateUnreadItems(items: readonly NotificationItem[]): NotificationItem[] {
   const byPost = new Map<string, NotificationItem>();
   for (const item of items) {
     if (!item.unread) continue;

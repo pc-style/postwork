@@ -9,11 +9,7 @@ import { v } from "convex/values";
  *   replies    → nested replies (self-referential via `parentId`)
  *   postReads  → per-user read state, drives unread badges
  */
-export const priority = v.union(
-  v.literal("urgent"),
-  v.literal("high"),
-  v.literal("normal"),
-);
+export const priority = v.union(v.literal("urgent"), v.literal("high"), v.literal("normal"));
 
 export const agentTaskStatus = v.union(
   v.literal("queued"),
@@ -23,20 +19,11 @@ export const agentTaskStatus = v.union(
   v.literal("cancelled"),
 );
 
-export const connectorCapability = v.union(
-  v.literal("agentTasks"),
-  v.literal("inboundEvents"),
-);
+export const connectorCapability = v.union(v.literal("agentTasks"), v.literal("inboundEvents"));
 
-export const connectorAuthStrategy = v.union(
-  v.literal("bearer"),
-  v.literal("providerSignature"),
-);
+export const connectorAuthStrategy = v.union(v.literal("bearer"), v.literal("providerSignature"));
 
-export const aiGenerationKind = v.union(
-  v.literal("postSummary"),
-  v.literal("agentTask"),
-);
+export const aiGenerationKind = v.union(v.literal("postSummary"), v.literal("agentTask"));
 
 export default defineSchema({
   orgs: defineTable({
@@ -52,9 +39,7 @@ export default defineSchema({
     title: v.string(),
     avatarColor: v.string(),
     initials: v.string(),
-    role: v.optional(
-      v.union(v.literal("admin"), v.literal("tester"), v.literal("member")),
-    ),
+    role: v.optional(v.union(v.literal("admin"), v.literal("tester"), v.literal("member"))),
     status: v.optional(v.union(v.literal("pending"), v.literal("active"))),
     profileCompletedAt: v.optional(v.number()),
     avatarStorageId: v.optional(v.id("_storage")),
@@ -132,7 +117,11 @@ export default defineSchema({
     .index("by_org_id_and_last_activity_at", ["orgId", "lastActivityAt"])
     .index("by_org_id_and_space_and_last_activity_at", ["orgId", "space", "lastActivityAt"])
     .index("by_org_id_and_space_id_and_last_activity_at", ["orgId", "spaceId", "lastActivityAt"])
-    .index("by_org_id_and_wall_owner_id_and_last_activity_at", ["orgId", "wallOwnerId", "lastActivityAt"])
+    .index("by_org_id_and_wall_owner_id_and_last_activity_at", [
+      "orgId",
+      "wallOwnerId",
+      "lastActivityAt",
+    ])
     .index("by_org_id_and_experiment_slug", ["orgId", "experimentSlug"])
     .searchIndex("search_body", {
       searchField: "body",
@@ -360,11 +349,7 @@ export default defineSchema({
     email: v.string(),
     name: v.optional(v.string()),
     message: v.optional(v.string()),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("denied"),
-    ),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("denied")),
     createdAt: v.number(),
     resolvedBy: v.optional(v.id("users")),
     resolvedAt: v.optional(v.number()),

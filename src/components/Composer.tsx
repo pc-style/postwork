@@ -1,20 +1,12 @@
-import { useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
-import {
-  AGENT_HANDLES,
-  parseAgentMentions,
-  resolveAgentUser,
-} from "../lib/agentMentions";
+import { AGENT_HANDLES, parseAgentMentions, resolveAgentUser } from "../lib/agentMentions";
 import { useAgentTasks } from "../lib/agentTasks";
 import { insertCodeFence } from "../lib/codeFence";
 import { insertContentUrl } from "../lib/insertContentUrl";
 import { useSession } from "../lib/session";
 import { useStore } from "../lib/store";
-import {
-  AttachmentButton,
-  AttachmentThumbnails,
-  useAttachmentPicker,
-} from "./AttachmentPicker";
+import { AttachmentButton, AttachmentThumbnails, useAttachmentPicker } from "./AttachmentPicker";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ComposerShell } from "./ComposerShell";
@@ -24,7 +16,7 @@ export function Composer({
   postId,
   parentId,
   placeholder = "Write a reply.",
-  autoFocus = false,
+  focusBodyOnMount = false,
   compact = false,
   onDone,
   onSubmitted,
@@ -32,7 +24,7 @@ export function Composer({
   postId: Id<"posts">;
   parentId?: Id<"replies">;
   placeholder?: string;
-  autoFocus?: boolean;
+  focusBodyOnMount?: boolean;
   compact?: boolean;
   /** Called on submit success AND when the user cancels. */
   onDone?: () => void;
@@ -43,9 +35,6 @@ export function Composer({
   const store = useStore();
   const { dispatch } = useAgentTasks();
   const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     pending,
     addFiles,
@@ -58,10 +47,51 @@ export function Composer({
     attachmentError,
     attachmentWarning,
   } = useAttachmentPicker();
+  const [submitState, submitAction, isSubmitting] = useActionState(
+    async (_previous: { error: string | null }, formData: FormData) => {
+      const text = String(formData.get("body") ?? "").trim();
+      if (!text || !currentUserId) return { error: null };
+      try {
+        const attachments = getReadyAttachments();
+        const replyId = await store.createReply({
+          postId,
+          parentId,
+          body: text,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        setBody("");
+        clearAttachments();
+        onSubmitted?.();
+        onDone?.();
+        for (const handle of parseAgentMentions(text)) {
+          const agent = resolveAgentUser(handle, users);
+          if (!agent) continue;
+          void dispatch({
+            postId,
+            sourceReplyId: replyId,
+            agentId: agent._id,
+            agentName: agent.name,
+            prompt: text,
+            contextText: text,
+          });
+        }
+        return { error: null };
+      } catch (caught) {
+        return {
+          error:
+            caught instanceof Error
+              ? caught.message
+              : "Couldn't add the reply. Check your connection and try again.",
+        };
+      }
+    },
+    { error: null },
+  );
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const mentioned = parseAgentMentions(body);
-  const engaged =
-    body.length > 0 || pending.length > 0 || busy || error !== null;
+  const error = submitState.error;
+  const engaged = body.length > 0 || pending.length > 0 || isSubmitting || error !== null;
 
   const onCodeFence = () => {
     const element = textareaRef.current;
@@ -92,59 +122,15 @@ export function Composer({
     });
   };
 
-  const submit = async () => {
-    if (!body.trim() || !currentUserId || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const text = body.trim();
-      const attachments = getReadyAttachments();
-      const replyId = await store.createReply({
-        postId,
-        parentId,
-        body: text,
-        attachments: attachments.length > 0 ? attachments : undefined,
-      });
-      setBody("");
-      clearAttachments();
-      onSubmitted?.();
-      onDone?.();
-
-      for (const handle of parseAgentMentions(text)) {
-        const agent = resolveAgentUser(handle, users);
-        if (!agent) continue;
-        void dispatch({
-          postId,
-          sourceReplyId: replyId,
-          agentId: agent._id,
-          agentName: agent.name,
-          prompt: text,
-          contextText: text,
-        });
-      }
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Couldn't add the reply. Check your connection and try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <div className="flex min-w-0 gap-2.5">
+    <form action={submitAction} className="flex min-w-0 gap-2.5">
       {!compact ? <Avatar user={currentUser ?? null} size={32} /> : null}
       <div className="group/composer min-w-0 flex-1">
         <ComposerShell
           body={body}
-          setBody={(value) => {
-            setBody(value);
-            setError(null);
-          }}
+          setBody={setBody}
           textareaRef={textareaRef}
-          autoFocus={autoFocus}
+          focusBodyOnMount={focusBodyOnMount}
           bodyLabel="Reply"
           srOnlyBodyLabel
           placeholder={placeholder}
@@ -187,27 +173,31 @@ export function Composer({
                     ? (attachmentError ?? "A media attachment failed to upload.")
                     : attachmentWarning
                       ? attachmentWarning
-                    : mentioned.length > 0
-                      ? `Asking ${mentioned.map((handle) => AGENT_HANDLES[handle]).join(", ")}`
-                      : "Cmd or Ctrl + Enter to reply. Mention @cursor to ask an agent."}
+                      : mentioned.length > 0
+                        ? `Asking ${mentioned.map((handle) => AGENT_HANDLES[handle]).join(", ")}`
+                        : "Cmd or Ctrl + Enter to reply. Mention @cursor to ask an agent."}
               </span>
             </>
           }
           actions={
             onDone ? (
-              <Button variant="secondary" onClick={onDone} disabled={busy}>
+              <Button variant="secondary" onClick={onDone} disabled={isSubmitting}>
                 cancel
               </Button>
             ) : undefined
           }
           submitLabel="add reply"
           submittingLabel="sending…"
-          submitting={busy}
-          disabled={busy || !body.trim() || hasUploading || hasAttachmentErrors}
-          onSubmit={() => void submit()}
+          submitting={isSubmitting}
+          disabled={isSubmitting || !body.trim() || hasUploading || hasAttachmentErrors}
+          submitType="submit"
         />
-        {error ? <p role="alert" className="ui-error mt-2">{error}</p> : null}
+        {error ? (
+          <p role="alert" className="ui-error mt-2">
+            {error}
+          </p>
+        ) : null}
       </div>
-    </div>
+    </form>
   );
 }

@@ -62,10 +62,7 @@ describe("composeCatchUpDigest", () => {
       2,
     );
 
-    expect(digest.items.map((item) => item.summary.status)).toEqual([
-      "missing",
-      "stale",
-    ]);
+    expect(digest.items.map((item) => item.summary.status)).toEqual(["missing", "stale"]);
     expect(digest).toMatchObject({
       eligibleInWindow: 3,
       omittedEligibleInWindow: 1,

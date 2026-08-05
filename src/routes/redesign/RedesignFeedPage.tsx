@@ -4,12 +4,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { LoadingState } from "../../components/LoadingState";
 import type { ReactNode } from "react";
 import { PRIORITIES, SPACES, priorityStyles, timeAgo } from "../../lib/format";
-import {
-  useFeed,
-  usePrefetchPost,
-  useSearch as useStoreSearch,
-  useStore,
-} from "../../lib/store";
+import { useFeed, usePrefetchPost, useSearch as useStoreSearch, useStore } from "../../lib/store";
 import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { useDeferredFlag } from "../../lib/useDeferredFlag";
@@ -22,9 +17,7 @@ export function RedesignFeedPage() {
   const search = useSearch({ strict: false }) as FeedSearch;
 
   const term = search.q ?? "";
-  const space = SPACES.includes(search.space as (typeof SPACES)[number])
-    ? search.space
-    : undefined;
+  const space = SPACES.includes(search.space as (typeof SPACES)[number]) ? search.space : undefined;
   const priority = search.priority;
   const onlyUnread = search.unread ?? false;
 
@@ -48,7 +41,9 @@ export function RedesignFeedPage() {
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
       <h1 className="sr-only">Feed</h1>
       <div className="relative">
-        <label htmlFor="feed-search" className="sr-only">Search posts</label>
+        <label htmlFor="feed-search" className="sr-only">
+          Search posts
+        </label>
         <input
           id="feed-search"
           value={term}
@@ -119,7 +114,11 @@ export function RedesignFeedPage() {
 
       {posts === undefined ? (
         showSkeleton ? (
-          <LoadingState label={searching ? "Searching posts" : "Loading posts"} preset="feed" count={5} />
+          <LoadingState
+            label={searching ? "Searching posts" : "Loading posts"}
+            preset="feed"
+            count={5}
+          />
         ) : null
       ) : posts.length === 0 && !canLoadMore ? (
         <EmptyState>
@@ -143,7 +142,9 @@ export function RedesignFeedPage() {
         </div>
       ) : (
         <div className="divide-y divide-border border-y border-border">
-          {posts.map((post) => <FeedRow key={post._id} post={post} />)}
+          {posts.map((post) => (
+            <FeedRow key={post._id} post={post} />
+          ))}
           {canLoadMore ? (
             <div className="py-3">
               <Button
@@ -178,14 +179,21 @@ function FeedRow({ post }: { post: EnrichedPost }) {
       onFocus={prefetch}
       onTouchStart={prefetch}
     >
-      <h2 className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
+      <h2
+        className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}
+      >
         {post.unread ? (
           <>
-            <span className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle" aria-hidden="true" />
+            <span
+              className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle"
+              aria-hidden="true"
+            />
             <span className="sr-only">Unread: </span>
           </>
         ) : null}
-        {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
+        {post.pinned ? (
+          <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span>
+        ) : null}
         {post.title}
       </h2>
       {post.body.trim() ? (
@@ -196,10 +204,14 @@ function FeedRow({ post }: { post: EnrichedPost }) {
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
         <span>{post.space}</span>
-        <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+        <span className="tabular-nums">
+          {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+        </span>
         <span className="tabular-nums">Active {timeAgo(post.lastActivityAt)}</span>
         {showPriority ? (
-          <span className={`inline-flex items-center gap-1.5 ${post.priority === "urgent" ? "text-urgent" : "text-high"}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 ${post.priority === "urgent" ? "text-urgent" : "text-high"}`}
+          >
             <span className={`size-1.5 rounded-full ${priority.dot}`} aria-hidden="true" />
             {priority.label}
           </span>
@@ -224,9 +236,7 @@ function FilterText({
       aria-pressed={pressed}
       onClick={onClick}
       className={`inline-flex min-h-11 items-center lowercase transition-colors sm:min-h-9 ${
-        pressed
-          ? "font-medium text-fg"
-          : "text-muted hover:text-fg"
+        pressed ? "font-medium text-fg" : "text-muted hover:text-fg"
       }`}
     >
       {children}

@@ -11,10 +11,7 @@ const statusTones: Record<AgentTask["status"], ChipTone> = {
 
 export function StatusChip({ status }: { status: AgentTask["status"] }) {
   return (
-    <Chip
-      tone={statusTones[status]}
-      className={status === "running" ? "animate-pulse" : ""}
-    >
+    <Chip tone={statusTones[status]} className={status === "running" ? "animate-pulse" : ""}>
       {status}
     </Chip>
   );

@@ -51,9 +51,7 @@ function ProfileDialogBody({
 }) {
   const me = useQuery(api.users.me, {});
   const completeProfile = useMutation(api.users.completeProfile);
-  const updateProfileAndNotifications = useMutation(
-    api.users.updateProfileAndNotifications,
-  );
+  const updateProfileAndNotifications = useMutation(api.users.updateProfileAndNotifications);
   const generateAvatarUploadUrl = useMutation(api.users.generateAvatarUploadUrl);
   const notificationPreferences = useQuery(
     api.notificationPreferences.current,
@@ -74,8 +72,7 @@ function ProfileDialogBody({
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notificationDraft, setNotificationDraft] =
-    useState<NotificationDraft | null>(null);
+  const [notificationDraft, setNotificationDraft] = useState<NotificationDraft | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -87,8 +84,7 @@ function ProfileDialogBody({
 
   useEffect(() => {
     if (mode !== "edit" || !notificationPreferences || notificationDraft) return;
-    const browserTimeZone =
-      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     setNotificationDraft({
       browserEnabled: notificationPreferences.browserEnabled,
       outboundEnabled: notificationPreferences.outboundEnabled,
@@ -116,8 +112,7 @@ function ProfileDialogBody({
     return user?.avatarUrl ?? null;
   }, [avatarDraft, localPreview, user?.avatarUrl, user?.providerAvatarUrl]);
 
-  const showingProvider =
-    !!user?.providerAvatarUrl && effectivePreview === user.providerAvatarUrl;
+  const showingProvider = !!user?.providerAvatarUrl && effectivePreview === user.providerAvatarUrl;
 
   const onNameChange = (nextName: string) => {
     setName(nextName);
@@ -217,7 +212,7 @@ function ProfileDialogBody({
           style={{
             backgroundColor: effectivePreview
               ? undefined
-              : user?.avatarColor ?? "var(--color-avatar-fallback)",
+              : (user?.avatarColor ?? "var(--color-avatar-fallback)"),
             fontSize: 72 * 0.38,
           }}
           aria-label="Profile image preview"
@@ -273,12 +268,18 @@ function ProfileDialogBody({
               </Button>
             ) : null}
           </div>
-          <p className="text-label leading-5 text-muted">use a square image, or keep your initials.</p>
+          <p className="text-label leading-5 text-muted">
+            use a square image, or keep your initials.
+          </p>
         </div>
       </div>
 
       <FormField label="name" required>
-        <input autoFocus value={name} onChange={(event) => onNameChange(event.target.value)} className="ui-field" />
+        <input
+          value={name}
+          onChange={(event) => onNameChange(event.target.value)}
+          className="ui-field"
+        />
       </FormField>
 
       <FormField label="initials" required help="use up to two letters.">
@@ -291,8 +292,16 @@ function ProfileDialogBody({
       </FormField>
 
       {mode === "onboarding" ? (
-        <FormField label="job title" optional help="describe your work. admins manage permissions separately.">
-          <input value={title} onChange={(event) => setTitle(event.target.value)} className="ui-field" />
+        <FormField
+          label="job title"
+          optional
+          help="describe your work. admins manage permissions separately."
+        >
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="ui-field"
+          />
         </FormField>
       ) : null}
 
@@ -311,9 +320,7 @@ function ProfileDialogBody({
               <PreferenceCheckbox
                 checked={notificationDraft.outboundEnabled}
                 onChange={(outboundEnabled) =>
-                  setNotificationDraft((draft) =>
-                    draft ? { ...draft, outboundEnabled } : draft,
-                  )
+                  setNotificationDraft((draft) => (draft ? { ...draft, outboundEnabled } : draft))
                 }
                 label="outbound notifications"
                 help="allow notifications outside the app when a delivery provider is connected."
@@ -338,9 +345,7 @@ function ProfileDialogBody({
                 <PreferenceCheckbox
                   checked={notificationDraft.digestEnabled}
                   onChange={(digestEnabled) =>
-                    setNotificationDraft((draft) =>
-                      draft ? { ...draft, digestEnabled } : draft,
-                    )
+                    setNotificationDraft((draft) => (draft ? { ...draft, digestEnabled } : draft))
                   }
                   disabled={!notificationDraft.outboundEnabled}
                   label="include a digest"
@@ -366,9 +371,7 @@ function ProfileDialogBody({
                         value={notificationDraft.quietHoursStart}
                         onChange={(event) =>
                           setNotificationDraft((draft) =>
-                            draft
-                              ? { ...draft, quietHoursStart: event.target.value }
-                              : draft,
+                            draft ? { ...draft, quietHoursStart: event.target.value } : draft,
                           )
                         }
                         disabled={!notificationDraft.outboundEnabled}
@@ -381,9 +384,7 @@ function ProfileDialogBody({
                         value={notificationDraft.quietHoursEnd}
                         onChange={(event) =>
                           setNotificationDraft((draft) =>
-                            draft
-                              ? { ...draft, quietHoursEnd: event.target.value }
-                              : draft,
+                            draft ? { ...draft, quietHoursEnd: event.target.value } : draft,
                           )
                         }
                         disabled={!notificationDraft.outboundEnabled}
@@ -403,21 +404,26 @@ function ProfileDialogBody({
         </fieldset>
       ) : null}
 
-      {error ? <p role="alert" className="ui-error">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="ui-error">
+          {error}
+        </p>
+      ) : null}
 
       <div className="sticky -bottom-5 -mx-4 mt-0! flex flex-col-reverse gap-2 border-t border-border bg-surface px-4 py-4 sm:-mx-6 sm:flex-row sm:justify-end sm:px-6">
         {mode === "edit" ? (
-          <Button variant="secondary" onClick={onClose} disabled={isSaving} className="w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSaving}
+            className="w-full sm:w-auto"
+          >
             cancel
           </Button>
         ) : null}
         <Button
           type="submit"
-          disabled={
-            !name.trim() ||
-            isUploading ||
-            (mode === "edit" && !notificationDraft)
-          }
+          disabled={!name.trim() || isUploading || (mode === "edit" && !notificationDraft)}
           loading={isSaving}
           loadingLabel="saving…"
           className="w-full sm:w-auto"
@@ -442,20 +448,24 @@ function PreferenceCheckbox({
   help: string;
   disabled?: boolean;
 }) {
+  const inputId = `preference-${label.replaceAll(" ", "-")}`;
+  const labelId = `${inputId}-label`;
   return (
-    <label className="flex cursor-pointer items-start gap-3 text-body text-fg has-disabled:cursor-not-allowed">
+    <div className="flex cursor-pointer items-start gap-3 text-body text-fg has-disabled:cursor-not-allowed">
       <input
         type="checkbox"
+        id={inputId}
+        aria-labelledby={labelId}
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         disabled={disabled}
         className="mt-0.5 size-4 shrink-0 accent-accent"
       />
-      <span>
+      <label htmlFor={inputId} id={labelId}>
         <span className="block font-medium">{label}</span>
         <span className="mt-0.5 block text-label leading-5 text-muted">{help}</span>
-      </span>
-    </label>
+      </label>
+    </div>
   );
 }
 

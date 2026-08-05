@@ -20,16 +20,12 @@ export function AuthShell({
   return (
     <div className="theme-ink flex min-h-screen justify-center bg-bg px-4 py-10 sm:items-center sm:py-14">
       <div className="w-full max-w-sm self-start sm:self-auto">
-        <p className="text-label font-medium lowercase text-accent-soft">
-          postwork
-        </p>
+        <p className="text-label font-medium lowercase text-accent-soft">postwork</p>
         <h1 className="mt-2 text-display font-semibold lowercase tracking-[-0.02em] text-fg [text-wrap:balance]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 text-body text-muted [text-wrap:pretty]">
-            {description}
-          </p>
+          <p className="mt-2 text-body text-muted [text-wrap:pretty]">{description}</p>
         ) : null}
         <div className="mt-6">{children}</div>
         {footer ? <div className="mt-4">{footer}</div> : null}

@@ -18,14 +18,10 @@ const DEFAULT_FREE_MODEL: FreeModel = {
   name: "OpenRouter free router",
 };
 
-const GENERATION_META: Record<
-  GenerationKind,
-  { label: string; description: string }
-> = {
+const GENERATION_META: Record<GenerationKind, { label: string; description: string }> = {
   postSummary: {
     label: "post summaries",
-    description:
-      "generate or regenerate the catch-up summary shown at the top of a post thread.",
+    description: "generate or regenerate the catch-up summary shown at the top of a post thread.",
   },
   agentTask: {
     label: "agent task replies",
@@ -53,9 +49,7 @@ export function AdminModelsPage() {
       .catch((err) => {
         if (!mounted) return;
         setModelsError(
-          err instanceof Error
-            ? err.message
-            : "could not load OpenRouter's free model list.",
+          err instanceof Error ? err.message : "could not load OpenRouter's free model list.",
         );
       })
       .finally(() => {
@@ -86,17 +80,18 @@ export function AdminModelsPage() {
             <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-4 text-body leading-6 text-muted">
               <div className="font-medium text-accent-soft">OpenRouter key missing</div>
               <p className="mt-1">
-                model choices are saved here, but generation needs
-                {" "}
-                <code className="font-mono text-label text-fg">OPENROUTER_API_KEY</code>
-                {" "}
-                in the Convex environment before these OpenRouter settings can run.
+                model choices are saved here, but generation needs{" "}
+                <code className="font-mono text-label text-fg">OPENROUTER_API_KEY</code> in the
+                Convex environment before these OpenRouter settings can run.
               </p>
             </div>
           ) : null}
 
           {modelsError ? (
-            <div role="alert" className="rounded-lg border border-urgent/30 bg-urgent/5 p-4 text-body text-urgent">
+            <div
+              role="alert"
+              className="rounded-lg border border-urgent/30 bg-urgent/5 p-4 text-body text-urgent"
+            >
               {modelsError} you can still enter a custom model id.
             </div>
           ) : null}
@@ -155,11 +150,7 @@ function ModelSettingCard({
     try {
       await setModel({ kind: setting.kind, modelId });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "could not save this model setting.",
-      );
+      setError(err instanceof Error ? err.message : "could not save this model setting.");
     } finally {
       setBusy(null);
     }
@@ -171,11 +162,7 @@ function ModelSettingCard({
     try {
       await resetModel({ kind: setting.kind });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "could not reset this model setting.",
-      );
+      setError(err instanceof Error ? err.message : "could not reset this model setting.");
     } finally {
       setBusy(null);
     }
@@ -210,9 +197,7 @@ function ModelSettingCard({
 
       <div className="mt-4 grid gap-3">
         <label className="block">
-          <span className="text-label font-medium lowercase text-muted">
-            free model preset
-          </span>
+          <span className="text-label font-medium lowercase text-muted">free model preset</span>
           <select
             value={selectedValue}
             onChange={(event) => {
@@ -232,9 +217,7 @@ function ModelSettingCard({
             {freeModels.map((model) => (
               <option key={model.id} value={model.id}>
                 {model.name} - {model.id}
-                {model.contextLength
-                  ? ` (${formatContextLength(model.contextLength)})`
-                  : ""}
+                {model.contextLength ? ` (${formatContextLength(model.contextLength)})` : ""}
               </option>
             ))}
             <option value={CUSTOM_MODEL_VALUE}>custom model id…</option>
@@ -243,9 +226,7 @@ function ModelSettingCard({
 
         {mode === "custom" ? (
           <label className="block">
-            <span className="text-label font-medium lowercase text-muted">
-              custom model id
-            </span>
+            <span className="text-label font-medium lowercase text-muted">custom model id</span>
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -253,14 +234,18 @@ function ModelSettingCard({
               className="ui-field mt-1 font-mono text-body placeholder:text-muted/60"
             />
             <p className="mt-1.5 text-label leading-5 text-muted">
-              use this for a newly released free model, an OpenRouter alias, or a
-              router id that is not in the fetched list.
+              use this for a newly released free model, an OpenRouter alias, or a router id that is
+              not in the fetched list.
             </p>
           </label>
         ) : null}
       </div>
 
-      {error ? <p role="alert" className="mt-3 text-label text-urgent">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="mt-3 text-label text-urgent">
+          {error}
+        </p>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-label text-muted">

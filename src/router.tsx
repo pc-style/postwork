@@ -45,8 +45,7 @@ function validateFeedSearch(search: Record<string, unknown>): FeedSearch {
     priority: PRIORITIES.includes(search.priority as Priority)
       ? (search.priority as Priority)
       : undefined,
-    unread:
-      search.unread === true || search.unread === "true" || search.unread === "1",
+    unread: search.unread === true || search.unread === "true" || search.unread === "1",
   };
 }
 
@@ -174,9 +173,7 @@ const adminUsersRoute = createRoute({
   component: AdminUsersPage,
   validateSearch: (search: Record<string, unknown>): AdminUsersSearch => {
     const filter = search.filter;
-    return filter === "members" ||
-      filter === "agents" ||
-      filter === "deactivated"
+    return filter === "members" || filter === "agents" || filter === "deactivated"
       ? { filter }
       : {};
   },
@@ -289,9 +286,7 @@ const routeTree = rootRoute.addChildren([
     appSpacesRoute,
     appSpaceRoute,
     appWallRoute,
-    ...(demoPolicy.flashExperimentsLab
-      ? [flashExperimentsRoute, flashExperimentRoute]
-      : []),
+    ...(demoPolicy.flashExperimentsLab ? [flashExperimentsRoute, flashExperimentRoute] : []),
   ]),
   adminLayoutRoute.addChildren([
     adminOverviewRoute,

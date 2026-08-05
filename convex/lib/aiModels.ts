@@ -30,7 +30,8 @@ export function normalizeModelId(value: string): string {
     throw new ConvexError({
       code: "INVALID_INPUT",
       field: "modelId",
-      message: "Model ID can only contain letters, numbers, dots, dashes, underscores, tildes, slashes, colons, and plus signs.",
+      message:
+        "Model ID can only contain letters, numbers, dots, dashes, underscores, tildes, slashes, colons, and plus signs.",
     });
   }
   return modelId;

@@ -18,11 +18,7 @@ const configuration = getSentryConfiguration({
 });
 
 export function initializeErrorReporting(): boolean {
-  if (
-    !configuration ||
-    typeof window === "undefined" ||
-    window.__postworkSentryInitialized
-  ) {
+  if (!configuration || typeof window === "undefined" || window.__postworkSentryInitialized) {
     return false;
   }
 
@@ -35,9 +31,7 @@ export function initializeErrorReporting(): boolean {
         tags: {
           "postwork.mode": configuration.mode,
           "postwork.environment": configuration.environment,
-          ...(configuration.release
-            ? { "postwork.release": configuration.release }
-            : {}),
+          ...(configuration.release ? { "postwork.release": configuration.release } : {}),
         },
       },
       // Sentry's default browser integrations include GlobalHandlers, which
@@ -52,16 +46,8 @@ export function initializeErrorReporting(): boolean {
   }
 }
 
-export function captureErrorBoundaryException(
-  error: Error,
-  info: ErrorInfo,
-  path: string,
-): void {
-  if (
-    !configuration ||
-    typeof window === "undefined" ||
-    !window.__postworkSentryInitialized
-  ) {
+export function captureErrorBoundaryException(error: Error, info: ErrorInfo, path: string): void {
+  if (!configuration || typeof window === "undefined" || !window.__postworkSentryInitialized) {
     return;
   }
 

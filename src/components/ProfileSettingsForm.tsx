@@ -38,9 +38,12 @@ export function ProfileSettingsForm() {
     setInitials(user.initials);
   }, [user]);
 
-  useEffect(() => () => {
-    if (localPreview) URL.revokeObjectURL(localPreview);
-  }, [localPreview]);
+  useEffect(
+    () => () => {
+      if (localPreview) URL.revokeObjectURL(localPreview);
+    },
+    [localPreview],
+  );
 
   const preview = useMemo(() => {
     if (avatarDraft === "upload") return localPreview;
@@ -114,7 +117,9 @@ export function ProfileSettingsForm() {
       setAvatarDraft("unchanged");
       setSaved(true);
     } catch (caught) {
-      setError(errorMessage(caught, "couldn't save your profile. review the fields and try again."));
+      setError(
+        errorMessage(caught, "couldn't save your profile. review the fields and try again."),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -123,47 +128,146 @@ export function ProfileSettingsForm() {
   if (!user) return <p className="text-body text-muted">loading profile…</p>;
 
   return (
-    <form className="max-w-xl space-y-5" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+    <form
+      className="max-w-xl space-y-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save();
+      }}
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-display font-semibold text-fg" style={{ backgroundColor: preview ? undefined : user.avatarColor }}>
-          {preview ? <img src={preview} alt="profile preview" className="size-full object-cover" /> : initials}
+        <div
+          className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-display font-semibold text-fg"
+          style={{ backgroundColor: preview ? undefined : user.avatarColor }}
+        >
+          {preview ? (
+            <img src={preview} alt="profile preview" className="size-full object-cover" />
+          ) : (
+            initials
+          )}
         </div>
         <div className="space-y-2">
-          <input ref={fileInputRef} type="file" accept="image/*" aria-label="choose a profile image" className="hidden" onChange={(event) => void upload(event.target.files?.[0])} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            aria-label="choose a profile image"
+            className="hidden"
+            onChange={(event) => void upload(event.target.files?.[0])}
+          />
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} loading={isUploading} loadingLabel="uploading…">upload image</Button>
-            <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "remove" }); setAvatarDraft("remove"); setSaved(false); }}>remove image</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              loading={isUploading}
+              loadingLabel="uploading…"
+            >
+              upload image
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={() => {
+                setAvatarAction({ type: "remove" });
+                setAvatarDraft("remove");
+                setSaved(false);
+              }}
+            >
+              remove image
+            </Button>
             {user.providerAvatarUrl && preview !== user.providerAvatarUrl ? (
-              <Button variant="quiet" size="sm" onClick={() => { setAvatarAction({ type: "useProvider" }); setAvatarDraft("provider"); setSaved(false); }}>use sign-in photo</Button>
+              <Button
+                variant="quiet"
+                size="sm"
+                onClick={() => {
+                  setAvatarAction({ type: "useProvider" });
+                  setAvatarDraft("provider");
+                  setSaved(false);
+                }}
+              >
+                use sign-in photo
+              </Button>
             ) : null}
           </div>
           <p className="text-label text-muted">use a square image, or keep your initials.</p>
         </div>
       </div>
-      <FormField label="name" required><input value={name} onChange={(event) => changeName(event.target.value)} className="ui-field" /></FormField>
-      <FormField label="job title" optional><input value={title} onChange={(event) => { setTitle(event.target.value); setSaved(false); }} className="ui-field" /></FormField>
-      <FormField label="initials" required help="use up to two letters."><input value={initials} maxLength={2} onChange={(event) => { setInitialsOverridden(true); setInitials(normalizeInitials(event.target.value)); setSaved(false); }} className="ui-field max-w-28" /></FormField>
-      {error ? <p role="alert" className="ui-error">{error}</p> : null}
-      <div className="flex items-center gap-3">
-        <Button type="submit" disabled={!dirty || !name.trim() || isUploading} loading={isSaving} loadingLabel="saving…">save profile</Button>
-        <p role="status" className="text-label text-muted">
-          {saved && !dirty ? "profile saved." : dirty ? "unsaved changes" : ""}
+      <FormField label="name" required>
+        <input
+          value={name}
+          onChange={(event) => changeName(event.target.value)}
+          className="ui-field"
+        />
+      </FormField>
+      <FormField label="job title" optional>
+        <input
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setSaved(false);
+          }}
+          className="ui-field"
+        />
+      </FormField>
+      <FormField label="initials" required help="use up to two letters.">
+        <input
+          value={initials}
+          maxLength={2}
+          onChange={(event) => {
+            setInitialsOverridden(true);
+            setInitials(normalizeInitials(event.target.value));
+            setSaved(false);
+          }}
+          className="ui-field max-w-28"
+        />
+      </FormField>
+      {error ? (
+        <p role="alert" className="ui-error">
+          {error}
         </p>
+      ) : null}
+      <div className="flex items-center gap-3">
+        <Button
+          type="submit"
+          disabled={!dirty || !name.trim() || isUploading}
+          loading={isSaving}
+          loadingLabel="saving…"
+        >
+          save profile
+        </Button>
+        <output className="text-label text-muted">
+          {saved && !dirty ? "profile saved." : dirty ? "unsaved changes" : ""}
+        </output>
       </div>
     </form>
   );
 }
 
 function deriveInitials(name: string) {
-  return normalizeInitials(name.split(/\s+/).filter(Boolean).map((part) => part[0]).join(""));
+  return normalizeInitials(
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join(""),
+  );
 }
 
 function normalizeInitials(value: string) {
-  return value.replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase();
+  return value
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 function isUploadResponse(value: unknown): value is { storageId: Id<"_storage"> } {
-  return typeof value === "object" && value !== null && "storageId" in value && typeof value.storageId === "string";
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "storageId" in value &&
+    typeof value.storageId === "string"
+  );
 }
 
 function errorMessage(error: unknown, fallback: string) {

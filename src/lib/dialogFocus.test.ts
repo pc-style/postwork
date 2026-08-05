@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  dialogFocusTarget,
-  isEffectivelyTabbable,
-} from "./dialogFocus";
+import { dialogFocusTarget, isEffectivelyTabbable } from "./dialogFocus";
 
 type ElementOptions = {
   disabled?: boolean;
@@ -27,12 +24,9 @@ function element({
     tabIndex,
     matches: (selector: string) => selector === ":disabled" && disabled,
     hasAttribute: (name: string) => name === "inert" && inert,
-    getAttribute: (name: string) =>
-      name === "aria-hidden" ? (ariaHidden ?? null) : null,
+    getAttribute: (name: string) => (name === "aria-hidden" ? (ariaHidden ?? null) : null),
     getClientRects: () =>
-      visible
-        ? ([{}] as unknown as DOMRectList)
-        : ([] as unknown as DOMRectList),
+      visible ? ([{}] as unknown as DOMRectList) : ([] as unknown as DOMRectList),
   } as HTMLElement;
 }
 

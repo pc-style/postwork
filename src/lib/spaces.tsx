@@ -8,9 +8,7 @@ import { isLocalId, useStore } from "./store";
 
 export type SpaceListItem = FunctionReturnType<typeof api.spaces.list>[number];
 export type SpaceDetails = NonNullable<FunctionReturnType<typeof api.spaces.getBySlug>>;
-export type SpaceMembership = FunctionReturnType<
-  typeof api.spaces.membershipsForSpace
->[number];
+export type SpaceMembership = FunctionReturnType<typeof api.spaces.membershipsForSpace>[number];
 
 export function useSpacesList() {
   const { currentUserId } = useSession();
@@ -30,10 +28,7 @@ export function useSpacesList() {
         ),
       };
     });
-  return [
-    ...localSpaces,
-    ...backend,
-  ];
+  return [...localSpaces, ...backend];
 }
 
 export function useSpaceCreationStatus() {
@@ -63,10 +58,7 @@ export function useSpaceBySlug(slug: string) {
   const local = store.overlay.spaces.find(
     (space) => space.slug === slug && space.createdBy === currentUserId,
   );
-  const space = useQuery(
-    api.spaces.getBySlug,
-    local ? "skip" : { slug, viewerId: currentUserId },
-  );
+  const space = useQuery(api.spaces.getBySlug, local ? "skip" : { slug, viewerId: currentUserId });
   if (local) return local;
   return space === undefined ? undefined : space;
 }
@@ -77,15 +69,17 @@ export function useSpaceMemberships(spaceId: Id<"spaces"> | undefined) {
   const localSpaceId = local ? spaceId : undefined;
   const membership =
     localSpaceId && currentUser
-      ? [{
-          _id: `local_membership_${localSpaceId}` as Id<"spaceMemberships">,
-          _creationTime: currentUser._creationTime,
-          orgId: currentUser.orgId,
-          spaceId: localSpaceId,
-          userId: currentUser._id,
-          createdAt: currentUser._creationTime,
-          user: currentUser,
-        }]
+      ? [
+          {
+            _id: `local_membership_${localSpaceId}` as Id<"spaceMemberships">,
+            _creationTime: currentUser._creationTime,
+            orgId: currentUser.orgId,
+            spaceId: localSpaceId,
+            userId: currentUser._id,
+            createdAt: currentUser._creationTime,
+            user: currentUser,
+          },
+        ]
       : [];
   return (
     useQuery(

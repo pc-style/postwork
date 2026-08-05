@@ -6,10 +6,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import {
-  GITHUB_WEBHOOK_MAX_BYTES,
-  signGitHubPayload,
-} from "./lib/githubWebhooks";
+import { GITHUB_WEBHOOK_MAX_BYTES, signGitHubPayload } from "./lib/githubWebhooks";
 
 const modules = import.meta.glob("./**/*.ts");
 const ENCRYPTION_KEY = "11".repeat(32);
@@ -121,7 +118,7 @@ describe("GitHub webhook ingestion", () => {
     const response = await deliver(state);
 
     expect(response.status).toBe(202);
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       duplicate: boolean;
       postId: string;
       agentTaskId?: string;
@@ -203,9 +200,7 @@ describe("GitHub webhook ingestion", () => {
     expect(stored.events).toEqual([]);
     expect(stored.posts).toEqual([]);
     expect(stored.tasks).toEqual([]);
-    expect(stored.audit.map((entry) => entry.action)).toEqual([
-      "connector.provisioned",
-    ]);
+    expect(stored.audit.map((entry) => entry.action)).toEqual(["connector.provisioned"]);
   });
 
   test("rejects an invalidly signed ping before any mutation", async () => {
@@ -338,7 +333,7 @@ describe("GitHub webhook ingestion", () => {
       state.authed.action(api.connectors.rewrapGithubSecret, {
         connectorId: other.connectorId,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow("GitHub connector not found.");
     const after = await state.t.run(async (ctx) => ctx.db.get(other.connectorId));
     expect(after?.encryptedSecret).toBe(before?.encryptedSecret);
   });
@@ -350,7 +345,7 @@ describe("GitHub webhook ingestion", () => {
 
     expect(first.status).toBe(202);
     expect(duplicate.status).toBe(200);
-    const firstBody = await first.json() as { eventId: string; postId: string };
+    const firstBody = (await first.json()) as { eventId: string; postId: string };
     expect(await duplicate.json()).toMatchObject({
       eventId: firstBody.eventId,
       postId: firstBody.postId,
@@ -371,9 +366,7 @@ describe("GitHub webhook ingestion", () => {
     });
 
     expect(response.status).toBe(422);
-    const events = await state.t.run(async (ctx) =>
-      ctx.db.query("connectorEvents").collect(),
-    );
+    const events = await state.t.run(async (ctx) => ctx.db.query("connectorEvents").collect());
     expect(events).toEqual([]);
   });
 
@@ -424,10 +417,8 @@ describe("GitHub webhook ingestion", () => {
       payload: issuePayload("reopened"),
     });
     expect(accepted.status).toBe(202);
-    const result = await accepted.json() as { postId: string };
-    const post = await state.t.run(async (ctx) =>
-      ctx.db.get(result.postId as Id<"posts">),
-    );
+    const result = (await accepted.json()) as { postId: string };
+    const post = await state.t.run(async (ctx) => ctx.db.get(result.postId as Id<"posts">));
     expect(post).toMatchObject({
       orgId: other.orgId,
       authorId: otherConnector.agentId,
@@ -453,7 +444,7 @@ describe("GitHub webhook ingestion", () => {
     });
 
     expect(response.status).toBe(202);
-    const result = await response.json() as { postId: string; agentTaskId: string };
+    const result = (await response.json()) as { postId: string; agentTaskId: string };
     const stored = await state.t.run(async (ctx) => ({
       post: await ctx.db.get(result.postId as never),
       task: await ctx.db.get(result.agentTaskId as never),

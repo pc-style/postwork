@@ -1,9 +1,4 @@
-export type SkeletonPreset =
-  | "feed"
-  | "post"
-  | "stats"
-  | "table"
-  | "inline";
+export type SkeletonPreset = "feed" | "post" | "stats" | "table" | "inline";
 
 export function Skeleton({
   preset = "inline",
@@ -15,14 +10,14 @@ export function Skeleton({
   label?: string;
 }) {
   return (
-    <div role="status" aria-label={label} className="w-full">
+    <output aria-label={label} className="block w-full">
       <span className="sr-only">{label}</span>
       <div aria-hidden="true" className="grid gap-3">
         {Array.from({ length: count }, (_, index) => (
           <SkeletonShape key={index} preset={preset} />
         ))}
       </div>
-    </div>
+    </output>
   );
 }
 

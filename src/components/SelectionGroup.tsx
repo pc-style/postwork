@@ -26,7 +26,7 @@ export function SelectionGroup<T extends string>({
               key={option.value}
               className={`inline-flex min-h-11 cursor-pointer items-center rounded-md border px-3 py-2 text-body transition-colors duration-150 ease-out focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-soft ${
                 checked
-                  ? option.className ?? "border-accent/60 bg-surface-2 text-fg"
+                  ? (option.className ?? "border-accent/60 bg-surface-2 text-fg")
                   : "border-border bg-bg text-muted hover:border-accent/40 hover:text-fg"
               }`}
             >

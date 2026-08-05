@@ -70,16 +70,10 @@ function previousKeys(value: string | undefined): Array<[string, string]> {
 export function connectorSecretKeyring(
   environment: ConnectorSecretEnvironment,
 ): ConnectorSecretKeyring {
-  const activeKeyId = normalizedKeyId(
-    environment.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID,
-  );
-  const activeKey = normalizedKey(
-    environment.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY,
-  );
+  const activeKeyId = normalizedKeyId(environment.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY_ID);
+  const activeKey = normalizedKey(environment.CONNECTOR_SECRET_ENCRYPTION_ACTIVE_KEY);
   const keys = new Map<string, string>([[activeKeyId, activeKey]]);
-  for (const [keyId, key] of previousKeys(
-    environment.CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS,
-  )) {
+  for (const [keyId, key] of previousKeys(environment.CONNECTOR_SECRET_ENCRYPTION_PREVIOUS_KEYS)) {
     if (keys.has(keyId)) {
       throw new Error("Connector encryption key IDs must be unique.");
     }

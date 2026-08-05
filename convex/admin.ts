@@ -2,20 +2,13 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import {
-  ensureActiveViewerUser,
-  getViewerFromAuth,
-} from "./authUsers";
+import { ensureActiveViewerUser, getViewerFromAuth } from "./authUsers";
 import { publicUser } from "./users";
 import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
 import { logInfo } from "./lib/observability";
 import { parse, profileTitleSchema } from "./lib/validation";
 import { aiGenerationKind } from "./schema";
-import {
-  DEFAULT_OPENROUTER_MODEL,
-  normalizeModelId,
-  type AiGenerationKind,
-} from "./lib/aiModels";
+import { DEFAULT_OPENROUTER_MODEL, normalizeModelId, type AiGenerationKind } from "./lib/aiModels";
 
 /**
  * Admin control plane — users, invites, access requests, audit history.
@@ -137,10 +130,7 @@ export const listUsers = query({
   },
 });
 
-const AI_GENERATION_KINDS: readonly AiGenerationKind[] = [
-  "postSummary",
-  "agentTask",
-];
+const AI_GENERATION_KINDS: readonly AiGenerationKind[] = ["postSummary", "agentTask"];
 
 export const aiModelSettings = query({
   args: {},
@@ -169,9 +159,7 @@ export const aiModelSettings = query({
           effectiveModelId:
             setting?.modelId ?? process.env.OPENROUTER_MODEL ?? DEFAULT_OPENROUTER_MODEL,
           updatedAt: setting?.updatedAt ?? null,
-          updatedByName: setting
-            ? (updaterNames.get(setting.updatedById) ?? "unknown")
-            : null,
+          updatedByName: setting ? (updaterNames.get(setting.updatedById) ?? "unknown") : null,
         };
       }),
     };
@@ -185,9 +173,7 @@ export const setAiModelSetting = mutation({
     const modelId = normalizeModelId(args.modelId);
     const existing = await ctx.db
       .query("aiGenerationSettings")
-      .withIndex("by_org_id_and_kind", (q) =>
-        q.eq("orgId", admin.orgId).eq("kind", args.kind),
-      )
+      .withIndex("by_org_id_and_kind", (q) => q.eq("orgId", admin.orgId).eq("kind", args.kind))
       .first();
     const now = Date.now();
     if (existing) {
@@ -224,9 +210,7 @@ export const resetAiModelSetting = mutation({
     const admin = await requireAdminForWrite(ctx);
     const existing = await ctx.db
       .query("aiGenerationSettings")
-      .withIndex("by_org_id_and_kind", (q) =>
-        q.eq("orgId", admin.orgId).eq("kind", args.kind),
-      )
+      .withIndex("by_org_id_and_kind", (q) => q.eq("orgId", admin.orgId).eq("kind", args.kind))
       .collect();
     await Promise.all(existing.map((setting) => ctx.db.delete(setting._id)));
     await logAudit(ctx, {
@@ -290,9 +274,7 @@ export const listAccessRequests = query({
     const admin = await requireAdminForRead(ctx);
     const requests = await ctx.db
       .query("accessRequests")
-      .withIndex("by_org_id_and_status_and_created_at", (q) =>
-        q.eq("orgId", admin.orgId),
-      )
+      .withIndex("by_org_id_and_status_and_created_at", (q) => q.eq("orgId", admin.orgId))
       .collect();
     return requests.sort((a, b) => b.createdAt - a.createdAt);
   },
@@ -372,9 +354,7 @@ export const createInvite = mutation({
       });
     }
     // Targeted invites admit exactly the one person.
-    const maxUses = target
-      ? 1
-      : Math.min(Math.max(Math.floor(args.maxUses ?? 1), 0), 1000);
+    const maxUses = target ? 1 : Math.min(Math.max(Math.floor(args.maxUses ?? 1), 0), 1000);
     const note = args.note?.trim().slice(0, 200) || undefined;
     const expiresAt =
       args.expiresInDays && args.expiresInDays > 0

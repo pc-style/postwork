@@ -88,9 +88,7 @@ export function useAttachmentPicker() {
         try {
           const input = await upload(file);
           setPending((prev) =>
-            prev.map((p) =>
-              p.key === key ? { ...p, uploading: false, input } : p,
-            ),
+            prev.map((p) => (p.key === key ? { ...p, uploading: false, input } : p)),
           );
         } catch (err) {
           setPending((prev) =>
@@ -122,10 +120,7 @@ export function useAttachmentPicker() {
   const getReadyAttachments = useCallback(
     (): AttachmentInput[] =>
       pending
-        .filter(
-          (p): p is PendingMedia & { input: AttachmentInput } =>
-            !!p.input && !p.error,
-        )
+        .filter((p): p is PendingMedia & { input: AttachmentInput } => !!p.input && !p.error)
         .map((p) => p.input),
     [pending],
   );
@@ -159,11 +154,7 @@ export function useAttachmentPicker() {
 }
 
 /** Hidden file input + trigger button. Renders nothing in demo mode. */
-export function AttachmentButton({
-  onFiles,
-}: {
-  onFiles: (files: FileList | File[]) => void;
-}) {
+export function AttachmentButton({ onFiles }: { onFiles: (files: FileList | File[]) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -178,11 +169,7 @@ export function AttachmentButton({
           e.target.value = "";
         }}
       />
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => ref.current?.click()}
-      >
+      <Button variant="secondary" size="sm" onClick={() => ref.current?.click()}>
         add media
       </Button>
     </>
@@ -215,15 +202,16 @@ export function AttachmentThumbnails({
               className="size-full object-cover"
             />
           ) : p.mediaKind === "image" ? (
-            <img
-              src={p.previewUrl}
-              alt={p.filename}
-              className="size-full object-cover"
-            />
+            <img src={p.previewUrl} alt={p.filename} className="size-full object-cover" />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-1 p-2 text-muted">
               <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-                <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <path
+                  d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
               </svg>
               <span className="max-w-full truncate text-label">{p.filename}</span>
             </div>
@@ -245,7 +233,12 @@ export function AttachmentThumbnails({
             aria-label={`Remove ${p.filename}`}
           >
             <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>

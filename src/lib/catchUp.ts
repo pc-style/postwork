@@ -28,9 +28,7 @@ export function catchUpEmptyState(digest: CatchUpDigest): {
 export function catchUpSummaryPreview(text: string): string {
   return text
     .replace(/^\s*\*\*\s*TL;DR\s*:?\s*\*\*\s*:?\s*/i, "")
-    .split(
-      /\n\s*\*\*\s*(?:Decisions|Open questions|Action items)\s*\*\*:?[^\n]*/i,
-    )[0]
+    .split(/\n\s*\*\*\s*(?:Decisions|Open questions|Action items)\s*\*\*:?[^\n]*/i)[0]
     .replace(/\*\*/g, "")
     .trim();
 }
@@ -47,8 +45,7 @@ export function composeDemoCatchUp(posts: EnrichedPost[]): CatchUpDigest {
   const items = eligible
     .sort(
       (a, b) =>
-        CATCH_UP_PRIORITIES.indexOf(a.priority) -
-          CATCH_UP_PRIORITIES.indexOf(b.priority) ||
+        CATCH_UP_PRIORITIES.indexOf(a.priority) - CATCH_UP_PRIORITIES.indexOf(b.priority) ||
         b.lastActivityAt - a.lastActivityAt ||
         b.createdAt - a.createdAt ||
         a._id.localeCompare(b._id),

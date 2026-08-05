@@ -4,10 +4,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import type { AttachmentWithUrl } from "../lib/types";
 import { AttachmentMedia } from "./AttachmentGallery";
 
-function attachment(
-  mediaKind: "image" | "video",
-  contentType: string,
-): AttachmentWithUrl {
+function attachment(mediaKind: "image" | "video", contentType: string): AttachmentWithUrl {
   return {
     _id: "attachment" as Id<"postAttachments">,
     postId: "post" as Id<"posts">,
@@ -31,9 +28,9 @@ describe("attachment media rendering", () => {
       <AttachmentMedia attachment={attachment("video", "video/mp4")} />,
     );
     expect(html).toContain("<video");
-    expect(html).toContain("controls=\"\"");
-    expect(html).toContain("playsInline=\"\"");
-    expect(html).toContain("type=\"video/mp4\"");
+    expect(html).toContain('controls=""');
+    expect(html).toContain('playsInline=""');
+    expect(html).toContain('type="video/mp4"');
   });
 
   test("renders GIF as an image so browser animation is preserved", () => {
@@ -45,4 +42,3 @@ describe("attachment media rendering", () => {
     expect(html).not.toContain("<video");
   });
 });
-

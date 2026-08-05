@@ -4,7 +4,12 @@ import { Component, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import { EmptyState } from "../../components/EmptyState";
 import { LoadingState } from "../../components/LoadingState";
-import { catchUpEmptyState, catchUpSummaryPreview, composeDemoCatchUp, groupCatchUpItems } from "../../lib/catchUp";
+import {
+  catchUpEmptyState,
+  catchUpSummaryPreview,
+  composeDemoCatchUp,
+  groupCatchUpItems,
+} from "../../lib/catchUp";
 import { isDemo } from "../../lib/demoMode";
 import { priorityStyles, timeAgo } from "../../lib/format";
 import { useFeed } from "../../lib/store";
@@ -31,10 +36,7 @@ export function CatchUpPage() {
   );
 }
 
-class CatchUpErrorBoundary extends Component<
-  { children: ReactNode },
-  { failed: boolean }
-> {
+class CatchUpErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -51,7 +53,10 @@ class CatchUpErrorBoundary extends Component<
       <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <EmptyState>
           <p className="font-medium text-fg">Catch-up is unavailable right now.</p>
-          <p className="mt-1">Your account may not have access, or the digest could not be loaded. Try again after refreshing.</p>
+          <p className="mt-1">
+            Your account may not have access, or the digest could not be loaded. Try again after
+            refreshing.
+          </p>
         </EmptyState>
       </div>
     );
@@ -66,7 +71,8 @@ function CatchUpContents() {
       <header className="border-b border-border pb-5">
         <h1 className="text-xl font-semibold tracking-tight text-fg">Catch up</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          Unread work, ordered by priority and recent activity. Opening a post gives you the full record.
+          Unread work, ordered by priority and recent activity. Opening a post gives you the full
+          record.
         </p>
       </header>
 
@@ -86,13 +92,18 @@ function CatchUpContents() {
             {groupCatchUpItems(digest.items).map((group) => (
               <section key={group.priority} aria-labelledby={`catch-up-${group.priority}`}>
                 <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
-                  <span className={`size-1.5 rounded-full ${priorityStyles[group.priority].dot}`} aria-hidden="true" />
+                  <span
+                    className={`size-1.5 rounded-full ${priorityStyles[group.priority].dot}`}
+                    aria-hidden="true"
+                  />
                   <h2 id={`catch-up-${group.priority}`} className="text-xs font-medium text-muted">
                     {priorityStyles[group.priority].label} · {group.items.length}
                   </h2>
                 </div>
                 <div className="divide-y divide-border">
-                  {group.items.map((item) => <CatchUpRow key={item.post._id} item={item} />)}
+                  {group.items.map((item) => (
+                    <CatchUpRow key={item.post._id} item={item} />
+                  ))}
                 </div>
               </section>
             ))}
@@ -119,14 +130,20 @@ function CatchUpRow({ item }: { item: CatchUpItem }) {
         <SummaryState status={summary.status} />
       </div>
       {summary.status === "missing" ? (
-        <p className="mt-2 text-sm leading-6 text-muted">No summary yet. Open the post for the full context.</p>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          No summary yet. Open the post for the full context.
+        </p>
       ) : (
-        <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{catchUpSummaryPreview(summary.text)}</p>
+        <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">
+          {catchUpSummaryPreview(summary.text)}
+        </p>
       )}
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span className="text-fg/85">{post.author?.name ?? "Unknown author"}</span>
         <span>{post.space}</span>
-        <span>{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+        <span>
+          {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+        </span>
         <span>Active {timeAgo(post.lastActivityAt)}</span>
       </p>
     </Link>
@@ -134,7 +151,12 @@ function CatchUpRow({ item }: { item: CatchUpItem }) {
 }
 
 function SummaryState({ status }: { status: CatchUpItem["summary"]["status"] }) {
-  const copy = status === "fresh" ? "summary current" : status === "stale" ? "new activity since summary" : "summary missing";
+  const copy =
+    status === "fresh"
+      ? "summary current"
+      : status === "stale"
+        ? "new activity since summary"
+        : "summary missing";
   const color = status === "stale" ? "text-accent-soft" : "text-muted";
   return <span className={`shrink-0 text-xs ${color}`}>{copy}</span>;
 }
@@ -142,12 +164,20 @@ function SummaryState({ status }: { status: CatchUpItem["summary"]["status"] }) 
 function DigestScope({ digest }: { digest: CatchUpDigest }) {
   const notes: string[] = [];
   if (digest.omittedEligibleInWindow > 0) {
-    notes.push(`${digest.omittedEligibleInWindow} more unread ${digest.omittedEligibleInWindow === 1 ? "post is" : "posts are"} outside this focused list`);
+    notes.push(
+      `${digest.omittedEligibleInWindow} more unread ${digest.omittedEligibleInWindow === 1 ? "post is" : "posts are"} outside this focused list`,
+    );
   }
   if (!digest.scan.complete) {
-    notes.push(`this view scanned the ${digest.scan.maxPosts} most recently active posts, so older unread work may not appear`);
+    notes.push(
+      `this view scanned the ${digest.scan.maxPosts} most recently active posts, so older unread work may not appear`,
+    );
   }
   if (isDemo) notes.push("demo view uses the selected teammate’s feed and session read state");
   if (!notes.length) return null;
-  return <p className="mt-8 border-t border-border pt-4 text-xs leading-5 text-muted">{notes.join(". ")}.</p>;
+  return (
+    <p className="mt-8 border-t border-border pt-4 text-xs leading-5 text-muted">
+      {notes.join(". ")}.
+    </p>
+  );
 }

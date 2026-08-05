@@ -1,8 +1,5 @@
 import { Button } from "./Button";
-import {
-  useBrowserNotificationsEnabled,
-  useNotificationPermission,
-} from "../lib/notifications";
+import { useBrowserNotificationsEnabled, useNotificationPermission } from "../lib/notifications";
 
 const PERMISSION_LABELS = {
   granted: "granted",
@@ -38,6 +35,7 @@ export function NotificationSettingsSection() {
           <Button
             variant="quiet"
             size="sm"
+            className="ui-optimistic-toggle"
             aria-pressed={enabled}
             onClick={() => setEnabled(!enabled)}
           >
@@ -47,7 +45,8 @@ export function NotificationSettingsSection() {
       </div>
       {permission === "denied" ? (
         <p className="mt-3 text-label text-muted">
-          notifications are blocked. allow postwork notifications in your browser settings, then reload this page.
+          notifications are blocked. allow postwork notifications in your browser settings, then
+          reload this page.
         </p>
       ) : null}
     </div>

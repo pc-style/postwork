@@ -30,10 +30,7 @@ export const MEDIA_MAX_SOURCE_IMAGE_BYTES = 40 * 1024 * 1024;
 export const MEDIA_OPTIMIZE_ABOVE_BYTES = 4 * 1024 * 1024;
 export const MEDIA_MAX_IMAGE_DIMENSION = 2560;
 
-const SAFE_OPTIMIZATION_TYPES: ReadonlySet<string> = new Set([
-  "image/jpeg",
-  "image/png",
-]);
+const SAFE_OPTIMIZATION_TYPES: ReadonlySet<string> = new Set(["image/jpeg", "image/png"]);
 
 export type MediaFileDecision =
   | { accepted: true; kind: MediaKind; optimize: boolean; maxBytes: number }
@@ -57,11 +54,12 @@ export function decideMediaFile(input: {
     };
   }
 
-  const maxBytes = kind === "image"
-    ? MEDIA_MAX_IMAGE_BYTES
-    : kind === "video"
-      ? MEDIA_MAX_VIDEO_BYTES
-      : MEDIA_MAX_FILE_BYTES;
+  const maxBytes =
+    kind === "image"
+      ? MEDIA_MAX_IMAGE_BYTES
+      : kind === "video"
+        ? MEDIA_MAX_VIDEO_BYTES
+        : MEDIA_MAX_FILE_BYTES;
   if (kind === "file") {
     return input.size <= maxBytes
       ? { accepted: true, kind, optimize: false, maxBytes }
@@ -93,8 +91,7 @@ export function decideMediaFile(input: {
     kind,
     optimize:
       safeToOptimize &&
-      (input.size > MEDIA_OPTIMIZE_ABOVE_BYTES ||
-        longestSide > MEDIA_MAX_IMAGE_DIMENSION),
+      (input.size > MEDIA_OPTIMIZE_ABOVE_BYTES || longestSide > MEDIA_MAX_IMAGE_DIMENSION),
     maxBytes,
   };
 }

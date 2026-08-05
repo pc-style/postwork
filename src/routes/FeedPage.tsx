@@ -7,12 +7,7 @@ import { QuickPostBar } from "../components/QuickPostBar";
 import { ToggleButton } from "../components/SelectionGroup";
 import { useActiveExperiment } from "../flashExperiments/active";
 import { PRIORITIES, SPACES } from "../lib/format";
-import {
-  useFeed,
-  usePrefetchPost,
-  useSearch as useStoreSearch,
-  useStore,
-} from "../lib/store";
+import { useFeed, usePrefetchPost, useSearch as useStoreSearch, useStore } from "../lib/store";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import type { FeedSearch } from "../router";
 
@@ -24,9 +19,7 @@ export function FeedPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as FeedSearch;
   const term = search.q ?? "";
-  const space = SPACES.includes(search.space as (typeof SPACES)[number])
-    ? search.space
-    : undefined;
+  const space = SPACES.includes(search.space as (typeof SPACES)[number]) ? search.space : undefined;
   const priority = search.priority;
   const onlyUnread = search.unread ?? false;
 
@@ -50,8 +43,15 @@ export function FeedPage() {
       {!slots.feedHeader ? <QuickPostBar /> : null}
 
       <div className="relative mb-4">
-        <label htmlFor="experiment-feed-search" className="sr-only">search posts</label>
-        <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">/</span>
+        <label htmlFor="experiment-feed-search" className="sr-only">
+          search posts
+        </label>
+        <span
+          className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft"
+          aria-hidden="true"
+        >
+          /
+        </span>
         <input
           id="experiment-feed-search"
           value={term}
@@ -74,9 +74,15 @@ export function FeedPage() {
         <div className="mb-5 grid gap-3">
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">space filters</legend>
-            <ToggleButton pressed={!space} onPressedChange={() => setSearch({ space: undefined })}>all spaces</ToggleButton>
+            <ToggleButton pressed={!space} onPressedChange={() => setSearch({ space: undefined })}>
+              all spaces
+            </ToggleButton>
             {SPACES.map((item) => (
-              <ToggleButton key={item} pressed={space === item} onPressedChange={() => setSearch({ space: item })}>
+              <ToggleButton
+                key={item}
+                pressed={space === item}
+                onPressedChange={() => setSearch({ space: item })}
+              >
                 {item}
               </ToggleButton>
             ))}
@@ -92,10 +98,18 @@ export function FeedPage() {
                 {item}
               </ToggleButton>
             ))}
-            <ToggleButton pressed={onlyUnread} onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}>
+            <ToggleButton
+              pressed={onlyUnread}
+              onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}
+            >
               unread
             </ToggleButton>
-            <Button variant="quiet" size="sm" className="min-h-11 sm:ms-auto" onClick={() => store.markAllRead()}>
+            <Button
+              variant="quiet"
+              size="sm"
+              className="min-h-11 sm:ms-auto"
+              onClick={() => store.markAllRead()}
+            >
               mark all read
             </Button>
           </fieldset>

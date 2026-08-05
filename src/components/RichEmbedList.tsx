@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import { buildRichPreview, extractUrls } from "../lib/richEmbeds";
 
@@ -7,26 +8,36 @@ const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
 export const MAX_RICH_PREVIEWS_PER_BODY = 3;
 
 export function RichEmbedList({ text }: { text: string }) {
-  const previews = useMemo(() => [...new Map(
-    extractUrls(text)
-      .map(buildRichPreview)
-      .filter((preview) => preview !== null)
-      .map((preview) => [preview.sourceUrl, preview]),
-  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY), [text]);
-  const genericUrls = useMemo(() => previews
-    .filter((preview) => preview.kind === "link")
-    .map((preview) => {
-      const url = new URL(preview.sourceUrl);
-      url.hash = "";
-      return url.toString();
-    }), [previews]);
+  const previews = useMemo(
+    () =>
+      [
+        ...new Map(
+          extractUrls(text)
+            .map(buildRichPreview)
+            .filter((preview) => preview !== null)
+            .map((preview) => [preview.sourceUrl, preview]),
+        ).values(),
+      ].slice(0, MAX_RICH_PREVIEWS_PER_BODY),
+    [text],
+  );
+  const genericUrls = useMemo(
+    () =>
+      previews
+        .filter((preview) => preview.kind === "link")
+        .map((preview) => {
+          const url = new URL(preview.sourceUrl);
+          url.hash = "";
+          return url.toString();
+        }),
+    [previews],
+  );
   const storedPreviews = useQuery(api.linkPreviews.get, { urls: genericUrls });
   const requestPreviews = useMutation(api.linkPreviews.request);
   const requestedKey = useRef("");
 
   useEffect(() => {
     if (!storedPreviews) return;
-    const storedUrls = new Set(storedPreviews.flatMap((preview) => preview ? [preview.url] : []));
+    const storedUrls = new Set(storedPreviews.flatMap((preview) => (preview ? [preview.url] : [])));
     const missing = genericUrls.filter((url) => !storedUrls.has(url));
     const key = missing.join("\n");
     if (!key || requestedKey.current === key) return;
@@ -35,9 +46,27 @@ export function RichEmbedList({ text }: { text: string }) {
     void requestPreviews({ urls: missing }).catch(() => undefined);
   }, [genericUrls, requestPreviews, storedPreviews]);
 
-  const previewByUrl = new Map(storedPreviews?.flatMap((preview) =>
-    preview ? [[preview.url, preview] as const] : [],
-  ));
+  return <RichEmbedListView text={text} storedPreviews={storedPreviews} />;
+}
+
+export function RichEmbedListView({
+  text,
+  storedPreviews,
+}: {
+  text: string;
+  storedPreviews?: FunctionReturnType<typeof api.linkPreviews.get>;
+}) {
+  const previews = [
+    ...new Map(
+      extractUrls(text)
+        .map(buildRichPreview)
+        .filter((preview) => preview !== null)
+        .map((preview) => [preview.sourceUrl, preview]),
+    ).values(),
+  ].slice(0, MAX_RICH_PREVIEWS_PER_BODY);
+  const previewByUrl = new Map(
+    storedPreviews?.flatMap((preview) => (preview ? [[preview.url, preview] as const] : [])),
+  );
 
   if (previews.length === 0) return null;
 
@@ -47,7 +76,10 @@ export function RichEmbedList({ text }: { text: string }) {
         if (preview.kind === "embed") {
           const height = preview.aspect === "audio" ? "h-[152px]" : "aspect-video";
           return (
-            <div key={preview.sourceUrl} className={`overflow-hidden rounded-md border border-border bg-bg ${height}`}>
+            <div
+              key={preview.sourceUrl}
+              className={`overflow-hidden rounded-md border border-border bg-bg ${height}`}
+            >
               <iframe
                 src={preview.embedUrl}
                 title={preview.title}
@@ -75,6 +107,7 @@ export function RichEmbedList({ text }: { text: string }) {
               className="max-h-80 w-fit max-w-full rounded-md border border-border bg-black"
             >
               <source src={preview.sourceUrl} type={preview.contentType} />
+              <track kind="captions" src="data:text/vtt,WEBVTT" />
               <a href={preview.sourceUrl}>open video</a>
             </video>
           );
@@ -89,7 +122,12 @@ export function RichEmbedList({ text }: { text: string }) {
               rel="noopener noreferrer"
               className="block w-fit max-w-full overflow-hidden rounded-md border border-border bg-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
             >
-              <img src={preview.sourceUrl} alt={preview.title} loading="lazy" className="max-h-80 max-w-full object-contain" />
+              <img
+                src={preview.sourceUrl}
+                alt={preview.title}
+                loading="lazy"
+                className="max-h-80 max-w-full object-contain"
+              />
             </a>
           );
         }
@@ -97,7 +135,8 @@ export function RichEmbedList({ text }: { text: string }) {
         const lookupUrl = new URL(preview.sourceUrl);
         lookupUrl.hash = "";
         const metadata = previewByUrl.get(lookupUrl.toString());
-        const hasMetadata = metadata?.status === "ok" && Boolean(metadata.title || metadata.description);
+        const hasMetadata =
+          metadata?.status === "ok" && Boolean(metadata.title || metadata.description);
         return (
           <a
             key={preview.sourceUrl}
@@ -109,11 +148,15 @@ export function RichEmbedList({ text }: { text: string }) {
             <span className="block font-mono text-label text-accent-soft">
               {hasMetadata && metadata.siteName ? metadata.siteName : preview.hostname}
             </span>
-            <span className={`mt-0.5 block text-body group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}>
-              {hasMetadata ? metadata.title ?? preview.label : preview.label}
+            <span
+              className={`mt-0.5 block text-body group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}
+            >
+              {hasMetadata ? (metadata.title ?? preview.label) : preview.label}
             </span>
             {hasMetadata && metadata.description ? (
-              <span className="mt-1 line-clamp-3 block text-label leading-5 text-muted">{metadata.description}</span>
+              <span className="mt-1 line-clamp-3 block text-label leading-5 text-muted">
+                {metadata.description}
+              </span>
             ) : null}
             {hasMetadata && metadata.imageUrl ? (
               <img

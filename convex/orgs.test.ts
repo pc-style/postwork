@@ -27,7 +27,7 @@ describe("organization slugs", () => {
     expect(defaultOrgSlug("  Acme & Sons  ")).toBe("acme-sons");
     expect(orgSlugError("acme-2")).toBeNull();
     for (const slug of ["ab", "-acme", "acme-", "Acme", "acme_team", "postwork", "staging"]) {
-      expect(orgSlugError(slug), slug).not.toBeNull();
+      expect(orgSlugError(slug)).not.toBeNull();
     }
   });
 
@@ -52,15 +52,17 @@ describe("organization slugs", () => {
       name: "Second Owner",
     });
     await second.mutation(api.users.ensureViewer, {});
-    await expect(second.mutation(api.orgs.create, { name: "Another Acme", slug: "acme" }))
-      .rejects.toThrow("already in use");
+    await expect(
+      second.mutation(api.orgs.create, { name: "Another Acme", slug: "acme" }),
+    ).rejects.toThrow("already in use");
   });
 
   test("only an admin can backfill or change its workspace slug", async () => {
     const { owner } = await setup();
     await owner.mutation(api.users.ensureViewer, {});
     await owner.mutation(api.orgs.create, { name: "Acme", slug: "acme" });
-    await expect(owner.mutation(api.orgs.setSlug, { slug: "acme-team" }))
-      .resolves.toEqual({ slug: "acme-team" });
+    await expect(owner.mutation(api.orgs.setSlug, { slug: "acme-team" })).resolves.toEqual({
+      slug: "acme-team",
+    });
   });
 });

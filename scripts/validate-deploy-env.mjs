@@ -38,28 +38,15 @@ function requireConvexDeploymentUrl(name, value) {
 }
 
 if (demo !== "true" && demo !== "false") {
-  throw new Error(
-    "VITE_DEMO must be explicitly set to true or false for deployment builds.",
-  );
+  throw new Error("VITE_DEMO must be explicitly set to true or false for deployment builds.");
 }
 
-const demoDeployment = requireConvexDeploymentUrl(
-  "DEMO_CONVEX_URL",
-  demoConvexUrl,
-);
-const productDeployment = requireConvexDeploymentUrl(
-  "PRODUCT_CONVEX_URL",
-  productConvexUrl,
-);
-requireConvexDeploymentUrl(
-  "VITE_CONVEX_URL",
-  frontendConvexUrl,
-);
+const demoDeployment = requireConvexDeploymentUrl("DEMO_CONVEX_URL", demoConvexUrl);
+const productDeployment = requireConvexDeploymentUrl("PRODUCT_CONVEX_URL", productConvexUrl);
+requireConvexDeploymentUrl("VITE_CONVEX_URL", frontendConvexUrl);
 
 if (demoDeployment === productDeployment) {
-  throw new Error(
-    "DEMO_CONVEX_URL and PRODUCT_CONVEX_URL must be different deployments.",
-  );
+  throw new Error("DEMO_CONVEX_URL and PRODUCT_CONVEX_URL must be different deployments.");
 }
 
 const expectedFrontendUrl = demo === "true" ? demoConvexUrl : productConvexUrl;

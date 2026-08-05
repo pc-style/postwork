@@ -8,8 +8,7 @@ import { PostMetaChips } from "./PostMetaChips";
 import { UserRoleTag } from "./UserRoleTag";
 
 export function PostCard({ post }: { post: EnrichedPost }) {
-  const snippet =
-    post.body.length > 180 ? `${post.body.slice(0, 180).trimEnd()}…` : post.body;
+  const snippet = post.body.length > 180 ? `${post.body.slice(0, 180).trimEnd()}…` : post.body;
   const prefetchPost = usePrefetchPost();
   const prefetch = () => prefetchPost(post._id);
 
@@ -23,7 +22,10 @@ export function PostCard({ post }: { post: EnrichedPost }) {
       onTouchStart={prefetch}
     >
       <div className="flex items-start gap-3">
-        <span className={`mt-2 size-2 shrink-0 rounded-full ${post.unread ? "bg-accent-soft" : "bg-transparent"}`} aria-hidden="true" />
+        <span
+          className={`mt-2 size-2 shrink-0 rounded-full ${post.unread ? "bg-accent-soft" : "bg-transparent"}`}
+          aria-hidden="true"
+        />
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <PostMetaChips post={post} quiet />
@@ -34,7 +36,9 @@ export function PostCard({ post }: { post: EnrichedPost }) {
             ) : null}
           </div>
 
-          <h2 className={`type-heading break-words text-title font-medium ${post.unread ? "text-fg" : "text-fg/75"}`}>
+          <h2
+            className={`type-heading break-words text-title font-medium ${post.unread ? "text-fg" : "text-fg/75"}`}
+          >
             {post.unread ? <span className="sr-only">unread: </span> : null}
             {post.title}
           </h2>
@@ -51,14 +55,21 @@ export function PostCard({ post }: { post: EnrichedPost }) {
 
             <div className="flex flex-wrap items-center gap-3 text-label text-muted">
               {post.participants.length > 0 ? (
-                <div className="flex -space-x-1.5" aria-label={`${post.participants.length} participants`}>
+                <div
+                  className="flex -space-x-1.5"
+                  aria-label={`${post.participants.length} participants`}
+                >
                   {post.participants.slice(0, 4).map((user) => (
                     <Avatar key={user._id} user={user} size={20} ring />
                   ))}
                 </div>
               ) : null}
-              <span className="type-numeric">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-              <span className="type-numeric text-accent-soft">active {timeAgo(post.lastActivityAt)}</span>
+              <span className="type-numeric">
+                {post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}
+              </span>
+              <span className="type-numeric text-accent-soft">
+                active {timeAgo(post.lastActivityAt)}
+              </span>
             </div>
           </div>
         </div>

@@ -39,15 +39,15 @@ describe("media upload decisions", () => {
       kind: "image",
       optimize: false,
     });
-    expect(
-      decideMediaFile({ contentType: "image/webp", size: 1024, width: 5000 }),
-    ).toMatchObject({ accepted: true, kind: "image", optimize: false });
+    expect(decideMediaFile({ contentType: "image/webp", size: 1024, width: 5000 })).toMatchObject({
+      accepted: true,
+      kind: "image",
+      optimize: false,
+    });
   });
 
   test("accepts supported video without browser transcoding", () => {
-    expect(
-      decideMediaFile({ contentType: "video/mp4", size: MEDIA_MAX_VIDEO_BYTES }),
-    ).toEqual({
+    expect(decideMediaFile({ contentType: "video/mp4", size: MEDIA_MAX_VIDEO_BYTES })).toEqual({
       accepted: true,
       kind: "video",
       optimize: false,
@@ -86,8 +86,9 @@ describe("media upload decisions", () => {
       accepted: true,
       kind: "file",
     });
-    expect(
-      decideMediaFile({ contentType: "image/png", size: 0 }),
-    ).toMatchObject({ accepted: false, reason: "Media files cannot be empty." });
+    expect(decideMediaFile({ contentType: "image/png", size: 0 })).toMatchObject({
+      accepted: false,
+      reason: "Media files cannot be empty.",
+    });
   });
 });

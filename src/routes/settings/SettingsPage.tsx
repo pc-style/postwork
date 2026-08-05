@@ -22,7 +22,10 @@ export function SettingsPage() {
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
       <h1 className="text-display font-semibold">settings</h1>
       <div className="mt-7 grid gap-8 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-12">
-        <nav aria-label="settings sections" className="flex gap-1 overflow-x-auto pb-2 pe-6 md:flex-col md:overflow-visible md:p-0">
+        <nav
+          aria-label="settings sections"
+          className="flex gap-1 overflow-x-auto pb-2 pe-6 md:flex-col md:overflow-visible md:p-0"
+        >
           {SECTIONS.map((item) => {
             const selected = section === item;
             return (
@@ -70,7 +73,12 @@ function WorkspaceSection() {
       const result = await setSlug({ slug });
       setSlugDraft(result.slug);
     } catch (caught) {
-      setError(getErrorMessage(caught, "couldn't update the workspace address. review the slug and try again."));
+      setError(
+        getErrorMessage(
+          caught,
+          "couldn't update the workspace address. review the slug and try again.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -79,16 +87,47 @@ function WorkspaceSection() {
   return (
     <section>
       <SectionHeader title="workspace" description="your team's name and canonical address." />
-      {!demoPolicy.productAuth ? <p className="text-body text-muted">workspace settings are available on the product deployment.</p> : me === undefined ? <p className="text-body text-muted">loading workspace…</p> : (
+      {!demoPolicy.productAuth ? (
+        <p className="text-body text-muted">
+          workspace settings are available on the product deployment.
+        </p>
+      ) : me === undefined ? (
+        <p className="text-body text-muted">loading workspace…</p>
+      ) : (
         <div className="max-w-xl rounded-lg border border-border bg-surface p-4">
           <h3 className="text-title font-medium">{me?.org?.name ?? "workspace"}</h3>
-          <p className="mt-2 text-label text-muted">{slug ? workspaceUrl(slug) : "this workspace still needs a slug."}</p>
+          <p className="mt-2 text-label text-muted">
+            {slug ? workspaceUrl(slug) : "this workspace still needs a slug."}
+          </p>
           {currentUser?.role === "admin" ? (
-            <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void save();
+              }}
+            >
               <FormField label="workspace slug" error={error}>
-                <input id="workspace-slug" value={slug} onChange={(event) => { setSlugDraft(event.target.value.toLowerCase()); setError(null); }} className="ui-field font-mono" placeholder="your-team" />
+                <input
+                  id="workspace-slug"
+                  value={slug}
+                  onChange={(event) => {
+                    setSlugDraft(event.target.value.toLowerCase());
+                    setError(null);
+                  }}
+                  className="ui-field font-mono"
+                  placeholder="your-team"
+                />
               </FormField>
-              <Button type="submit" size="sm" disabled={pristine || !slug.trim()} loading={saving} loadingLabel="saving…">save workspace address</Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={pristine || !slug.trim()}
+                loading={saving}
+                loadingLabel="saving…"
+              >
+                save workspace address
+              </Button>
             </form>
           ) : null}
         </div>
@@ -110,8 +149,12 @@ function ProfileSection() {
   return (
     <section>
       <SectionHeader title="profile" description="manage how teammates see you in postwork." />
-      {demoPolicy.productAuth ? <ProfileSettingsForm /> : (
-        <p className="text-body text-muted">profile editing is available on the product deployment.</p>
+      {demoPolicy.productAuth ? (
+        <ProfileSettingsForm />
+      ) : (
+        <p className="text-body text-muted">
+          profile editing is available on the product deployment.
+        </p>
       )}
     </section>
   );
@@ -140,7 +183,9 @@ function AgentsSection() {
       const next = await setXSyncHandle({ handle: nextHandle });
       setHandle(next.handle ? `@${next.handle}` : "");
     } catch (caught) {
-      setError(getErrorMessage(caught, "couldn't update this agent. review the handle and try again."));
+      setError(
+        getErrorMessage(caught, "couldn't update this agent. review the handle and try again."),
+      );
     } finally {
       setSaving(false);
     }
@@ -163,20 +208,51 @@ function AgentsSection() {
               ) : null}
             </div>
             {status?.configured ? (
-              <Button variant="quiet" size="sm" disabled={saving} onClick={() => void save(null)}>disconnect</Button>
+              <Button variant="quiet" size="sm" disabled={saving} onClick={() => void save(null)}>
+                disconnect
+              </Button>
             ) : null}
           </div>
           <div className="p-4">
-            {status === undefined ? <p className="text-body text-muted">loading agent…</p> : (
-              <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); void save(handle); }}>
+            {status === undefined ? (
+              <p className="text-body text-muted">loading agent…</p>
+            ) : (
+              <form
+                className="space-y-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void save(handle);
+                }}
+              >
                 <FormField
                   label="x handle"
-                  help={status.agentName ? `posts arrive in postwork as ${status.agentName}. new posts from this handle are mirrored every 30 minutes.` : "new posts from this handle are mirrored into postwork every 30 minutes."}
+                  help={
+                    status.agentName
+                      ? `posts arrive in postwork as ${status.agentName}. new posts from this handle are mirrored every 30 minutes.`
+                      : "new posts from this handle are mirrored into postwork every 30 minutes."
+                  }
                   error={error}
                 >
-                  <input id="x-sync-handle" value={handle} onChange={(event) => { setHandle(event.target.value); setError(null); }} placeholder="@handle" className="ui-field" />
+                  <input
+                    id="x-sync-handle"
+                    value={handle}
+                    onChange={(event) => {
+                      setHandle(event.target.value);
+                      setError(null);
+                    }}
+                    placeholder="@handle"
+                    className="ui-field"
+                  />
                 </FormField>
-                <Button type="submit" size="sm" disabled={pristine || !handle.trim()} loading={saving} loadingLabel="saving…">save x handle</Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={pristine || !handle.trim()}
+                  loading={saving}
+                  loadingLabel="saving…"
+                >
+                  save x handle
+                </Button>
               </form>
             )}
           </div>

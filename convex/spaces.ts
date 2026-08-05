@@ -29,9 +29,7 @@ async function countCreatedSpaces(
   return (
     await ctx.db
       .query("spaces")
-      .withIndex("by_org_id_and_created_by", (q) =>
-        q.eq("orgId", orgId).eq("createdBy", userId),
-      )
+      .withIndex("by_org_id_and_created_by", (q) => q.eq("orgId", orgId).eq("createdBy", userId))
       .take(limit)
   ).length;
 }
@@ -118,9 +116,7 @@ export const create = mutation({
     while (
       await ctx.db
         .query("spaces")
-        .withIndex("by_org_id_and_slug", (q) =>
-          q.eq("orgId", orgId).eq("slug", slug),
-        )
+        .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", orgId).eq("slug", slug))
         .unique()
     ) {
       slug = `${slugBase}-${suffix}`;
@@ -169,9 +165,7 @@ export const list = query({
       visible.map(async (space) => {
         const memberships = await ctx.db
           .query("spaceMemberships")
-          .withIndex("by_org_id_and_space_id", (q) =>
-            q.eq("orgId", orgId).eq("spaceId", space._id),
-          )
+          .withIndex("by_org_id_and_space_id", (q) => q.eq("orgId", orgId).eq("spaceId", space._id))
           .collect();
         const posts = await ctx.db
           .query("posts")
@@ -201,18 +195,14 @@ export const getBySlug = query({
     const orgId = scope.orgId;
     const space = await ctx.db
       .query("spaces")
-      .withIndex("by_org_id_and_slug", (q) =>
-        q.eq("orgId", orgId).eq("slug", args.slug),
-      )
+      .withIndex("by_org_id_and_slug", (q) => q.eq("orgId", orgId).eq("slug", args.slug))
       .unique();
     if (!space) return null;
     if (!(await canAccessSpace(ctx, space._id, viewer?._id))) return null;
 
     const memberships = await ctx.db
       .query("spaceMemberships")
-      .withIndex("by_org_id_and_space_id", (q) =>
-            q.eq("orgId", orgId).eq("spaceId", space._id),
-          )
+      .withIndex("by_org_id_and_space_id", (q) => q.eq("orgId", orgId).eq("spaceId", space._id))
       .collect();
 
     return {
@@ -234,9 +224,7 @@ export const membershipsForSpace = query({
 
     const memberships = await ctx.db
       .query("spaceMemberships")
-      .withIndex("by_org_id_and_space_id", (q) =>
-        q.eq("orgId", orgId).eq("spaceId", args.spaceId),
-      )
+      .withIndex("by_org_id_and_space_id", (q) => q.eq("orgId", orgId).eq("spaceId", args.spaceId))
       .collect();
 
     return await Promise.all(

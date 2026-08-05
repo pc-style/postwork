@@ -89,7 +89,11 @@ export function SendAgentButton({
               {AGENT_HANDLES[handle]}
             </button>
           ))}
-          {error ? <span role="alert" className="ui-error mt-1 block">{error}</span> : null}
+          {error ? (
+            <span role="alert" className="ui-error mt-1 block">
+              {error}
+            </span>
+          ) : null}
         </span>
       ) : null}
     </span>

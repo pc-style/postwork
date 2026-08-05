@@ -34,11 +34,7 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
   if (me.needsProfileSetup) {
     return <ProfileDialog mode="onboarding" open onClose={() => {}} />;
   }
-  if (
-    requestedTenantSlug &&
-    me.org?.slug &&
-    requestedTenantSlug !== me.org.slug
-  ) {
+  if (requestedTenantSlug && me.org?.slug && requestedTenantSlug !== me.org.slug) {
     const canonicalUrl = `${workspaceUrl(me.org.slug)}${window.location.pathname}${window.location.search}`;
     return (
       <AuthShell
@@ -48,10 +44,7 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
         <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
           <p className="text-body text-muted">
             continue to your workspace at{" "}
-            <span className="font-mono text-code text-fg">
-              {me.org.slug}.postwork.pcstyle.dev
-            </span>
-            .
+            <span className="font-mono text-code text-fg">{me.org.slug}.postwork.pcstyle.dev</span>.
           </p>
           <a
             href={canonicalUrl}
@@ -75,10 +68,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 }
 
 function AdminGate({ children }: { children: ReactNode }) {
-  const serverIsAdmin = useQuery(
-    api.admin.viewerIsAdmin,
-    demoPolicy.productAuth ? {} : "skip",
-  );
+  const serverIsAdmin = useQuery(api.admin.viewerIsAdmin, demoPolicy.productAuth ? {} : "skip");
   const isAdmin = demoPolicy.productAuth ? serverIsAdmin : false;
 
   if (isAdmin === undefined) {
@@ -88,9 +78,7 @@ function AdminGate({ children }: { children: ReactNode }) {
   if (!isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg px-6 text-center">
-        <h1 className="text-title font-semibold lowercase text-fg">
-          admin access required
-        </h1>
+        <h1 className="text-title font-semibold lowercase text-fg">admin access required</h1>
         <p className="max-w-sm text-body text-muted">
           {demoPolicy.productAuth
             ? "Ask an existing admin if you need access to this area."

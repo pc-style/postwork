@@ -40,12 +40,9 @@ const configuredDemo =
 
 export const isDemo = parseDemoFlag(configuredDemo);
 export const demoPolicy = getDemoPolicy(isDemo);
-export const DEMO_BANNER_MESSAGE =
-  "public demo: data resets, pick a teammate";
+export const DEMO_BANNER_MESSAGE = "public demo: data resets, pick a teammate";
 
-export function getRequiredViteEnv(
-  key: keyof Pick<ImportMetaEnv, "VITE_CONVEX_URL">,
-): string {
+export function getRequiredViteEnv(key: keyof Pick<ImportMetaEnv, "VITE_CONVEX_URL">): string {
   const value = import.meta.env[key];
   if (!value) {
     throw new Error(`${key} is not set. Run \`bunx convex dev\` to create a deployment.`);

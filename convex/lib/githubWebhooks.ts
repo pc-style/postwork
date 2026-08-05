@@ -33,9 +33,7 @@ function text(value: unknown, max: number): string | null {
 }
 
 function integer(value: unknown): number | null {
-  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
-    ? value
-    : null;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
 function safeUrl(value: unknown): string | null {
@@ -71,10 +69,7 @@ function postBody(fields: {
   ].join("\n");
 }
 
-function routeIssue(
-  action: string,
-  payload: Record<string, unknown>,
-): GitHubEventRoute | null {
+function routeIssue(action: string, payload: Record<string, unknown>): GitHubEventRoute | null {
   if (!new Set(["opened", "reopened", "closed"]).has(action)) return null;
   const issue = record(payload.issue);
   const repository = repositoryName(payload);
@@ -135,16 +130,18 @@ function routeWorkflowRun(
   if (!workflow || !repository || !actor || !name || !conclusion || !url || !runNumber) {
     return null;
   }
-  if (!new Set([
-    "action_required",
-    "cancelled",
-    "failure",
-    "neutral",
-    "skipped",
-    "stale",
-    "startup_failure",
-    "timed_out",
-  ]).has(conclusion)) {
+  if (
+    !new Set([
+      "action_required",
+      "cancelled",
+      "failure",
+      "neutral",
+      "skipped",
+      "stale",
+      "startup_failure",
+      "timed_out",
+    ]).has(conclusion)
+  ) {
     return null;
   }
   const title = `GitHub workflow ${conclusion}: ${name} #${runNumber}`.slice(0, 160);
@@ -173,9 +170,7 @@ export function routeGitHubEvent(event: string, value: unknown): GitHubEventRout
 
 export function githubExternalEventId(deliveryId: string): string | null {
   const normalized = deliveryId.trim();
-  return /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,199}$/.test(normalized)
-    ? `github:${normalized}`
-    : null;
+  return /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,199}$/.test(normalized) ? `github:${normalized}` : null;
 }
 
 export async function signGitHubPayload(

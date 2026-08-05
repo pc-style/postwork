@@ -8,9 +8,7 @@ import { Skeleton } from "../../components/Skeleton";
 import { AdminPage, AdminRecordList, StatusPill } from "./AdminShell";
 import { ActionButton } from "./AdminUsersPage";
 
-type AccessRequest = FunctionReturnType<
-  typeof api.admin.listAccessRequests
->[number];
+type AccessRequest = FunctionReturnType<typeof api.admin.listAccessRequests>[number];
 
 const STATUS_TONE = {
   pending: "warn",
@@ -32,8 +30,7 @@ export function AdminAccessRequestsPage() {
         <Skeleton preset="table" count={5} label="loading access requests" />
       ) : requests.length === 0 ? (
         <p className="text-body text-muted">
-          no requests yet. they land here when someone asks to join from the
-          sign-in screen.
+          no requests yet. they land here when someone asks to join from the sign-in screen.
         </p>
       ) : (
         <AdminRecordList
@@ -54,9 +51,7 @@ export function AdminAccessRequestsPage() {
             {
               label: "status",
               render: (request) => (
-                <StatusPill tone={STATUS_TONE[request.status]}>
-                  {request.status}
-                </StatusPill>
+                <StatusPill tone={STATUS_TONE[request.status]}>{request.status}</StatusPill>
               ),
             },
             {
@@ -68,20 +63,12 @@ export function AdminAccessRequestsPage() {
         />
       )}
 
-      {selected && (
-        <RequestSheet request={selected} onClose={() => setSelectedId(null)} />
-      )}
+      {selected && <RequestSheet request={selected} onClose={() => setSelectedId(null)} />}
     </AdminPage>
   );
 }
 
-function RequestSheet({
-  request,
-  onClose,
-}: {
-  request: AccessRequest;
-  onClose: () => void;
-}) {
+function RequestSheet({ request, onClose }: { request: AccessRequest; onClose: () => void }) {
   const approve = useMutation(api.admin.approveAccessRequest);
   const deny = useMutation(api.admin.denyAccessRequest);
   const [error, setError] = useState<string | null>(null);
@@ -106,17 +93,13 @@ function RequestSheet({
         request.status === "pending" ? (
           <div className="flex flex-wrap items-center gap-2">
             <ActionButton
-              onClick={() =>
-                run(() => approve({ requestId: request._id }), "approve this request")
-              }
+              onClick={() => run(() => approve({ requestId: request._id }), "approve this request")}
             >
               approve + mint invite
             </ActionButton>
             <ActionButton
               danger
-              onClick={() =>
-                run(() => deny({ requestId: request._id }), "deny this request")
-              }
+              onClick={() => run(() => deny({ requestId: request._id }), "deny this request")}
             >
               deny
             </ActionButton>
@@ -126,13 +109,9 @@ function RequestSheet({
     >
       <div className="divide-y divide-border/60">
         <SheetField label="status">
-          <StatusPill tone={STATUS_TONE[request.status]}>
-            {request.status}
-          </StatusPill>
+          <StatusPill tone={STATUS_TONE[request.status]}>{request.status}</StatusPill>
         </SheetField>
-        <SheetField label="message">
-          {request.message ?? "no message"}
-        </SheetField>
+        <SheetField label="message">{request.message ?? "no message"}</SheetField>
         <SheetField label="requested">{timeAgo(request.createdAt)}</SheetField>
         {request.resolvedAt ? (
           <SheetField label="resolved">{timeAgo(request.resolvedAt)}</SheetField>
@@ -148,8 +127,7 @@ function RequestSheet({
       </div>
       {request.status === "approved" && (
         <p className="mt-4 text-label text-muted">
-          the invite code is in the invites section. copy it there and send it
-          to the requester.
+          the invite code is in the invites section. copy it there and send it to the requester.
         </p>
       )}
       {error && <p className="mt-4 text-label text-urgent">{error}</p>}

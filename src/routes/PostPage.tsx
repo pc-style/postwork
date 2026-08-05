@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { useStore, usePost, useReplies } from "../lib/store";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -27,17 +27,17 @@ export function PostPage() {
 
   const post = usePost(postId);
   const replies = useReplies(postId).replies;
+  const hasPost = post !== undefined && post !== null;
 
   useDocumentTitle(post ? `${post.title} · postwork` : "postwork");
+  const markRead = useEffectEvent(() => store.markRead(postId));
 
   // Mark read whenever this post (or its activity) is viewed — session only.
   useEffect(() => {
-    if (post) {
-      store.markRead(postId);
+    if (hasPost) {
+      markRead();
     }
-    // store.markRead is stable enough via useCallback; depend on activity bump.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId, post?.lastActivityAt]);
+  }, [hasPost, postId, post?.lastActivityAt]);
 
   if (post === undefined) {
     return <LoadingState label="Loading post" preset="post" />;
@@ -58,39 +58,39 @@ export function PostPage() {
       {slots.post ? (
         slots.post({ postId: post._id })
       ) : (
-      <article className="rounded-lg border border-border bg-surface p-5">
-        <PostMetaChips post={post} className="mb-3" />
+        <article className="rounded-lg border border-border bg-surface p-5">
+          <PostMetaChips post={post} className="mb-3" />
 
-        <h1 className="type-heading text-display font-semibold text-fg">{post.title}</h1>
+          <h1 className="type-heading text-display font-semibold text-fg">{post.title}</h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body text-muted">
-          <Avatar user={post.author} size={28} />
-          <span className="text-fg">{post.author?.name}</span>
-          {post.author?.isAgent && <AgentTag />}
-          <UserRoleTag role={post.author?.role} />
-          <span>{post.author?.title}</span>
-          <span className="type-numeric">{timeAgo(post.createdAt)}</span>
-        </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body text-muted">
+            <Avatar user={post.author} size={28} />
+            <span className="text-fg">{post.author?.name}</span>
+            {post.author?.isAgent && <AgentTag />}
+            <UserRoleTag role={post.author?.role} />
+            <span>{post.author?.title}</span>
+            <span className="type-numeric">{timeAgo(post.createdAt)}</span>
+          </div>
 
-        <div className="mt-4">
-          <RichText text={post.body} className="prose-post text-title text-fg" />
-          <RichEmbedList text={post.body} />
-        </div>
+          <div className="mt-4">
+            <RichText text={post.body} className="prose-post text-title text-fg" />
+            <RichEmbedList text={post.body} />
+          </div>
 
-        <div className="mt-5">
-          <AgentSummary
-            postId={post._id}
-            summary={post.summary}
-            model={post.summaryModel}
-            updatedAt={post.summaryUpdatedAt}
-            isStale={post.isStale}
-          />
-        </div>
+          <div className="mt-5">
+            <AgentSummary
+              postId={post._id}
+              summary={post.summary}
+              model={post.summaryModel}
+              updatedAt={post.summaryUpdatedAt}
+              isStale={post.isStale}
+            />
+          </div>
 
-        <div className="mt-4">
-          <AgentTasksPanel postId={post._id} />
-        </div>
-      </article>
+          <div className="mt-4">
+            <AgentTasksPanel postId={post._id} />
+          </div>
+        </article>
       )}
 
       <div className="mt-6">

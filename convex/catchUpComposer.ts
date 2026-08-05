@@ -49,9 +49,7 @@ export function composeCatchUpDigest<TPost>(
   candidates: readonly CatchUpCandidate<TPost>[],
   limit = DEFAULT_CATCH_UP_LIMIT,
 ): CatchUpDigest<TPost> {
-  const eligible = candidates
-    .filter((candidate) => candidate.unread)
-    .sort(compareCandidates);
+  const eligible = candidates.filter((candidate) => candidate.unread).sort(compareCandidates);
   const boundedLimit = Math.max(1, Math.floor(limit));
 
   return {
@@ -64,10 +62,7 @@ export function composeCatchUpDigest<TPost>(
   };
 }
 
-function compareCandidates<TPost>(
-  a: CatchUpCandidate<TPost>,
-  b: CatchUpCandidate<TPost>,
-): number {
+function compareCandidates<TPost>(a: CatchUpCandidate<TPost>, b: CatchUpCandidate<TPost>): number {
   return (
     PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] ||
     b.lastActivityAt - a.lastActivityAt ||
@@ -76,9 +71,7 @@ function compareCandidates<TPost>(
   );
 }
 
-function projectSummary<TPost>(
-  candidate: CatchUpCandidate<TPost>,
-): CatchUpSummary {
+function projectSummary<TPost>(candidate: CatchUpCandidate<TPost>): CatchUpSummary {
   const text = candidate.summary?.trim();
   if (!text) {
     return { status: "missing", text: null, model: null, updatedAt: null };

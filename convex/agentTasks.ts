@@ -1,6 +1,12 @@
 import { generateText } from "ai";
 import { ConvexError, v } from "convex/values";
-import { internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
@@ -29,13 +35,10 @@ async function generateAgentResult(args: {
   prompt: string;
   contextText: string;
 }): Promise<AgentResult> {
-  const openRouterModelId = await args.ctx.runQuery(
-    internal.ai.getGenerationModelSetting,
-    {
-      orgId: args.orgId,
-      kind: "agentTask",
-    },
-  );
+  const openRouterModelId = await args.ctx.runQuery(internal.ai.getGenerationModelSetting, {
+    orgId: args.orgId,
+    kind: "agentTask",
+  });
 
   // Demo fallback: when no AI provider is configured on the deployment, the
   // action returns a disabled signal instead of throwing — so the client shows
@@ -51,8 +54,7 @@ async function generateAgentResult(args: {
 
   // agentName is interpolated into the system prompt — collapse whitespace and
   // cap length so it can't carry injected multi-line instructions.
-  const agentName =
-    args.agentName.replace(/\s+/g, " ").trim().slice(0, 60) || "an agent";
+  const agentName = args.agentName.replace(/\s+/g, " ").trim().slice(0, 60) || "an agent";
   const { model, modelId } = resolveModel({ openRouterModelId });
   const { text } = await generateText({
     model,
@@ -109,11 +111,8 @@ export const forPost = query({
     if (scope.authenticated && !scope.viewer) return [];
     const viewer = scope.viewer;
     const post = await ctx.db.get(args.postId);
-    if (
-      !post ||
-      post.orgId !== scope.orgId ||
-      !(await canAccessPost(ctx, post, viewer?._id))
-    ) return [];
+    if (!post || post.orgId !== scope.orgId || !(await canAccessPost(ctx, post, viewer?._id)))
+      return [];
     const tasks = await ctx.db
       .query("agentTasks")
       .withIndex("by_org_id_and_post_id", (q) =>
@@ -149,11 +148,7 @@ export const create = mutation({
 
     if (args.sourceReplyId) {
       const sourceReply = await ctx.db.get(args.sourceReplyId);
-      if (
-        !sourceReply ||
-        sourceReply.orgId !== orgId ||
-        sourceReply.postId !== args.postId
-      ) {
+      if (!sourceReply || sourceReply.orgId !== orgId || sourceReply.postId !== args.postId) {
         notFound("Source reply not found.");
       }
     }
@@ -211,10 +206,7 @@ export const getRunnableTask = internalQuery({
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId);
     if (!task) return null;
-    const [post, agent] = await Promise.all([
-      ctx.db.get(task.postId),
-      ctx.db.get(task.agentId),
-    ]);
+    const [post, agent] = await Promise.all([ctx.db.get(task.postId), ctx.db.get(task.agentId)]);
     if (!post || !agent || post.orgId !== task.orgId || agent.orgId !== task.orgId) {
       return null;
     }
@@ -247,9 +239,7 @@ export const getRunnableTask = internalQuery({
       "",
       "REPLIES:",
       ...(replies.length
-        ? replies.map(
-            (reply) => `- ${authorNames.get(reply.authorId) ?? "Unknown"}: ${reply.body}`,
-          )
+        ? replies.map((reply) => `- ${authorNames.get(reply.authorId) ?? "Unknown"}: ${reply.body}`)
         : ["(no replies yet)"]),
     ].join("\n");
 
@@ -310,7 +300,11 @@ export const runSimulated = internalAction({
     try {
       const res = await generateAgentResult({
         ctx,
-        orgId: runnable.task.orgId ?? (() => { throw new Error("Agent task missing orgId"); })(),
+        orgId:
+          runnable.task.orgId ??
+          (() => {
+            throw new Error("Agent task missing orgId");
+          })(),
         agentName: runnable.agentName,
         prompt: runnable.task.prompt,
         contextText: runnable.contextText,
@@ -326,15 +320,12 @@ export const runSimulated = internalAction({
         return;
       }
 
-      const replyId: Id<"replies"> = await ctx.runMutation(
-        internal.replies.createAsAgent,
-        {
-          postId: runnable.task.postId,
-          parentId: runnable.task.sourceReplyId,
-          authorId: runnable.task.agentId,
-          body: res.result,
-        },
-      );
+      const replyId: Id<"replies"> = await ctx.runMutation(internal.replies.createAsAgent, {
+        postId: runnable.task.postId,
+        parentId: runnable.task.sourceReplyId,
+        authorId: runnable.task.agentId,
+        body: res.result,
+      });
 
       await ctx.runMutation(internal.agentTasks.setStatus, {
         taskId: args.taskId,
@@ -349,9 +340,7 @@ export const runSimulated = internalAction({
       await ctx.runMutation(internal.agentTasks.setStatus, {
         taskId: args.taskId,
         status: "failed",
-        error: /API_KEY|not set/i.test(msg)
-          ? "AI is disabled for the time of the demo."
-          : msg,
+        error: /API_KEY|not set/i.test(msg) ? "AI is disabled for the time of the demo." : msg,
         completedAt: Date.now(),
       });
     }

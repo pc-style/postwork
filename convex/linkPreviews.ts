@@ -10,7 +10,13 @@ const FETCH_TIMEOUT_MS = 8_000;
 
 function isPrivateHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (host === "localhost" || host.endsWith(".local") || host === "::1" || host === "0:0:0:0:0:0:0:1") return true;
+  if (
+    host === "localhost" ||
+    host.endsWith(".local") ||
+    host === "::1" ||
+    host === "0:0:0:0:0:0:0:1"
+  )
+    return true;
   if (/^(?:0|10|127)(?:\.|$)/.test(host) || /^192\.168(?:\.|$)/.test(host)) return true;
   const match172 = host.match(/^172\.(\d+)(?:\.|$)/);
   if (match172 && Number(match172[1]) >= 16 && Number(match172[1]) <= 31) return true;
@@ -22,7 +28,13 @@ export function normalizePreviewUrl(value: string): string | null {
   if (value.length === 0 || value.length > MAX_URL_LENGTH) return null;
   try {
     const url = new URL(value);
-    if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password || isPrivateHostname(url.hostname)) return null;
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password ||
+      isPrivateHostname(url.hostname)
+    )
+      return null;
     url.hash = "";
     return url.toString();
   } catch {
@@ -79,8 +91,17 @@ export const get = query({
   args: { urls: v.array(v.string()) },
   handler: async (ctx, { urls }) => {
     if (urls.length > MAX_URLS) throw new ConvexError("At most 5 link previews can be requested");
-    const normalized = [...new Set(urls.map(normalizePreviewUrl).filter((url): url is string => url !== null))];
-    return Promise.all(normalized.map((url) => ctx.db.query("linkPreviews").withIndex("by_url", (q) => q.eq("url", url)).unique()));
+    const normalized = [
+      ...new Set(urls.map(normalizePreviewUrl).filter((url): url is string => url !== null)),
+    ];
+    return Promise.all(
+      normalized.map((url) =>
+        ctx.db
+          .query("linkPreviews")
+          .withIndex("by_url", (q) => q.eq("url", url))
+          .unique(),
+      ),
+    );
   },
 });
 
@@ -89,14 +110,22 @@ export const request = mutation({
   handler: async (ctx, { urls }) => {
     if (urls.length > MAX_URLS) throw new ConvexError("At most 5 link previews can be requested");
     const now = Date.now();
-    const normalized = [...new Set(urls.map((value) => {
-      const url = normalizePreviewUrl(value);
-      if (!url) throw new ConvexError("Invalid or unsafe preview URL");
-      return url;
-    }))];
+    const normalized = [
+      ...new Set(
+        urls.map((value) => {
+          const url = normalizePreviewUrl(value);
+          if (!url) throw new ConvexError("Invalid or unsafe preview URL");
+          return url;
+        }),
+      ),
+    ];
     for (const url of normalized) {
-      const existing = await ctx.db.query("linkPreviews").withIndex("by_url", (q) => q.eq("url", url)).unique();
-      if (existing && (existing.status !== "failed" || now - existing.fetchedAt < RETRY_AFTER_MS)) continue;
+      const existing = await ctx.db
+        .query("linkPreviews")
+        .withIndex("by_url", (q) => q.eq("url", url))
+        .unique();
+      if (existing && (existing.status !== "failed" || now - existing.fetchedAt < RETRY_AFTER_MS))
+        continue;
       if (existing) await ctx.db.patch(existing._id, { status: "pending", fetchedAt: now });
       else await ctx.db.insert("linkPreviews", { url, status: "pending", fetchedAt: now });
       await ctx.scheduler.runAfter(0, internal.linkPreviews.fetchPreview, { url });
@@ -115,7 +144,10 @@ export const storePreview = internalMutation({
     siteName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const row = await ctx.db.query("linkPreviews").withIndex("by_url", (q) => q.eq("url", args.url)).unique();
+    const row = await ctx.db
+      .query("linkPreviews")
+      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .unique();
     const value = { ...args, fetchedAt: Date.now() };
     if (row) await ctx.db.patch(row._id, value);
     else await ctx.db.insert("linkPreviews", value);
@@ -140,7 +172,10 @@ async function readLimited(response: Response): Promise<string> {
   }
   const bytes = new Uint8Array(size);
   let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
   return new TextDecoder().decode(bytes);
 }
 

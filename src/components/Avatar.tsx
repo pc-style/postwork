@@ -6,10 +6,7 @@ export function Avatar({
   size = 36,
   ring = false,
 }: {
-  user: Pick<
-    Doc<"users">,
-    "initials" | "avatarColor" | "name" | "avatarUrl"
-  > | null;
+  user: Pick<Doc<"users">, "initials" | "avatarColor" | "name" | "avatarUrl"> | null;
   size?: number;
   ring?: boolean;
 }) {

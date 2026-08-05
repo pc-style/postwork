@@ -17,10 +17,7 @@ export function parseAgentMentions(body: string): string[] {
   return [...handles];
 }
 
-export function resolveAgentUser(
-  handle: string,
-  users: Doc<"users">[],
-): Doc<"users"> | undefined {
+export function resolveAgentUser(handle: string, users: Doc<"users">[]): Doc<"users"> | undefined {
   const name = AGENT_HANDLES[handle.toLowerCase()];
   if (!name) return undefined;
   return users.find((user) => user.isAgent && user.name === name);

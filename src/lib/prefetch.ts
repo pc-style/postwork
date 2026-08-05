@@ -15,10 +15,7 @@ import { convex } from "./convexClient";
 const PREFETCH_TTL_MS = 45_000;
 const MAX_ACTIVE = 25;
 
-const active = new Map<
-  string,
-  { unsubscribe: () => void; timer: ReturnType<typeof setTimeout> }
->();
+const active = new Map<string, { unsubscribe: () => void; timer: ReturnType<typeof setTimeout> }>();
 
 function release(key: string) {
   const entry = active.get(key);

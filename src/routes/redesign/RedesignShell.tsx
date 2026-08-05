@@ -32,9 +32,7 @@ export function RedesignShell({ children }: { children: ReactNode }) {
       </div>
       <div className="flex min-h-screen w-full">
         <Sidebar />
-        <main className={`min-w-0 flex-1 ${showComposerDock ? "pb-20" : ""}`}>
-          {children}
-        </main>
+        <main className={`min-w-0 flex-1 ${showComposerDock ? "pb-20" : ""}`}>{children}</main>
       </div>
 
       {showComposerDock ? <QuickPostBar /> : null}
@@ -72,9 +70,7 @@ const NAV: ReadonlyArray<{
 ];
 
 const SIDEBAR_TOP = demoPolicy.publicDemoBanner ? "md:top-8" : "md:top-0";
-const SIDEBAR_HEIGHT = demoPolicy.publicDemoBanner
-  ? "md:h-[calc(100vh-2rem)]"
-  : "md:h-screen";
+const SIDEBAR_HEIGHT = demoPolicy.publicDemoBanner ? "md:h-[calc(100vh-2rem)]" : "md:h-screen";
 
 function MobileHeader({ onOpen }: { onOpen: () => void }) {
   const counts = useCounts();
@@ -83,7 +79,10 @@ function MobileHeader({ onOpen }: { onOpen: () => void }) {
       <Link to="/app" className="text-title font-semibold tracking-tight">
         post<span className="text-accent-soft">work</span>
       </Link>
-      <div className="ml-auto flex items-center gap-2 text-label text-muted" aria-label="Your queue">
+      <div
+        className="ml-auto flex items-center gap-2 text-label text-muted"
+        aria-label="Your queue"
+      >
         <Link
           to="/app"
           search={{ unread: true }}
@@ -110,7 +109,9 @@ function MobileHeader({ onOpen }: { onOpen: () => void }) {
 
 function Sidebar() {
   return (
-    <aside className={`sticky ${SIDEBAR_TOP} hidden h-screen ${SIDEBAR_HEIGHT} w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border pt-6 md:flex`}>
+    <aside
+      className={`sticky ${SIDEBAR_TOP} hidden h-screen ${SIDEBAR_HEIGHT} w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border pt-6 md:flex`}
+    >
       <div className="shrink-0 px-5">
         <Link to="/app" className="text-title font-semibold tracking-tight">
           post<span className="text-accent-soft">work</span>
@@ -134,7 +135,10 @@ function Sidebar() {
 function Queue({ onSelect }: { onSelect?: () => void }) {
   const counts = useCounts();
   return (
-    <div className="mt-4 flex shrink-0 flex-wrap gap-4 border-y border-border px-5 py-3 text-label text-muted" aria-label="Your queue">
+    <div
+      className="mt-4 flex shrink-0 flex-wrap gap-4 border-y border-border px-5 py-3 text-label text-muted"
+      aria-label="Your queue"
+    >
       <Link
         to="/app"
         search={{ unread: true }}
@@ -216,7 +220,12 @@ function MobileNavigation({ onSelect }: { onSelect: () => void }) {
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-      <path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M5 7h14M5 12h14M5 17h14"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

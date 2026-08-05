@@ -37,16 +37,12 @@ function errorText(result: ReturnType<typeof validate>) {
 describe("deployment environment contract", () => {
   test("accepts matching demo and product deployments", () => {
     expect(validate().exitCode).toBe(0);
-    expect(
-      validate({ VITE_DEMO: "false", VITE_CONVEX_URL: productUrl }).exitCode,
-    ).toBe(0);
+    expect(validate({ VITE_DEMO: "false", VITE_CONVEX_URL: productUrl }).exitCode).toBe(0);
   });
 
   test("accepts regional Convex deployment hosts", () => {
-    const regionalDemoUrl =
-      "https://postwork-demo.eu-west-1.convex.cloud";
-    const regionalProductUrl =
-      "https://postwork-product.eu-west-1.convex.cloud";
+    const regionalDemoUrl = "https://postwork-demo.eu-west-1.convex.cloud";
+    const regionalProductUrl = "https://postwork-product.eu-west-1.convex.cloud";
 
     expect(
       validate({
@@ -57,14 +53,11 @@ describe("deployment environment contract", () => {
     ).toBe(0);
   });
 
-  test.each(["DEMO_CONVEX_URL", "PRODUCT_CONVEX_URL"])(
-    "rejects missing %s",
-    (name) => {
-      const result = validate({ [name]: undefined });
-      expect(result.exitCode).not.toBe(0);
-      expect(errorText(result)).toContain(`${name} must be set`);
-    },
-  );
+  test.each(["DEMO_CONVEX_URL", "PRODUCT_CONVEX_URL"])("rejects missing %s", (name) => {
+    const result = validate({ [name]: undefined });
+    expect(result.exitCode).not.toBe(0);
+    expect(errorText(result)).toContain(`${name} must be set`);
+  });
 
   test("rejects identical expected deployments", () => {
     const result = validate({ PRODUCT_CONVEX_URL: `${demoUrl}/` });
@@ -96,9 +89,7 @@ describe("deployment environment contract", () => {
   ])("rejects invalid deployment URL in %s", (name, value) => {
     const result = validate({ [name]: value });
     expect(result.exitCode).not.toBe(0);
-    expect(errorText(result)).toContain(
-      `${name} must be a valid HTTPS Convex deployment URL`,
-    );
+    expect(errorText(result)).toContain(`${name} must be a valid HTTPS Convex deployment URL`);
   });
 
   test("rejects missing Clerk configuration in product mode", () => {

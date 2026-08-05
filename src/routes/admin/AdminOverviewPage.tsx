@@ -19,29 +19,15 @@ export function AdminOverviewPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Stat
-              label="members"
-              value={overview.members}
-              to="/admin/users"
-              filter="members"
-            />
-            <Stat
-              label="agents"
-              value={overview.agents}
-              to="/admin/users"
-              filter="agents"
-            />
+            <Stat label="members" value={overview.members} to="/admin/users" filter="members" />
+            <Stat label="agents" value={overview.agents} to="/admin/users" filter="agents" />
             <Stat
               label="deactivated"
               value={overview.deactivated}
               to="/admin/users"
               filter="deactivated"
             />
-            <Stat
-              label="active invites"
-              value={overview.activeInvites}
-              to="/admin/invites"
-            />
+            <Stat label="active invites" value={overview.activeInvites} to="/admin/invites" />
             <Stat
               label="pending requests"
               value={overview.pendingRequests}
@@ -52,9 +38,7 @@ export function AdminOverviewPage() {
 
           <div className="mt-10">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-label font-medium lowercase text-muted">
-                recent activity
-              </h2>
+              <h2 className="text-label font-medium lowercase text-muted">recent activity</h2>
               <Link
                 to="/admin/audit-log"
                 className="inline-flex min-h-11 items-center rounded-md px-2 text-label text-accent-soft transition-colors hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
@@ -73,9 +57,7 @@ export function AdminOverviewPage() {
                     key={entry._id}
                     className="flex items-baseline justify-between gap-4 rounded-md border border-border bg-surface px-4 py-2.5 text-body"
                   >
-                    <span className="font-mono text-label text-fg">
-                      {entry.action}
-                    </span>
+                    <span className="font-mono text-label text-fg">{entry.action}</span>
                     <span className="shrink-0 text-label text-muted tabular-nums">
                       {timeAgo(entry.createdAt)}
                     </span>
@@ -116,9 +98,7 @@ function Stat({
       >
         {value}
       </div>
-      <div className="mt-0.5 text-label font-medium lowercase text-muted">
-        {label}
-      </div>
+      <div className="mt-0.5 text-label font-medium lowercase text-muted">{label}</div>
     </Link>
   );
 }

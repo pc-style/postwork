@@ -17,9 +17,7 @@ export function PageHeader({
     <header className="mb-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="type-heading text-display font-semibold text-fg">
-            {title.toLowerCase()}
-          </h1>
+          <h1 className="type-heading text-display font-semibold text-fg">{title.toLowerCase()}</h1>
           {description ? (
             <p className="type-description mt-1.5 text-body text-muted">{description}</p>
           ) : null}
