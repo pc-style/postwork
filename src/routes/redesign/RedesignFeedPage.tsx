@@ -1,7 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
-import { FeedCover, FeedCoverModeToggle, feedCoverVariant } from "../../components/FeedCover";
+import { FeedCover, FeedCoverModeToggle } from "../../components/FeedCover";
 import { LoadingState } from "../../components/LoadingState";
 import type { ReactNode } from "react";
 import { useFeedCoverMode } from "../../lib/feedDisplay";
@@ -173,7 +173,6 @@ function FeedRow({ post }: { post: EnrichedPost }) {
   const prefetch = () => prefetchPost(post._id);
   const coverMode = useFeedCoverMode();
   const cover = post.cover ?? null;
-  const coverVariant = cover ? feedCoverVariant(cover, coverMode) : null;
 
   return (
     <Link
@@ -193,26 +192,19 @@ function FeedRow({ post }: { post: EnrichedPost }) {
                 <span className="sr-only">Unread: </span>
               </>
             ) : null}
-            {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
+            {post.pinned ? <span className="mr-2 text-label font-medium text-accent-soft">pinned</span> : null}
             {post.title}
           </h2>
           {post.body.trim() ? (
-            <p className="mt-1 line-clamp-2 text-sm text-muted">
+            <p className="mt-1 line-clamp-2 text-body text-muted">
               {post.body.length > 240 ? `${post.body.slice(0, 240).trimEnd()}…` : post.body}
             </p>
           ) : null}
         </div>
-        {cover && coverVariant === "thumb" ? (
-          <FeedCover cover={cover} variant="thumb" />
-        ) : null}
+        {cover ? <FeedCover cover={cover} mode={coverMode} /> : null}
       </div>
-      {cover && coverVariant === "banner" ? (
-        <div className="mt-2">
-          <FeedCover cover={cover} variant="banner" />
-        </div>
-      ) : null}
-      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-        <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-muted">
+        <span className="text-fg/85">{post.author?.name ?? "unknown"}</span>
         <span>{post.space}</span>
         <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
         <span className="tabular-nums">Active {timeAgo(post.lastActivityAt)}</span>

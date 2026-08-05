@@ -5,7 +5,7 @@ import { usePrefetchPost } from "../lib/store";
 import type { EnrichedPost } from "../lib/types";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
-import { FeedCover, feedCoverVariant } from "./FeedCover";
+import { FeedCover } from "./FeedCover";
 import { PostMetaChips } from "./PostMetaChips";
 import { UserRoleTag } from "./UserRoleTag";
 
@@ -16,7 +16,6 @@ export function PostCard({ post }: { post: EnrichedPost }) {
   const prefetch = () => prefetchPost(post._id);
   const coverMode = useFeedCoverMode();
   const cover = post.cover ?? null;
-  const coverVariant = cover ? feedCoverVariant(cover, coverMode) : null;
 
   return (
     <Link
@@ -47,15 +46,8 @@ export function PostCard({ post }: { post: EnrichedPost }) {
               </h2>
               <p className="type-description mt-1 line-clamp-2 text-body text-muted">{snippet}</p>
             </div>
-            {cover && coverVariant === "thumb" ? (
-              <FeedCover cover={cover} variant="thumb" />
-            ) : null}
+            {cover ? <FeedCover cover={cover} mode={coverMode} /> : null}
           </div>
-          {cover && coverVariant === "banner" ? (
-            <div className="mt-3">
-              <FeedCover cover={cover} variant="banner" />
-            </div>
-          ) : null}
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-muted">
