@@ -7,12 +7,13 @@ import { FormField } from "../components/FormField";
 import { PageHeader } from "../components/PageHeader";
 import { timeAgo } from "../lib/format";
 import { useSpaceCreationStatus, useSpacesList } from "../lib/spaces";
-import { useStore } from "../lib/store";
+import { usePrefetchSpace, useStore } from "../lib/store";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 
 export function SpacesPage() {
   useDocumentTitle("spaces · postwork");
   const spaces = useSpacesList().slice().sort((a, b) => b.latestActivityAt - a.latestActivityAt);
+  const prefetchSpace = usePrefetchSpace();
   const creationStatus = useSpaceCreationStatus();
   const [creating, setCreating] = useState(false);
 
@@ -52,6 +53,9 @@ export function SpacesPage() {
               to="/app/spaces/$slug"
               params={{ slug: space.slug }}
               className="group block rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent/40 hover:bg-surface-2"
+              onMouseEnter={() => prefetchSpace(space)}
+              onFocus={() => prefetchSpace(space)}
+              onTouchStart={() => prefetchSpace(space)}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">

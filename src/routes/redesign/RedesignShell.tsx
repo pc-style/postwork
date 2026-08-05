@@ -9,7 +9,7 @@ import { UserSwitcher } from "../../components/UserSwitcher";
 import { demoPolicy } from "../../lib/demoMode";
 import { navItemClass, useActiveNavKey, type NavKey } from "../../lib/activeNav";
 import { useSession } from "../../lib/session";
-import { useCounts } from "../../lib/store";
+import { useCounts, usePrefetchNav } from "../../lib/store";
 import { useUnreadTabBadge } from "../../lib/useDocumentTitle";
 import { useUnreadNotifier } from "../../lib/notifications";
 
@@ -160,6 +160,7 @@ function Queue({ onSelect }: { onSelect?: () => void }) {
 function NavLinks({ onSelect }: { onSelect?: () => void }) {
   const { currentUser } = useSession();
   const activeKey = useActiveNavKey();
+  const prefetchNav = usePrefetchNav();
   return (
     <nav aria-label="Primary navigation" className="flex flex-col gap-1 px-3">
       {NAV.map((item) => (
@@ -170,6 +171,9 @@ function NavLinks({ onSelect }: { onSelect?: () => void }) {
           aria-current={activeKey === item.key ? "page" : undefined}
           className={navItemClass(activeKey === item.key)}
           onClick={onSelect}
+          onMouseEnter={() => prefetchNav(item.key)}
+          onFocus={() => prefetchNav(item.key)}
+          onTouchStart={() => prefetchNav(item.key)}
         >
           {item.label}
         </Link>

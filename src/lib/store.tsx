@@ -992,6 +992,54 @@ export function useSearch(term: string) {
 }
 
 /**
+ * Warms the Convex cache for a sidebar destination before navigation (call
+ * on hover/focus/touch of a nav link). Each case prefetches the exact
+ * query+args the destination page mounts with, so it renders without a
+ * loading state. Destinations whose data is already live (home reuses the
+ * feed subscription) or form-driven (settings) have nothing to warm.
+ */
+export function usePrefetchNav() {
+  const store = useStore();
+  const viewerId = store.currentUserId;
+  return useCallback(
+    (key: string) => {
+      switch (key) {
+        case "catch-up":
+          prefetchQuery(api.posts.catchUpDigest, {});
+          break;
+        case "spaces":
+          prefetchQuery(api.spaces.list, { viewerId });
+          break;
+        case "agents":
+          prefetchQuery(api.agentTasks.list, {});
+          break;
+        default:
+          break;
+      }
+    },
+    [viewerId],
+  );
+}
+
+/**
+ * Warms the Convex cache for a space page before navigation (call on
+ * hover/focus/touch of a space row). Prefetches the same `getBySlug` and
+ * `postsForSpace` args the space page mounts with.
+ */
+export function usePrefetchSpace() {
+  const store = useStore();
+  const viewerId = store.currentUserId;
+  return useCallback(
+    (space: { slug: string; _id: Id<"spaces"> }) => {
+      if (isLocalId(space._id)) return;
+      prefetchQuery(api.spaces.getBySlug, { slug: space.slug, viewerId });
+      prefetchQuery(api.spaces.postsForSpace, { spaceId: space._id, viewerId });
+    },
+    [viewerId],
+  );
+}
+
+/**
  * Returns a callback that warms the Convex cache for a post page before
  * navigation (call it on hover/focus/touch of a post link). Prefetches the
  * same `api.posts.get` args `usePost` will use, so the post page renders
