@@ -9,33 +9,25 @@ import type { EnrichedPost } from "../lib/types";
 export type PostCover = NonNullable<EnrichedPost["cover"]>;
 
 /**
- * A feed card's cover, always a right-aligned square thumbnail (hackernews /
- * reddit style): 56px in compact mode, 96px in regular. Lazy, fixed-size
- * against layout shift, and self-hiding when the image fails to load.
+ * A feed card's cover: a right-aligned 96px square thumbnail (hackernews /
+ * reddit style). Rendered only in "regular" media mode; "compact" cards are
+ * text-only. Lazy, fixed-size against layout shift, and self-hiding when the
+ * image fails to load.
  */
-export function FeedCover({
-  cover,
-  mode,
-}: {
-  cover: PostCover;
-  mode: FeedCoverMode;
-}) {
+export function FeedCover({ cover }: { cover: PostCover }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   if (failedUrl === cover.url) return null;
 
-  const px = mode === "regular" ? 96 : 56;
   return (
     <img
       src={cover.url}
       alt={cover.alt}
       loading="lazy"
-      width={px}
-      height={px}
+      width={96}
+      height={96}
       referrerPolicy="no-referrer"
       onError={() => setFailedUrl(cover.url)}
-      className={`${
-        mode === "regular" ? "size-24" : "size-14"
-      } shrink-0 rounded-md border border-border bg-bg object-cover`}
+      className="size-24 shrink-0 rounded-md border border-border bg-bg object-cover"
     />
   );
 }

@@ -201,7 +201,7 @@ function FeedRow({ post }: { post: EnrichedPost }) {
             </p>
           ) : null}
         </div>
-        {cover ? <FeedCover cover={cover} mode={coverMode} /> : null}
+        {cover && coverMode === "regular" ? <FeedCover cover={cover} /> : null}
       </div>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-muted">
         <span className="text-fg/85">{post.author?.name ?? "unknown"}</span>

@@ -46,7 +46,7 @@ export function PostCard({ post }: { post: EnrichedPost }) {
               </h2>
               <p className="type-description mt-1 line-clamp-2 text-body text-muted">{snippet}</p>
             </div>
-            {cover ? <FeedCover cover={cover} mode={coverMode} /> : null}
+            {cover && coverMode === "regular" ? <FeedCover cover={cover} /> : null}
           </div>
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
