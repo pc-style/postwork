@@ -67,8 +67,13 @@ export function AttachmentMedia({
         src={attachment.url}
         alt={attachment.filename}
         onError={() => setFailed(true)}
-        className="max-h-48 max-w-full object-cover"
+        // Explicit dimensions + auto sizing let the browser reserve the final
+        // aspect ratio before the bytes arrive, avoiding layout shift.
+        width={attachment.width}
+        height={attachment.height}
+        className="h-auto max-h-48 w-auto max-w-full object-cover"
         loading="lazy"
+        decoding="async"
       />
     </a>
   );

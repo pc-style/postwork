@@ -2,32 +2,81 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   redirect,
   Outlet,
 } from "@tanstack/react-router";
-import { AgentsPage } from "./routes/AgentsPage";
+// The core app path (feed shell + feed + post) stays statically imported so
+// first paint of /app needs exactly one JS chunk. Everything else below uses
+// lazyRouteComponent: those routes become separate chunks that the router
+// fetches on demand — and *prefetches* on hover/focus thanks to
+// `defaultPreload: "intent"` on the router instance.
 import { SpacesPage } from "./routes/SpacesPage";
 import { SpacePage } from "./routes/SpacePage";
 import { WallPage } from "./routes/WallPage";
-import { FlashExperimentsPage } from "./routes/FlashExperimentsPage";
-import { FlashExperimentPage } from "./routes/FlashExperimentPage";
-import { LandingPage } from "./routes/LandingPage";
-import { ChangelogPage } from "./routes/ChangelogPage";
-import { JoinPage } from "./routes/JoinPage";
 import { RequireAuth } from "./routes/gates";
 import { RedesignLayout } from "./routes/redesign/RedesignShell";
 import { RedesignFeedPage } from "./routes/redesign/RedesignFeedPage";
 import { RedesignPostPage } from "./routes/redesign/RedesignPostPage";
 import { CatchUpPage } from "./routes/redesign/CatchUpPage";
-import { SettingsPage } from "./routes/settings/SettingsPage";
-import { AdminLayout } from "./routes/admin/AdminShell";
-import { AdminOverviewPage } from "./routes/admin/AdminOverviewPage";
-import { AdminUsersPage } from "./routes/admin/AdminUsersPage";
-import { AdminModelsPage } from "./routes/admin/AdminModelsPage";
-import { AdminInvitesPage } from "./routes/admin/AdminInvitesPage";
-import { AdminAccessRequestsPage } from "./routes/admin/AdminAccessRequestsPage";
-import { AdminAuditLogPage } from "./routes/admin/AdminAuditLogPage";
 import { demoPolicy } from "./lib/demoMode";
+
+const LandingPage = lazyRouteComponent(
+  () => import("./routes/LandingPage"),
+  "LandingPage",
+);
+const ChangelogPage = lazyRouteComponent(
+  () => import("./routes/ChangelogPage"),
+  "ChangelogPage",
+);
+const JoinPage = lazyRouteComponent(
+  () => import("./routes/JoinPage"),
+  "JoinPage",
+);
+const AgentsPage = lazyRouteComponent(
+  () => import("./routes/AgentsPage"),
+  "AgentsPage",
+);
+const SettingsPage = lazyRouteComponent(
+  () => import("./routes/settings/SettingsPage"),
+  "SettingsPage",
+);
+const FlashExperimentsPage = lazyRouteComponent(
+  () => import("./routes/FlashExperimentsPage"),
+  "FlashExperimentsPage",
+);
+const FlashExperimentPage = lazyRouteComponent(
+  () => import("./routes/FlashExperimentPage"),
+  "FlashExperimentPage",
+);
+const AdminLayout = lazyRouteComponent(
+  () => import("./routes/admin/AdminShell"),
+  "AdminLayout",
+);
+const AdminOverviewPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminOverviewPage"),
+  "AdminOverviewPage",
+);
+const AdminUsersPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminUsersPage"),
+  "AdminUsersPage",
+);
+const AdminModelsPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminModelsPage"),
+  "AdminModelsPage",
+);
+const AdminInvitesPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminInvitesPage"),
+  "AdminInvitesPage",
+);
+const AdminAccessRequestsPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminAccessRequestsPage"),
+  "AdminAccessRequestsPage",
+);
+const AdminAuditLogPage = lazyRouteComponent(
+  () => import("./routes/admin/AdminAuditLogPage"),
+  "AdminAuditLogPage",
+);
 import { PRIORITIES } from "./lib/format";
 import type { Priority } from "./lib/types";
 
@@ -316,7 +365,16 @@ const routeTree = rootRoute.addChildren([
 // the previous page's scroll offset across pushState navigations, so opening a
 // post from a scrolled feed landed you mid-page with phantom space above the
 // post and a sticky sidebar pinned partway down.
-export const router = createRouter({ routeTree, scrollRestoration: true });
+//
+// defaultPreload "intent" starts loading a route's lazy chunk (and any route
+// loaders) when the user hovers or touch-starts a <Link> to it, after a short
+// dwell delay so quick pointer passes don't trigger fetches.
+export const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+  defaultPreload: "intent",
+  defaultPreloadDelay: 50,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {

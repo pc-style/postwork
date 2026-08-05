@@ -27,8 +27,12 @@ export {
 };
 
 export const MEDIA_MAX_SOURCE_IMAGE_BYTES = 40 * 1024 * 1024;
-export const MEDIA_OPTIMIZE_ABOVE_BYTES = 4 * 1024 * 1024;
-export const MEDIA_MAX_IMAGE_DIMENSION = 2560;
+/** Below this size, a WebP re-encode rarely wins enough bytes to matter. */
+export const MEDIA_OPTIMIZE_MIN_BYTES = 16 * 1024;
+export const MEDIA_MAX_IMAGE_DIMENSION = 2000;
+/** Lossy WebP quality used when re-encoding still images at upload time. */
+export const MEDIA_WEBP_QUALITY = 0.82;
+export const MEDIA_WEBP_CONTENT_TYPE = "image/webp";
 
 const SAFE_OPTIMIZATION_TYPES: ReadonlySet<string> = new Set([
   "image/jpeg",
@@ -93,8 +97,45 @@ export function decideMediaFile(input: {
     kind,
     optimize:
       safeToOptimize &&
-      (input.size > MEDIA_OPTIMIZE_ABOVE_BYTES ||
+      (input.size > MEDIA_OPTIMIZE_MIN_BYTES ||
         longestSide > MEDIA_MAX_IMAGE_DIMENSION),
     maxBytes,
   };
+}
+
+/**
+ * Scale a source image so its longest edge fits `maxDimension`, preserving
+ * aspect ratio. Never upscales.
+ */
+export function targetImageDimensions(
+  width: number,
+  height: number,
+  maxDimension: number = MEDIA_MAX_IMAGE_DIMENSION,
+): { width: number; height: number } {
+  const longestSide = Math.max(width, height);
+  const scale = longestSide > 0 ? Math.min(1, maxDimension / longestSide) : 1;
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+/**
+ * After re-encoding, upload whichever variant is smaller. The original is only
+ * eligible when it fits the hard byte cap on its own; otherwise the re-encode
+ * is the only path to an acceptable upload.
+ */
+export function pickSmallerEncoding(input: {
+  originalBytes: number;
+  encodedBytes: number;
+  originalFits: boolean;
+}): "original" | "encoded" {
+  if (!input.originalFits) return "encoded";
+  return input.encodedBytes < input.originalBytes ? "encoded" : "original";
+}
+
+/** Swap (or append) the file extension to match a `image/webp` re-encode. */
+export function webpFilename(filename: string): string {
+  const stem = filename.replace(/\.[^./\\]+$/, "");
+  return `${stem || filename}.webp`;
 }

@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { useFeedCoverMode } from "../lib/feedDisplay";
 import { timeAgo } from "../lib/format";
 import { usePrefetchPost } from "../lib/store";
 import type { EnrichedPost } from "../lib/types";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
+import { FeedCover, feedCoverVariant } from "./FeedCover";
 import { PostMetaChips } from "./PostMetaChips";
 import { UserRoleTag } from "./UserRoleTag";
 
@@ -12,6 +14,9 @@ export function PostCard({ post }: { post: EnrichedPost }) {
     post.body.length > 180 ? `${post.body.slice(0, 180).trimEnd()}…` : post.body;
   const prefetchPost = usePrefetchPost();
   const prefetch = () => prefetchPost(post._id);
+  const coverMode = useFeedCoverMode();
+  const cover = post.cover ?? null;
+  const coverVariant = cover ? feedCoverVariant(cover, coverMode) : null;
 
   return (
     <Link
@@ -34,11 +39,23 @@ export function PostCard({ post }: { post: EnrichedPost }) {
             ) : null}
           </div>
 
-          <h2 className={`type-heading break-words text-title font-medium ${post.unread ? "text-fg" : "text-fg/75"}`}>
-            {post.unread ? <span className="sr-only">unread: </span> : null}
-            {post.title}
-          </h2>
-          <p className="type-description mt-1 line-clamp-2 text-body text-muted">{snippet}</p>
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className={`type-heading break-words text-title font-medium ${post.unread ? "text-fg" : "text-fg/75"}`}>
+                {post.unread ? <span className="sr-only">unread: </span> : null}
+                {post.title}
+              </h2>
+              <p className="type-description mt-1 line-clamp-2 text-body text-muted">{snippet}</p>
+            </div>
+            {cover && coverVariant === "thumb" ? (
+              <FeedCover cover={cover} variant="thumb" />
+            ) : null}
+          </div>
+          {cover && coverVariant === "banner" ? (
+            <div className="mt-3">
+              <FeedCover cover={cover} variant="banner" />
+            </div>
+          ) : null}
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-muted">

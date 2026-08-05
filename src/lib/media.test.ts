@@ -4,7 +4,12 @@ import {
   formatFileSize,
   MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
+  MEDIA_MAX_IMAGE_DIMENSION,
   MEDIA_MAX_VIDEO_BYTES,
+  MEDIA_OPTIMIZE_MIN_BYTES,
+  pickSmallerEncoding,
+  targetImageDimensions,
+  webpFilename,
 } from "./media";
 
 describe("media upload decisions", () => {
@@ -31,6 +36,28 @@ describe("media upload decisions", () => {
         height: 2000,
       }),
     ).toMatchObject({ accepted: true, kind: "image", optimize: true });
+  });
+
+  test("optimizes ordinary still JPEG and PNG files for WebP re-encode", () => {
+    expect(
+      decideMediaFile({
+        contentType: "image/jpeg",
+        size: 2 * 1024 * 1024,
+        width: 1600,
+        height: 900,
+      }),
+    ).toMatchObject({ accepted: true, kind: "image", optimize: true });
+  });
+
+  test("skips optimization for tiny stills within the dimension cap", () => {
+    expect(
+      decideMediaFile({
+        contentType: "image/png",
+        size: MEDIA_OPTIMIZE_MIN_BYTES,
+        width: 320,
+        height: 240,
+      }),
+    ).toMatchObject({ accepted: true, kind: "image", optimize: false });
   });
 
   test("passes animation-capable image formats through unchanged", () => {
@@ -89,5 +116,39 @@ describe("media upload decisions", () => {
     expect(
       decideMediaFile({ contentType: "image/png", size: 0 }),
     ).toMatchObject({ accepted: false, reason: "Media files cannot be empty." });
+  });
+});
+
+describe("image re-encode helpers", () => {
+  test("downscales the long edge to the cap while preserving aspect ratio", () => {
+    expect(targetImageDimensions(4000, 3000)).toEqual({ width: 2000, height: 1500 });
+    expect(targetImageDimensions(1500, 4500)).toEqual({
+      width: Math.round(1500 * (MEDIA_MAX_IMAGE_DIMENSION / 4500)),
+      height: 2000,
+    });
+  });
+
+  test("never upscales or produces zero dimensions", () => {
+    expect(targetImageDimensions(800, 600)).toEqual({ width: 800, height: 600 });
+    expect(targetImageDimensions(1, 6000)).toEqual({ width: 1, height: 2000 });
+    expect(targetImageDimensions(0, 0)).toEqual({ width: 1, height: 1 });
+  });
+
+  test("keeps the original only when it is smaller and within the size cap", () => {
+    expect(
+      pickSmallerEncoding({ originalBytes: 100, encodedBytes: 80, originalFits: true }),
+    ).toBe("encoded");
+    expect(
+      pickSmallerEncoding({ originalBytes: 100, encodedBytes: 100, originalFits: true }),
+    ).toBe("original");
+    expect(
+      pickSmallerEncoding({ originalBytes: 100, encodedBytes: 120, originalFits: false }),
+    ).toBe("encoded");
+  });
+
+  test("renames re-encoded files with a .webp extension", () => {
+    expect(webpFilename("photo.JPEG")).toBe("photo.webp");
+    expect(webpFilename("archive.tar.png")).toBe("archive.tar.webp");
+    expect(webpFilename("noextension")).toBe("noextension.webp");
   });
 });

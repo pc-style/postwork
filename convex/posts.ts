@@ -22,11 +22,18 @@ import {
   postTitleSchema,
   postBodySchema,
   attachmentInputSchema,
+  attachmentMediaKind,
   LIMITS,
 } from "./lib/validation";
 import { logInfo } from "./lib/observability";
 import { isSummaryStale } from "./lib/summaryStaleness";
 import { validateStoredAttachment } from "./lib/attachmentStorage";
+import {
+  directImageCoverUrl,
+  extractBodyUrls,
+  youtubeThumbnailUrl,
+} from "./lib/postCover";
+import { normalizePreviewUrl } from "./linkPreviews";
 import {
   composeCatchUpDigest,
   DEFAULT_CATCH_UP_LIMIT,
@@ -43,6 +50,18 @@ type CatchUpDigestResult = CatchUpDigest<EnrichedPost> & {
   };
 };
 
+/**
+ * The one optional cover visual a feed card may show: the post's first image
+ * attachment, else the first link-embed thumbnail found in the body.
+ */
+export type PostCover = {
+  kind: "attachment" | "embed";
+  url: string;
+  alt: string;
+  width?: number;
+  height?: number;
+};
+
 export type EnrichedPost = Doc<"posts"> & {
   author: PublicUser | null;
   participants: PublicUser[];
@@ -51,7 +70,76 @@ export type EnrichedPost = Doc<"posts"> & {
   // Raw per-viewer read timestamp, so the client can layer session-only
   // read state on top without re-querying the backend.
   lastReadAt: number;
+  // Only feed-shaped queries pay to resolve the cover; enrich-only callers
+  // (counts, catch-up digest, single post) leave it undefined.
+  cover?: PostCover | null;
 };
+
+// Bounded scans: enough attachment rows to skip past reply media, and only
+// the leading body URLs — matching the thread view's embed cap.
+const COVER_ATTACHMENT_SCAN = 20;
+const COVER_BODY_URLS = 3;
+
+async function resolveCover(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+): Promise<PostCover | null> {
+  const attachments = await ctx.db
+    .query("postAttachments")
+    .withIndex("by_org_id_and_post_id", (q) =>
+      q.eq("orgId", post.orgId).eq("postId", post._id),
+    )
+    .take(COVER_ATTACHMENT_SCAN);
+  for (const att of attachments) {
+    if (att.replyId) continue;
+    const kind = att.mediaKind ?? attachmentMediaKind(att.contentType);
+    if (kind !== "image") continue;
+    const url = await ctx.storage.getUrl(att.storageId);
+    if (!url) continue;
+    return {
+      kind: "attachment",
+      url,
+      alt: att.filename,
+      width: att.width,
+      height: att.height,
+    };
+  }
+
+  for (const raw of extractBodyUrls(post.body, COVER_BODY_URLS)) {
+    const direct = directImageCoverUrl(raw);
+    if (direct) return { kind: "embed", url: direct, alt: "gif" };
+    const youtube = youtubeThumbnailUrl(raw);
+    if (youtube) return { kind: "embed", url: youtube, alt: "youtube video" };
+    const normalized = normalizePreviewUrl(raw);
+    if (!normalized) continue;
+    // Same normalized key the thread view writes when it requests previews,
+    // so the feed reuses the cache instead of fetching anything itself.
+    const preview = await ctx.db
+      .query("linkPreviews")
+      .withIndex("by_url", (q) => q.eq("url", normalized))
+      .unique();
+    if (preview?.status === "ok" && preview.imageUrl) {
+      return {
+        kind: "embed",
+        url: preview.imageUrl,
+        alt: preview.title ?? preview.siteName ?? "link preview",
+      };
+    }
+  }
+  return null;
+}
+
+async function enrichWithCover(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+  viewerId: Id<"users"> | undefined,
+): Promise<EnrichedPost> {
+  const [enriched, cover] = await Promise.all([
+    enrich(ctx, post, viewerId),
+    resolveCover(ctx, post),
+  ]);
+  return { ...enriched, cover };
+}
 
 async function enrich(
   ctx: QueryCtx,
@@ -163,7 +251,9 @@ export async function listPostsBySpaceId(
     .order("desc")
     .take(200);
 
-  const enriched = await Promise.all(posts.map((post) => enrich(ctx, post, viewerId)));
+  const enriched = await Promise.all(
+    posts.map((post) => enrichWithCover(ctx, post, viewerId)),
+  );
   enriched.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return b.lastActivityAt - a.lastActivityAt;
@@ -221,7 +311,7 @@ export const feed = query({
     });
 
     let enriched = await Promise.all(
-      allowed.map((p) => enrich(ctx, p, viewer?._id)),
+      allowed.map((p) => enrichWithCover(ctx, p, viewer?._id)),
     );
     if (args.onlyUnread) enriched = enriched.filter((p) => p.unread);
     return enriched;
@@ -271,7 +361,7 @@ export const feedPaginated = query({
     }
 
     const enriched = await Promise.all(
-      allowed.map((p) => enrich(ctx, p, viewer?._id)),
+      allowed.map((p) => enrichWithCover(ctx, p, viewer?._id)),
     );
     return { ...result, page: enriched };
   },
@@ -364,7 +454,9 @@ export const search = query({
       }
     }
 
-    return await Promise.all(allowed.map((p) => enrich(ctx, p, viewer?._id)));
+    return await Promise.all(
+      allowed.map((p) => enrichWithCover(ctx, p, viewer?._id)),
+    );
   },
 });
 

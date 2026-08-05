@@ -1,8 +1,10 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
+import { FeedCover, FeedCoverModeToggle, feedCoverVariant } from "../../components/FeedCover";
 import { LoadingState } from "../../components/LoadingState";
 import type { ReactNode } from "react";
+import { useFeedCoverMode } from "../../lib/feedDisplay";
 import { PRIORITIES, SPACES, priorityStyles, timeAgo } from "../../lib/format";
 import {
   useFeed,
@@ -100,6 +102,7 @@ export function RedesignFeedPage() {
               unread
             </FilterText>
             <span className="ml-auto" />
+            <FeedCoverModeToggle />
             <button
               type="button"
               onClick={() => store.markAllRead()}
@@ -168,6 +171,9 @@ function FeedRow({ post }: { post: EnrichedPost }) {
   const priority = priorityStyles[post.priority];
   const prefetchPost = usePrefetchPost();
   const prefetch = () => prefetchPost(post._id);
+  const coverMode = useFeedCoverMode();
+  const cover = post.cover ?? null;
+  const coverVariant = cover ? feedCoverVariant(cover, coverMode) : null;
 
   return (
     <Link
@@ -178,20 +184,32 @@ function FeedRow({ post }: { post: EnrichedPost }) {
       onFocus={prefetch}
       onTouchStart={prefetch}
     >
-      <h2 className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
-        {post.unread ? (
-          <>
-            <span className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle" aria-hidden="true" />
-            <span className="sr-only">Unread: </span>
-          </>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className={`text-[15px] leading-snug tracking-tight ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
+            {post.unread ? (
+              <>
+                <span className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent-soft align-middle" aria-hidden="true" />
+                <span className="sr-only">Unread: </span>
+              </>
+            ) : null}
+            {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
+            {post.title}
+          </h2>
+          {post.body.trim() ? (
+            <p className="mt-1 line-clamp-2 text-sm text-muted">
+              {post.body.length > 240 ? `${post.body.slice(0, 240).trimEnd()}…` : post.body}
+            </p>
+          ) : null}
+        </div>
+        {cover && coverVariant === "thumb" ? (
+          <FeedCover cover={cover} variant="thumb" />
         ) : null}
-        {post.pinned ? <span className="mr-2 text-xs font-medium text-accent-soft">Pinned</span> : null}
-        {post.title}
-      </h2>
-      {post.body.trim() ? (
-        <p className="mt-1 line-clamp-2 text-sm text-muted">
-          {post.body.length > 240 ? `${post.body.slice(0, 240).trimEnd()}…` : post.body}
-        </p>
+      </div>
+      {cover && coverVariant === "banner" ? (
+        <div className="mt-2">
+          <FeedCover cover={cover} variant="banner" />
+        </div>
       ) : null}
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>

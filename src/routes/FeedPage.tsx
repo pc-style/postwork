@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FeedCoverModeToggle } from "../components/FeedCover";
 import { LoadingState } from "../components/LoadingState";
 import { PostCard } from "../components/PostCard";
 import { QuickPostBar } from "../components/QuickPostBar";
@@ -95,7 +96,9 @@ export function FeedPage() {
             <ToggleButton pressed={onlyUnread} onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}>
               unread
             </ToggleButton>
-            <Button variant="quiet" size="sm" className="min-h-11 sm:ms-auto" onClick={() => store.markAllRead()}>
+            <span className="sm:ms-auto" />
+            <FeedCoverModeToggle />
+            <Button variant="quiet" size="sm" className="min-h-11" onClick={() => store.markAllRead()}>
               mark all read
             </Button>
           </fieldset>

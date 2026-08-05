@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* color roles - see docs/design-system.md; accent = actions, never location */
   --color-bg: #0a0a0b;
   --color-surface: #121014;
   --color-surface-2: #18151a;
@@ -13,10 +14,12 @@
   --color-accent-hover: #af367e;
   --color-avatar-fallback: #3a2526;
 
+  /* priority state colors (urgent doubles as the error color); tint fills only */
   --color-urgent: #ff7b7b;
   --color-high: #e1b452;
   --color-normal: #a19d98;
 
+  /* font stacks - Inter for UI, mono for code/data */
   --font-sans:
     "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -24,12 +27,15 @@
     ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas,
     monospace;
 
+  /* motion - dialogs/sheets only; everything else is 150ms ease-out */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* radius roles - sm tags/chips, md interactive controls, lg cards/panels (max) */
   --radius-sm: 2px;
   --radius-md: 6px;
   --radius-lg: 8px;
 
+  /* type scale - the only 5 sizes; see docs/design-system.md */
   --text-label: 0.6875rem;
   --text-label--line-height: 1.2;
   --text-body: 0.875rem;
