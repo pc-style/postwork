@@ -4,6 +4,7 @@ import {
   formatFileSize,
   MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_IMAGE_BYTES,
+  MEDIA_MAX_FILENAME_CHARS,
   MEDIA_MAX_IMAGE_DIMENSION,
   MEDIA_MAX_VIDEO_BYTES,
   MEDIA_OPTIMIZE_MIN_BYTES,
@@ -150,5 +151,15 @@ describe("image re-encode helpers", () => {
     expect(webpFilename("photo.JPEG")).toBe("photo.webp");
     expect(webpFilename("archive.tar.png")).toBe("archive.tar.webp");
     expect(webpFilename("noextension")).toBe("noextension.webp");
+  });
+
+  test("keeps renamed files within the server's 200-char filename limit", () => {
+    const longStem = "a".repeat(196);
+    const input = `${longStem}.jpg`; // exactly 200 chars, the schema max
+    const output = webpFilename(input);
+    expect(input.length).toBe(MEDIA_MAX_FILENAME_CHARS);
+    expect(output.length).toBeLessThanOrEqual(MEDIA_MAX_FILENAME_CHARS);
+    expect(output).toBe(`${"a".repeat(195)}.webp`);
+    expect(webpFilename("b".repeat(200))).toBe(`${"b".repeat(195)}.webp`);
   });
 });

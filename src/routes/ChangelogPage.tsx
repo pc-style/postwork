@@ -9,6 +9,16 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "5 August 2026",
+    title: "feed cards show media, images travel lighter, the app loads faster",
+    note: "posts with images or link embeds now surface a cover on the feed card, with a persisted compact/regular toggle in the feed header. image attachments are re-encoded to webp (2000px cap, smaller-file-wins) at upload, so photos land around 8-15x lighter. the main js bundle was split from 929kb to under 400kb with route-level chunks that prefetch on hover, and the design system is now codified in docs/design-system.md.",
+  },
+  {
+    date: "5 August 2026",
+    title: "one design system, one sign-in path",
+    note: "a full polish sweep from beta feedback: selection no longer shifts rows (color instead of weight, everywhere), the sidebar always highlights the page you are actually on, back buttons and the duplicate settings entry are gone, chips share one shape, type collapsed to five sizes, and lowercase is enforced across the app. posts open at the top instead of mid-scroll, the reply box starts tall enough to see your text and can no longer eat it on resize, saves disable until something changed, and sign-in was rebuilt as a single mobile-first flow: authenticate first, then enter an invite code, request access, or start a workspace.",
+  },
+  {
     date: "30 July 2026",
     title: "a six-discipline polish sweep plus a react checkup",
     note: "ran accessibility, layout, typography, ui-polish, writing, and color passes over the core app: skip link and named landmarks, real focus traps and escape/restore in pickers and the user switcher, semantic post form with inline errors, logical properties and calmer reply separators for layout, balanced headings, tabular numbers and 70ch prose measure, layered dialog shadows, avatar/media outlines and press feedback, empty states and errors that say what to do next, and accent colors nudged to pass contrast without leaving the wine palette. react doctor then cleared all six error-level findings: stable popover-dismiss listeners, module-scope notification-hook selection, and pure sidebar-width state updaters.",

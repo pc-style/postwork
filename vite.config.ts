@@ -4,7 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { port: 5173 },
+  server: {
+    port: 5173,
+    // allow access through the exe.dev HTTPS proxy hostnames
+    allowedHosts: [".exe.xyz", ".exe.dev"],
+  },
   build: {
     rolldownOptions: {
       output: {

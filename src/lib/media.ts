@@ -134,8 +134,20 @@ export function pickSmallerEncoding(input: {
   return input.encodedBytes < input.originalBytes ? "encoded" : "original";
 }
 
-/** Swap (or append) the file extension to match a `image/webp` re-encode. */
+/**
+ * Mirrors the filename `.max(200)` in `attachmentInputSchema`
+ * (convex/lib/validation.ts). Keep the two in sync — a longer name uploads
+ * fine but is rejected when the post or reply is created.
+ */
+export const MEDIA_MAX_FILENAME_CHARS = 200;
+
+const WEBP_EXTENSION = ".webp";
+
+/**
+ * Swap (or append) the file extension to match a `image/webp` re-encode,
+ * truncating the stem so the result always fits the server's filename limit.
+ */
 export function webpFilename(filename: string): string {
-  const stem = filename.replace(/\.[^./\\]+$/, "");
-  return `${stem || filename}.webp`;
+  const stem = filename.replace(/\.[^./\\]+$/, "") || filename;
+  return `${stem.slice(0, MEDIA_MAX_FILENAME_CHARS - WEBP_EXTENSION.length)}${WEBP_EXTENSION}`;
 }
