@@ -61,6 +61,8 @@ body,
 html {
   background: var(--color-bg);
   overflow-x: clip;
+  /* keep the centered layout from shifting when a page stops scrolling */
+  scrollbar-gutter: stable;
 }
 
 body {

@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "../../components/Button";
+import { FeedCoverModeToggle } from "../../components/FeedCover";
 import { FormField } from "../../components/FormField";
 import { NotificationSettingsSection } from "../../components/NotificationSettingsSection";
 import { ProfileSettingsForm } from "../../components/ProfileSettingsForm";
@@ -11,7 +12,7 @@ import { useSession } from "../../lib/session";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { workspaceUrl } from "../../lib/tenant";
 
-const SECTIONS = ["profile", "workspace", "agents", "notifications"] as const;
+const SECTIONS = ["profile", "display", "workspace", "agents", "notifications"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export function SettingsPage() {
@@ -19,7 +20,7 @@ export function SettingsPage() {
   const [section, setSection] = useState<Section>("profile");
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
+    <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pt-10">
       <h1 className="text-display font-semibold">settings</h1>
       <div className="mt-7 grid gap-8 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-12">
         <nav aria-label="settings sections" className="flex gap-1 overflow-x-auto pb-2 pe-6 md:flex-col md:overflow-visible md:p-0">
@@ -40,6 +41,7 @@ export function SettingsPage() {
         </nav>
         <div className="min-w-0 md:ps-10">
           {section === "profile" ? <ProfileSection /> : null}
+          {section === "display" ? <DisplaySection /> : null}
           {section === "workspace" ? <WorkspaceSection /> : null}
           {section === "agents" ? <AgentsSection /> : null}
           {section === "notifications" ? <NotificationsSection /> : null}
@@ -103,6 +105,23 @@ function SectionHeader({ title, description }: { title: string; description?: st
       <h2 className="text-title font-semibold">{title}</h2>
       {description ? <p className="mt-2 text-body text-muted">{description}</p> : null}
     </header>
+  );
+}
+
+function DisplaySection() {
+  return (
+    <section>
+      <SectionHeader title="display" description="how the feed shows post media on this device." />
+      <div className="max-w-xl rounded-lg border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-title font-medium">feed media</h3>
+            <p className="mt-1 text-body text-muted">compact is text only; regular shows a thumbnail on each post.</p>
+          </div>
+          <FeedCoverModeToggle />
+        </div>
+      </div>
+    </section>
   );
 }
 

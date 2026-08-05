@@ -1,7 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
-import { FeedCover, FeedCoverModeToggle } from "../../components/FeedCover";
+import { FeedCover } from "../../components/FeedCover";
 import { LoadingState } from "../../components/LoadingState";
 import { memo } from "react";
 import type { ReactNode } from "react";
@@ -103,7 +103,6 @@ export function RedesignFeedPage() {
               unread
             </FilterText>
             <span className="ml-auto" />
-            <FeedCoverModeToggle />
             <button
               type="button"
               onClick={() => store.markAllRead()}
