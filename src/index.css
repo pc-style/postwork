@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* color roles - see docs/design-system.md; accent = actions, never location */
   --color-bg: #0a0a0b;
   --color-surface: #121014;
   --color-surface-2: #18151a;
@@ -9,12 +10,16 @@
   --color-muted: #a19d98;
   --color-faint: #5c5956;
   --color-accent: #8c1862;
-  --color-accent-soft: #c64f98;
+  --color-accent-soft: #ca559d;
+  --color-accent-hover: #af367e;
+  --color-avatar-fallback: #3a2526;
 
+  /* priority state colors (urgent doubles as the error color); tint fills only */
   --color-urgent: #ff7b7b;
   --color-high: #e1b452;
   --color-normal: #a19d98;
 
+  /* font stacks - Inter for UI, mono for code/data */
   --font-sans:
     "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -22,17 +27,23 @@
     ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas,
     monospace;
 
+  /* motion - dialogs/sheets only; everything else is 150ms ease-out */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* radius roles - sm tags/chips, md interactive controls, lg cards/panels (max) */
   --radius-sm: 2px;
   --radius-md: 6px;
   --radius-lg: 8px;
 
-  --text-label: 0.6875rem;
-  --text-label--line-height: 1.2;
+  /* type scale - the only 4 sizes; body is the default for almost everything; see docs/design-system.md */
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
   --text-title: 0.9375rem;
   --text-title--line-height: 1.3;
+  --text-display: 1.25rem;
+  --text-display--line-height: 1.2;
   --text-code: 0.8125rem;
+  --text-code--line-height: 1.6;
 }
 
 :root {
@@ -48,6 +59,8 @@ body,
 html {
   background: var(--color-bg);
   overflow-x: clip;
+  /* keep the centered layout from shifting when a page stops scrolling */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -57,6 +70,7 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.011em;
   overflow-x: clip;
 }
@@ -102,6 +116,7 @@ input,
 textarea,
 select {
   accent-color: var(--color-accent-soft);
+  caret-color: var(--color-accent-soft);
 }
 
 @media (max-width: 639px) {
@@ -123,7 +138,31 @@ samp {
 .prose-post {
   white-space: pre-wrap;
   line-height: 1.65;
+  max-width: 70ch;
   overflow-wrap: anywhere;
+}
+
+.prose-post a {
+  text-decoration-thickness: from-font;
+  text-underline-position: from-font;
+  text-decoration-skip-ink: auto;
+}
+
+/* wrapping only: sizes, tracking and leading stay with the text-* tokens
+   and explicit utilities so this class never fights the type scale */
+.type-heading {
+  text-wrap: balance;
+}
+
+.type-description {
+  max-width: 70ch;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.type-numeric {
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-ink {
@@ -132,35 +171,68 @@ samp {
   color: var(--color-fg);
 }
 
-.ui-field {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  color: var(--color-fg);
-  padding: 0.625rem 0.75rem;
-  transition: border-color 150ms ease, background-color 150ms ease;
+/* Layered so single-purpose utilities (e.g. `min-h-24` on composer textareas)
+   can override these defaults. Unlayered rules would beat every Tailwind
+   utility regardless of order, which silently pinned all fields to 44px. */
+@layer components {
+  .ui-field {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    padding: 0.625rem 0.75rem;
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
+
+  .ui-field:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  }
+
+  .ui-field:focus-visible {
+    outline: 2px solid var(--color-accent-soft);
+    outline-offset: 2px;
+  }
+
+  .ui-field[aria-invalid="true"] {
+    border-color: var(--color-urgent);
+  }
+
+  .ui-field:disabled {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-muted);
+  }
 }
 
-.ui-field:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+.ui-button {
+  transition-property: color, background-color, border-color, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
-.ui-field:focus-visible {
-  border-color: var(--color-accent-soft);
-  outline: 2px solid var(--color-accent-soft);
-  outline-offset: 2px;
+.ui-button:active:not(:disabled) {
+  scale: 0.96;
 }
 
-.ui-field[aria-invalid="true"] {
-  border-color: var(--color-urgent);
+.ui-media-outline {
+  outline: 1px solid rgb(255 255 255 / 0.1);
+  outline-offset: -1px;
 }
 
-.ui-field:disabled {
-  border-color: var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-muted);
+.ui-interactive-media {
+  transition-property: outline-color, background-color, scale;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.ui-interactive-media:hover {
+  outline-color: color-mix(in srgb, var(--color-accent-soft) 40%, transparent);
+}
+
+.ui-interactive-media:active {
+  scale: 0.96;
 }
 
 .ui-error {
@@ -197,8 +269,10 @@ samp {
 }
 
 .ui-dialog {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-fg) 6%, transparent),
-    0 24px 64px rgb(0 0 0 / 0.58);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-fg) 8%, transparent),
+    0 8px 24px -8px rgb(0 0 0 / 0.52),
+    0 24px 56px -24px rgb(0 0 0 / 0.68);
 }
 
 dialog[open] {
@@ -278,5 +352,11 @@ dialog.sheet-panel[open] {
   dialog[open],
   dialog[open]::backdrop {
     transition: none;
+  }
+
+  /* No press-scale motion for reduced-motion users. */
+  .ui-button:active:not(:disabled),
+  .ui-interactive-media:active {
+    scale: none;
   }
 }

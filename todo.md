@@ -2,6 +2,15 @@
 
 Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026).
 
+## dx / infra (Pronsh, PR #25 review, 30 July)
+
+- [ ] evaluate react compiler (vite plugin + eslint plugin) in one pass —
+      would make most manual `useMemo`/`useCallback`/`memo` redundant.
+      don't strip memoization piecemeal before it lands.
+- [ ] consider `useActionState` for button-triggered async mutations
+      (agent tasks panel, settings saves) if we wrap them in form actions;
+      today the manual busy/error pair is the repo convention.
+
 ## retention hooks (Pronsh: "i need something to hook me in")
 
 1. **Digest email as teaser** — daily "3 posts moved, 1 needs you" via existing
@@ -36,3 +45,20 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
       titles stay bold+bright (27 July).
 - [x] alignment pass: tightened breadcrumb dead space, summary teaser skips
       the bare "TL;DR" line (27 July). Revisit after next screenshot review.
+
+## mobile nits (Pronsh, 30 July phone-responsiveness review)
+
+- [x] sign-in page remodel: card contents felt uneven on mobile. Sign-in card
+      now comes first, invite/request-access moved below it, double border
+      inside the Clerk card removed, even padding (30 July).
+- [x] deep-link redirect: /app/settings while logged out now returns to
+      settings after sign-in via Clerk forceRedirectUrl (30 July).
+- [x] clicking "N unread" in the header/sidebar opens the feed filtered to
+      unread; "N urgent" opens the priority view (30 July).
+- [x] own reply no longer instantly collapses behind "show 1 reply" — the
+      subthread expands on submit (30 July).
+- [x] react-scan set up, dev-only (30 July).
+- [ ] deferred: solidjs experiment ("only if tokens to burn") — explicitly
+      not now per pcstyle.
+- [ ] consider: jakubkrehel/skills agent-skill collection for interface
+      polish (animation, a11y, product writing).

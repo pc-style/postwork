@@ -29,12 +29,12 @@ export function PostModeration({
   if (!canEdit && !canDelete) return null;
 
   return (
-    <div className="mt-3 flex min-h-11 flex-wrap items-center gap-1.5 text-xs transition-opacity sm:min-h-9 sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover/post:opacity-100">
+    <div className="mt-3 flex min-h-11 flex-wrap items-center gap-1.5 text-body transition-opacity sm:min-h-9 sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover/post:opacity-100">
       {canEdit ? (
         <Button
           variant="quiet"
           size="sm"
-          className="min-h-11 text-xs sm:min-h-9"
+          className="min-h-11 text-body sm:min-h-9"
           onClick={onStartEdit}
         >
           edit
@@ -43,8 +43,8 @@ export function PostModeration({
       {canDelete ? (
         <AnchoredConfirmation
           triggerLabel="delete"
-          title="Delete this post?"
-          description="This permanently deletes the post and all replies."
+          title="delete this post?"
+          description="this permanently deletes the post and all replies."
           confirmLabel="delete post"
           onConfirm={async () => {
             await store.deletePost({ postId: post._id });

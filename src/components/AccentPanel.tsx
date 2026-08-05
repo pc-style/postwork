@@ -15,10 +15,10 @@ export function AccentPanel({
     <div className="rounded-lg border border-accent/25 bg-accent/[0.06] p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+          <span className="rounded-sm bg-accent/20 px-1.5 py-px text-body leading-tight font-semibold text-accent-soft">
             {chipLabel}
           </span>
-          <span className="text-xs font-semibold tracking-normal text-accent-soft lowercase">
+          <span className="text-body font-semibold tracking-normal text-accent-soft lowercase">
             {title}
           </span>
         </div>

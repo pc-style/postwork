@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+  <style>
+    text { font-family: "Inter", sans-serif; }
+    .mono { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; }
+  </style>
+
+  <rect width="1600" height="960" fill="#0a0a0b"/>
+
+  <!-- header -->
+  <text x="64" y="76" fill="#e8e6e3" font-size="34" font-weight="700" letter-spacing="-1">post<tspan fill="#ca559d">work</tspan> design system</text>
+  <text x="64" y="106" fill="#a19d98" font-size="15">tokens: src/index.css @theme &#183; rules: docs/design-system.md &#183; change the token, never the instance</text>
+  <path d="M64 132 H1536" stroke="#302d32"/>
+
+  <!-- ===== column 1: color roles ===== -->
+  <g transform="translate(64 176)">
+    <text x="0" y="0" fill="#e8e6e3" font-size="19" font-weight="600">color roles</text>
+
+    <g transform="translate(0 28)">
+      <rect x="0" y="0" width="44" height="32" rx="6" fill="#0a0a0b" stroke="#302d32"/>
+      <text x="56" y="15" fill="#e8e6e3" font-size="14">bg</text>
+      <text x="56" y="30" fill="#5c5956" font-size="12" class="mono">#0a0a0b page</text>
+
+      <rect x="0" y="46" width="44" height="32" rx="6" fill="#121014" stroke="#302d32"/>
+      <text x="56" y="61" fill="#e8e6e3" font-size="14">surface</text>
+      <text x="56" y="76" fill="#5c5956" font-size="12" class="mono">#121014 cards, panels</text>
+
+      <rect x="0" y="92" width="44" height="32" rx="6" fill="#18151a" stroke="#302d32"/>
+      <text x="56" y="107" fill="#e8e6e3" font-size="14">surface-2</text>
+      <text x="56" y="122" fill="#5c5956" font-size="12" class="mono">#18151a selection fill, hover</text>
+
+      <rect x="0" y="138" width="44" height="32" rx="6" fill="#302d32"/>
+      <text x="56" y="153" fill="#e8e6e3" font-size="14">border</text>
+      <text x="56" y="168" fill="#5c5956" font-size="12" class="mono">#302d32 all 1px borders</text>
+
+      <rect x="0" y="184" width="44" height="32" rx="6" fill="#e8e6e3"/>
+      <text x="56" y="199" fill="#e8e6e3" font-size="14">fg</text>
+      <text x="56" y="214" fill="#5c5956" font-size="12" class="mono">#e8e6e3 primary text</text>
+
+      <rect x="0" y="230" width="44" height="32" rx="6" fill="#a19d98"/>
+      <text x="56" y="245" fill="#e8e6e3" font-size="14">muted</text>
+      <text x="56" y="260" fill="#5c5956" font-size="12" class="mono">#a19d98 secondary, idle interactive</text>
+
+      <rect x="0" y="276" width="44" height="32" rx="6" fill="#5c5956"/>
+      <text x="56" y="291" fill="#e8e6e3" font-size="14">faint</text>
+      <text x="56" y="306" fill="#5c5956" font-size="12" class="mono">#5c5956 separators, hints</text>
+
+      <rect x="0" y="322" width="44" height="32" rx="6" fill="#8c1862"/>
+      <text x="56" y="337" fill="#e8e6e3" font-size="14">accent</text>
+      <text x="56" y="352" fill="#5c5956" font-size="12" class="mono">#8c1862 solid fills</text>
+
+      <rect x="0" y="368" width="44" height="32" rx="6" fill="#ca559d"/>
+      <text x="56" y="383" fill="#e8e6e3" font-size="14">accent-soft</text>
+      <text x="56" y="398" fill="#5c5956" font-size="12" class="mono">#ca559d focus, accent text</text>
+
+      <rect x="0" y="414" width="44" height="32" rx="6" fill="#af367e"/>
+      <text x="56" y="429" fill="#e8e6e3" font-size="14">accent-hover</text>
+      <text x="56" y="444" fill="#5c5956" font-size="12" class="mono">#af367e</text>
+
+      <rect x="0" y="460" width="44" height="32" rx="6" fill="#ff7b7b"/>
+      <text x="56" y="475" fill="#e8e6e3" font-size="14">urgent</text>
+      <text x="56" y="490" fill="#5c5956" font-size="12" class="mono">#ff7b7b priority + errors</text>
+
+      <rect x="0" y="506" width="44" height="32" rx="6" fill="#e1b452"/>
+      <text x="56" y="521" fill="#e8e6e3" font-size="14">high</text>
+      <text x="56" y="536" fill="#5c5956" font-size="12" class="mono">#e1b452 priority</text>
+    </g>
+
+    <g transform="translate(0 604)">
+      <rect x="0" y="0" width="432" height="64" rx="8" fill="#121014" stroke="#302d32"/>
+      <text x="16" y="26" fill="#ca559d" font-size="13" font-weight="600">accent means action.</text>
+      <text x="16" y="46" fill="#a19d98" font-size="13">never location: active nav is surface-2 + fg, no pink.</text>
+    </g>
+  </g>
+
+  <!-- ===== column 2: type + radius ===== -->
+  <g transform="translate(600 176)">
+    <text x="0" y="0" fill="#e8e6e3" font-size="19" font-weight="600">type scale &#183; exactly 4 sizes</text>
+
+    <g transform="translate(0 40)">
+      <text x="0" y="0" fill="#e8e6e3" font-size="14">text-body &#183; the default for almost everything: ui, chips, meta</text>
+      <text x="432" y="0" fill="#5c5956" font-size="12" class="mono" text-anchor="end">14px</text>
+
+      <text x="0" y="38" fill="#e8e6e3" font-size="15" font-weight="500">text-title &#183; card titles, section headers</text>
+      <text x="432" y="38" fill="#5c5956" font-size="12" class="mono" text-anchor="end">15px</text>
+
+      <text x="0" y="80" fill="#e8e6e3" font-size="20" font-weight="600">text-display &#183; page headings</text>
+      <text x="432" y="80" fill="#5c5956" font-size="12" class="mono" text-anchor="end">20px</text>
+
+      <text x="0" y="118" fill="#e8e6e3" font-size="13" class="mono">text-code &#183; code and mono data</text>
+      <text x="432" y="118" fill="#5c5956" font-size="12" class="mono" text-anchor="end">13px</text>
+    </g>
+
+    <g transform="translate(0 220)">
+      <rect x="0" y="0" width="432" height="64" rx="8" fill="#121014" stroke="#302d32"/>
+      <text x="16" y="26" fill="#e8e6e3" font-size="13" font-weight="600">one size for almost everything.</text>
+      <text x="16" y="46" fill="#a19d98" font-size="13">hierarchy from color and spacing, never from shrinking the font.</text>
+    </g>
+
+    <text x="0" y="348" fill="#e8e6e3" font-size="19" font-weight="600">radius roles</text>
+    <g transform="translate(0 376)">
+      <rect x="0" y="0" width="108" height="30" rx="2" fill="#18151a" stroke="#302d32"/>
+      <text x="54" y="19" fill="#a19d98" font-size="11" text-anchor="middle">tag &#183; sm 2px</text>
+
+      <rect x="124" y="0" width="140" height="30" rx="6" fill="#8c1862"/>
+      <text x="194" y="19" fill="#e8e6e3" font-size="11" font-weight="500" text-anchor="middle">control &#183; md 6px</text>
+
+      <rect x="280" y="-10" width="152" height="50" rx="8" fill="#121014" stroke="#302d32"/>
+      <text x="356" y="19" fill="#a19d98" font-size="11" text-anchor="middle">card &#183; lg 8px</text>
+    </g>
+    <g transform="translate(0 442)">
+      <circle cx="15" cy="15" r="15" fill="#3a2526"/>
+      <text x="15" y="20" fill="#e8e6e3" font-size="11" font-weight="600" text-anchor="middle">pc</text>
+      <text x="44" y="19" fill="#5c5956" font-size="13">rounded-full: avatars and spinners only. 8px is the maximum radius.</text>
+    </g>
+
+    <text x="0" y="548" fill="#e8e6e3" font-size="19" font-weight="600">motion</text>
+    <g transform="translate(0 576)">
+      <text x="0" y="0" fill="#a19d98" font-size="13">&#8226; 150ms ease-out &#183; color / bg / border / transform / opacity only</text>
+      <text x="0" y="26" fill="#a19d98" font-size="13">&#8226; press feedback scale 0.96 &#183; dialogs 200ms spring</text>
+      <text x="0" y="52" fill="#a19d98" font-size="13">&#8226; collapse anchors scroll to the bottom of the closing region</text>
+      <text x="0" y="78" fill="#a19d98" font-size="13">&#8226; reduced-motion handled globally, never per component</text>
+    </g>
+  </g>
+
+  <!-- ===== column 3: states + writing ===== -->
+  <g transform="translate(1104 176)">
+    <text x="0" y="0" fill="#e8e6e3" font-size="19" font-weight="600">states</text>
+
+    <g transform="translate(0 32)">
+      <rect x="0" y="0" width="120" height="36" rx="6" fill="none"/>
+      <text x="14" y="23" fill="#a19d98" font-size="14">unselected</text>
+
+      <rect x="132" y="0" width="112" height="36" rx="6" fill="#18151a"/>
+      <text x="146" y="23" fill="#e8e6e3" font-size="14">selected</text>
+
+      <rect x="258" y="0" width="96" height="36" rx="6" fill="#0a0a0b" stroke="#302d32"/>
+      <rect x="254" y="-4" width="104" height="44" rx="9" fill="none" stroke="#ca559d" stroke-width="2"/>
+      <text x="272" y="23" fill="#e8e6e3" font-size="14">focus</text>
+    </g>
+
+    <g transform="translate(0 96)">
+      <text x="0" y="0" fill="#a19d98" font-size="13">&#8226; selected = surface-2 + fg. weight NEVER changes (layout shift)</text>
+      <text x="0" y="26" fill="#a19d98" font-size="13">&#8226; hovering an already-active item changes nothing</text>
+      <text x="0" y="52" fill="#a19d98" font-size="13">&#8226; active derives from the router location, not click state</text>
+      <text x="0" y="78" fill="#a19d98" font-size="13">&#8226; focus = 2px accent-soft outline, never a border swap</text>
+      <text x="0" y="104" fill="#a19d98" font-size="13">&#8226; loading = skeletons; the spinner lives only inside Button</text>
+      <text x="0" y="130" fill="#a19d98" font-size="13">&#8226; errors inline below the field, lowercase, no toasts</text>
+    </g>
+
+    <g transform="translate(0 268)">
+      <rect x="0" y="0" width="200" height="30" rx="6" fill="#8c1862"/>
+      <text x="100" y="19" fill="#e8e6e3" font-size="13" font-weight="500" text-anchor="middle">save workspace address</text>
+      <rect x="212" y="0" width="88" height="30" rx="6" fill="#0a0a0b" stroke="#302d32"/>
+      <text x="256" y="19" fill="#a19d98" font-size="13" text-anchor="middle">cancel</text>
+      <rect x="312" y="2" width="56" height="24" rx="2" fill="#18151a"/>
+      <text x="340" y="19" fill="#a19d98" font-size="13" text-anchor="middle">agent</text>
+      <rect x="374" y="4" width="46" height="22" rx="2" fill="#18151a"/>
+      <text x="397" y="19" fill="#a19d98" font-size="11" text-anchor="middle">done</text>
+    </g>
+
+    <text x="0" y="360" fill="#e8e6e3" font-size="19" font-weight="600">writing</text>
+    <g transform="translate(0 388)">
+      <text x="0" y="0" fill="#a19d98" font-size="13">&#8226; lowercase everywhere in chrome</text>
+      <text x="0" y="26" fill="#a19d98" font-size="13">&#8226; no em or en dashes, ever. hyphen or restructure</text>
+      <text x="0" y="52" fill="#a19d98" font-size="13">&#8226; dots only for real state (priority, unread) or the &#183; separator</text>
+      <text x="0" y="78" fill="#a19d98" font-size="13">&#8226; buttons are lowercase verb phrases that never wrap</text>
+      <text x="0" y="104" fill="#a19d98" font-size="13">&#8226; no emoji. icons inline svg, currentColor, stroke 1.5</text>
+    </g>
+
+    <g transform="translate(0 540)">
+      <rect x="0" y="0" width="432" height="104" rx="8" fill="#121014" stroke="#302d32"/>
+      <text x="16" y="28" fill="#e8e6e3" font-size="13" font-weight="600">changing the system</text>
+      <text x="16" y="52" fill="#a19d98" font-size="13">change token values in @theme + this doc in the same pr.</text>
+      <text x="16" y="74" fill="#a19d98" font-size="13">never a new size, radius, or color inline in a component.</text>
+      <text x="16" y="96" fill="#a19d98" font-size="13">new shared patterns get a utility class or prop, not one-offs.</text>
+    </g>
+  </g>
+
+  <path d="M64 892 H1536" stroke="#302d32"/>
+  <text x="64" y="924" fill="#5c5956" font-size="13" class="mono">postwork.pcstyle.dev &#183; docs/design-system.md</text>
+</svg>

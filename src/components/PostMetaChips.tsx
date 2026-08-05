@@ -28,11 +28,9 @@ export function PostMetaChips({
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {post.pinned && <Chip tone="accent">Pinned</Chip>}
+      {post.pinned && <Chip tone="accent">pinned</Chip>}
       {!quiet || post.priority !== "normal" ? (
-        <Chip tone={priorityTones[post.priority] ?? "muted"} dot>
-          {p.label}
-        </Chip>
+        <Chip tone={priorityTones[post.priority] ?? "muted"}>{p.label}</Chip>
       ) : null}
       <span className={revealClass}>
         <Chip tone="neutral">{post.space}</Chip>

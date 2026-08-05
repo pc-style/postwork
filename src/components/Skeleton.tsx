@@ -8,7 +8,7 @@ export type SkeletonPreset =
 export function Skeleton({
   preset = "inline",
   count = 1,
-  label = "Loading content",
+  label = "loading content",
 }: {
   preset?: SkeletonPreset;
   count?: number;

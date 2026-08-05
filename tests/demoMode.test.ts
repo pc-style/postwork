@@ -20,7 +20,7 @@ describe("demo mode policy", () => {
     expect(policy.sessionOverlay).toBe(true);
     expect(policy.productAuth).toBe(false);
     expect(DEMO_BANNER_MESSAGE).toBe(
-      "public demo — data resets, pick a teammate",
+      "public demo: data resets, pick a teammate",
     );
   });
 

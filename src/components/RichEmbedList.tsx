@@ -104,26 +104,24 @@ export function RichEmbedList({ text }: { text: string }) {
             href={preview.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex min-w-0 overflow-hidden rounded-md border border-border bg-bg transition-colors hover:border-accent/50 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
+            className="group block w-fit min-w-0 max-w-md overflow-hidden rounded-md border border-border border-l-2 border-l-accent bg-bg px-3 py-2.5 transition-colors hover:border-accent/50 hover:border-l-accent-soft hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft"
           >
-            <span className="min-w-0 flex-1 px-3 py-2.5">
-              <span className="block font-mono text-[11px] text-accent-soft">
-                {hasMetadata && metadata.siteName ? metadata.siteName : preview.hostname}
-              </span>
-              <span className={`mt-0.5 block text-sm group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}>
-                {hasMetadata ? metadata.title ?? preview.label : preview.label}
-              </span>
-              {hasMetadata && metadata.description ? (
-                <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted">{metadata.description}</span>
-              ) : null}
+            <span className="block font-mono text-body text-accent-soft">
+              {hasMetadata && metadata.siteName ? metadata.siteName : preview.hostname}
             </span>
+            <span className={`mt-0.5 block text-body group-hover:text-fg ${hasMetadata ? "font-medium text-fg" : "truncate text-muted"}`}>
+              {hasMetadata ? metadata.title ?? preview.label : preview.label}
+            </span>
+            {hasMetadata && metadata.description ? (
+              <span className="mt-1 line-clamp-3 block text-body leading-5 text-muted">{metadata.description}</span>
+            ) : null}
             {hasMetadata && metadata.imageUrl ? (
               <img
                 src={metadata.imageUrl}
                 alt=""
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                className="h-24 w-28 shrink-0 self-stretch border-l border-border object-cover sm:w-36"
+                className="mt-2 block max-h-64 w-full rounded-md border border-border object-cover"
               />
             ) : null}
           </a>

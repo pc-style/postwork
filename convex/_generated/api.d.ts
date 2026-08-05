@@ -28,6 +28,7 @@ import type * as lib_githubWebhooks from "../lib/githubWebhooks.js";
 import type * as lib_inviteTargets from "../lib/inviteTargets.js";
 import type * as lib_mediaPolicy from "../lib/mediaPolicy.js";
 import type * as lib_observability from "../lib/observability.js";
+import type * as lib_postCover from "../lib/postCover.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_summaryStaleness from "../lib/summaryStaleness.js";
 import type * as lib_validation from "../lib/validation.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   "lib/inviteTargets": typeof lib_inviteTargets;
   "lib/mediaPolicy": typeof lib_mediaPolicy;
   "lib/observability": typeof lib_observability;
+  "lib/postCover": typeof lib_postCover;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/summaryStaleness": typeof lib_summaryStaleness;
   "lib/validation": typeof lib_validation;

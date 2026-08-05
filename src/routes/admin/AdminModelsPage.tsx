@@ -25,12 +25,12 @@ const GENERATION_META: Record<
   postSummary: {
     label: "post summaries",
     description:
-      "Generate or regenerate the catch-up summary shown at the top of a post thread.",
+      "generate or regenerate the catch-up summary shown at the top of a post thread.",
   },
   agentTask: {
     label: "agent task replies",
     description:
-      "Generate the simulated coding-agent investigation result that gets posted back into a thread.",
+      "generate the simulated coding-agent investigation result that gets posted back into a thread.",
   },
 };
 
@@ -55,7 +55,7 @@ export function AdminModelsPage() {
         setModelsError(
           err instanceof Error
             ? err.message
-            : "Could not load OpenRouter's free model list.",
+            : "could not load OpenRouter's free model list.",
         );
       })
       .finally(() => {
@@ -79,16 +79,16 @@ export function AdminModelsPage() {
       description="choose an OpenRouter model per generation path. presets show free models only; custom model ids are allowed."
     >
       {settings === undefined ? (
-        <Skeleton preset="stats" count={2} label="Loading model settings" />
+        <Skeleton preset="stats" count={2} label="loading model settings" />
       ) : (
         <div className="grid gap-4">
           {!settings.openRouterConfigured ? (
-            <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-4 text-sm leading-6 text-muted">
+            <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-4 text-body leading-6 text-muted">
               <div className="font-medium text-accent-soft">OpenRouter key missing</div>
               <p className="mt-1">
-                Model choices are saved here, but generation needs
+                model choices are saved here, but generation needs
                 {" "}
-                <code className="font-mono text-xs text-fg">OPENROUTER_API_KEY</code>
+                <code className="font-mono text-body text-fg">OPENROUTER_API_KEY</code>
                 {" "}
                 in the Convex environment before these OpenRouter settings can run.
               </p>
@@ -96,8 +96,8 @@ export function AdminModelsPage() {
           ) : null}
 
           {modelsError ? (
-            <div role="alert" className="rounded-lg border border-urgent/30 bg-urgent/5 p-4 text-sm text-urgent">
-              {modelsError} You can still enter a custom model id.
+            <div role="alert" className="rounded-lg border border-urgent/30 bg-urgent/5 p-4 text-body text-urgent">
+              {modelsError} you can still enter a custom model id.
             </div>
           ) : null}
 
@@ -147,7 +147,7 @@ function ModelSettingCard({
   async function save() {
     const modelId = draft.trim();
     if (!modelId) {
-      setError("Model ID is required.");
+      setError("model id is required.");
       return;
     }
     setBusy("save");
@@ -158,7 +158,7 @@ function ModelSettingCard({
       setError(
         err instanceof Error
           ? err.message
-          : "Could not save this model setting.",
+          : "could not save this model setting.",
       );
     } finally {
       setBusy(null);
@@ -174,7 +174,7 @@ function ModelSettingCard({
       setError(
         err instanceof Error
           ? err.message
-          : "Could not reset this model setting.",
+          : "could not reset this model setting.",
       );
     } finally {
       setBusy(null);
@@ -185,15 +185,15 @@ function ModelSettingCard({
     <article className="rounded-lg border border-border bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-fg">{meta.label}</h2>
-          <p className="mt-1 text-sm leading-6 text-muted">{meta.description}</p>
+          <h2 className="text-title font-semibold tracking-tight text-fg">{meta.label}</h2>
+          <p className="mt-1 text-body leading-6 text-muted">{meta.description}</p>
         </div>
         <StatusPill tone={setting.modelId ? "good" : "muted"}>
           {setting.modelId ? "pinned" : "env"}
         </StatusPill>
       </div>
 
-      <dl className="mt-4 grid gap-2 rounded-md border border-border bg-bg px-3 py-2 text-xs">
+      <dl className="mt-4 grid gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body">
         <div className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
           <dt className="text-muted">effective model</dt>
           <dd className="break-all font-mono text-fg">{setting.effectiveModelId}</dd>
@@ -210,7 +210,7 @@ function ModelSettingCard({
 
       <div className="mt-4 grid gap-3">
         <label className="block">
-          <span className="text-label font-medium lowercase text-muted">
+          <span className="text-body font-medium lowercase text-muted">
             free model preset
           </span>
           <select
@@ -227,11 +227,11 @@ function ModelSettingCard({
                 setDraft(next);
               }
             }}
-            className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg transition-colors focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+            className="ui-field mt-1 text-body"
           >
             {freeModels.map((model) => (
               <option key={model.id} value={model.id}>
-                {model.name} — {model.id}
+                {model.name} - {model.id}
                 {model.contextLength
                   ? ` (${formatContextLength(model.contextLength)})`
                   : ""}
@@ -243,27 +243,27 @@ function ModelSettingCard({
 
         {mode === "custom" ? (
           <label className="block">
-            <span className="text-label font-medium lowercase text-muted">
+            <span className="text-body font-medium lowercase text-muted">
               custom model id
             </span>
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="provider/model:free"
-              className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm text-fg transition-colors placeholder:text-muted/60 focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              className="ui-field mt-1 font-mono text-body placeholder:text-muted/60"
             />
-            <p className="mt-1.5 text-xs leading-5 text-muted">
-              Use this for a newly released free model, an OpenRouter alias, or a
+            <p className="mt-1.5 text-body leading-5 text-muted">
+              use this for a newly released free model, an OpenRouter alias, or a
               router id that is not in the fetched list.
             </p>
           </label>
         ) : null}
       </div>
 
-      {error ? <p role="alert" className="mt-3 text-xs text-urgent">{error}</p> : null}
+      {error ? <p role="alert" className="mt-3 text-body text-urgent">{error}</p> : null}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted">
+        <p className="text-body text-muted">
           {modelsLoading ? "loading free OpenRouter models…" : `${freeModels.length} free presets`}
         </p>
         <div className="flex flex-wrap items-center gap-2">

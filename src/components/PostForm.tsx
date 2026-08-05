@@ -54,7 +54,7 @@ export function PriorityPicker({
 }) {
   return (
     <SelectionGroup
-      label="Priority"
+      label="priority"
       value={priority}
       onChange={onChange}
       options={PRIORITIES.map((value) => ({
@@ -77,9 +77,9 @@ export function PostForm({
   textareaRef,
   titlePlaceholder = "Example: Release checklist update",
   bodyPlaceholder = "Add the context, decision, or question.",
-  titleHelp = "Summarize the post in one line.",
-  bodyHelp = "Add the context, decision, or question.",
-  submitLabel = "post",
+  titleHelp = "summarize the post in one line.",
+  bodyHelp = "add the context, decision, or question.",
+  submitLabel = "create post",
   submittingLabel = "posting…",
   resetOnSubmit = false,
   extraFields,
@@ -119,7 +119,9 @@ export function PostForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [titleTouched, setTitleTouched] = useState(false);
   const [bodyTouched, setBodyTouched] = useState(false);
+  const internalTitleRef = useRef<HTMLInputElement>(null);
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const resolvedTitleRef = titleRef ?? internalTitleRef;
   const bodyRef = textareaRef ?? internalTextareaRef;
   const {
     pending,
@@ -209,7 +211,13 @@ export function PostForm({
   const submit = async () => {
     setTitleTouched(true);
     setBodyTouched(true);
-    if (!canSubmit || busy) return;
+    if (!canSubmit || busy) {
+      requestAnimationFrame(() => {
+        if (titleMissing) resolvedTitleRef.current?.focus();
+        else if (bodyMissing) bodyRef.current?.focus();
+      });
+      return;
+    }
     setBusy(true);
     setFormError(null);
     try {
@@ -228,7 +236,7 @@ export function PostForm({
       setFormError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't create the post. Check the fields and try again.",
+          : "couldn't create the post. check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -236,17 +244,24 @@ export function PostForm({
   };
 
   return (
-    <div className="space-y-5">
+    <form
+      className="space-y-5"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
       <ComposerShell
         title={title}
         setTitle={(value) => {
           setTitle(value);
           setFormError(null);
         }}
-        titleRef={titleRef}
-        titleLabel="Title"
+        titleRef={resolvedTitleRef}
+        titleLabel="title"
         titleHelp={titleHelp}
-        titleError={titleTouched && titleMissing ? "Add a title." : undefined}
+        titleError={titleTouched && titleMissing ? "add a title." : undefined}
         titlePlaceholder={titlePlaceholder}
         titleAutoFocus={autoFocusTitle}
         titleRequired={requireTitle}
@@ -257,9 +272,9 @@ export function PostForm({
           setFormError(null);
         }}
         textareaRef={bodyRef}
-        bodyLabel="Post"
+        bodyLabel="post"
         bodyHelp={bodyHelp}
-        bodyError={bodyTouched && bodyMissing ? "Add the post content." : undefined}
+        bodyError={bodyTouched && bodyMissing ? "add context, a decision, or a question." : undefined}
         placeholder={bodyPlaceholder}
         rows={bodyRows}
         autoFocus={autoFocusBody}
@@ -282,7 +297,7 @@ export function PostForm({
         afterBody={
           <div className="grid gap-5">
             {showSpace ? (
-              <FormField label="Space" required error={spaceMissing ? "Choose a space." : undefined}>
+              <FormField label="space" required error={spaceMissing ? "choose a space." : undefined}>
                 <select
                   value={selectedSpace ? selectedSpace.id ?? selectedSpace.label : ""}
                   onChange={(event) => setSpaceKey(event.target.value)}
@@ -297,8 +312,8 @@ export function PostForm({
               </FormField>
             ) : fixedSpace ? (
               <div>
-                <p className="text-sm font-medium text-fg">Space</p>
-                <p className="mt-1.5 rounded-md border border-border bg-bg px-3 py-2.5 text-sm text-muted">
+                <p className="text-body font-medium text-fg">space</p>
+                <p className="mt-1.5 rounded-md border border-border bg-bg px-3 py-2.5 text-body text-muted">
                   {fixedSpace.label}
                 </p>
               </div>
@@ -308,13 +323,13 @@ export function PostForm({
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               {canUpload ? <AttachmentButton onFiles={addFiles} /> : null}
               <GifPicker onSelect={onGif} />
-              {hasUploading ? <span className="text-xs text-accent-soft">Optimizing and uploading media…</span> : null}
+              {hasUploading ? <span className="text-body text-accent-soft">optimizing and uploading media…</span> : null}
               {hasAttachmentErrors ? (
-                <span className="ui-error">{attachmentError ?? "A media attachment failed to upload."}</span>
+                <span className="ui-error">{attachmentError ?? "couldn't upload a media attachment. remove it or try again."}</span>
               ) : null}
-              {attachmentWarning ? <span className="text-xs text-urgent">{attachmentWarning}</span> : null}
+              {attachmentWarning ? <span className="text-body text-urgent">{attachmentWarning}</span> : null}
               {!hasUploading && !hasAttachmentErrors && !attachmentWarning ? (
-                <span className="text-xs text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
+                <span className="text-body text-muted">images up to 10 MB; MP4/WebM up to 50 MB; 8 files max</span>
               ) : null}
             </div>
           </div>
@@ -330,18 +345,19 @@ export function PostForm({
         hint={
           <span>
             {canSubmit
-              ? "Press Cmd or Ctrl + Enter to post."
-              : "Complete the required fields before posting."}
+              ? "press cmd or ctrl + enter to post."
+              : "complete the required fields before posting."}
           </span>
         }
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}
         submitting={busy}
-        disabled={busy || !canSubmit}
+        disabled={busy || hasUploading || hasAttachmentErrors}
+        submitType="submit"
         onSubmit={() => void submit()}
       />
       {formError ? <p role="alert" className="ui-error">{formError}</p> : null}
-    </div>
+    </form>
   );
 }
 

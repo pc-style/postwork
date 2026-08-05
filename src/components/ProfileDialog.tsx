@@ -28,11 +28,11 @@ export function ProfileDialog(props: {
 
   return (
     <Dialog
-      title={props.mode === "onboarding" ? "Finish your profile" : "Edit profile"}
+      title={props.mode === "onboarding" ? "finish your profile" : "edit profile"}
       description={
         props.mode === "onboarding"
-          ? "Add the details teammates will see across Postwork."
-          : "Update your profile and notification preferences."
+          ? "add the details teammates will see across postwork."
+          : "update your profile and notification preferences."
       }
       dismissible={props.mode === "edit"}
       onClose={props.onClose}
@@ -135,7 +135,7 @@ function ProfileDialogBody({
     if (!file) return;
     setError(null);
     if (file.size > 5 * 1024 * 1024) {
-      setError("Choose an image smaller than 5 MB.");
+      setError("choose an image smaller than 5 MB.");
       return;
     }
 
@@ -155,7 +155,7 @@ function ProfileDialogBody({
       setAvatarAction({ type: "upload", storageId: json.storageId });
       setAvatarDraft("upload");
     } catch {
-      setError("We couldn't upload that image. Choose another image and try again.");
+      setError("we couldn't upload that image. choose another image and try again.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -171,7 +171,7 @@ function ProfileDialogBody({
       notificationDraft?.quietHoursEnabled &&
       notificationDraft.quietHoursStart === notificationDraft.quietHoursEnd
     ) {
-      setError("Choose different start and end times for quiet hours.");
+      setError("choose different start and end times for quiet hours.");
       return;
     }
     setIsSaving(true);
@@ -186,7 +186,7 @@ function ProfileDialogBody({
         });
       } else {
         if (!notificationDraft) {
-          throw new Error("Notification preferences are still loading.");
+          throw new Error("notification preferences are still loading.");
         }
         await updateProfileAndNotifications({
           name: trimmedName,
@@ -197,7 +197,7 @@ function ProfileDialogBody({
         onClose();
       }
     } catch {
-      setError("We couldn't save your settings. Review the fields and try again.");
+      setError("we couldn't save your settings. review the fields and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -215,7 +215,9 @@ function ProfileDialogBody({
         <div
           className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 font-semibold text-fg"
           style={{
-            backgroundColor: effectivePreview ? undefined : user?.avatarColor ?? "#3a2526",
+            backgroundColor: effectivePreview
+              ? undefined
+              : user?.avatarColor ?? "var(--color-avatar-fallback)",
             fontSize: 72 * 0.38,
           }}
           aria-label="Profile image preview"
@@ -271,15 +273,15 @@ function ProfileDialogBody({
               </Button>
             ) : null}
           </div>
-          <p className="text-xs leading-5 text-muted">Use a square image, or keep your initials.</p>
+          <p className="text-body leading-5 text-muted">use a square image, or keep your initials.</p>
         </div>
       </div>
 
-      <FormField label="Name" required>
+      <FormField label="name" required>
         <input autoFocus value={name} onChange={(event) => onNameChange(event.target.value)} className="ui-field" />
       </FormField>
 
-      <FormField label="Initials" required help="Use up to two letters.">
+      <FormField label="initials" required help="use up to two letters.">
         <input
           value={initials}
           maxLength={2}
@@ -289,7 +291,7 @@ function ProfileDialogBody({
       </FormField>
 
       {mode === "onboarding" ? (
-        <FormField label="Job title" optional help="Describe your work. Admins manage permissions separately.">
+        <FormField label="job title" optional help="describe your work. admins manage permissions separately.">
           <input value={title} onChange={(event) => setTitle(event.target.value)} className="ui-field" />
         </FormField>
       ) : null}
@@ -299,9 +301,9 @@ function ProfileDialogBody({
           className="space-y-3 border-t border-border pt-4"
           disabled={!notificationDraft || isSaving}
         >
-          <legend className="text-sm font-medium text-fg">notifications</legend>
-          <p className="text-xs leading-5 text-muted">
-            In-app unread state always stays on. Outbound delivery is off by default.
+          <legend className="text-body font-medium text-fg">notifications</legend>
+          <p className="text-body leading-5 text-muted">
+            in-app unread state always stays on. outbound delivery is off by default.
           </p>
 
           {notificationDraft ? (
@@ -314,7 +316,7 @@ function ProfileDialogBody({
                   )
                 }
                 label="outbound notifications"
-                help="Allow notifications outside the app when a delivery provider is connected."
+                help="allow notifications outside the app when a delivery provider is connected."
               />
 
               <div
@@ -331,7 +333,7 @@ function ProfileDialogBody({
                   }
                   disabled={!notificationDraft.outboundEnabled}
                   label="send urgent posts immediately"
-                  help="Only urgent unread posts qualify; high and normal never interrupt."
+                  help="only urgent unread posts qualify; high and normal never interrupt."
                 />
                 <PreferenceCheckbox
                   checked={notificationDraft.digestEnabled}
@@ -342,7 +344,7 @@ function ProfileDialogBody({
                   }
                   disabled={!notificationDraft.outboundEnabled}
                   label="include a digest"
-                  help="Bundle high and normal posts, plus urgent posts held back by your settings."
+                  help="bundle high and normal posts, plus urgent posts held back by your settings."
                 />
                 <PreferenceCheckbox
                   checked={notificationDraft.quietHoursEnabled}
@@ -353,12 +355,12 @@ function ProfileDialogBody({
                   }
                   disabled={!notificationDraft.outboundEnabled}
                   label="quiet hours"
-                  help="Never send an immediate notification during this window."
+                  help="never send an immediate notification during this window."
                 />
 
                 {notificationDraft.quietHoursEnabled ? (
                   <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Starts">
+                    <FormField label="starts">
                       <input
                         type="time"
                         value={notificationDraft.quietHoursStart}
@@ -373,7 +375,7 @@ function ProfileDialogBody({
                         className="ui-field"
                       />
                     </FormField>
-                    <FormField label="Ends">
+                    <FormField label="ends">
                       <input
                         type="time"
                         value={notificationDraft.quietHoursEnd}
@@ -388,15 +390,15 @@ function ProfileDialogBody({
                         className="ui-field"
                       />
                     </FormField>
-                    <p className="col-span-2 text-xs leading-5 text-muted">
-                      Times use {notificationDraft.quietHoursTimeZone}.
+                    <p className="col-span-2 text-body leading-5 text-muted">
+                      times use {notificationDraft.quietHoursTimeZone}.
                     </p>
                   </div>
                 ) : null}
               </div>
             </>
           ) : (
-            <p className="text-xs text-muted">loading notification preferences…</p>
+            <p className="text-body text-muted">loading notification preferences…</p>
           )}
         </fieldset>
       ) : null}
@@ -441,7 +443,7 @@ function PreferenceCheckbox({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 text-sm text-fg has-disabled:cursor-not-allowed">
+    <label className="flex cursor-pointer items-start gap-3 text-body text-fg has-disabled:cursor-not-allowed">
       <input
         type="checkbox"
         checked={checked}
@@ -451,7 +453,7 @@ function PreferenceCheckbox({
       />
       <span>
         <span className="block font-medium">{label}</span>
-        <span className="mt-0.5 block text-xs leading-5 text-muted">{help}</span>
+        <span className="mt-0.5 block text-body leading-5 text-muted">{help}</span>
       </span>
     </label>
   );

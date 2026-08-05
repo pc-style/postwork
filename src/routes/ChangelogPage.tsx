@@ -9,6 +9,51 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "5 August 2026",
+    title: "one font size, hierarchy from color",
+    note: "beta feedback said the 11px meta text was too small, and the fix went deeper than a bump: the small label size is gone from the type scale entirely. chips, tags, meta rows, and small buttons now share the same 14px body size as everything else, with hierarchy carried by color and spacing instead of shrinking the font. tags stay compact through tighter padding, not tinier text.",
+  },
+  {
+    date: "5 August 2026",
+    title: "feed cards show media, images travel lighter, the app loads faster",
+    note: "posts with images or link embeds now surface a cover on the feed card, with a persisted compact/regular toggle in the feed header. image attachments are re-encoded to webp (2000px cap, smaller-file-wins) at upload, so photos land around 8-15x lighter. the main js bundle was split from 929kb to under 400kb with route-level chunks that prefetch on hover, and the design system is now codified in docs/design-system.md.",
+  },
+  {
+    date: "5 August 2026",
+    title: "one design system, one sign-in path",
+    note: "a full polish sweep from beta feedback: selection no longer shifts rows (color instead of weight, everywhere), the sidebar always highlights the page you are actually on, back buttons and the duplicate settings entry are gone, chips share one shape, type collapsed to five sizes, and lowercase is enforced across the app. posts open at the top instead of mid-scroll, the reply box starts tall enough to see your text and can no longer eat it on resize, saves disable until something changed, and sign-in was rebuilt as a single mobile-first flow: authenticate first, then enter an invite code, request access, or start a workspace.",
+  },
+  {
+    date: "30 July 2026",
+    title: "a six-discipline polish sweep plus a react checkup",
+    note: "ran accessibility, layout, typography, ui-polish, writing, and color passes over the core app: skip link and named landmarks, real focus traps and escape/restore in pickers and the user switcher, semantic post form with inline errors, logical properties and calmer reply separators for layout, balanced headings, tabular numbers and 70ch prose measure, layered dialog shadows, avatar/media outlines and press feedback, empty states and errors that say what to do next, and accent colors nudged to pass contrast without leaving the wine palette. react doctor then cleared all six error-level findings: stable popover-dismiss listeners, module-scope notification-hook selection, and pure sidebar-width state updaters.",
+  },
+  {
+    date: "30 July 2026",
+    title: "your reply no longer hides from you",
+    note: "replying inside a collapsed subthread now expands it immediately, so your fresh reply shows up instead of disappearing behind a “show 1 reply” button.",
+  },
+  {
+    date: "30 July 2026",
+    title: "unread counts are now doors, not decorations",
+    note: "the unread and urgent counters in the mobile header and sidebar queue are clickable: unread opens the feed filtered to unread posts, urgent opens the priority view.",
+  },
+  {
+    date: "30 July 2026",
+    title: "sign-in remembers where you were going",
+    note: "opening a deep link like /app/settings while signed out now returns you to that exact page after signing in, instead of dropping you on home. the sign-in page also got a mobile remodel: the sign-in card comes first, the invite/request-access block moved below it, and the double border inside the card is gone.",
+  },
+  {
+    date: "29 July 2026",
+    title: "link cards now read like discord embeds",
+    note: "generic link previews switched from a thin row with a side thumbnail to a stacked card: accent bar on the left, site name, title, up to three description lines, and a large image below, capped at a readable width.",
+  },
+  {
+    date: "27 July 2026",
+    title: "ask an agent stops stacking and the sidebar stretches",
+    note: "the agent-tasks header keeps “ask an agent” on one line instead of wrapping word-by-word in the narrow rail, and the post-page agent sidebar can be drag-resized (persisted) with keyboard arrow support.",
+  },
+  {
     date: "27 July 2026",
     title: "shared links now show what is behind them",
     note: "http and https links in posts and replies are now clickable outside code, and ordinary web links fetch cached title, description, site, and image metadata instead of showing a hostname-only placeholder.",
@@ -36,12 +81,12 @@ const changes: readonly Change[] = [
   {
     date: "27 July 2026",
     title: "a pinned tab is now a notification",
-    note: "the browser tab title shows your unread count — (3) postwork — so a pinned tab tells you when something moved without opening it.",
+    note: "the browser tab title shows your unread count, like (3) postwork, so a pinned tab tells you when something moved without opening it.",
   },
   {
     date: "27 July 2026",
     title: "the demo shows what a connector agent brings home",
-    note: "the demo org now has an X Pulse connector agent that posts a daily x analytics digest: impressions, follows, the top post, and which mentions need a human reply. seeded data for now — it prototypes the inbound cross-posting flow where the thing you check twitter for lives in a post instead.",
+    note: "the demo org now has an X Pulse connector agent that posts a daily x analytics digest: impressions, follows, the top post, and which mentions need a human reply. seeded data for now; it prototypes the inbound cross-posting flow where the thing you check twitter for lives in a post instead.",
   },
   {
     date: "27 July 2026",
@@ -154,25 +199,25 @@ export function ChangelogPage() {
         <header className="flex items-center justify-between gap-6">
           <Link
             to="/"
-            className="text-base font-semibold tracking-tight transition-colors hover:text-accent-soft"
+            className="text-title font-semibold tracking-tight transition-colors hover:text-accent-soft"
           >
             post<span className="text-accent">work</span>
           </Link>
           <nav aria-label="Public navigation" className="flex items-center gap-5">
-            <Link to="/" className="text-xs text-muted transition-colors hover:text-fg">
+            <Link to="/" className="text-body text-muted transition-colors hover:text-fg">
               home
             </Link>
-            <Link to="/app" className="text-xs text-muted transition-colors hover:text-fg">
+            <Link to="/app" className="text-body text-muted transition-colors hover:text-fg">
               open app
             </Link>
           </nav>
         </header>
 
         <main className="mt-20 md:mt-28">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-[-0.04em] md:text-5xl">
+          <h1 className="max-w-xl text-display font-semibold leading-tight tracking-[-0.04em]">
             dev changelog
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-7 text-muted [text-wrap:pretty]">
+          <p className="mt-6 max-w-lg text-title leading-7 text-muted [text-wrap:pretty]">
             stuff i shipped recently.
           </p>
 
@@ -182,12 +227,12 @@ export function ChangelogPage() {
                 key={`${change.date}-${change.title}`}
                 className="grid gap-4 border-b border-border py-10 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-8"
               >
-                <time className="text-xs leading-6 text-faint">{change.date}</time>
+                <time className="text-body leading-6 text-faint">{change.date}</time>
                 <div>
-                  <h2 className="max-w-lg text-xl font-semibold tracking-tight [text-wrap:balance]">
+                  <h2 className="max-w-lg text-display font-semibold tracking-tight [text-wrap:balance]">
                     {change.title}
                   </h2>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+                  <p className="mt-3 max-w-xl text-body leading-6 text-muted">
                     {change.note}
                   </p>
                 </div>
@@ -196,7 +241,7 @@ export function ChangelogPage() {
           </div>
         </main>
 
-        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-xs text-faint">
+        <footer className="mt-24 flex items-center justify-between border-t border-border pt-6 text-body text-faint">
           <span>postwork</span>
           <Link to="/app" className="transition-colors hover:text-muted">
             open app

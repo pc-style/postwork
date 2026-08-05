@@ -1,3 +1,5 @@
+Before any UI change, read `docs/design-system.md` (tokens, roles, and rules; update it in the same PR when you change the system).
+
 <!-- convex-ai-start -->
 
 This project uses [Convex](https://convex.dev) as its backend.

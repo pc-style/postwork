@@ -184,7 +184,7 @@ function ReplyItem({
             {node.author?.name ?? "member"}
           </span>
           <UserRoleTag role={node.author?.role} />
-          <span className="text-label text-muted">
+          <span className="text-body text-muted">
             {timeAgo(node.createdAt)}
           </span>
         </div>
@@ -194,7 +194,7 @@ function ReplyItem({
         <Button
           variant="quiet"
           size="sm"
-          className="mt-1.5 min-h-9 px-1.5 text-label"
+          className="mt-1.5 min-h-9 px-1.5 text-body"
           onClick={() => setReplyingTo(isReplying ? null : node._id)}
           aria-expanded={isReplying}
         >

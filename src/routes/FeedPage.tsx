@@ -18,7 +18,7 @@ import type { FeedSearch } from "../router";
 
 export function FeedPage() {
   const prefetchPost = usePrefetchPost();
-  useDocumentTitle("Postwork");
+  useDocumentTitle("postwork");
   const store = useStore();
   const { slots } = useActiveExperiment();
   const navigate = useNavigate();
@@ -45,24 +45,25 @@ export function FeedPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <h1 className="sr-only">posts</h1>
       {slots.feedHeader}
       {!slots.feedHeader ? <QuickPostBar /> : null}
 
       <div className="relative mb-4">
-        <label htmlFor="experiment-feed-search" className="sr-only">Search posts</label>
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">/</span>
+        <label htmlFor="experiment-feed-search" className="sr-only">search posts</label>
+        <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 font-semibold text-accent-soft" aria-hidden="true">/</span>
         <input
           id="experiment-feed-search"
           value={term}
           onChange={(event) => setSearch({ q: event.target.value || undefined })}
-          placeholder="Search by title, text, or teammate"
-          className="ui-field pl-8 pr-20"
+          placeholder="search by title, text, or teammate"
+          className="ui-field ps-8 pe-20"
         />
         {searching ? (
           <button
             type="button"
             onClick={() => setSearch({ q: undefined })}
-            className="absolute right-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center rounded-md px-3 text-xs text-muted hover:bg-surface hover:text-fg sm:min-h-9"
+            className="ui-button absolute end-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center rounded-md px-3 text-body text-muted hover:bg-surface hover:text-fg sm:min-h-9"
           >
             clear
           </button>
@@ -71,15 +72,17 @@ export function FeedPage() {
 
       {!searching ? (
         <div className="mb-5 grid gap-3">
-          <div className="flex flex-wrap gap-2" aria-label="Space filters">
+          <fieldset className="flex flex-wrap gap-2">
+            <legend className="sr-only">space filters</legend>
             <ToggleButton pressed={!space} onPressedChange={() => setSearch({ space: undefined })}>all spaces</ToggleButton>
             {SPACES.map((item) => (
               <ToggleButton key={item} pressed={space === item} onPressedChange={() => setSearch({ space: item })}>
                 {item}
               </ToggleButton>
             ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2" aria-label="Feed filters">
+          </fieldset>
+          <fieldset className="flex flex-wrap items-center gap-2">
+            <legend className="sr-only">feed filters</legend>
             {PRIORITIES.map((item) => (
               <ToggleButton
                 key={item}
@@ -92,28 +95,29 @@ export function FeedPage() {
             <ToggleButton pressed={onlyUnread} onPressedChange={(pressed) => setSearch({ unread: pressed || undefined })}>
               unread
             </ToggleButton>
-            <Button variant="quiet" size="sm" className="ml-auto min-h-11" onClick={() => store.markAllRead()}>
+            <span className="sm:ms-auto" />
+            <Button variant="quiet" size="sm" className="min-h-11" onClick={() => store.markAllRead()}>
               mark all read
             </Button>
-          </div>
+          </fieldset>
         </div>
       ) : (
-        <p className="mb-3 text-sm text-muted" aria-live="polite">
+        <p className="type-numeric mb-3 text-body text-muted" aria-live="polite">
           {searchResults === undefined
-            ? "Searching…"
+            ? "searching…"
             : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"} for “${term}”`}
         </p>
       )}
 
       {posts === undefined ? (
-        <LoadingState label="Loading posts" preset="feed" count={4} />
+        <LoadingState label="loading posts" preset="feed" count={4} />
       ) : posts.length === 0 ? (
         <EmptyState>
           {searching
-            ? "No posts match this search. Try a different term."
+            ? "no posts match this search. clear the search or try a different term."
             : onlyUnread
-              ? "You're all caught up. Nothing unread here."
-              : "No posts match these filters. Clear a filter or search again."}
+              ? "you're caught up. turn off the unread filter to view all posts."
+              : "no posts match these filters. adjust the filters above to view more posts."}
         </EmptyState>
       ) : (
         <div className="space-y-3">

@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -36,31 +38,32 @@ export function AnchoredConfirmation({
   const titleId = useId();
   const descriptionId = useId();
 
-  const restoreFocus = () => {
+  const restoreFocus = useCallback(() => {
     requestAnimationFrame(() => {
       if (triggerRef.current?.isConnected) triggerRef.current.focus();
       else fallbackFocusRef?.current?.focus();
     });
-  };
+  }, [fallbackFocusRef]);
 
-  const close = () => {
+  const close = useCallback(() => {
     if (busy) return;
     setOpen(false);
     setError(null);
     restoreFocus();
-  };
+  }, [busy, restoreFocus]);
+  const closeFromEffect = useEffectEvent(close);
 
   useEffect(() => {
     if (!open) return;
     cancelRef.current?.focus();
 
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) close();
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) closeFromEffect();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        close();
+        closeFromEffect();
         return;
       }
       if (event.key !== "Tab") return;
@@ -76,13 +79,13 @@ export function AnchoredConfirmation({
       }
     };
 
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, busy]);
+  }, [open]);
 
   const confirm = async () => {
     if (busy) return;
@@ -97,7 +100,7 @@ export function AnchoredConfirmation({
       setError(
         caught instanceof Error
           ? caught.message
-          : `We couldn't ${confirmLabel}. Try again.`,
+          : `couldn't ${confirmLabel}. check your connection and try again.`,
       );
       setBusy(false);
     }
@@ -109,7 +112,7 @@ export function AnchoredConfirmation({
         ref={triggerRef}
         variant="quiet"
         size="sm"
-        className="min-h-11 text-xs hover:border-urgent/50 hover:text-urgent sm:min-h-9"
+        className="min-h-11 text-body hover:border-urgent/50 hover:text-urgent sm:min-h-9"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => {
@@ -129,10 +132,10 @@ export function AnchoredConfirmation({
             align === "right" ? "right-0" : "left-0"
           }`}
         >
-          <strong id={titleId} className="block text-sm font-semibold text-fg">
+          <strong id={titleId} className="block text-body font-semibold text-fg">
             {title}
           </strong>
-          <span id={descriptionId} className="mt-1 block text-xs leading-5 text-muted">
+          <span id={descriptionId} className="mt-1 block text-body leading-5 text-muted">
             {description}
           </span>
           {error ? (

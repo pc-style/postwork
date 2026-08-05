@@ -8,7 +8,9 @@ export function QuickPostBar() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* offset by the sidebar width on md+ so the button centers on the
+          content column, not the full viewport */}
+      <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:left-[clamp(12rem,18vw,15rem)]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl justify-center">
           <Button
             ref={triggerRef}
@@ -35,11 +37,11 @@ export function QuickPostBar() {
 
 function PlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" className="-ms-0.5 size-4" aria-hidden="true">
       <path
         d="M12 5v14M5 12h14"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>

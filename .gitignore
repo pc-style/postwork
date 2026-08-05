@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .env.local
+.env.beta
 .DS_Store
 *.log
 .vite
@@ -34,3 +35,6 @@ artifacts
 
 videos/
 .env.local.team-backup
+
+# Local database snapshots
+backups/

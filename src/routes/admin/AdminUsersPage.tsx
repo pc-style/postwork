@@ -54,9 +54,9 @@ export function AdminUsersPage() {
             key={label}
             to="/admin/users"
             search={value ? { filter: value } : {}}
-            className={`inline-flex min-h-11 items-center rounded-md border px-2.5 py-1 text-xs lowercase transition-colors sm:min-h-9 ${
+            className={`inline-flex min-h-11 items-center rounded-md border px-2.5 py-1 text-body lowercase transition-colors sm:min-h-9 ${
               filter === value
-                ? "border-accent/40 bg-surface text-fg"
+                ? "border-border bg-surface-2 text-fg"
                 : "border-border text-muted hover:text-fg"
             }`}
           >
@@ -65,9 +65,9 @@ export function AdminUsersPage() {
         ))}
       </div>
       {visible === undefined ? (
-        <Skeleton preset="table" count={5} label="Loading users" />
+        <Skeleton preset="table" count={5} label="loading users" />
       ) : visible.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           no {filter ?? "users"} here{filter ? " yet" : ""}.
         </p>
       ) : (
@@ -111,7 +111,7 @@ export function AdminUsersPage() {
             },
             {
               label: "joined",
-              className: "text-xs text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (user) => timeAgo(user._creationTime),
             },
           ]}
@@ -216,7 +216,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       <div className="divide-y divide-border/60">
         <div className="py-2.5">
           <label htmlFor="admin-user-title" className="block">
-            <span className="text-label font-medium lowercase text-muted">
+            <span className="text-body font-medium lowercase text-muted">
               job title
             </span>
             <input
@@ -224,11 +224,11 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
               value={title}
               onChange={(event) => setTitleDraft(event.target.value)}
               placeholder="role or description, not permissions"
-              className="mt-1 w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg transition-colors placeholder:text-muted/60 focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              className="ui-field mt-1 text-body placeholder:text-muted/60"
             />
           </label>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-xs text-muted">
+            <p className="text-body text-muted">
               permissions are controlled by role.
             </p>
             <ActionButton
@@ -255,7 +255,7 @@ function UserSheet({ user, onClose }: { user: AdminUser; onClose: () => void }) 
           {user._id}
         </SheetField>
       </div>
-      {error && <p className="mt-4 text-xs text-urgent">{error}</p>}
+      {error && <p className="mt-4 text-body text-urgent">{error}</p>}
     </Sheet>
   );
 }

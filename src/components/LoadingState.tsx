@@ -1,7 +1,7 @@
 import { Skeleton, type SkeletonPreset } from "./Skeleton";
 
 export function LoadingState({
-  label = "Loading content",
+  label = "loading content",
   preset = "inline",
   count = 1,
 }: {

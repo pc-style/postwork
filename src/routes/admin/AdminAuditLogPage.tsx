@@ -20,9 +20,9 @@ export function AdminAuditLogPage() {
       description="append-only history of control-plane actions. open view details for the full record."
     >
       {entries === undefined ? (
-        <Skeleton preset="table" count={5} label="Loading audit log" />
+        <Skeleton preset="table" count={5} label="loading audit log" />
       ) : entries.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           empty so far. admin actions and onboarding events land here.
         </p>
       ) : (
@@ -34,7 +34,7 @@ export function AdminAuditLogPage() {
             {
               label: "action",
               primary: true,
-              className: "font-mono text-xs text-fg",
+              className: "font-mono text-body text-fg",
               render: (entry) => entry.action,
             },
             {
@@ -53,7 +53,7 @@ export function AdminAuditLogPage() {
             },
             {
               label: "when",
-              className: "text-xs text-muted tabular-nums",
+              className: "text-body text-muted tabular-nums",
               render: (entry) => timeAgo(entry.createdAt),
             },
           ]}
@@ -85,7 +85,7 @@ function AuditSheet({
 
   return (
     <Sheet
-      title={<span className="font-mono text-sm">{entry.action}</span>}
+      title={<span className="font-mono text-body">{entry.action}</span>}
       subtitle={timeAgo(entry.createdAt)}
       onClose={onClose}
     >
@@ -103,10 +103,10 @@ function AuditSheet({
       </div>
       {metadata && (
         <div className="mt-4">
-          <div className="text-label font-medium lowercase text-muted">
+          <div className="text-body font-medium lowercase text-muted">
             metadata
           </div>
-          <pre className="mt-1.5 overflow-x-auto rounded-md border border-border bg-bg p-3 text-xs text-fg">
+          <pre className="mt-1.5 overflow-x-auto rounded-md border border-border bg-bg p-3 text-body text-fg">
             {metadata}
           </pre>
         </div>

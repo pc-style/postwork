@@ -20,9 +20,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <RequireAdmin>
       <div className="theme-ink min-h-screen w-full bg-bg text-fg">
         <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-bg/95 px-4 backdrop-blur md:hidden">
-          <Link to="/admin" className="text-base font-semibold tracking-tight">
+          <Link to="/admin" className="text-title font-semibold tracking-tight">
             post<span className="text-accent-soft">work</span>
-            <span className="ml-2 text-xs font-medium text-muted">admin</span>
+            <span className="ml-2 text-body font-medium text-muted">admin</span>
           </Link>
           <Button variant="icon" aria-label="Open admin navigation" onClick={() => setMobileNavOpen(true)}>
             <MenuIcon />
@@ -32,10 +32,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <div className="flex min-h-screen w-full">
           <aside className="sticky top-0 hidden h-screen w-[clamp(12rem,18vw,15rem)] shrink-0 flex-col border-r border-border py-6 md:flex">
             <div className="px-5">
-              <Link to="/" className="text-base font-semibold tracking-tight">
+              <Link to="/" className="text-title font-semibold tracking-tight">
                 post<span className="text-accent-soft">work</span>
               </Link>
-              <div className="mt-1 text-label font-medium text-muted">Admin</div>
+              <div className="mt-1 text-body font-medium text-muted">admin</div>
             </div>
             <AdminNav />
             <div className="mt-auto px-5 pb-2">
@@ -46,7 +46,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </div>
 
         {mobileNavOpen ? (
-          <Sheet title="Admin navigation" onClose={() => setMobileNavOpen(false)}>
+          <Sheet title="admin navigation" onClose={() => setMobileNavOpen(false)}>
             <div className="flex min-h-full flex-col">
               <AdminNav onSelect={() => setMobileNavOpen(false)} />
               <div className="mt-auto border-t border-border pt-5">
@@ -70,7 +70,7 @@ export function AdminLayout() {
 
 function AdminNav({ onSelect }: { onSelect?: () => void }) {
   return (
-    <nav aria-label="Admin navigation" className="mt-6 flex flex-col gap-1 px-3 text-sm">
+    <nav aria-label="Admin navigation" className="mt-6 flex flex-col gap-1 px-3 text-body">
       {ADMIN_NAV.map((item) => (
         <Link
           key={item.label}
@@ -91,7 +91,7 @@ function BackToApp({ onSelect }: { onSelect?: () => void }) {
   return (
     <Link
       to="/app"
-      className="inline-flex min-h-11 items-center text-xs text-muted transition-colors hover:text-fg"
+      className="inline-flex min-h-11 items-center text-body text-muted transition-colors hover:text-fg"
       onClick={onSelect}
     >
       <span aria-hidden="true" className="mr-1.5">←</span>
@@ -115,8 +115,8 @@ export function AdminPage({
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-fg">{title}</h1>
-          {description ? <p className="mt-1 max-w-xl text-sm leading-6 text-muted">{description}</p> : null}
+          <h1 className="text-display font-semibold tracking-tight text-fg">{title}</h1>
+          {description ? <p className="mt-1 max-w-xl text-body leading-6 text-muted">{description}</p> : null}
         </div>
         {actions ? <div className="w-full sm:w-auto">{actions}</div> : null}
       </div>
@@ -146,13 +146,13 @@ export function AdminRecordList<T extends { _id: string }>({
   return (
     <>
       <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
-        <table className="w-full min-w-[44rem] text-left text-sm">
+        <table className="w-full min-w-[44rem] text-left text-body">
           <thead>
-            <tr className="border-b border-border bg-surface text-label font-medium text-muted">
+            <tr className="border-b border-border bg-surface text-body font-medium text-muted">
               {columns.map((column) => (
                 <th key={column.label} className="px-4 py-3 font-medium">{column.label}</th>
               ))}
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 text-right font-medium">actions</th>
             </tr>
           </thead>
           <tbody>
@@ -186,8 +186,8 @@ export function AdminRecordList<T extends { _id: string }>({
             <dl className="grid gap-3">
               {columns.map((column) => (
                 <div key={column.label} className={column.primary ? "border-b border-border pb-3" : "grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3"}>
-                  <dt className={column.primary ? "sr-only" : "text-xs font-medium text-muted"}>{column.label}</dt>
-                  <dd className={`min-w-0 break-words text-sm ${column.primary ? "text-fg" : "text-fg/90"}`}>
+                  <dt className={column.primary ? "sr-only" : "text-body font-medium text-muted"}>{column.label}</dt>
+                  <dd className={`min-w-0 break-words text-body ${column.primary ? "text-fg" : "text-fg/90"}`}>
                     {column.render(item)}
                   </dd>
                 </div>
@@ -217,7 +217,7 @@ export function StatusPill({
     muted: "border-border bg-surface-2 text-muted",
   } as const;
   return (
-    <span className={`inline-flex rounded-md border px-2 py-0.5 text-xs ${tones[tone]}`}>
+    <span className={`inline-flex rounded-sm border px-2 py-px text-body leading-tight ${tones[tone]}`}>
       {children}
     </span>
   );

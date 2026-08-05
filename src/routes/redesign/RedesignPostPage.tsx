@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AgentSummary } from "../../components/AgentSummary";
@@ -20,6 +27,24 @@ import type { EnrichedPost } from "../../lib/types";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
 import { useDeferredFlag } from "../../lib/useDeferredFlag";
 
+const AGENT_SIDEBAR_WIDTH_KEY = "postwork.agentSidebarWidth";
+const AGENT_SIDEBAR_DEFAULT = 336;
+const AGENT_SIDEBAR_MIN = 280;
+const AGENT_SIDEBAR_MAX = 560;
+// Wide enough for a normal horizontal "agents" button — never rotated text.
+const AGENT_SIDEBAR_COLLAPSED = 104;
+
+function clampSidebarWidth(width: number) {
+  return Math.min(AGENT_SIDEBAR_MAX, Math.max(AGENT_SIDEBAR_MIN, Math.round(width)));
+}
+
+function readSidebarWidth() {
+  if (typeof window === "undefined") return AGENT_SIDEBAR_DEFAULT;
+  const raw = window.localStorage.getItem(AGENT_SIDEBAR_WIDTH_KEY);
+  const parsed = raw ? Number(raw) : Number.NaN;
+  return Number.isFinite(parsed) ? clampSidebarWidth(parsed) : AGENT_SIDEBAR_DEFAULT;
+}
+
 export function RedesignPostPage() {
   const { postId: postIdParam } = useParams({ strict: false });
   const postId = postIdParam as Id<"posts">;
@@ -30,6 +55,54 @@ export function RedesignPostPage() {
   const [editing, setEditing] = useState(false);
   const showSkeleton = useDeferredFlag(150);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Lazy initializer: the saved width applies on first paint (no jump from
+  // the default); readSidebarWidth already guards `typeof window`.
+  const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
+  const [resizing, setResizing] = useState(false);
+  const resizeRef = useRef<{ startX: number; startWidth: number; currentWidth: number } | null>(
+    null,
+  );
+
+  const onResizePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!sidebarOpen) return;
+      // preventDefault stops text selection during the drag, but also
+      // suppresses the default pointerdown focus — refocus explicitly so the
+      // separator keeps its keyboard-resize affordance after a drag.
+      event.preventDefault();
+      event.currentTarget.focus();
+      resizeRef.current = {
+        startX: event.clientX,
+        startWidth: sidebarWidth,
+        currentWidth: sidebarWidth,
+      };
+      setResizing(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [sidebarOpen, sidebarWidth],
+  );
+
+  const onResizePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = resizeRef.current;
+    if (!drag) return;
+    // Handle sits on the left edge; dragging left grows the sidebar.
+    const next = clampSidebarWidth(drag.startWidth + (drag.startX - event.clientX));
+    drag.currentWidth = next;
+    setSidebarWidth(next);
+  }, []);
+
+  const endResize = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = resizeRef.current;
+    if (!drag) return;
+    resizeRef.current = null;
+    setResizing(false);
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // already released
+    }
+    window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(drag.currentWidth));
+  }, []);
 
   useDocumentTitle(post ? `${post.title} · postwork` : "Post · postwork");
 
@@ -78,15 +151,20 @@ export function RedesignPostPage() {
     </>
   );
 
+  const openSidebarWidth = sidebarOpen ? sidebarWidth : AGENT_SIDEBAR_COLLAPSED;
+
   return (
     <div
-      className={`mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:max-w-6xl xl:grid xl:gap-8 xl:px-8 xl:pt-10 ${
-        sidebarOpen
-          ? "xl:grid-cols-[minmax(0,1fr)_21rem]"
-          : "xl:grid-cols-[minmax(0,1fr)_2.75rem]"
+      className={`mx-auto w-full max-w-3xl px-4 pb-8 pt-6 sm:px-6 sm:pt-8 xl:grid xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_var(--agent-sidebar-width)] xl:gap-0 xl:px-8 xl:pt-10 ${
+        resizing ? "xl:select-none xl:cursor-col-resize" : ""
       }`}
+      style={
+        {
+          ["--agent-sidebar-width" as string]: `${openSidebarWidth}px`,
+        } as CSSProperties
+      }
     >
-    <article className="min-w-0">
+    <article className="min-w-0 xl:pr-8">
       <nav aria-label="Breadcrumb" className="mb-2 text-xs text-muted">
         <Link
           to="/app"
@@ -167,36 +245,64 @@ export function RedesignPostPage() {
 
     <aside
       aria-label="Agent panels"
-      className="hidden xl:block xl:border-l xl:border-border xl:pl-6"
+      className="relative hidden min-w-0 xl:block"
     >
-      <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
-        {sidebarOpen ? (
-          <>
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-label font-semibold text-muted">agents</span>
-              <Button
-                variant="quiet"
-                size="sm"
-                className="min-h-8 text-xs"
-                onClick={() => setSidebarOpen(false)}
-                aria-expanded={true}
-              >
-                hide
-              </Button>
-            </div>
-            {agentPanels}
-          </>
-        ) : (
-          <Button
-            variant="quiet"
-            size="sm"
-            className="min-h-24 w-full px-1 text-xs [writing-mode:vertical-rl]"
-            onClick={() => setSidebarOpen(true)}
-            aria-expanded={false}
-          >
-            agents
-          </Button>
-        )}
+      {sidebarOpen ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize agent sidebar"
+          aria-valuemin={AGENT_SIDEBAR_MIN}
+          aria-valuemax={AGENT_SIDEBAR_MAX}
+          aria-valuenow={sidebarWidth}
+          tabIndex={0}
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={endResize}
+          onPointerCancel={endResize}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            const delta = event.key === "ArrowLeft" ? 16 : -16;
+            const next = clampSidebarWidth(sidebarWidth + delta);
+            setSidebarWidth(next);
+            window.localStorage.setItem(AGENT_SIDEBAR_WIDTH_KEY, String(next));
+          }}
+          className={`absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none ${
+            resizing ? "bg-accent/30" : "hover:bg-accent/20"
+          }`}
+        />
+      ) : null}
+      <div className="h-full border-l border-border pl-6">
+        <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto overflow-x-hidden">
+          {sidebarOpen ? (
+            <>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="shrink-0 text-body font-semibold text-muted">agents</span>
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  className="min-h-8 shrink-0 text-xs"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-expanded={true}
+                >
+                  hide
+                </Button>
+              </div>
+              {agentPanels}
+            </>
+          ) : (
+            <Button
+              variant="quiet"
+              size="sm"
+              className="w-full text-body"
+              onClick={() => setSidebarOpen(true)}
+              aria-expanded={false}
+            >
+              agents
+            </Button>
+          )}
+        </div>
       </div>
     </aside>
     </div>

@@ -26,33 +26,33 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
           <Avatar user={agent} size={38} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-semibold text-fg">{agent.name}</h2>
+              <h2 className="text-title font-semibold text-fg">{agent.name}</h2>
               <AgentTag />
             </div>
-            <p className="text-sm text-muted">{agent.title}</p>
+            <p className="text-body text-muted">{agent.title}</p>
           </div>
         </div>
-        <div className="rounded-md border border-accent/30 bg-accent/10 px-2 py-1 text-xs text-accent-soft">
+        <div className="rounded-sm border border-accent/30 bg-accent/10 px-2 py-1 text-body text-accent-soft">
           {agentTasks.length} {agentTasks.length === 1 ? "task" : "tasks"}
         </div>
       </div>
 
       {recent.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">No tasks have been assigned to this agent.</p>
+        <p className="mt-4 text-body text-muted">no tasks have been assigned to this agent.</p>
       ) : (
         <div className="mt-4 space-y-2">
           {recent.map((task) => (
             <div key={task._id} className="rounded-md border border-border bg-bg p-3">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 <StatusChip status={task.status} />
-                <span className="text-label text-muted">{timeAgo(task.createdAt)}</span>
+                <span className="text-body text-muted">{timeAgo(task.createdAt)}</span>
                 {isLocalId(task.postId) ? (
-                  <span className="text-label text-muted">Session post</span>
+                  <span className="text-body text-muted">session post</span>
                 ) : (
                   <Link
                     to="/app/posts/$postId"
                     params={{ postId: task.postId }}
-                    className="inline-flex min-h-11 items-center text-label text-accent-soft transition-colors hover:text-fg sm:min-h-9"
+                    className="ms-auto inline-flex min-h-11 items-center text-body text-accent-soft transition-colors hover:text-fg sm:min-h-9"
                     onMouseEnter={() => prefetchPost(task.postId)}
                     onFocus={() => prefetchPost(task.postId)}
                     onTouchStart={() => prefetchPost(task.postId)}
@@ -61,9 +61,9 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
                   </Link>
                 )}
               </div>
-              <p className="break-words text-sm text-fg">{truncate(task.prompt, 120)}</p>
+              <p className="break-words text-body text-fg">{truncate(task.prompt, 120)}</p>
               {task.status === "done" && task.result ? (
-                <p className="mt-1.5 break-words text-xs text-muted">{truncate(task.result.replace(/\s+/g, " ").trim(), 160)}</p>
+                <p className="mt-1.5 break-words text-body text-muted">{truncate(task.result.replace(/\s+/g, " ").trim(), 160)}</p>
               ) : null}
             </div>
           ))}
@@ -74,7 +74,7 @@ function AgentCard({ agent, agentTasks }: { agent: Doc<"users">; agentTasks: Age
 }
 
 export function AgentsPage() {
-  useDocumentTitle("Agents · postwork");
+  useDocumentTitle("agents · postwork");
   const { users } = useSession();
   const { tasks } = useAgentTasks();
   const agents = users.filter((user) => user.isAgent);
@@ -82,20 +82,18 @@ export function AgentsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <PageHeader
-        backTo="/app"
-        backLabel="feed"
-        title="Agents"
-        description="Review agent tasks and open the posts where they were requested."
+        title="agents"
+        description="review agent tasks and open the posts where they were requested."
       />
 
       {tasks.length === 0 ? (
         <div className="mb-5">
-          <EmptyState>No agent tasks yet. Open a post to ask an agent for help.</EmptyState>
+          <EmptyState>no agent tasks yet. open a post to ask an agent for help.</EmptyState>
         </div>
       ) : null}
 
       {agents.length === 0 ? (
-        <EmptyState>No agents are available.</EmptyState>
+        <EmptyState>no agents are available.</EmptyState>
       ) : (
         <div className="grid gap-4">
           {agents.map((agent) => (

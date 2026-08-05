@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAttachmentUpload } from "../lib/attachments";
 import {
   getMediaKind,
@@ -37,6 +37,20 @@ export function useAttachmentPicker() {
   const [limitError, setLimitError] = useState<string | null>(null);
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null);
   const counter = useRef(0);
+  const pendingRef = useRef(pending);
+
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+
+  useEffect(
+    () => () => {
+      for (const item of pendingRef.current) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+    },
+    [],
+  );
 
   const addFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -48,12 +62,12 @@ export function useAttachmentPicker() {
       const accepted = supported.slice(0, available);
       setLimitError(
         supported.length > available
-          ? `Maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
+          ? `maximum ${MEDIA_MAX_PER_MESSAGE} media attachments per post or reply.`
           : null,
       );
       setSelectionWarning(
         supported.length !== selected.length
-          ? `Unsupported files were not added. ${UNSUPPORTED_MEDIA_MESSAGE}`
+          ? `unsupported files were not added. ${UNSUPPORTED_MEDIA_MESSAGE}`
           : null,
       );
       for (const file of accepted) {
@@ -211,17 +225,17 @@ export function AttachmentThumbnails({
               <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
                 <path d="M7.5 3.75h6l3 3v13.5h-9zM13.5 3.75v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
               </svg>
-              <span className="max-w-full truncate text-[10px]">{p.filename}</span>
+              <span className="max-w-full truncate text-body">{p.filename}</span>
             </div>
           )}
           {p.uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-xs text-muted">
-              Uploading…
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/75 px-1 text-center text-body text-muted">
+              uploading…
             </div>
           )}
           {p.error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bg/90 p-1 text-center text-[10px] leading-tight text-urgent">
-              Upload failed
+            <div className="absolute inset-0 flex items-center justify-center bg-bg/90 p-1 text-center text-body leading-tight text-urgent">
+              upload failed
             </div>
           )}
           <button

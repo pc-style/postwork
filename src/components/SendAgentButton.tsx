@@ -48,7 +48,7 @@ export function SendAgentButton({
       setError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't send the agent task. Try again.",
+          : "couldn't send the agent task. check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -60,7 +60,7 @@ export function SendAgentButton({
       <Button
         variant="quiet"
         size="sm"
-        className="min-h-9 text-xs"
+        className="min-h-9 text-body"
         onClick={() => {
           setError(null);
           setOpen((value) => !value);
@@ -84,7 +84,7 @@ export function SendAgentButton({
               role="menuitem"
               disabled={busy}
               onClick={() => void send(handle)}
-              className="flex min-h-11 w-full items-center rounded-sm px-3 py-2 text-left text-xs text-muted transition-colors hover:bg-accent/10 hover:text-fg disabled:text-muted/70"
+              className="flex min-h-11 w-full items-center rounded-sm px-3 py-2 text-left text-body text-muted transition-colors hover:bg-accent/10 hover:text-fg disabled:text-muted/70"
             >
               {AGENT_HANDLES[handle]}
             </button>

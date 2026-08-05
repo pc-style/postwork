@@ -6,7 +6,7 @@ import { timeAgo } from "../lib/format";
 import { Button } from "./Button";
 
 function teaserFrom(summary?: string) {
-  if (!summary) return "Generate a catch-up on key decisions and open questions.";
+  if (!summary) return "Generate a summary of key decisions and open questions.";
   const line = summary
     .split("\n")
     .map((part) => part.replace(/^[#>\-*\s]+/, "").replace(/\*\*/g, "").trim())
@@ -62,10 +62,10 @@ export function AgentSummary({
           className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-2.5 transition-colors hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-soft [&::-webkit-details-marker]:hidden"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="rounded-sm bg-accent/20 px-1.5 py-0.5 text-label font-semibold text-accent-soft">
+            <span className="shrink-0 rounded-sm bg-accent/20 px-1.5 py-px text-body leading-tight lowercase text-accent-soft">
               ai
             </span>
-            <span className="text-xs font-semibold lowercase text-accent-soft">
+            <span className="shrink-0 whitespace-nowrap text-body lowercase text-accent-soft">
               agent summary
             </span>
             {!expanded && summary && isStale ? (
@@ -75,7 +75,7 @@ export function AgentSummary({
               />
             ) : null}
             {!expanded ? (
-              <span className="hidden truncate text-xs text-muted sm:inline">
+              <span className="hidden truncate text-body text-muted sm:inline">
                 {teaserFrom(summary)}
                 {summary && isStale ? (
                   <span className="sr-only"> New replies since this summary.</span>
@@ -83,18 +83,18 @@ export function AgentSummary({
               </span>
             ) : null}
           </span>
-          <span className="shrink-0 text-xs text-muted">{expanded ? "hide" : "open"}</span>
+          <span className="shrink-0 text-body text-muted">{expanded ? "hide" : "open"}</span>
         </summary>
 
         <div className="ui-reveal px-4 pb-4">
           {summary ? <Markdown text={summary} /> : (
-            <p className="text-sm text-muted">
-              No summary yet. Generate one to catch up on key decisions and open questions.
+            <p className="text-body text-muted">
+              Generate a summary of key decisions and open questions.
             </p>
           )}
 
           {summary && isStale && (
-            <p className="mt-2.5 text-label text-muted">
+            <p className="mt-2.5 text-body text-muted">
               New replies arrived after this summary. Regenerate to include them.
             </p>
           )}
@@ -107,7 +107,7 @@ export function AgentSummary({
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             {(model || updatedAt) && !error ? (
-              <p className="text-label text-muted">
+              <p className="text-body text-muted">
                 {model ? (model === "seed/baked" ? "Demo summary" : `Model: ${model}`) : null}
                 {model && updatedAt ? ", " : ""}
                 {updatedAt ? `covers activity through ${timeAgo(updatedAt)}` : ""}
@@ -124,7 +124,7 @@ export function AgentSummary({
               loadingLabel="summarizing…"
               title={local ? "Save the post before generating a summary" : undefined}
             >
-              {local ? "save first" : summary ? "regenerate" : "generate"}
+              {local ? "save post first" : summary ? "regenerate summary" : "generate summary"}
             </Button>
           </div>
         </div>

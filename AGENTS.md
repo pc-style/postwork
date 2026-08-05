@@ -115,6 +115,10 @@ public copy or making brand identity decisions. Read `docs/design.md` before
 changing product UI or the visual system. The concrete visual rules below remain
 the quick reference.
 
+**Any UI change must first read `docs/design-system.md`** - the codified token
+roles and rules (colors, type scale, radii, states, motion, writing). Adjust
+that doc in the same PR whenever you change the system itself.
+
 ## Design conventions (style is derived from pcstyle.dev)
 
 Use `docs/design.md` as the canonical visual system. Quick reference: warm

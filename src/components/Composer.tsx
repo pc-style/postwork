@@ -33,6 +33,7 @@ export function Composer({
   placeholder?: string;
   autoFocus?: boolean;
   compact?: boolean;
+  /** Called on submit success AND when the user cancels. */
   onDone?: () => void;
 }) {
   const { currentUser, currentUserId, users } = useSession();
@@ -121,7 +122,7 @@ export function Composer({
       setError(
         caught instanceof Error
           ? caught.message
-          : "We couldn't add the reply. Try again.",
+          : "couldn't add the reply. check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -143,12 +144,11 @@ export function Composer({
           bodyLabel="Reply"
           srOnlyBodyLabel
           placeholder={placeholder}
-          rows={engaged ? (compact ? 2 : 3) : 1}
-          textareaClassName={
-            engaged
-              ? "ui-field min-h-24 resize-y"
-              : "ui-field min-h-11 resize-none transition-[min-height] group-focus-within/composer:min-h-24 group-focus-within/composer:resize-y"
-          }
+          rows={compact ? 3 : 4}
+          autoGrow
+          textareaClassName={`ui-field ${
+            compact ? "min-h-24" : "min-h-28"
+          } max-h-[45vh] resize-none overflow-y-auto`}
           footerClassName={`ui-reveal mt-3 flex-wrap items-center justify-between gap-3 ${
             engaged ? "flex" : "hidden group-focus-within/composer:flex"
           }`}
@@ -196,7 +196,7 @@ export function Composer({
               </Button>
             ) : undefined
           }
-          submitLabel="reply"
+          submitLabel="add reply"
           submittingLabel="sending…"
           submitting={busy}
           disabled={busy || !body.trim() || hasUploading || hasAttachmentErrors}

@@ -19,7 +19,7 @@ export const MEDIA_MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 export const MEDIA_MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MEDIA_MAX_PER_MESSAGE = 8;
 export const UNSUPPORTED_MEDIA_MESSAGE =
-  "Choose an image up to 10 MB, a video up to 50 MB, or a file up to 25 MB.";
+  "choose an image up to 10 MB, a video up to 50 MB, or a file up to 25 MB.";
 
 export function getMediaKind(contentType: string): MediaKind | null {
   if (!contentType.trim()) return null;

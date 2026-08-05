@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { useFeedCoverMode } from "../lib/feedDisplay";
 import { timeAgo } from "../lib/format";
 import { usePrefetchPost } from "../lib/store";
 import type { EnrichedPost } from "../lib/types";
 import { AgentTag } from "./AgentTag";
 import { Avatar } from "./Avatar";
+import { FeedCover } from "./FeedCover";
 import { PostMetaChips } from "./PostMetaChips";
 import { UserRoleTag } from "./UserRoleTag";
 
@@ -12,6 +14,8 @@ export function PostCard({ post }: { post: EnrichedPost }) {
     post.body.length > 180 ? `${post.body.slice(0, 180).trimEnd()}…` : post.body;
   const prefetchPost = usePrefetchPost();
   const prefetch = () => prefetchPost(post._id);
+  const coverMode = useFeedCoverMode();
+  const cover = post.cover ?? null;
 
   return (
     <Link
@@ -28,28 +32,33 @@ export function PostCard({ post }: { post: EnrichedPost }) {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <PostMetaChips post={post} quiet />
             {post.summary ? (
-              <span className="text-label text-accent-soft transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                AI summary
+              <span className="text-body text-accent-soft transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                ai summary
               </span>
             ) : null}
           </div>
 
-          <h2 className={`break-words text-title ${post.unread ? "font-semibold text-fg" : "font-medium text-fg/90"}`}>
-            {post.unread ? <span className="sr-only">Unread: </span> : null}
-            {post.title}
-          </h2>
-          <p className="mt-1 line-clamp-2 text-sm text-muted">{snippet}</p>
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className={`type-heading break-words text-title font-medium ${post.unread ? "text-fg" : "text-fg/75"}`}>
+                {post.unread ? <span className="sr-only">unread: </span> : null}
+                {post.title}
+              </h2>
+              <p className="type-description mt-1 line-clamp-2 text-body text-muted">{snippet}</p>
+            </div>
+            {cover && coverMode === "regular" ? <FeedCover cover={cover} /> : null}
+          </div>
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-body text-muted">
               <Avatar user={post.author} size={20} />
-              <span className="text-fg/85">{post.author?.name ?? "Unknown"}</span>
+              <span className="text-fg/85">{post.author?.name ?? "unknown"}</span>
               {post.author?.isAgent ? <AgentTag /> : null}
               <UserRoleTag role={post.author?.role} />
-              <span>{timeAgo(post.createdAt)}</span>
+              <span className="type-numeric">{timeAgo(post.createdAt)}</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+            <div className="flex flex-wrap items-center gap-2.5 text-body text-muted">
               {post.participants.length > 0 ? (
                 <div className="flex -space-x-1.5" aria-label={`${post.participants.length} participants`}>
                   {post.participants.slice(0, 4).map((user) => (
@@ -57,8 +66,8 @@ export function PostCard({ post }: { post: EnrichedPost }) {
                   ))}
                 </div>
               ) : null}
-              <span className="tabular-nums">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-              <span className="text-accent-soft">Active {timeAgo(post.lastActivityAt)}</span>
+              <span className="type-numeric">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+              <span className="type-numeric text-accent-soft">active {timeAgo(post.lastActivityAt)}</span>
             </div>
           </div>
         </div>
