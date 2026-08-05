@@ -8,11 +8,13 @@
   <rect width="1200" height="630" fill="#0a0a0b"/>
   <rect x="24.5" y="24.5" width="1151" height="581" rx="16" fill="none" stroke="#302d32" opacity="0.55"/>
 
+  <!-- nested-reply thread motif: a post, a reply, a nested reply -->
   <g stroke-linecap="round" stroke-width="13">
-    <path d="M118 160H216" stroke="#8c1862"/>
-    <path d="M118 190H216" stroke="#8c1862"/>
-    <path d="M118 220H176" stroke="#ca559d"/>
+    <path d="M118 160H240" stroke="#8c1862"/>
+    <path d="M158 194H256" stroke="#af367e"/>
+    <path d="M198 228H272" stroke="#ca559d"/>
   </g>
+  <path d="M124 173 V187 M164 207 V221" stroke="#302d32" stroke-width="2"/>
 
   <text x="110" y="400" fill="#e8e6e3" font-size="152" font-weight="700" letter-spacing="-6">postwork</text>
   <text x="114" y="478" fill="#a19d98" font-size="56" font-weight="500" letter-spacing="-1.5">posts, not channels.</text>
