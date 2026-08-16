@@ -6,6 +6,8 @@ import {
   ensureActiveViewerUser,
   getOrgMembership,
   getViewerFromAuth,
+  listOrgUsersWithMembership,
+  requireOrgId,
 } from "./authUsers";
 import { publicUser } from "./users";
 import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
@@ -154,11 +156,16 @@ export const listUsers = query({
   args: {},
   handler: async (ctx) => {
     const admin = await requireAdminForRead(ctx);
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_org_id_and_role", (q) => q.eq("orgId", admin.orgId))
-      .collect();
-    return users.map((u) => publicUser(u));
+    const orgId = requireOrgId(admin);
+    const members = await listOrgUsersWithMembership(ctx, orgId);
+    // Role/status/deactivation are this org's membership view, so moderating
+    // a cross-org member acts on the right record.
+    return members.map(({ user, membership }) => ({
+      ...publicUser(user),
+      role: membership.role,
+      status: membership.status,
+      deactivatedAt: membership.deactivatedAt,
+    }));
   },
 });
 

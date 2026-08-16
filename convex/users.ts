@@ -11,6 +11,7 @@ import {
   findUserForIdentity,
   getOrgMembership,
   getProductOrgId,
+  listOrgUsersWithMembership,
   resolveReadScope,
   upsertOrgMembership,
 } from "./authUsers";
@@ -62,11 +63,15 @@ export const list = query({
     const scope = await resolveReadScope(ctx);
     if (scope.authenticated && !scope.viewer) return [];
     const orgId = scope.orgId;
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))
-      .collect();
-    return users.map((u) => publicUser(u));
+    const members = await listOrgUsersWithMembership(ctx, orgId);
+    // Role/status/deactivation reflect THIS org's membership, not the
+    // member's home-org fields.
+    return members.map(({ user, membership }) => ({
+      ...publicUser(user),
+      role: membership.role,
+      status: membership.status,
+      deactivatedAt: membership.deactivatedAt,
+    }));
   },
 });
 
@@ -77,7 +82,18 @@ export const viewer = query({
     if (!identity) return null;
     const legacyOrgId = await getProductOrgId(ctx);
     const user = await findUserForIdentity(ctx, identity, legacyOrgId);
-    return publicUser(user);
+    if (!user) return null;
+    // Project the active-org membership so the client sees the same
+    // role/status the server enforces.
+    const membership = user.orgId
+      ? await getOrgMembership(ctx, user.orgId, user._id)
+      : null;
+    return {
+      ...publicUser(user),
+      role: membership?.role ?? user.role ?? "member",
+      status: membership?.status ?? user.status ?? "pending",
+      deactivatedAt: membership ? membership.deactivatedAt : user.deactivatedAt,
+    };
   },
 });
 

@@ -416,3 +416,47 @@ describe("space visibility and lifecycle", () => {
     ).resolves.toBeNull();
   });
 });
+
+describe("cross-org member visibility", () => {
+  test("a member whose home org is elsewhere appears in this org's rosters with this org's role", async () => {
+    const t = makeHarness();
+    const homeOrgId = await insertOrg(t, "home");
+    const otherOrgId = await insertOrg(t, "other");
+    const travelerId = await insertUser(t, homeOrgId, "traveler", "member");
+    await insertUser(t, otherOrgId, "host", "admin");
+    await t.run(async (ctx) => {
+      await ctx.db.insert("orgMemberships", {
+        orgId: otherOrgId,
+        userId: travelerId,
+        role: "tester",
+        status: "active",
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    });
+
+    const host = t.withIdentity(identityFor("host"));
+    const roster = await host.query(api.admin.listUsers, {});
+    const traveler = roster.find((entry) => entry._id === travelerId);
+    expect(traveler).toBeDefined();
+    // Role comes from the membership in THIS org, not the home-org fields.
+    expect(traveler?.role).toBe("tester");
+    expect(traveler?.status).toBe("active");
+
+    // Moderation from this org acts on this org's membership only.
+    await host.mutation(api.users.deactivate, { userId: travelerId });
+    const after = await host.query(api.admin.listUsers, {});
+    expect(after.find((entry) => entry._id === travelerId)?.deactivatedAt).toBeGreaterThan(0);
+    const state = await t.run(async (ctx) => ({
+      user: await ctx.db.get(travelerId),
+      homeMembership: await ctx.db
+        .query("orgMemberships")
+        .withIndex("by_org_id_and_user_id", (q) =>
+          q.eq("orgId", homeOrgId).eq("userId", travelerId),
+        )
+        .unique(),
+    }));
+    expect(state.user?.deactivatedAt).toBeUndefined();
+    expect(state.homeMembership?.deactivatedAt).toBeUndefined();
+  });
+});

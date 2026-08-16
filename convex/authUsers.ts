@@ -271,6 +271,47 @@ export async function listOrgMembershipsForUser(
   }];
 }
 
+/**
+ * Everyone who belongs to this organization: legacy home-org rows (covers
+ * seed personas and agents without membership rows) plus cross-org members,
+ * each with their role/status *in this org* projected from the membership.
+ */
+export async function listOrgUsersWithMembership(
+  ctx: AuthCtx,
+  orgId: Id<"orgs">,
+): Promise<Array<{ user: Doc<"users">; membership: EffectiveOrgMembership }>> {
+  const results = new Map<
+    string,
+    { user: Doc<"users">; membership: EffectiveOrgMembership }
+  >();
+  const homeUsers = await ctx.db
+    .query("users")
+    .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))
+    .collect();
+  for (const user of homeUsers) {
+    const membership = (await getOrgMembership(ctx, orgId, user._id)) ?? {
+      orgId,
+      userId: user._id,
+      role: user.role ?? "member",
+      status: user.status ?? "active",
+      deactivatedAt: user.deactivatedAt,
+    };
+    results.set(user._id, { user, membership });
+  }
+  const memberships = await ctx.db
+    .query("orgMemberships")
+    .withIndex("by_org_id_and_status", (q) =>
+      q.eq("orgId", orgId).eq("status", "active"),
+    )
+    .collect();
+  for (const membership of memberships) {
+    if (results.has(membership.userId)) continue;
+    const user = await ctx.db.get(membership.userId);
+    if (user) results.set(user._id, { user, membership });
+  }
+  return [...results.values()];
+}
+
 export async function requireOrgMembership(
   ctx: AuthCtx,
   orgId: Id<"orgs">,
