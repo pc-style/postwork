@@ -71,11 +71,13 @@ type OrgUser = Doc<"users"> & { orgId: Id<"orgs"> };
 async function requireAdminForRead(ctx: QueryCtx): Promise<OrgUser> {
   const viewer = await getViewerFromAuth(ctx);
   if (!viewer) forbidden("Sign in first.");
+  if (!viewer.orgId) forbidden("Admins only.");
+  const membership = await getOrgMembership(ctx, viewer.orgId, viewer._id);
   if (
-    !viewer.orgId ||
-    viewer.status === "pending" ||
-    viewer.deactivatedAt ||
-    viewer.role !== "admin"
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
   ) {
     forbidden("Admins only.");
   }
@@ -95,6 +97,34 @@ async function requireAdminForWrite(ctx: MutationCtx): Promise<OrgUser> {
     forbidden("Admins only.");
   }
   return viewer as OrgUser;
+}
+
+/**
+ * Internal functions receive the caller's token identifier from an action and
+ * must re-verify admin standing against the membership row (source of truth),
+ * not the legacy user fields.
+ */
+async function requireAdminByTokenIdentifier(
+  ctx: MutationCtx | QueryCtx,
+  tokenIdentifier: string,
+): Promise<OrgUser> {
+  const admin = await ctx.db
+    .query("users")
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", tokenIdentifier),
+    )
+    .unique();
+  if (!admin?.orgId) forbidden("Admins only.");
+  const membership = await getOrgMembership(ctx, admin.orgId, admin._id);
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
+    forbidden("Admins only.");
+  }
+  return admin as OrgUser;
 }
 
 function publicConnector(connector: Doc<"connectors">) {
@@ -325,20 +355,10 @@ export const provisionRecord = internalMutation({
     encryptedSecret: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
-      .unique();
-    if (
-      !admin?.orgId ||
-      admin.role !== "admin" ||
-      admin.status === "pending" ||
-      admin.deactivatedAt
-    ) {
-      forbidden("Admins only.");
-    }
+    const admin = await requireAdminByTokenIdentifier(
+      ctx,
+      args.adminTokenIdentifier,
+    );
     const orgId = admin.orgId;
 
     const name = args.name.trim().replace(/\s+/g, " ").slice(0, 80);
@@ -446,20 +466,10 @@ export const getGithubSecretForRewrap = internalQuery({
     connectorId: v.id("connectors"),
   },
   handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
-      .unique();
-    if (
-      !admin?.orgId ||
-      admin.role !== "admin" ||
-      admin.status === "pending" ||
-      admin.deactivatedAt
-    ) {
-      forbidden("Admins only.");
-    }
+    const admin = await requireAdminByTokenIdentifier(
+      ctx,
+      args.adminTokenIdentifier,
+    );
     const connector = await ctx.db.get(args.connectorId);
     if (
       !connector ||
@@ -486,20 +496,10 @@ export const commitGithubSecretRewrap = internalMutation({
     toKeyId: v.string(),
   },
   handler: async (ctx, args) => {
-    const admin = await ctx.db
-      .query("users")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.adminTokenIdentifier),
-      )
-      .unique();
-    if (
-      !admin?.orgId ||
-      admin.role !== "admin" ||
-      admin.status === "pending" ||
-      admin.deactivatedAt
-    ) {
-      forbidden("Admins only.");
-    }
+    const admin = await requireAdminByTokenIdentifier(
+      ctx,
+      args.adminTokenIdentifier,
+    );
     const connector = await ctx.db.get(args.connectorId);
     if (
       !connector ||
