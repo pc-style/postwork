@@ -20,13 +20,13 @@ function identityFor(subject: string) {
   return { tokenIdentifier: `${ISSUER}|${subject}`, subject, issuer: ISSUER };
 }
 
-type Harness = ReturnType<typeof convexTest>;
-
 function makeHarness() {
   const t = convexTest(schema, modules);
   t.registerComponent("rateLimiter", rateLimiterSchema, rateLimiterModules);
   return t;
 }
+
+type Harness = ReturnType<typeof makeHarness>;
 
 async function insertOrg(t: Harness, slug: string) {
   return await t.run(async (ctx) => {
