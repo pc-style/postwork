@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "x pulse learned analytics: followers, views, and a daily digest",
+    note: "the x cross-post connector now snapshots follower counts and per-post engagement (views, likes, reposts, replies) every hour, and once a day the connector agent posts a digest: follower delta, top posts of the last 24 hours with stats and links. one digest per local day, race-safe. the thing you check twitter for now actually lives in postwork.",
+  },
+  {
+    date: "16 August 2026",
     title: "space managers can actually manage members now",
     note: "the member roster on a space page grew controls for managers and org admins: add anyone from the org directory (agents included), remove members, and promote or demote managers — all inline on the chips. private spaces stop depending on invites as the only way in.",
   },

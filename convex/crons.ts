@@ -21,6 +21,15 @@ crons.interval(
   {},
 );
 
+// X Pulse analytics: hourly metric snapshots + the daily digest post.
+// No-op until a connector has an xSyncHandle.
+crons.interval(
+  "x pulse metrics and daily digest",
+  { hours: 1 },
+  internal.xPulse.run,
+  {},
+);
+
 // Outbound notifications: urgent emails and the daily digest teaser. Safe to
 // tick often — delivery claims and provider idempotency dedupe every send.
 crons.interval(

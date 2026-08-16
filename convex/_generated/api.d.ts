@@ -23,6 +23,7 @@ import type * as flashExperiments from "../flashExperiments.js";
 import type * as http from "../http.js";
 import type * as lib_aiModels from "../lib/aiModels.js";
 import type * as lib_attachmentStorage from "../lib/attachmentStorage.js";
+import type * as lib_audit from "../lib/audit.js";
 import type * as lib_connectorSecrets from "../lib/connectorSecrets.js";
 import type * as lib_githubWebhooks from "../lib/githubWebhooks.js";
 import type * as lib_inviteTargets from "../lib/inviteTargets.js";
@@ -33,6 +34,7 @@ import type * as lib_postCover from "../lib/postCover.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_summaryStaleness from "../lib/summaryStaleness.js";
 import type * as lib_validation from "../lib/validation.js";
+import type * as lib_xPulseDigest from "../lib/xPulseDigest.js";
 import type * as linkPreviews from "../linkPreviews.js";
 import type * as migrations from "../migrations.js";
 import type * as notificationComposer from "../notificationComposer.js";
@@ -45,6 +47,7 @@ import type * as replies from "../replies.js";
 import type * as seed from "../seed.js";
 import type * as spaces from "../spaces.js";
 import type * as users from "../users.js";
+import type * as xPulse from "../xPulse.js";
 import type * as xSync from "../xSync.js";
 
 import type {
@@ -69,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/aiModels": typeof lib_aiModels;
   "lib/attachmentStorage": typeof lib_attachmentStorage;
+  "lib/audit": typeof lib_audit;
   "lib/connectorSecrets": typeof lib_connectorSecrets;
   "lib/githubWebhooks": typeof lib_githubWebhooks;
   "lib/inviteTargets": typeof lib_inviteTargets;
@@ -79,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/summaryStaleness": typeof lib_summaryStaleness;
   "lib/validation": typeof lib_validation;
+  "lib/xPulseDigest": typeof lib_xPulseDigest;
   linkPreviews: typeof linkPreviews;
   migrations: typeof migrations;
   notificationComposer: typeof notificationComposer;
@@ -91,6 +96,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   spaces: typeof spaces;
   users: typeof users;
+  xPulse: typeof xPulse;
   xSync: typeof xSync;
 }>;
 
