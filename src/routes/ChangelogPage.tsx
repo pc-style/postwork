@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "the url is the workspace",
+    note: "opening a workspace address like acme.postwork.pcstyle.dev now takes you into that workspace if your account belongs to it — the session follows the link instead of bouncing you to a 'wrong address' screen. old addresses redirect to the renamed one, non-members still get the polite refusal, and switching workspaces while on a tenant address moves the browser to the right subdomain.",
+  },
+  {
+    date: "16 August 2026",
     title: "your workspace data is yours: one-click json export",
     note: "admins get a workspace export card on the admin overview: members, spaces, posts, and replies stream down in pages and land as a single json file. token identifiers, emails, and secrets never leave the server.",
   },

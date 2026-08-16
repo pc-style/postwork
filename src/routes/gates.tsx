@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { AuthLoading, AuthShell } from "../components/auth/AuthShell";
 import { SignInScreen } from "../components/auth/SignInScreen";
@@ -39,31 +39,82 @@ function ProductAuthGate({ children }: { children: ReactNode }) {
     me.org?.slug &&
     requestedTenantSlug !== me.org.slug
   ) {
-    const canonicalUrl = `${workspaceUrl(me.org.slug)}${window.location.pathname}${window.location.search}`;
     return (
-      <AuthShell
-        title="this workspace has another address"
-        description={`you're signed in to ${me.org.name}, not the workspace at this address.`}
-      >
-        <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-          <p className="text-body text-muted">
-            continue to your workspace at{" "}
-            <span className="font-mono text-code text-fg">
-              {me.org.slug}.postwork.pcstyle.dev
-            </span>
-            .
-          </p>
-          <a
-            href={canonicalUrl}
-            className="ui-button mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
-          >
-            open {me.org.name}
-          </a>
-        </div>
-      </AuthShell>
+      <TenantFollowGate
+        slug={requestedTenantSlug}
+        activeOrg={{ name: me.org.name, slug: me.org.slug }}
+      />
     );
   }
   return <>{children}</>;
+}
+
+/**
+ * The URL is the workspace. When a signed-in member opens a tenant subdomain
+ * that is not their active workspace, follow the URL: switch the session to
+ * that org (membership-checked server-side). Old slugs redirect to the
+ * canonical address; non-members keep the "another address" screen.
+ */
+function TenantFollowGate({
+  slug,
+  activeOrg,
+}: {
+  slug: string;
+  activeOrg: { name: string; slug: string };
+}) {
+  const context = useQuery(api.orgs.getContext, { slug });
+  const switchActive = useMutation(api.orgs.switchActive);
+  const attempted = useRef(false);
+  const [failed, setFailed] = useState(false);
+
+  const canonicalSlug = context?.org.slug;
+  useEffect(() => {
+    if (!context || failed) return;
+    // An old alias resolves to the canonical address — move the browser
+    // there so bookmarks heal themselves.
+    if (canonicalSlug && canonicalSlug !== slug) {
+      window.location.replace(
+        `${workspaceUrl(canonicalSlug)}${window.location.pathname}${window.location.search}`,
+      );
+      return;
+    }
+    if (attempted.current) return;
+    attempted.current = true;
+    switchActive({ orgId: context.org._id }).catch(() => setFailed(true));
+  }, [canonicalSlug, context, failed, slug, switchActive]);
+
+  if (context === undefined) {
+    return <AuthLoading label="Checking workspace" />;
+  }
+  if (context !== null && !failed) {
+    // Membership confirmed — the switch (or alias redirect) is in flight;
+    // the parent gate re-renders children once `me.org.slug` matches.
+    return <AuthLoading label={`Opening ${context.org.name}`} />;
+  }
+
+  const canonicalUrl = `${workspaceUrl(activeOrg.slug)}${window.location.pathname}${window.location.search}`;
+  return (
+    <AuthShell
+      title="this workspace has another address"
+      description={`you're signed in to ${activeOrg.name}, and your account doesn't belong to the workspace at this address.`}
+    >
+      <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
+        <p className="text-body text-muted">
+          continue to your workspace at{" "}
+          <span className="font-mono text-code text-fg">
+            {activeOrg.slug}.postwork.pcstyle.dev
+          </span>
+          .
+        </p>
+        <a
+          href={canonicalUrl}
+          className="ui-button mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+        >
+          open {activeOrg.name}
+        </a>
+      </div>
+    </AuthShell>
+  );
 }
 
 export function RequireAdmin({ children }: { children: ReactNode }) {

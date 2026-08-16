@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useSession } from "../lib/session";
+import { tenantSlugFromHostname, workspaceUrl } from "../lib/tenant";
 
 /**
  * Active-workspace picker. Renders nothing until the account belongs to more
@@ -19,12 +20,17 @@ export function WorkspaceSwitcher() {
 
   const activeOrgId = currentUser.orgId;
 
-  const choose = async (orgId: Id<"orgs">) => {
+  const choose = async (orgId: Id<"orgs">, slug: string | undefined) => {
     if (orgId === activeOrgId || switching) return;
     setSwitching(orgId);
     setError(null);
     try {
       await switchActive({ orgId });
+      // On a tenant subdomain the URL is the workspace — follow it there.
+      if (slug && tenantSlugFromHostname(window.location.hostname)) {
+        window.location.assign(`${workspaceUrl(slug)}/app`);
+        return;
+      }
     } catch {
       setError("Couldn't switch workspaces. Try again.");
     } finally {
@@ -48,7 +54,7 @@ export function WorkspaceSwitcher() {
               role="option"
               aria-selected={active}
               disabled={switching !== null}
-              onClick={() => void choose(org._id)}
+              onClick={() => void choose(org._id, org.slug)}
               className={`flex min-h-9 w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-sm transition-colors ${
                 active
                   ? "bg-surface-2 text-fg"

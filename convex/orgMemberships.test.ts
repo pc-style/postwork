@@ -469,3 +469,29 @@ describe("cross-org member visibility", () => {
     expect(state.homeMembership?.deactivatedAt).toBeUndefined();
   });
 });
+
+describe("workspace context by slug", () => {
+  test("members resolve context, aliases mark the redirect, non-members get null", async () => {
+    const t = makeHarness();
+    const orgId = await insertOrg(t, "acme");
+    await insertOrg(t, "other");
+    await insertUser(t, orgId, "member", "member");
+    const member = t.withIdentity(identityFor("member"));
+
+    const direct = await member.query(api.orgs.getContext, { slug: "acme" });
+    expect(direct?.org._id).toBe(orgId);
+    expect(direct?.membership.role).toBe("member");
+    expect(direct?.redirectedFromAlias).toBeNull();
+
+    // Rename leaves an alias behind; the old slug still resolves.
+    const admin = t.withIdentity(identityFor("boss"));
+    await insertUser(t, orgId, "boss", "admin");
+    await admin.mutation(api.orgs.update, { orgId, slug: "acme-inc" });
+    const viaAlias = await member.query(api.orgs.getContext, { slug: "acme" });
+    expect(viaAlias?.org.slug).toBe("acme-inc");
+    expect(viaAlias?.redirectedFromAlias).toBe("acme");
+
+    // Not a member of "other" — no context.
+    expect(await member.query(api.orgs.getContext, { slug: "other" })).toBeNull();
+  });
+});

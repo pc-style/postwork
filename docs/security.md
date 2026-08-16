@@ -91,9 +91,11 @@ convex test suites (`convex/*.test.ts`).
 
 ## Known gaps (tracked, not hidden)
 
-- Org-scoped URLs: the client is switch-based today (one active workspace per
-  session); simultaneous multi-workspace URLs are designed for
-  (`resolveReadScope(requestedOrgId)`, `orgs.getContext`) but not shipped.
+- Org-scoped URLs: tenant subdomains now act as workspace-scoped links — the
+  session follows the URL for members (`orgs.getContext` + `switchActive`),
+  aliases redirect to the canonical address. Truly simultaneous
+  multi-workspace sessions (different orgs in different tabs) remain
+  unshipped; the backend hooks exist (`resolveReadScope(requestedOrgId)`).
 - SSO (SAML/OIDC beyond Clerk's defaults) and SCIM provisioning are not
   implemented.
 - Link-preview fetching cannot defend against DNS rebinding from inside the
