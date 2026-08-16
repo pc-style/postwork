@@ -1,18 +1,26 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { buildRichPreview, extractUrls } from "../lib/richEmbeds";
+import type { FunctionReturnType } from "convex/server";
+import { buildRichPreview, extractUrls, type RichPreview } from "../lib/richEmbeds";
 
 const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
 export const MAX_RICH_PREVIEWS_PER_BODY = 3;
 
-export function RichEmbedList({ text }: { text: string }) {
-  const previews = useMemo(() => [...new Map(
+type StoredPreview = NonNullable<FunctionReturnType<typeof api.linkPreviews.get>[number]>;
+
+/** Pure preview extraction — no hooks, shared with tests. */
+export function collectRichPreviews(text: string): RichPreview[] {
+  return [...new Map(
     extractUrls(text)
       .map(buildRichPreview)
       .filter((preview) => preview !== null)
       .map((preview) => [preview.sourceUrl, preview]),
-  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY), [text]);
+  ).values()].slice(0, MAX_RICH_PREVIEWS_PER_BODY);
+}
+
+export function RichEmbedList({ text }: { text: string }) {
+  const previews = useMemo(() => collectRichPreviews(text), [text]);
   const genericUrls = useMemo(() => previews
     .filter((preview) => preview.kind === "link")
     .map((preview) => {
@@ -39,6 +47,17 @@ export function RichEmbedList({ text }: { text: string }) {
     preview ? [[preview.url, preview] as const] : [],
   ));
 
+  return <RichEmbedItems previews={previews} metadataByUrl={previewByUrl} />;
+}
+
+/** Pure presentational list — no hooks, directly testable. */
+export function RichEmbedItems({
+  previews,
+  metadataByUrl,
+}: {
+  previews: RichPreview[];
+  metadataByUrl?: ReadonlyMap<string, StoredPreview>;
+}) {
   if (previews.length === 0) return null;
 
   return (
@@ -96,7 +115,7 @@ export function RichEmbedList({ text }: { text: string }) {
 
         const lookupUrl = new URL(preview.sourceUrl);
         lookupUrl.hash = "";
-        const metadata = previewByUrl.get(lookupUrl.toString());
+        const metadata = metadataByUrl?.get(lookupUrl.toString());
         const hasMetadata = metadata?.status === "ok" && Boolean(metadata.title || metadata.description);
         return (
           <a
