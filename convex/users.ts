@@ -46,6 +46,8 @@ export function publicUser(user: Doc<"users"> | null): PublicUser | null {
   const {
     tokenIdentifier: _tokenIdentifier,
     subject: _subject,
+    // Outbound delivery address — scheduler-only, never shown to members.
+    email: _email,
     ...rest
   } = user;
   return rest;

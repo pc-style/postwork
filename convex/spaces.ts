@@ -15,6 +15,7 @@ import {
 import { logAudit } from "./admin";
 import { spaceMemberRole, spaceVisibility } from "./schema";
 import { listPostsBySpaceId } from "./posts";
+import { publicUser } from "./users";
 
 async function requireManageableSpace(
   ctx: MutationCtx,
@@ -289,7 +290,7 @@ export const membershipsForSpace = query({
     return await Promise.all(
       memberships.map(async (membership) => ({
         ...membership,
-        user: await ctx.db.get(membership.userId),
+        user: publicUser(await ctx.db.get(membership.userId)),
       })),
     );
   },
