@@ -51,6 +51,11 @@ so a green build covers both layers.
 
 ## Convex specifics (read before touching the backend)
 
+- **ALWAYS verify the target deployment before any `convex dev`/`convex run`:**
+  `bunx convex dev --once -v 2>&1 | grep -A2 "Developing against"`. A
+  `CONVEX_DEPLOY_KEY` (prod) in `.env.local` silently routes those commands at
+  the LIVE backend. Keep the key commented out except during an intentional
+  deploy; day-to-day dev uses `CONVEX_DEPLOYMENT=anonymous:...`.
 - **Codegen / typecheck needs a deployment.** `convex codegen` fails with
   "No CONVEX_DEPLOYMENT set" unless a deployment is configured. The repo is wired
   to a **local anonymous** deployment (`.env.local` → `CONVEX_DEPLOYMENT=anonymous:...`)

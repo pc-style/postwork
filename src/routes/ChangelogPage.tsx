@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "switch workspaces without signing out",
+    note: "accounts that belong to more than one organization get a workspace picker in the profile rail. picking one flips the whole session — feed, spaces, queue — to that org. space creation now offers public or private visibility up front, space pages show private and archived states, public spaces have join/leave, and managers can archive or unarchive from the space header.",
+  },
+  {
+    date: "16 August 2026",
     title: "one account, many workspaces",
     note: "membership moved into its own table, so a single account can belong to several organizations: redeeming an invite for a second workspace now adds it instead of erroring. moderation (deactivate, reactivate, role changes) writes through the membership records, admin checks read them as the source of truth, and an org can never demote its last admin.",
   },

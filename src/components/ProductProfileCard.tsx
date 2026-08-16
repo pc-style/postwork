@@ -4,6 +4,7 @@ import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { UserRoleTag } from "./UserRoleTag";
 import { Skeleton } from "./Skeleton";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 export function ProductProfileCard() {
   const { signOut } = useClerk();
@@ -19,6 +20,7 @@ export function ProductProfileCard() {
 
   return (
     <div className="space-y-3">
+      <WorkspaceSwitcher />
       <section className="rounded-lg border border-border bg-surface p-4 text-body">
         <div className="flex items-start gap-3">
           <Avatar user={currentUser} size={40} />

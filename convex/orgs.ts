@@ -128,6 +128,33 @@ export const getContext = query({
   },
 });
 
+/**
+ * Switch the account's active workspace. The legacy client scopes every
+ * query through `users.orgId`, so flipping it (with the membership's role
+ * and status mirrored) moves the whole session to the selected org.
+ */
+export const switchActive = mutation({
+  args: { orgId: v.id("orgs") },
+  handler: async (ctx, args) => {
+    const viewer = await ensureViewerUser(ctx);
+    const membership = await getOrgMembership(ctx, args.orgId, viewer._id);
+    if (
+      !membership ||
+      membership.status !== "active" ||
+      membership.deactivatedAt
+    ) {
+      forbidden("You do not have access to this organization.");
+    }
+    await ctx.db.patch(viewer._id, {
+      orgId: args.orgId,
+      role: membership.role,
+      status: membership.status,
+      deactivatedAt: membership.deactivatedAt,
+    });
+    return { ok: true as const };
+  },
+});
+
 export const create = mutation({
   args: { name: v.string(), slug: v.optional(v.string()) },
   handler: async (ctx, args) => {

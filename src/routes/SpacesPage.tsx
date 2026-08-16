@@ -1,10 +1,12 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "../components/Button";
+import { Chip } from "../components/Chip";
 import { Dialog } from "../components/Dialog";
 import { EmptyState } from "../components/EmptyState";
 import { FormField } from "../components/FormField";
 import { PageHeader } from "../components/PageHeader";
+import { SelectionGroup } from "../components/SelectionGroup";
 import { timeAgo } from "../lib/format";
 import { useSpaceCreationStatus, useSpacesList } from "../lib/spaces";
 import { usePrefetchSpace, useStore } from "../lib/store";
@@ -59,7 +61,15 @@ export function SpacesPage() {
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <h2 className="type-heading text-title font-semibold text-fg">{space.name}</h2>
+                  <h2 className="type-heading flex items-center gap-2 text-title font-semibold text-fg">
+                    <span className="truncate">{space.name}</span>
+                    {"visibility" in space && space.visibility === "private" ? (
+                      <Chip tone="neutral">private</Chip>
+                    ) : null}
+                    {"archivedAt" in space && space.archivedAt ? (
+                      <Chip tone="muted">archived</Chip>
+                    ) : null}
+                  </h2>
                   {space.description ? (
                     <p className="type-description mt-1 text-body text-muted">{space.description}</p>
                   ) : null}
@@ -87,6 +97,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
   const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +111,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
       const created = await store.createSpace({
         name,
         description: description.trim() || undefined,
+        visibility,
         existingSlugs: spaces.map((space) => space.slug),
       });
       onClose();
@@ -153,6 +165,31 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
             className="ui-field resize-y text-body leading-6 placeholder:text-muted/60"
           />
         </FormField>
+        <SelectionGroup
+          label="Visibility"
+          value={visibility}
+          onChange={setVisibility}
+          options={[
+            {
+              value: "public",
+              label: (
+                <span>
+                  public
+                  <span className="ml-2 text-xs text-muted">anyone in the org can read and post</span>
+                </span>
+              ),
+            },
+            {
+              value: "private",
+              label: (
+                <span>
+                  private
+                  <span className="ml-2 text-xs text-muted">members only</span>
+                </span>
+              ),
+            },
+          ]}
+        />
         {error ? <p role="alert" className="ui-error">{error}</p> : null}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" disabled={saving} onClick={onClose}>

@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { getRouteApi, Link } from "@tanstack/react-router";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
+import { Button } from "../components/Button";
+import { Chip } from "../components/Chip";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingState } from "../components/LoadingState";
 import { PostCard } from "../components/PostCard";
 import { PostForm } from "../components/PostForm";
+import { isDemo } from "../lib/demoMode";
 import { useSession } from "../lib/session";
 import { useSpaceBySlug, useSpaceMemberships } from "../lib/spaces";
 import { useSpaceFeed, useStore } from "../lib/store";
@@ -48,13 +54,19 @@ export function SpacePage() {
   const memberUsers = memberships
     .map((membership) => membership.user)
     .filter((user) => user !== null);
+  const isPrivate = "visibility" in space && space.visibility === "private";
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <header className="mb-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="type-heading text-display font-semibold text-fg">{space.name}</h1>
+            <h1 className="type-heading flex items-center gap-2 text-display font-semibold text-fg">
+              <span className="truncate">{space.name}</span>
+              {isPrivate ? <Chip tone="neutral">private</Chip> : null}
+              {isArchived ? <Chip tone="muted">archived</Chip> : null}
+            </h1>
             {space.description ? (
               <p className="type-description mt-1.5 text-body text-muted">{space.description}</p>
             ) : null}
@@ -64,6 +76,15 @@ export function SpacePage() {
             <div className="sm:mt-1">{feed.length} posts</div>
           </div>
         </div>
+
+        {isArchived ? (
+          <p className="mt-4 rounded-md border border-border bg-bg px-3 py-2 text-xs text-muted">
+            This space is archived — posts stay readable, but nothing new can
+            be added.
+          </p>
+        ) : null}
+
+        <SpaceActions space={space} />
 
         {memberUsers.length > 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Space members">
@@ -85,6 +106,7 @@ export function SpacePage() {
         </div>
       )}
 
+      {isArchived ? null : (
       <section className="mt-6 rounded-lg border border-border bg-surface p-4" aria-labelledby="space-post-heading">
         <h2 id="space-post-heading" className="type-heading mb-4 text-title font-semibold text-fg">new post in {space.name}</h2>
         <PostForm
@@ -105,6 +127,109 @@ export function SpacePage() {
           }}
         />
       </section>
+      )}
     </div>
   );
 }
+
+/**
+ * Membership + lifecycle controls. Join/leave applies to the signed-in
+ * product session; managers and org admins additionally get archive control.
+ * The demo overlay stays read-only here.
+ */
+function SpaceActions({
+  space,
+}: {
+  space: NonNullable<ReturnType<typeof useSpaceBySlug>>;
+}) {
+  const join = useMutation(api.spaces.join);
+  const leave = useMutation(api.spaces.leave);
+  const archive = useMutation(api.spaces.archive);
+  const unarchive = useMutation(api.spaces.unarchive);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isDemo) return null;
+  const isMember = "viewerIsMember" in space && space.viewerIsMember === true;
+  const canManage = "viewerCanManage" in space && space.viewerCanManage === true;
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
+  const isPrivate = "visibility" in space && space.visibility === "private";
+  const spaceId = space._id as Id<"spaces">;
+
+  const act = async (label: string, run: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(label);
+    setError(null);
+    try {
+      await run();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "That didn't work. Try again.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const buttons: ReactButton[] = [];
+  if (!isArchived && !isMember && !isPrivate) {
+    buttons.push({
+      label: "join space",
+      loading: "joining…",
+      onClick: () => act("join", () => join({ spaceId })),
+    });
+  }
+  if (!isArchived && isMember) {
+    buttons.push({
+      label: "leave space",
+      loading: "leaving…",
+      onClick: () => act("leave", () => leave({ spaceId })),
+    });
+  }
+  if (canManage) {
+    buttons.push(
+      isArchived
+        ? {
+            label: "unarchive space",
+            loading: "unarchiving…",
+            onClick: () => act("unarchive", () => unarchive({ spaceId })),
+          }
+        : {
+            label: "archive space",
+            loading: "archiving…",
+            onClick: () => act("archive", () => archive({ spaceId })),
+          },
+    );
+  }
+
+  if (buttons.length === 0 && !error) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      {buttons.map((button) => (
+        <Button
+          key={button.label}
+          variant="secondary"
+          size="sm"
+          loading={busy !== null && busy === button.label.split(" ")[0]}
+          loadingLabel={button.loading}
+          disabled={busy !== null}
+          onClick={button.onClick}
+        >
+          {button.label}
+        </Button>
+      ))}
+      {error ? (
+        <p role="alert" className="text-xs text-urgent">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+type ReactButton = {
+  label: string;
+  loading: string;
+  onClick: () => void;
+};
