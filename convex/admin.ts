@@ -302,9 +302,17 @@ export const listInvites = query({
         creators.set(invite.createdBy, creator?.name ?? "unknown");
       }
     }
+    const spaceNames = new Map<string, string>();
+    for (const invite of invites) {
+      if (invite.spaceId && !spaceNames.has(invite.spaceId)) {
+        const space = await ctx.db.get(invite.spaceId);
+        spaceNames.set(invite.spaceId, space?.name ?? "deleted space");
+      }
+    }
     return invites.map((invite) => ({
       ...invite,
       createdByName: creators.get(invite.createdBy) ?? "unknown",
+      spaceName: invite.spaceId ? spaceNames.get(invite.spaceId) ?? null : null,
     }));
   },
 });
@@ -384,9 +392,21 @@ export const createInvite = mutation({
     // "Hot" invite target: a github handle (with or without @) or an email.
     // The targeted person is auto-activated on sign-in, no code entry needed.
     target: v.optional(v.string()),
+    // Optional landing space: redeeming this invite also adds the person to
+    // this space (private spaces become joinable through it).
+    spaceId: v.optional(v.id("spaces")),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdminForWrite(ctx);
+    if (args.spaceId) {
+      const space = await ctx.db.get(args.spaceId);
+      if (!space || space.orgId !== admin.orgId || space.archivedAt) {
+        throw new ConvexError({
+          code: "INVALID_INPUT",
+          message: "Choose an active space in this organization.",
+        });
+      }
+    }
     let target: InviteTarget | null;
     try {
       target = parseInviteTarget(args.target);
@@ -407,6 +427,7 @@ export const createInvite = mutation({
         : undefined;
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
+      spaceId: args.spaceId,
       code: await uniqueInviteCode(ctx),
       note,
       createdBy: admin._id,
@@ -427,6 +448,7 @@ export const createInvite = mutation({
         maxUses,
         note,
         ...(target ? { target: `${target.kind}:${target.value}` } : {}),
+        ...(args.spaceId ? { spaceId: args.spaceId } : {}),
       },
     });
     logInfo("admin.inviteCreated", { inviteId, adminId: admin._id });

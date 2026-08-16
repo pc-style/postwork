@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
 import { Button } from "../../components/Button";
@@ -37,6 +38,9 @@ export function AdminInvitesPage() {
   const [creating, setCreating] = useState(false);
   const [target, setTarget] = useState("");
   const [targetError, setTargetError] = useState<string | null>(null);
+  const [spaceId, setSpaceId] = useState("");
+  const spaces = useQuery(api.spaces.list, {});
+  const openSpaces = (spaces ?? []).filter((space) => !space.archivedAt);
   const selected = invites?.find((i) => i._id === selectedId) ?? null;
 
   const mint = async () => {
@@ -46,8 +50,10 @@ export function AdminInvitesPage() {
       const id = await createInvite({
         maxUses: 1,
         target: target.trim() || undefined,
+        spaceId: spaceId ? (spaceId as Id<"spaces">) : undefined,
       });
       setTarget("");
+      setSpaceId("");
       setSelectedId(id);
     } catch (err) {
       setTargetError(
@@ -63,7 +69,7 @@ export function AdminInvitesPage() {
   return (
     <AdminPage
       title="invites"
-      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person. they activate automatically on sign-in."
+      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person — they activate automatically on sign-in. pick a landing space and redeeming drops them straight into it, private spaces included."
       actions={
         <div className="flex flex-col items-end gap-1">
           <div className="flex w-full flex-wrap items-center justify-end gap-2">
@@ -79,6 +85,21 @@ export function AdminInvitesPage() {
               placeholder="@github-handle or email (optional)"
               className="ui-field min-w-0 max-w-56 flex-1 font-mono text-body placeholder:font-sans"
             />
+            {openSpaces.length > 0 ? (
+              <select
+                value={spaceId}
+                onChange={(e) => setSpaceId(e.target.value)}
+                aria-label="Landing space"
+                className="min-h-11 rounded-lg border border-border bg-bg px-2 py-2 text-xs text-fg focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              >
+                <option value="">no landing space</option>
+                {openSpaces.map((space) => (
+                  <option key={space._id} value={space._id}>
+                    → {space.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <Button
               onClick={() => void mint()}
               loading={creating}
@@ -115,6 +136,11 @@ export function AdminInvitesPage() {
               label: "for",
               className: "max-w-[12rem] truncate font-mono text-body text-accent-soft",
               render: (invite) => formatTarget(invite) ?? <span className="text-muted">none</span>,
+            },
+            {
+              label: "space",
+              className: "max-w-[10rem] truncate text-xs text-muted",
+              render: (invite) => invite.spaceName ?? <span className="text-muted">—</span>,
             },
             {
               label: "note",
