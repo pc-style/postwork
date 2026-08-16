@@ -19,6 +19,7 @@ import type * as catchUpComposer from "../catchUpComposer.js";
 import type * as connectors from "../connectors.js";
 import type * as crons from "../crons.js";
 import type * as discussions from "../discussions.js";
+import type * as exports from "../exports.js";
 import type * as flashExperiments from "../flashExperiments.js";
 import type * as http from "../http.js";
 import type * as inviteDelivery from "../inviteDelivery.js";
@@ -69,6 +70,7 @@ declare const fullApi: ApiFromModules<{
   connectors: typeof connectors;
   crons: typeof crons;
   discussions: typeof discussions;
+  exports: typeof exports;
   flashExperiments: typeof flashExperiments;
   http: typeof http;
   inviteDelivery: typeof inviteDelivery;

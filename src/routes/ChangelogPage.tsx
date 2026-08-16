@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "your workspace data is yours: one-click json export",
+    note: "admins get a workspace export card on the admin overview: members, spaces, posts, and replies stream down in pages and land as a single json file. token identifiers, emails, and secrets never leave the server.",
+  },
+  {
+    date: "16 August 2026",
     title: "approving an access request now emails the invite",
     note: "the approve button used to mint a code an admin had to copy out of the invites list and deliver by hand. now the requester gets their join link by email automatically, and creating an invite targeted at an email address delivers itself the same way. one send per invite, idempotent, silent on demo deployments — the code stays visible in the admin ui as a manual fallback.",
   },
