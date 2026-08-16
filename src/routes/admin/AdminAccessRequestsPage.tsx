@@ -148,8 +148,8 @@ function RequestSheet({
       </div>
       {request.status === "approved" && (
         <p className="mt-4 text-body text-muted">
-          the invite code is in the invites section. copy it there and send it
-          to the requester.
+          the requester was emailed their join link. the code also lives in
+          the invites section if you need to resend it manually.
         </p>
       )}
       {error && <p className="mt-4 text-body text-urgent">{error}</p>}

@@ -21,6 +21,7 @@ import type * as crons from "../crons.js";
 import type * as discussions from "../discussions.js";
 import type * as flashExperiments from "../flashExperiments.js";
 import type * as http from "../http.js";
+import type * as inviteDelivery from "../inviteDelivery.js";
 import type * as lib_aiModels from "../lib/aiModels.js";
 import type * as lib_attachmentStorage from "../lib/attachmentStorage.js";
 import type * as lib_audit from "../lib/audit.js";
@@ -70,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   discussions: typeof discussions;
   flashExperiments: typeof flashExperiments;
   http: typeof http;
+  inviteDelivery: typeof inviteDelivery;
   "lib/aiModels": typeof lib_aiModels;
   "lib/attachmentStorage": typeof lib_attachmentStorage;
   "lib/audit": typeof lib_audit;

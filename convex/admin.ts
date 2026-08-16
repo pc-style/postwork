@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
@@ -436,6 +437,14 @@ export const createInvite = mutation({
         ...(args.spaceId ? { spaceId: args.spaceId } : {}),
       },
     });
+    // Email-targeted invites deliver themselves; github-targeted invites
+    // auto-claim on sign-in and have no address to send to.
+    if (target?.kind === "email") {
+      await ctx.scheduler.runAfter(0, internal.inviteDelivery.deliver, {
+        inviteId,
+        recipientEmail: target.value,
+      });
+    }
     logInfo("admin.inviteCreated", { inviteId, adminId: admin._id });
     return inviteId;
   },
@@ -476,8 +485,8 @@ export const approveAccessRequest = mutation({
         message: "Request is already resolved.",
       });
     }
-    // Mint a single-use invite for the requester; delivering the code (email)
-    // is a follow-up integration — the admin can copy it from the invites list.
+    // Mint a single-use invite for the requester; delivery is scheduled below
+    // and the code stays visible in the invites list as a manual fallback.
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
       code: await uniqueInviteCode(ctx),
@@ -492,6 +501,12 @@ export const approveAccessRequest = mutation({
       resolvedBy: admin._id,
       resolvedAt: Date.now(),
       inviteId,
+    });
+    // Close the loop: the requester gets the join link by email (no-op on
+    // demo or when Resend is not configured).
+    await ctx.scheduler.runAfter(0, internal.inviteDelivery.deliver, {
+      inviteId,
+      recipientEmail: request.email,
     });
     await logAudit(ctx, {
       orgId: admin.orgId,

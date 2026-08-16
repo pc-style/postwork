@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "approving an access request now emails the invite",
+    note: "the approve button used to mint a code an admin had to copy out of the invites list and deliver by hand. now the requester gets their join link by email automatically, and creating an invite targeted at an email address delivers itself the same way. one send per invite, idempotent, silent on demo deployments — the code stays visible in the admin ui as a manual fallback.",
+  },
+  {
+    date: "16 August 2026",
     title: "x pulse learned analytics: followers, views, and a daily digest",
     note: "the x cross-post connector now snapshots follower counts and per-post engagement (views, likes, reposts, replies) every hour, and once a day the connector agent posts a digest: follower delta, top posts of the last 24 hours with stats and links. one digest per local day, race-safe. the thing you check twitter for now actually lives in postwork.",
   },
