@@ -117,7 +117,9 @@ Read `docs/product.md` when shaping product flows, users, or interaction
 principles. Read `docs/business-plan.md` when working on positioning, pricing,
 market strategy, or go-to-market decisions. Read `docs/brand.md` when writing
 public copy or making brand identity decisions. Read `docs/design.md` before
-changing product UI or the visual system. The concrete visual rules below remain
+changing product UI or the visual system. Read `docs/security.md` before
+touching auth, tenancy, or any external surface — it states the invariants the
+test suites enforce. The concrete visual rules below remain
 the quick reference.
 
 **Any UI change must first read `docs/design-system.md`** - the codified token
