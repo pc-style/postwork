@@ -22,6 +22,7 @@ import {
   profileTitleSchema,
   profileInitialsSchema,
 } from "./lib/validation";
+import { logAudit } from "./lib/audit";
 import { logInfo } from "./lib/observability";
 import { preferenceArgs, savePreferences } from "./notificationPreferences";
 
@@ -278,7 +279,7 @@ export const setRole = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { orgId } = await ensureActiveOrgViewer(ctx, undefined, {
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx, undefined, {
       admin: true,
     });
     const target = await ctx.db.get(args.userId);
@@ -300,6 +301,14 @@ export const setRole = mutation({
     }
 
     await upsertOrgMembership(ctx, orgId, args.userId, { role: args.role });
+    await logAudit(ctx, {
+      orgId,
+      actorId: viewer._id,
+      action: "user.role_changed",
+      targetType: "user",
+      targetId: args.userId,
+      metadata: { role: args.role },
+    });
     logInfo("user.roleChanged", { userId: args.userId, role: args.role });
   },
 });
@@ -330,6 +339,13 @@ export const deactivate = mutation({
     }
 
     await upsertOrgMembership(ctx, orgId, args.userId, { deactivatedAt: Date.now() });
+    await logAudit(ctx, {
+      orgId,
+      actorId: viewer._id,
+      action: "user.deactivated",
+      targetType: "user",
+      targetId: args.userId,
+    });
     logInfo("user.deactivated", { userId: args.userId, adminId: viewer._id });
   },
 });
@@ -350,6 +366,13 @@ export const reactivate = mutation({
     }
 
     await upsertOrgMembership(ctx, orgId, args.userId, { deactivatedAt: null });
+    await logAudit(ctx, {
+      orgId,
+      actorId: viewer._id,
+      action: "user.reactivated",
+      targetType: "user",
+      targetId: args.userId,
+    });
     logInfo("user.reactivated", { userId: args.userId, adminId: viewer._id });
   },
 });

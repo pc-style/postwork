@@ -157,6 +157,15 @@ describe("moderation writes through membership rows", () => {
         priority: "normal",
       }),
     ).resolves.toBeDefined();
+
+    // Enterprise audit trail: both moderation actions leave tenant-visible rows.
+    const auditActions = await t.run(async (ctx) =>
+      (await ctx.db.query("auditLog").collect())
+        .filter((row) => row.orgId === orgId)
+        .map((row) => row.action),
+    );
+    expect(auditActions).toContain("user.deactivated");
+    expect(auditActions).toContain("user.reactivated");
   });
 
   test("cannot demote the last admin", async () => {

@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
@@ -73,27 +73,8 @@ async function requireAdminForWrite(ctx: MutationCtx): Promise<Doc<"users">> {
   return viewer;
 }
 
-export async function logAudit(
-  ctx: MutationCtx,
-  entry: {
-    orgId: Id<"orgs"> | undefined;
-    actorId?: Id<"users">;
-    action: string;
-    targetType?: string;
-    targetId?: string;
-    metadata?: Record<string, unknown>;
-  },
-) {
-  await ctx.db.insert("auditLog", {
-    orgId: entry.orgId,
-    actorId: entry.actorId,
-    action: entry.action,
-    targetType: entry.targetType,
-    targetId: entry.targetId,
-    metadata: entry.metadata ? JSON.stringify(entry.metadata) : undefined,
-    createdAt: Date.now(),
-  });
-}
+import { logAudit } from "./lib/audit";
+export { logAudit };
 
 /** Is the current viewer an org admin? Cheap gate for the /admin routes. */
 export const viewerIsAdmin = query({
@@ -114,11 +95,8 @@ export const overview = query({
   args: {},
   handler: async (ctx) => {
     const admin = await requireAdminForRead(ctx);
-    const orgId = admin.orgId;
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))
-      .collect();
+    const orgId = requireOrgId(admin);
+    const roster = await listOrgUsersWithMembership(ctx, orgId);
     const invites = await ctx.db
       .query("invites")
       .withIndex("by_org_id_and_created_at", (q) => q.eq("orgId", orgId))
@@ -142,9 +120,9 @@ export const overview = query({
         (i.maxUses === 0 || i.usedCount < i.maxUses),
     );
     return {
-      members: users.filter((u) => !u.isAgent).length,
-      agents: users.filter((u) => u.isAgent).length,
-      deactivated: users.filter((u) => u.deactivatedAt).length,
+      members: roster.filter(({ user }) => !user.isAgent).length,
+      agents: roster.filter(({ user }) => user.isAgent).length,
+      deactivated: roster.filter(({ membership }) => membership.deactivatedAt).length,
       activeInvites: activeInvites.length,
       pendingRequests: pending.length,
       recentAudit,
