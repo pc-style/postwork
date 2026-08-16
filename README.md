@@ -4,6 +4,32 @@ Postwork is an experimental, post-based team communication prototype. Posts—no
 channels—are the top-level unit: each is a durable thread with nested replies,
 activity bumping, search, unread and priority state, plus an AI catch-up slot.
 
+## At a glance
+
+- **Problem and approach:** Team decisions become difficult to recover when
+  conversation is organized around fast-moving channels. Postwork instead uses
+  durable, searchable posts with nested discussion and explicit catch-up state.
+- **Demo:** The seeded public walkthrough is live at
+  [postwork.pcstyle.dev](https://postwork.pcstyle.dev). Its people, organizations,
+  and conversations are fictional.
+- **Install:** With [Bun](https://bun.sh/) available, run `bun install` and then
+  `bun run dev`; see [Run locally](#run-locally) for backend details.
+- **Trust and privacy boundary:** The public demo is not a private workspace.
+  Visitor writes stay in browser memory and reset on refresh, but optional
+  Plausible analytics can record page views and outbound-link events. Do not
+  enter sensitive or real workplace information. Product mode sends durable
+  data to the operator-configured Convex, Clerk, AI, monitoring, email, and media
+  providers described in this repository; a self-hosting operator is responsible
+  for those providers and their policies.
+- **Status:** Experimental flow-design prototype, not a production-ready or
+  maintained service. APIs, data models, and behavior may change without notice.
+- **License:** No open-source license is granted. Default copyright applies; do
+  not copy, modify, or redistribute the code unless you have separate permission
+  from the relevant rights holders.
+- **Provenance:** This is an original pc-style prototype with human and
+  AI-assisted contributions recorded in the Git history. Seed content is
+  fictional and exists only to demonstrate the product flow.
+
 It intentionally supports two modes from one codebase:
 
 - **Public demo mode** is a seeded, no-auth product walkthrough. Visitor writes
