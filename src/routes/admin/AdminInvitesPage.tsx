@@ -168,10 +168,96 @@ export function AdminInvitesPage() {
         />
       )}
 
+      <AutoJoinDomains />
+
       {selected && (
         <InviteSheet invite={selected} onClose={() => setSelectedId(null)} />
       )}
     </AdminPage>
+  );
+}
+
+/**
+ * JIT provisioning: sign-ups whose email lives on a claimed domain become
+ * members automatically, no invite needed. Claiming requires the admin's own
+ * email to be on the domain; public providers are refused server-side.
+ */
+function AutoJoinDomains() {
+  const domains = useQuery(api.orgDomains.list);
+  const addDomain = useMutation(api.orgDomains.add);
+  const removeDomain = useMutation(api.orgDomains.remove);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!draft.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await addDomain({ domain: draft });
+      setDraft("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error && caught.message.length < 200
+          ? caught.message.replace(/^.*Uncaught ConvexError:?\s*/i, "").split("\n")[0]
+          : "couldn't add that domain.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-body font-medium lowercase text-muted">auto-join domains</h2>
+      <p className="mt-1 max-w-2xl text-body text-muted">
+        anyone signing up with an email on these domains joins this workspace
+        automatically — no invite needed. you can only claim the domain your
+        own email uses; public providers are refused.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {(domains ?? []).map((entry) => (
+          <span
+            key={entry._id}
+            className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 font-mono text-body text-fg"
+          >
+            {entry.domain}
+            <button
+              type="button"
+              aria-label={`stop auto-join for ${entry.domain}`}
+              disabled={busy}
+              onClick={() => void removeDomain({ domainId: entry._id })}
+              className="rounded px-1 text-body text-muted transition-colors hover:bg-surface-2 hover:text-urgent focus-visible:outline-2 focus-visible:outline-accent-soft"
+            >
+              remove
+            </button>
+          </span>
+        ))}
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <input
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setError(null);
+            }}
+            placeholder="acme.com"
+            aria-label="Claim an auto-join domain"
+            className="min-h-11 w-40 rounded-lg border border-dashed border-border bg-bg px-3 py-2 font-mono text-body placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+          />
+          <Button type="submit" variant="secondary" size="sm" loading={busy} loadingLabel="adding…" disabled={!draft.trim()}>
+            add domain
+          </Button>
+        </form>
+      </div>
+      {error ? <p role="alert" className="mt-2 text-body text-urgent">{error}</p> : null}
+    </section>
   );
 }
 

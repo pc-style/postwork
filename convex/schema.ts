@@ -83,6 +83,18 @@ export default defineSchema({
     .index("by_org_id_and_role", ["orgId", "role"])
     .index("by_org_id_and_status", ["orgId", "status"]),
 
+  // Verified email domains: sign-ups whose address matches auto-join the org
+  // as members. v1 verification: the claiming admin's own email must be on
+  // the domain, and public providers are refused outright.
+  orgDomains: defineTable({
+    orgId: v.id("orgs"),
+    domain: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_domain", ["domain"])
+    .index("by_org_id", ["orgId"]),
+
   // Old slugs remain resolvable after an organization rename.
   orgSlugAliases: defineTable({
     orgId: v.id("orgs"),

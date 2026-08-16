@@ -3,11 +3,13 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   ensureViewerUser,
+  getOrgMembership,
   getProductOrgId,
   unauthenticated,
   upsertOrgMembership,
 } from "./authUsers";
 import { logAudit } from "./admin";
+import { emailDomain, isPublicEmailProvider } from "./lib/emailDomains";
 import { logInfo } from "./lib/observability";
 import {
   formatInviteTarget,
@@ -181,6 +183,43 @@ export const claimTargetedInvite = mutation({
         userId: viewer._id,
       });
       return { activated: true as const };
+    }
+
+    // No targeted invite — try domain auto-join (JIT provisioning). The
+    // email comes from the verified auth identity, never from client input.
+    const domain = emailDomain(identity.email ?? undefined);
+    if (domain && !isPublicEmailProvider(domain)) {
+      const claimed = await ctx.db
+        .query("orgDomains")
+        .withIndex("by_domain", (q) => q.eq("domain", domain))
+        .unique();
+      const priorMembership = claimed
+        ? await getOrgMembership(ctx, claimed.orgId, viewer._id)
+        : null;
+      // Never resurrect a moderated membership — auto-join is for accounts
+      // this org has no record of.
+      if (claimed && !priorMembership) {
+        await upsertOrgMembership(ctx, claimed.orgId, viewer._id, {
+          role: "member",
+          status: "active",
+        });
+        if (!viewer.orgId) {
+          await ctx.db.patch(viewer._id, {
+            orgId: claimed.orgId,
+            status: "active",
+          });
+        }
+        await logAudit(ctx, {
+          orgId: claimed.orgId,
+          actorId: viewer._id,
+          action: "member.domain_joined",
+          targetType: "user",
+          targetId: viewer._id,
+          metadata: { domain },
+        });
+        logInfo("access.domainJoined", { userId: viewer._id, orgId: claimed.orgId });
+        return { activated: true as const };
+      }
     }
     return { activated: false as const };
   },

@@ -97,7 +97,10 @@ convex test suites (`convex/*.test.ts`).
   multi-workspace sessions (different orgs in different tabs) remain
   unshipped; the backend hooks exist (`resolveReadScope(requestedOrgId)`).
 - SSO (SAML/OIDC beyond Clerk's defaults) and SCIM provisioning are not
-  implemented.
+  implemented. JIT provisioning exists via claimed email domains
+  (`orgDomains` + the activation gate): matching sign-ups become members
+  automatically, public providers are unclaimable, and moderated memberships
+  are never resurrected by a domain join.
 - Link-preview fetching cannot defend against DNS rebinding from inside the
   Convex runtime; the hostname filter is best-effort.
 - The X proxy search endpoint is unavailable, so X mentions are not ingested.

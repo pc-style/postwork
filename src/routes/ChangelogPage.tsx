@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "sign up with your work email, land in your workspace",
+    note: "admins can claim their company's email domain (only the one their own account uses — public providers are refused), and from then on anyone signing up with a matching address becomes a member automatically. no invite, no access request, no waiting. moderated accounts never sneak back in this way, and every domain claim and join lands in the audit log.",
+  },
+  {
+    date: "16 August 2026",
     title: "the url is the workspace",
     note: "opening a workspace address like acme.postwork.pcstyle.dev now takes you into that workspace if your account belongs to it — the session follows the link instead of bouncing you to a 'wrong address' screen. old addresses redirect to the renamed one, non-members still get the polite refusal, and switching workspaces while on a tenant address moves the browser to the right subdomain.",
   },
