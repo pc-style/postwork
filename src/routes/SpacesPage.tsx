@@ -166,7 +166,7 @@ function CreateSpaceDialog({ onClose }: { onClose: () => void }) {
           />
         </FormField>
         <SelectionGroup
-          label="Visibility"
+          label="visibility"
           value={visibility}
           onChange={setVisibility}
           options={[
