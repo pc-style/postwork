@@ -51,9 +51,6 @@ export function SpacePage() {
     );
   }
 
-  const memberUsers = memberships
-    .map((membership) => membership.user)
-    .filter((user) => user !== null);
   const isPrivate = "visibility" in space && space.visibility === "private";
   const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
 
@@ -86,16 +83,7 @@ export function SpacePage() {
 
         <SpaceActions space={space} />
 
-        {memberUsers.length > 0 ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Space members">
-            {memberUsers.map((user) => (
-              <div key={user._id} className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body text-muted">
-                <Avatar user={user} size={20} />
-                <span className="text-fg">{user.name}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        <SpaceMembers space={space} memberships={memberships} />
       </header>
 
       {feed.length === 0 ? (
@@ -233,3 +221,144 @@ type ReactButton = {
   loading: string;
   onClick: () => void;
 };
+
+
+/**
+ * Member roster. Everyone sees the chips; space managers (and org admins)
+ * additionally manage membership inline: add from the org directory, remove,
+ * and toggle the manager role. Demo overlay stays read-only.
+ */
+function SpaceMembers({
+  space,
+  memberships,
+}: {
+  space: NonNullable<ReturnType<typeof useSpaceBySlug>>;
+  memberships: ReturnType<typeof useSpaceMemberships>;
+}) {
+  const { users } = useSession();
+  const addMember = useMutation(api.spaces.addMember);
+  const removeMember = useMutation(api.spaces.removeMember);
+  const setMemberRole = useMutation(api.spaces.setMemberRole);
+  const [pendingAdd, setPendingAdd] = useState("");
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const canManage =
+    !isDemo && "viewerCanManage" in space && space.viewerCanManage === true;
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
+  const spaceId = space._id as Id<"spaces">;
+
+  const memberIds = new Set(memberships.map((membership) => membership.userId));
+  const candidates = users.filter(
+    (user) =>
+      !memberIds.has(user._id) &&
+      user.status === "active" &&
+      !user.deactivatedAt,
+  );
+
+  const act = async (userId: string, run: () => Promise<unknown>) => {
+    if (busyUserId) return;
+    setBusyUserId(userId);
+    setError(null);
+    try {
+      await run();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "that didn't work. try again.",
+      );
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  if (memberships.length === 0 && !canManage) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Space members">
+        {memberships.map((membership) => {
+          const user = membership.user;
+          if (!user) return null;
+          const isManager =
+            "role" in membership && membership.role === "manager";
+          return (
+            <div
+              key={membership._id}
+              className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body text-muted"
+            >
+              <Avatar user={user} size={20} />
+              <span className="text-fg">{user.name}</span>
+              {isManager ? <Chip tone="accent">manager</Chip> : null}
+              {canManage && !isArchived ? (
+                <span className="ms-1 flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={busyUserId !== null}
+                    onClick={() =>
+                      void act(user._id, () =>
+                        setMemberRole({
+                          spaceId,
+                          userId: user._id as Id<"users">,
+                          role: isManager ? "member" : "manager",
+                        }),
+                      )
+                    }
+                    className="rounded px-1 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent-soft"
+                  >
+                    {isManager ? "demote" : "promote"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`remove ${user.name} from this space`}
+                    disabled={busyUserId !== null}
+                    onClick={() =>
+                      void act(user._id, () =>
+                        removeMember({
+                          spaceId,
+                          userId: user._id as Id<"users">,
+                        }),
+                      )
+                    }
+                    className="rounded px-1 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-urgent focus-visible:outline-2 focus-visible:outline-accent-soft"
+                  >
+                    remove
+                  </button>
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+
+        {canManage && !isArchived && candidates.length > 0 ? (
+          <select
+            value={pendingAdd}
+            disabled={busyUserId !== null}
+            aria-label="Add a member to this space"
+            onChange={(event) => {
+              const userId = event.target.value;
+              setPendingAdd("");
+              if (!userId) return;
+              void act(userId, () =>
+                addMember({ spaceId, userId: userId as Id<"users"> }),
+              );
+            }}
+            className="min-h-11 rounded-md border border-dashed border-border bg-bg px-2 py-2 text-body text-muted transition-colors hover:border-accent/40 hover:text-fg focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+          >
+            <option value="">+ add member</option>
+            {candidates.map((user) => (
+              <option key={user._id} value={user._id}>
+                {user.name}
+                {user.isAgent ? " (agent)" : ""}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+      {error ? (
+        <p role="alert" className="mt-2 text-xs text-urgent">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
