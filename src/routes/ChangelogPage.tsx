@@ -10,6 +10,11 @@ type Change = {
 const changes: readonly Change[] = [
   {
     date: "16 August 2026",
+    title: "postwork now emails you before you forget it exists",
+    note: "the outbound notification pipeline finally has a driver: a scheduler ticks every 30 minutes, sends one email the moment something urgent lands (deduped per urgent-post set), and one daily digest of unread activity released when your quiet hours end. reading a post in the app removes it from future emails, and every send is idempotent — no double delivery, ever. requires a configured resend provider; demo stays email-free.",
+  },
+  {
+    date: "16 August 2026",
     title: "switch workspaces without signing out",
     note: "accounts that belong to more than one organization get a workspace picker in the profile rail. picking one flips the whole session — feed, spaces, queue — to that org. space creation now offers public or private visibility up front, space pages show private and archived states, public spaces have join/leave, and managers can archive or unarchive from the space header.",
   },

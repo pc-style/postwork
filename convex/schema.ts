@@ -113,6 +113,9 @@ export default defineSchema({
     // identifier to a `users` doc so they can author posts/replies). Seed
     // personas leave this undefined. `subject` is retained only as legacy data.
     tokenIdentifier: v.optional(v.string()),
+    // Outbound delivery address synced from the auth identity. Only used by
+    // the notification scheduler; never rendered to other members.
+    email: v.optional(v.string()),
     subject: v.optional(v.string()),
     // Moderation: set when an admin deactivates a user. Deactivated users
     // cannot write; their existing content stays.

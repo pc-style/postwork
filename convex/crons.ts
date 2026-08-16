@@ -21,4 +21,13 @@ crons.interval(
   {},
 );
 
+// Outbound notifications: urgent emails and the daily digest teaser. Safe to
+// tick often — delivery claims and provider idempotency dedupe every send.
+crons.interval(
+  "deliver outbound notifications",
+  { minutes: 30 },
+  internal.notificationScheduler.run,
+  {},
+);
+
 export default crons;

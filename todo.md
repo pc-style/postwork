@@ -16,6 +16,12 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
 1. **Digest email as teaser** — daily "3 posts moved, 1 needs you" via existing
    Resend delivery. Subject line is the hook ("shivam replied to wrec 3.0
    update"); body shows the AI summary teaser, not full content. Click = visit.
+   - [x] shipped (16 Aug): notificationScheduler cron drives the existing
+         delivery boundary — immediate urgent email + daily digest at
+         quiet-hours end, idempotent per local day. Emails come from
+         users.email synced from the auth identity.
+   - [ ] follow-up: richer email body (AI summary teaser instead of title
+         list).
 2. **"Needs you" notification trigger** — only notify on mentions, replies to
    your posts, or finished agent tasks. Scarcity keeps the signal trusted.
 3. **Inbound cross-posting (favorite)** — connector agent pulls Twitter/X

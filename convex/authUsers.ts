@@ -395,6 +395,10 @@ export async function ensureViewerUser(
           ? "admin"
           : "member";
     }
+    const identityEmail = identity.email?.trim().toLowerCase() || undefined;
+    if (identityEmail && existing.email !== identityEmail) {
+      patch.email = identityEmail;
+    }
 
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(existing._id, patch);
@@ -416,6 +420,7 @@ export async function ensureViewerUser(
     status: "pending",
     tokenIdentifier: identity.tokenIdentifier,
     subject: identity.subject,
+    email: identity.email?.trim().toLowerCase() || undefined,
     providerAvatarUrl: identityPicture,
     avatarUrl: computeAvatarUrl({
       providerAvatarUrl: identityPicture,
