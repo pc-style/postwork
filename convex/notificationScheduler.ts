@@ -13,6 +13,7 @@ import {
   digestDue,
   immediateKeySuffix,
   localDateKey,
+  summaryTeaser,
 } from "./lib/outboundSchedule";
 import { logInfo } from "./lib/observability";
 
@@ -94,6 +95,7 @@ export const collectDispatches = internalQuery({
           unread: true,
           space: post.space,
           url: `/app/posts/${post._id}`,
+          teaser: summaryTeaser(post.summary),
         });
       }
       if (items.length === 0) continue;

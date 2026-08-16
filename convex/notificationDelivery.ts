@@ -28,6 +28,7 @@ const notificationItem = v.object({
   unread: v.boolean(),
   space: v.optional(v.string()),
   url: v.optional(v.string()),
+  teaser: v.optional(v.string()),
 });
 
 const outboundCandidate = v.object({
@@ -522,9 +523,12 @@ export function renderNotificationEmail(
   const rows = candidate.items.map((item) => {
     const url = safeItemUrl(item.url, item.postId, appUrl);
     const label = `${item.priority}: ${item.title}`;
+    // Teaser is a short plain-text preview; it never replaces reading the
+    // post — the click is the point.
+    const teaser = item.teaser?.trim() ? item.teaser.trim() : "";
     return {
-      html: `<li><a href="${escapeHtml(url)}">${escapeHtml(label)}</a>${item.space ? ` <span>in ${escapeHtml(item.space)}</span>` : ""}</li>`,
-      text: `- ${label}${item.space ? ` in ${item.space}` : ""}\n  ${url}`,
+      html: `<li><a href="${escapeHtml(url)}">${escapeHtml(label)}</a>${item.space ? ` <span>in ${escapeHtml(item.space)}</span>` : ""}${teaser ? `<br/><span style="color:#666">${escapeHtml(teaser)}</span>` : ""}</li>`,
+      text: `- ${label}${item.space ? ` in ${item.space}` : ""}${teaser ? `\n  ${teaser}` : ""}\n  ${url}`,
     };
   });
   const omitted = candidate.omittedCount > 0
@@ -578,6 +582,9 @@ function validateDispatchInput(
     }
     if (candidate.items.some((item) => !item.unread)) {
       return "Read posts cannot cross the provider boundary.";
+    }
+    if (candidate.items.some((item) => (item.teaser?.length ?? 0) > 300)) {
+      return "Item teasers must stay under 300 characters.";
     }
     if (
       candidate.kind === "immediate" &&

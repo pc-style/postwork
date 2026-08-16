@@ -94,6 +94,7 @@ async function insertPost(
       lastActivityAt: 10,
       replyCount: 0,
       participantIds: [authorId],
+      summary: `TL;DR: summary of ${title}`,
     }),
   );
 }
@@ -120,6 +121,7 @@ describe("notification scheduler", () => {
     expect(digest?.candidates[0]?.items.map((item) => item.title)).toEqual([
       "Weekly notes",
     ]);
+    expect(digest?.candidates[0]?.items[0]?.teaser).toBe("summary of Weekly notes");
 
     // Same tick later in the day → identical keys (the claim table dedupes).
     const again = await t.query(

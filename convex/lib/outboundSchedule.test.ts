@@ -5,6 +5,7 @@ import {
   immediateKeySuffix,
   localDateKey,
   minutesInTimeZone,
+  summaryTeaser,
 } from "./outboundSchedule";
 import type { NotificationItem } from "../notificationComposer";
 
@@ -72,5 +73,27 @@ describe("immediateKeySuffix", () => {
     expect(immediateKeySuffix([item("a")])).not.toBe(
       immediateKeySuffix([item("a"), item("c")]),
     );
+  });
+});
+
+describe("summaryTeaser", () => {
+  test("drops a leading tl;dr label and strips markdown", () => {
+    expect(summaryTeaser("TL;DR: **Ship it** — see [the doc](https://x.test).")).toBe(
+      "Ship it — see the doc.",
+    );
+  });
+
+  test("collapses whitespace and returns undefined for empty summaries", () => {
+    expect(summaryTeaser("  \n\t ")).toBeUndefined();
+    expect(summaryTeaser(undefined)).toBeUndefined();
+    expect(summaryTeaser("a\n\nb")).toBe("a b");
+  });
+
+  test("truncates long summaries on a word boundary with an ellipsis", () => {
+    const long = Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ");
+    const teaser = summaryTeaser(long)!;
+    expect(teaser.length).toBeLessThanOrEqual(161);
+    expect(teaser.endsWith("\u2026")).toBe(true);
+    expect(teaser).not.toContain("word59");
   });
 });

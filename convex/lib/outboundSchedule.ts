@@ -81,3 +81,25 @@ export function immediateKeySuffix(items: readonly NotificationItem[]): string {
     .slice(0, 8)
     .join(",");
 }
+
+const TEASER_MAX_CHARS = 160;
+
+/**
+ * Turn a stored post summary into a short plain-text email teaser: drop a
+ * bare leading "TL;DR" label, strip light markdown, collapse whitespace, and
+ * cut on a word boundary. Returns undefined when nothing useful remains.
+ */
+export function summaryTeaser(summary: string | undefined): string | undefined {
+  if (!summary) return undefined;
+  const cleaned = summary
+    .replace(/^\s*tl;?dr:?\s*/i, "")
+    .replace(/[*_`#>]/g, "")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return undefined;
+  if (cleaned.length <= TEASER_MAX_CHARS) return cleaned;
+  const cut = cleaned.slice(0, TEASER_MAX_CHARS);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 80 ? lastSpace : TEASER_MAX_CHARS).trimEnd()}\u2026`;
+}

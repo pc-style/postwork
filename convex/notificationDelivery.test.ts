@@ -311,4 +311,32 @@ describe("Resend adapter", () => {
       'href="https://postwork.example/posts/post-1"',
     );
   });
+
+  test("renders a teaser under the link, escaped, in html and text", () => {
+    const content = renderNotificationEmail(
+      {
+        ...candidates[0],
+        items: [
+          {
+            ...candidates[0].items[0],
+            teaser: 'decision shipped <script>alert(1)</script>',
+          },
+        ],
+      },
+      config.appUrl,
+    );
+
+    expect(content.html).toContain("decision shipped &lt;script&gt;");
+    expect(content.html).not.toContain("<script>");
+    expect(content.text).toContain("decision shipped <script>alert(1)</script>");
+
+    const validationError = renderNotificationEmail(
+      {
+        ...candidates[0],
+        items: [{ ...candidates[0].items[0], teaser: undefined }],
+      },
+      config.appUrl,
+    );
+    expect(validationError.html).not.toContain("color:#666");
+  });
 });
