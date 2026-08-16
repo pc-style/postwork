@@ -13,6 +13,7 @@ import {
   requireOrgId,
 } from "./authUsers";
 import { logAudit } from "./admin";
+import { rateLimiter } from "./lib/rateLimit";
 import { spaceMemberRole, spaceVisibility } from "./schema";
 import { listPostsBySpaceId } from "./posts";
 import { publicUser } from "./users";
@@ -117,6 +118,7 @@ export const create = mutation({
     const { viewer, orgId, membership } = await ensureActiveOrgViewer(ctx, undefined, {
       unauthenticatedMessage: "Sign in to create a space.",
     });
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const name = args.name.trim();
     const description = args.description?.trim() || undefined;
 
@@ -326,6 +328,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
 
     const patch: Partial<Doc<"spaces">> = { updatedAt: Date.now() };
@@ -372,6 +375,7 @@ export const archive = mutation({
   args: { spaceId: v.id("spaces") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
     if (space.archivedAt) return;
     await ctx.db.patch(args.spaceId, {
@@ -393,6 +397,7 @@ export const unarchive = mutation({
   args: { spaceId: v.id("spaces") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
     if (!space.archivedAt) return;
     await ctx.db.patch(args.spaceId, {
@@ -415,6 +420,7 @@ export const join = mutation({
   args: { spaceId: v.id("spaces") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await ctx.db.get(args.spaceId);
     if (!space?.orgId) forbidden("Space not found.");
     const membership = await getOrgMembership(ctx, space.orgId, viewer._id);
@@ -441,6 +447,7 @@ export const leave = mutation({
   args: { spaceId: v.id("spaces") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await ctx.db.get(args.spaceId);
     if (!space?.orgId) forbidden("Space not found.");
     const existing = await findSpaceMembership(ctx, space.orgId, args.spaceId, viewer._id);
@@ -467,6 +474,7 @@ export const addMember = mutation({
   args: { spaceId: v.id("spaces"), userId: v.id("users") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
     const targetMembership = await getOrgMembership(ctx, space.orgId, args.userId);
     if (
@@ -500,6 +508,7 @@ export const removeMember = mutation({
   args: { spaceId: v.id("spaces"), userId: v.id("users") },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
     const existing = await findSpaceMembership(ctx, space.orgId, args.spaceId, args.userId);
     if (!existing) return;
@@ -523,6 +532,7 @@ export const setMemberRole = mutation({
   },
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const space = await requireManageableSpace(ctx, args.spaceId, viewer._id);
     const existing = await findSpaceMembership(ctx, space.orgId, args.spaceId, args.userId);
     if (!existing) forbidden("That person is not a member of this space.");

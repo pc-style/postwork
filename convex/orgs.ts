@@ -9,6 +9,7 @@ import {
   forbidden,
 } from "./authUsers";
 import { logAudit } from "./admin";
+import { rateLimiter } from "./lib/rateLimit";
 import { logInfo } from "./lib/observability";
 
 export const RESERVED_ORG_SLUGS = new Set([
@@ -137,6 +138,7 @@ export const switchActive = mutation({
   args: { orgId: v.id("orgs") },
   handler: async (ctx, args) => {
     const viewer = await ensureViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const membership = await getOrgMembership(ctx, args.orgId, viewer._id);
     if (
       !membership ||
@@ -159,6 +161,7 @@ export const create = mutation({
   args: { name: v.string(), slug: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const viewer = await ensureViewerUser(ctx);
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const name = args.name.trim();
     if (name.length < 2 || name.length > 64) {
       invalidInput("Organization name must be between 2 and 64 characters.");
