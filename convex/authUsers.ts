@@ -4,6 +4,13 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { AVATAR_PALETTE } from "./avatarPalette";
 
 type AuthCtx = MutationCtx | QueryCtx;
+export type EffectiveOrgMembership = {
+  orgId: Id<"orgs">;
+  userId: Id<"users">;
+  role: "admin" | "tester" | "member";
+  status: "pending" | "active";
+  deactivatedAt?: number;
+};
 
 export const DEMO_ORG_SLUG = "postwork-demo";
 export const DEMO_ORG_NAME = "Postwork Demo";
@@ -173,6 +180,18 @@ export async function findUserForIdentity(
 }
 
 export async function countAdmins(ctx: AuthCtx, orgId: Id<"orgs">): Promise<number> {
+  const memberships = await ctx.db
+    .query("orgMemberships")
+    .withIndex("by_org_id_and_role", (q) =>
+      q.eq("orgId", orgId).eq("role", "admin"),
+    )
+    .take(2);
+  if (memberships.length > 0) {
+    return memberships.filter(
+      (membership) =>
+        membership.status === "active" && !membership.deactivatedAt,
+    ).length;
+  }
   const admins = await ctx.db.query("users").withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId).eq("role", "admin")).take(2);
   return admins.length;
 }
@@ -203,6 +222,79 @@ export function requireOrgId(user: Pick<Doc<"users">, "orgId">): Id<"orgs"> {
   return user.orgId;
 }
 
+export async function getOrgMembership(
+  ctx: AuthCtx,
+  orgId: Id<"orgs">,
+  userId: Id<"users">,
+): Promise<EffectiveOrgMembership | null> {
+  const membership = await ctx.db
+    .query("orgMemberships")
+    .withIndex("by_org_id_and_user_id", (q) =>
+      q.eq("orgId", orgId).eq("userId", userId),
+    )
+    .unique();
+  if (membership) return membership;
+
+  // Compatibility for the deployed client while the additive membership
+  // backfill is rolling out.
+  const user = await ctx.db.get(userId);
+  if (!user || user.orgId !== orgId) return null;
+  return {
+    orgId,
+    userId,
+    role: user.role ?? "member",
+    status: user.status ?? "active",
+    deactivatedAt: user.deactivatedAt,
+  };
+}
+
+export async function listOrgMembershipsForUser(
+  ctx: AuthCtx,
+  user: Doc<"users">,
+): Promise<EffectiveOrgMembership[]> {
+  const memberships = (
+    await ctx.db
+      .query("orgMemberships")
+      .withIndex("by_user_id_and_status", (q) =>
+        q.eq("userId", user._id).eq("status", "active"),
+      )
+      .collect()
+  ).filter((m) => !m.deactivatedAt);
+  if (memberships.length > 0) return memberships;
+  if (!user.orgId) return [];
+  return [{
+    orgId: user.orgId,
+    userId: user._id,
+    role: user.role ?? "member",
+    status: user.status ?? "active",
+    deactivatedAt: user.deactivatedAt,
+  }];
+}
+
+export async function requireOrgMembership(
+  ctx: AuthCtx,
+  orgId: Id<"orgs">,
+  userId: Id<"users">,
+  options?: {
+    admin?: boolean;
+    allowPending?: boolean;
+    message?: string;
+  },
+): Promise<EffectiveOrgMembership> {
+  const membership = await getOrgMembership(ctx, orgId, userId);
+  if (
+    !membership ||
+    (!options?.allowPending && membership.status !== "active") ||
+    membership.deactivatedAt
+  ) {
+    forbidden(options?.message ?? "You do not have access to this organization.");
+  }
+  if (options?.admin && membership.role !== "admin") {
+    forbidden(options.message ?? "Organization admins only.");
+  }
+  return membership;
+}
+
 export async function getViewerFromAuth(
   ctx: AuthCtx,
 ): Promise<Doc<"users"> | null> {
@@ -214,15 +306,33 @@ export async function getViewerFromAuth(
 
 export type ReadScope = { orgId: Id<"orgs">; viewer: Doc<"users"> | null; authenticated: boolean };
 
-export async function resolveReadScope(ctx: QueryCtx, requestedViewerId?: Id<"users">): Promise<ReadScope> {
+export async function resolveReadScope(
+  ctx: QueryCtx,
+  requestedViewerId?: Id<"users">,
+  requestedOrgId?: Id<"orgs">,
+): Promise<ReadScope> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity) {
     const productOrgId = await getProductOrgId(ctx);
     const viewer = await findUserForIdentity(ctx, identity, productOrgId);
-    const orgId = viewer?.orgId ?? productOrgId;
-    return { orgId, viewer: viewer?.status === "active" && !viewer.deactivatedAt ? viewer : null, authenticated: true };
+    const orgId = requestedOrgId ?? viewer?.orgId ?? productOrgId;
+    if (!viewer) {
+      return { orgId, viewer: null, authenticated: true };
+    }
+    const membership = await getOrgMembership(ctx, orgId, viewer._id);
+    return {
+      orgId,
+      viewer:
+        membership?.status === "active" && !membership.deactivatedAt
+          ? viewer
+          : null,
+      authenticated: true,
+    };
   }
   const orgId = await getDemoOrgId(ctx);
+  if (requestedOrgId && requestedOrgId !== orgId) {
+    return { orgId: requestedOrgId, viewer: null, authenticated: false };
+  }
   const requested = requestedViewerId ? await ctx.db.get(requestedViewerId) : null;
   return { orgId, viewer: requested?.orgId === orgId ? requested : null, authenticated: false };
 }
@@ -248,8 +358,16 @@ export async function ensureViewerUser(
   const identityPicture = identity.pictureUrl?.trim() || undefined;
 
   if (existing) {
-    // Moderation (Phase 3.5): deactivated users cannot write.
-    if (existing.deactivatedAt) {
+    // Legacy-only moderation fallback. Once membership rows exist,
+    // deactivation is scoped to the organization selected by the request.
+    const memberships = await ctx.db
+      .query("orgMemberships")
+      .withIndex("by_user_id_and_status", (q) =>
+        q.eq("userId", existing._id).eq("status", "active"),
+      )
+      .collect();
+    const usable = memberships.filter((m) => !m.deactivatedAt);
+    if (existing.deactivatedAt && usable.length === 0) {
       forbidden("Your account has been deactivated. Contact an admin.");
     }
     const patch: Partial<Doc<"users">> = {};
@@ -330,7 +448,15 @@ export async function ensureActiveViewerUser(
   options?: { unauthenticatedMessage?: string },
 ): Promise<Doc<"users">> {
   const user = await ensureViewerUser(ctx, options);
-  if (user.status === "pending") {
+  const activeMemberships = (
+    await ctx.db
+      .query("orgMemberships")
+      .withIndex("by_user_id_and_status", (q) =>
+        q.eq("userId", user._id).eq("status", "active"),
+      )
+      .collect()
+  ).filter((m) => !m.deactivatedAt);
+  if (user.status === "pending" && activeMemberships.length === 0) {
     throw new ConvexError({
       code: "PENDING_ACTIVATION",
       message: "Redeem an invite to activate your account.",
@@ -339,17 +465,39 @@ export async function ensureActiveViewerUser(
   return user;
 }
 
+export async function ensureActiveOrgViewer(
+  ctx: MutationCtx,
+  requestedOrgId?: Id<"orgs">,
+  options?: {
+    admin?: boolean;
+    unauthenticatedMessage?: string;
+  },
+): Promise<{
+  viewer: Doc<"users">;
+  orgId: Id<"orgs">;
+  membership: EffectiveOrgMembership;
+}> {
+  const viewer = await ensureActiveViewerUser(ctx, {
+    unauthenticatedMessage: options?.unauthenticatedMessage,
+  });
+  const orgId = requestedOrgId ?? requireOrgId(viewer);
+  const membership = await requireOrgMembership(ctx, orgId, viewer._id, {
+    admin: options?.admin,
+  });
+  return { viewer, orgId, membership };
+}
+
 export async function isSpaceMember(
   ctx: AuthCtx,
   spaceId: Id<"spaces">,
   userId: Id<"users">,
 ): Promise<boolean> {
-  const viewer = await ctx.db.get(userId);
-  if (!viewer?.orgId) return false;
+  const space = await ctx.db.get(spaceId);
+  if (!space?.orgId) return false;
   const membership = await ctx.db
     .query("spaceMemberships")
     .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
-      q.eq("orgId", viewer.orgId).eq("spaceId", spaceId).eq("userId", userId),
+      q.eq("orgId", space.orgId).eq("spaceId", spaceId).eq("userId", userId),
     )
     .unique();
   return membership !== null;
@@ -361,13 +509,23 @@ export async function canAccessSpace(
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
   const space = await ctx.db.get(spaceId);
-  const viewer = viewerId ? await ctx.db.get(viewerId) : null;
-  const orgId = viewer?.orgId ?? await getDemoOrgId(ctx);
+  const orgId = space?.orgId ?? await getDemoOrgId(ctx);
   if (!space || space.orgId !== orgId) {
     return false;
   }
 
   if (viewerId) {
+    const orgMembership = await getOrgMembership(ctx, orgId, viewerId);
+    if (
+      !orgMembership ||
+      orgMembership.status !== "active" ||
+      orgMembership.deactivatedAt
+    ) {
+      return false;
+    }
+    if (orgMembership.role === "admin" || space.visibility !== "private") {
+      return true;
+    }
     return await isSpaceMember(ctx, spaceId, viewerId);
   }
 
@@ -379,8 +537,20 @@ export async function canAccessPost(
   post: Doc<"posts">,
   viewerId: Id<"users"> | undefined,
 ): Promise<boolean> {
-  const orgId = viewerId ? (await ctx.db.get(viewerId))?.orgId : await getDemoOrgId(ctx);
-  if (post.orgId !== orgId) return false;
+  const orgId = post.orgId;
+  if (!orgId) return false;
+  if (viewerId) {
+    const membership = await getOrgMembership(ctx, orgId, viewerId);
+    if (
+      !membership ||
+      membership.status !== "active" ||
+      membership.deactivatedAt
+    ) {
+      return false;
+    }
+  } else if (orgId !== await getDemoOrgId(ctx)) {
+    return false;
+  }
 
   if (!post.spaceId) {
     return true;
@@ -389,13 +559,111 @@ export async function canAccessPost(
   return await canAccessSpace(ctx, post.spaceId, viewerId);
 }
 
-export async function requireSpaceMember(
+export async function requireSpaceReadAccess(
   ctx: AuthCtx,
   spaceId: Id<"spaces">,
   viewerId: Id<"users">,
   message = "You do not have access to this space.",
 ): Promise<void> {
-  if (!(await isSpaceMember(ctx, spaceId, viewerId))) {
+  if (!(await canAccessSpace(ctx, spaceId, viewerId))) {
     forbidden(message);
   }
+}
+
+/**
+ * Single write path for organization role/status/deactivation changes.
+ * Writes the membership row (source of truth) and mirrors onto the legacy
+ * user fields while the deployed client still reads them.
+ * `deactivatedAt: null` clears the flag.
+ */
+export async function upsertOrgMembership(
+  ctx: MutationCtx,
+  orgId: Id<"orgs">,
+  userId: Id<"users">,
+  patch: {
+    role?: "admin" | "tester" | "member";
+    status?: "pending" | "active";
+    deactivatedAt?: number | null;
+  },
+): Promise<void> {
+  const now = Date.now();
+  const existing = await ctx.db
+    .query("orgMemberships")
+    .withIndex("by_org_id_and_user_id", (q) =>
+      q.eq("orgId", orgId).eq("userId", userId),
+    )
+    .unique();
+  const user = await ctx.db.get(userId);
+  const legacyMatches = user?.orgId === orgId;
+  if (existing) {
+    const membershipPatch: Partial<Doc<"orgMemberships">> = { updatedAt: now };
+    if (patch.role !== undefined) membershipPatch.role = patch.role;
+    if (patch.status !== undefined) membershipPatch.status = patch.status;
+    if (patch.deactivatedAt !== undefined) {
+      membershipPatch.deactivatedAt = patch.deactivatedAt ?? undefined;
+    }
+    await ctx.db.patch(existing._id, membershipPatch);
+  } else {
+    await ctx.db.insert("orgMemberships", {
+      orgId,
+      userId,
+      role: patch.role ?? (legacyMatches ? user?.role ?? "member" : "member"),
+      status: patch.status ?? (legacyMatches ? user?.status ?? "active" : "active"),
+      deactivatedAt:
+        patch.deactivatedAt !== undefined
+          ? patch.deactivatedAt ?? undefined
+          : legacyMatches
+            ? user?.deactivatedAt
+            : undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+  if (user && legacyMatches) {
+    const legacy: Partial<Doc<"users">> = {};
+    if (patch.role !== undefined) legacy.role = patch.role;
+    if (patch.status !== undefined) legacy.status = patch.status;
+    if (patch.deactivatedAt !== undefined) legacy.deactivatedAt = patch.deactivatedAt ?? undefined;
+    if (Object.keys(legacy).length > 0) await ctx.db.patch(userId, legacy);
+  }
+}
+
+export async function canManageSpace(
+  ctx: AuthCtx,
+  spaceId: Id<"spaces">,
+  userId: Id<"users">,
+): Promise<boolean> {
+  const space = await ctx.db.get(spaceId);
+  if (!space?.orgId) return false;
+  const orgMembership = await getOrgMembership(ctx, space.orgId, userId);
+  if (
+    !orgMembership ||
+    orgMembership.status !== "active" ||
+    orgMembership.deactivatedAt
+  ) {
+    return false;
+  }
+  if (orgMembership.role === "admin") return true;
+  const membership = await ctx.db
+    .query("spaceMemberships")
+    .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
+      q.eq("orgId", space.orgId).eq("spaceId", spaceId).eq("userId", userId),
+    )
+    .unique();
+  return membership?.role === "manager";
+}
+
+export async function requireSpaceWriteAccess(
+  ctx: AuthCtx,
+  spaceId: Id<"spaces">,
+  userId: Id<"users">,
+): Promise<Doc<"spaces">> {
+  const space = await ctx.db.get(spaceId);
+  if (!space?.orgId || !(await canAccessSpace(ctx, spaceId, userId))) {
+    forbidden("You do not have access to this space.");
+  }
+  if (space.archivedAt) {
+    forbidden("Archived spaces are read-only.");
+  }
+  return space;
 }

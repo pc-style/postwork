@@ -5,14 +5,16 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import {
   canAccessPost,
+  ensureActiveOrgViewer,
   ensureActiveViewerUser,
   forbidden,
   notFound,
-  requireSpaceMember,
+  requireOrgMembership,
+  requireSpaceReadAccess,
+  requireSpaceWriteAccess,
   resolveReadScope,
   getViewerFromAuth,
   unauthenticated,
-  requireOrgId,
 } from "./authUsers";
 import { priority } from "./schema";
 import { publicUser, type PublicUser } from "./users";
@@ -579,8 +581,7 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = requireOrgId(viewer);
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx);
 
     // Rate limit (Phase 3.1).
     await rateLimiter.limit(ctx, "createPost", { key: viewer._id, throws: true });
@@ -597,7 +598,7 @@ export const create = mutation({
     }
 
     if (args.spaceId) {
-      await requireSpaceMember(ctx, args.spaceId, viewer._id);
+      await requireSpaceWriteAccess(ctx, args.spaceId, viewer._id);
     }
 
     const now = Date.now();
@@ -652,12 +653,11 @@ export const markRead = mutation({
     postId: v.id("posts"),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = requireOrgId(viewer);
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx);
     const post = await ctx.db.get(args.postId);
     if (!post || post.orgId !== orgId) notFound("Post not found.");
     if (post.spaceId) {
-      await requireSpaceMember(ctx, post.spaceId, viewer._id);
+      await requireSpaceReadAccess(ctx, post.spaceId, viewer._id);
     }
 
     await upsertRead(ctx, orgId, viewer._id, args.postId, Date.now());
@@ -667,8 +667,7 @@ export const markRead = mutation({
 export const markAllRead = mutation({
   args: {},
   handler: async (ctx) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = requireOrgId(viewer);
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx);
     const now = Date.now();
     const posts = await ctx.db
       .query("posts")
@@ -692,9 +691,12 @@ export const storeSummary = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
+    if (!post?.orgId) notFound("Post not found.");
+    await requireOrgMembership(ctx, post.orgId, viewer._id, {
+      message: "Post not found.",
+    });
     if (post.spaceId) {
-      await requireSpaceMember(ctx, post.spaceId, viewer._id);
+      await requireSpaceReadAccess(ctx, post.spaceId, viewer._id);
     }
 
     await ctx.db.patch(args.postId, {
@@ -747,7 +749,10 @@ export const edit = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
+    if (!post?.orgId) notFound("Post not found.");
+    await requireOrgMembership(ctx, post.orgId, viewer._id, {
+      message: "Post not found.",
+    });
     if (post.authorId !== viewer._id) {
       forbidden("You can only edit your own posts.");
     }
@@ -775,12 +780,15 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
-    if (post.authorId !== viewer._id && viewer.role !== "admin") {
+    if (!post?.orgId) notFound("Post not found.");
+    const membership = await requireOrgMembership(ctx, post.orgId, viewer._id, {
+      message: "Post not found.",
+    });
+    if (post.authorId !== viewer._id && membership.role !== "admin") {
       forbidden("Only the author or an admin can delete a post.");
     }
 
-    const orgId = viewer.orgId;
+    const orgId = post.orgId;
 
     // Delete all replies on this post.
     const replies = await ctx.db

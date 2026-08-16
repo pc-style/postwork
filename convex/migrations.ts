@@ -35,6 +35,46 @@ export const activateFirstProductAdmin = internalMutation({
   },
 });
 
+/**
+ * Additive multi-workspace rollout: create an orgMemberships row for every
+ * user that only has legacy org fields. Idempotent — safe to re-run.
+ */
+export const backfillOrgMemberships = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    let created = 0;
+    let skipped = 0;
+    for (const user of await ctx.db.query("users").collect()) {
+      if (!user.orgId) {
+        skipped += 1;
+        continue;
+      }
+      const existing = await ctx.db
+        .query("orgMemberships")
+        .withIndex("by_org_id_and_user_id", (q) =>
+          q.eq("orgId", user.orgId!).eq("userId", user._id),
+        )
+        .unique();
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+      const now = Date.now();
+      await ctx.db.insert("orgMemberships", {
+        orgId: user.orgId,
+        userId: user._id,
+        role: user.role ?? "member",
+        status: user.status ?? "active",
+        deactivatedAt: user.deactivatedAt,
+        createdAt: now,
+        updatedAt: now,
+      });
+      created += 1;
+    }
+    return { created, skipped };
+  },
+});
+
 export const auditTenantOwnership = internalQuery({
   args: {},
   handler: async (ctx) => {

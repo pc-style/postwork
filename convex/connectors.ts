@@ -10,7 +10,7 @@ import {
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { ensureActiveViewerUser, getViewerFromAuth, initialsFrom } from "./authUsers";
+import { ensureActiveViewerUser, getOrgMembership, getViewerFromAuth, initialsFrom } from "./authUsers";
 import { insertAgentReply } from "./replies";
 import { connectorAuthStrategy, connectorCapability } from "./schema";
 import { parse, replyBodySchema } from "./lib/validation";
@@ -84,7 +84,16 @@ async function requireAdminForRead(ctx: QueryCtx): Promise<OrgUser> {
 
 async function requireAdminForWrite(ctx: MutationCtx): Promise<OrgUser> {
   const viewer = await ensureActiveViewerUser(ctx);
-  if (!viewer.orgId || viewer.role !== "admin") forbidden("Admins only.");
+  if (!viewer.orgId) forbidden("Admins only.");
+  const membership = await getOrgMembership(ctx, viewer.orgId, viewer._id);
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
+    forbidden("Admins only.");
+  }
   return viewer as OrgUser;
 }
 

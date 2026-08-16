@@ -4,11 +4,15 @@ import type { Doc } from "./_generated/dataModel";
 import {
   applyAvatarAction,
   computeAvatarUrl,
+  countAdmins,
+  ensureActiveOrgViewer,
   ensureActiveViewerUser,
   ensureViewerUser,
   findUserForIdentity,
+  getOrgMembership,
   getProductOrgId,
   resolveReadScope,
+  upsertOrgMembership,
 } from "./authUsers";
 import { rateLimiter } from "./lib/rateLimit";
 import {
@@ -256,20 +260,28 @@ export const setRole = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    if (viewer.role !== "admin") {
+    const { orgId } = await ensureActiveOrgViewer(ctx, undefined, {
+      admin: true,
+    });
+    const target = await ctx.db.get(args.userId);
+    const targetMembership = target
+      ? await getOrgMembership(ctx, orgId, target._id)
+      : null;
+    if (!target || !targetMembership) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
+    }
+    if (
+      targetMembership.role === "admin" &&
+      args.role !== "admin" &&
+      (await countAdmins(ctx, orgId)) <= 1
+    ) {
       throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "Only admins can manage roles.",
+        code: "INVALID_INPUT",
+        message: "An organization needs at least one admin.",
       });
     }
 
-    const target = await ctx.db.get(args.userId);
-    if (!target || target.orgId !== viewer.orgId) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
-    }
-
-    await ctx.db.patch(args.userId, { role: args.role });
+    await upsertOrgMembership(ctx, orgId, args.userId, { role: args.role });
     logInfo("user.roleChanged", { userId: args.userId, role: args.role });
   },
 });
@@ -282,16 +294,14 @@ export const setRole = mutation({
 export const deactivate = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    if (viewer.role !== "admin") {
-      throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "Only admins can deactivate users.",
-      });
-    }
-
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx, undefined, {
+      admin: true,
+    });
     const target = await ctx.db.get(args.userId);
-    if (!target || target.orgId !== viewer.orgId) {
+    const targetMembership = target
+      ? await getOrgMembership(ctx, orgId, target._id)
+      : null;
+    if (!target || !targetMembership) {
       throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
     }
     if (target._id === viewer._id) {
@@ -301,7 +311,7 @@ export const deactivate = mutation({
       });
     }
 
-    await ctx.db.patch(args.userId, { deactivatedAt: Date.now() });
+    await upsertOrgMembership(ctx, orgId, args.userId, { deactivatedAt: Date.now() });
     logInfo("user.deactivated", { userId: args.userId, adminId: viewer._id });
   },
 });
@@ -310,20 +320,18 @@ export const deactivate = mutation({
 export const reactivate = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    if (viewer.role !== "admin") {
-      throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "Only admins can reactivate users.",
-      });
-    }
-
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx, undefined, {
+      admin: true,
+    });
     const target = await ctx.db.get(args.userId);
-    if (!target || target.orgId !== viewer.orgId) {
+    const targetMembership = target
+      ? await getOrgMembership(ctx, orgId, target._id)
+      : null;
+    if (!target || !targetMembership) {
       throw new ConvexError({ code: "NOT_FOUND", message: "User not found." });
     }
 
-    await ctx.db.patch(args.userId, { deactivatedAt: undefined });
+    await upsertOrgMembership(ctx, orgId, args.userId, { deactivatedAt: null });
     logInfo("user.reactivated", { userId: args.userId, adminId: viewer._id });
   },
 });

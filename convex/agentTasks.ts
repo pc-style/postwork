@@ -7,10 +7,9 @@ import type { ActionCtx } from "./_generated/server";
 import { aiConfigured, resolveModel } from "./ai";
 import {
   canAccessPost,
-  ensureActiveViewerUser,
+  ensureActiveOrgViewer,
   forbidden,
   notFound,
-  requireOrgId,
   resolveReadScope,
 } from "./authUsers";
 import { agentTaskStatus } from "./schema";
@@ -132,8 +131,7 @@ export const create = mutation({
     prompt: v.string(),
   },
   handler: async (ctx, args) => {
-    const viewer = await ensureActiveViewerUser(ctx);
-    const orgId = requireOrgId(viewer);
+    const { viewer, orgId } = await ensureActiveOrgViewer(ctx);
     await rateLimiter.limit(ctx, "agentTask", { key: viewer._id, throws: true });
 
     const post = await ctx.db.get(args.postId);

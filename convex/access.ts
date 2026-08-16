@@ -1,7 +1,12 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
-import { ensureViewerUser, getProductOrgId, unauthenticated } from "./authUsers";
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import {
+  ensureViewerUser,
+  getProductOrgId,
+  unauthenticated,
+  upsertOrgMembership,
+} from "./authUsers";
 import { logAudit } from "./admin";
 import { logInfo } from "./lib/observability";
 import {
@@ -46,6 +51,47 @@ export const checkInvite = query({
  * the join. (Membership itself is currently org-wide on sign-in; this is the
  * future-proof hook where invite-gated membership will be enforced.)
  */
+/**
+ * Membership activation shared by code redemption and targeted-invite
+ * claiming. Adds the org membership (multi-workspace safe), mirrors legacy
+ * fields for accounts that have no home org yet, and honors space-scoped
+ * invites by adding the redeemer to the target space.
+ */
+async function activateMembershipFromInvite(
+  ctx: MutationCtx,
+  viewer: Doc<"users">,
+  orgId: Id<"orgs">,
+  invite: Doc<"invites">,
+): Promise<void> {
+  await upsertOrgMembership(ctx, orgId, viewer._id, {
+    status: "active",
+    deactivatedAt: null,
+  });
+  if (!viewer.orgId) {
+    await ctx.db.patch(viewer._id, { orgId, status: "active" });
+  }
+  if (invite.spaceId) {
+    const space = await ctx.db.get(invite.spaceId);
+    if (space && space.orgId === orgId && !space.archivedAt) {
+      const existing = await ctx.db
+        .query("spaceMemberships")
+        .withIndex("by_org_id_and_space_id_and_user_id", (q) =>
+          q.eq("orgId", orgId).eq("spaceId", invite.spaceId!).eq("userId", viewer._id),
+        )
+        .unique();
+      if (!existing) {
+        await ctx.db.insert("spaceMemberships", {
+          orgId,
+          spaceId: invite.spaceId,
+          userId: viewer._id,
+          role: "member",
+          createdAt: Date.now(),
+        });
+      }
+    }
+  }
+}
+
 export const redeemInvite = mutation({
   args: { code: v.string() },
   handler: async (ctx, args) => {
@@ -62,12 +108,6 @@ export const redeemInvite = mutation({
       });
     }
     const targetOrgId = invite.orgId ?? await getProductOrgId(ctx);
-    if (viewer.orgId && viewer.orgId !== targetOrgId) {
-      throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "Your account already belongs to a different organization.",
-      });
-    }
     const identity = await ctx.auth.getUserIdentity();
     if (identity && !identityMatchesInvite(identity, invite)) {
       throw new ConvexError({
@@ -76,7 +116,7 @@ export const redeemInvite = mutation({
       });
     }
     await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
-    await ctx.db.patch(viewer._id, { orgId: targetOrgId, status: "active" });
+    await activateMembershipFromInvite(ctx, viewer, targetOrgId, invite);
     await logAudit(ctx, {
       orgId: targetOrgId,
       actorId: viewer._id,
@@ -127,7 +167,7 @@ export const claimTargetedInvite = mutation({
 
       const orgId = invite.orgId ?? await getProductOrgId(ctx);
       await ctx.db.patch(invite._id, { usedCount: invite.usedCount + 1 });
-      await ctx.db.patch(viewer._id, { orgId, status: "active" });
+      await activateMembershipFromInvite(ctx, viewer, orgId, invite);
       await logAudit(ctx, {
         orgId,
         actorId: viewer._id,

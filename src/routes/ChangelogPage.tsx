@@ -9,6 +9,16 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "16 August 2026",
+    title: "one account, many workspaces",
+    note: "membership moved into its own table, so a single account can belong to several organizations: redeeming an invite for a second workspace now adds it instead of erroring. moderation (deactivate, reactivate, role changes) writes through the membership records, admin checks read them as the source of truth, and an org can never demote its last admin.",
+  },
+  {
+    date: "16 August 2026",
+    title: "spaces learned visibility, managers, and archives",
+    note: "spaces can now be public (anyone in the org can read and post) or private (members only, admins excepted). creators become managers, managers can rename, archive, and manage members, archived spaces turn read-only, and invites can target a specific space so redeeming one drops you straight into it.",
+  },
+  {
     date: "5 August 2026",
     title: "one font size, hierarchy from color",
     note: "beta feedback said the 11px meta text was too small, and the fix went deeper than a bump: the small label size is gone from the type scale entirely. chips, tags, meta rows, and small buttons now share the same 14px body size as everything else, with hierarchy carried by color and spacing instead of shrinking the font. tags stay compact through tighter padding, not tinier text.",

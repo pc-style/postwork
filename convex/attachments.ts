@@ -5,6 +5,7 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
+  requireOrgMembership,
   canAccessPost,
   resolveReadScope,
 } from "./authUsers";
@@ -210,10 +211,13 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const att = await ctx.db.get(args.attachmentId);
-    if (!att || att.orgId !== viewer.orgId) {
+    if (!att?.orgId) {
       throw new Error("Attachment not found.");
     }
-    if (att.uploadedBy !== viewer._id && viewer.role !== "admin") {
+    const membership = await requireOrgMembership(ctx, att.orgId, viewer._id, {
+      message: "Attachment not found.",
+    });
+    if (att.uploadedBy !== viewer._id && membership.role !== "admin") {
       throw new Error("Only the uploader or an admin can delete an attachment.");
     }
 

@@ -4,6 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
+  getOrgMembership,
   getViewerFromAuth,
 } from "./authUsers";
 import { publicUser } from "./users";
@@ -36,7 +37,17 @@ async function requireAdminForRead(ctx: QueryCtx): Promise<Doc<"users">> {
     throw new ConvexError({ code: "UNAUTHENTICATED", message: "Sign in first." });
   }
   // Admin implies an activated account — a pending user is never an admin.
-  if (viewer.status === "pending" || viewer.role !== "admin") {
+  // Membership rows are the source of truth; legacy user fields only back
+  // them up while the backfill rolls out.
+  const membership = viewer.orgId
+    ? await getOrgMembership(ctx, viewer.orgId, viewer._id)
+    : null;
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
   return viewer;
@@ -46,7 +57,15 @@ async function requireAdminForWrite(ctx: MutationCtx): Promise<Doc<"users">> {
   // ensureActiveViewerUser rejects pending (invite-not-redeemed) accounts, so
   // a pending first-user cannot mint themselves an invite via the admin API.
   const viewer = await ensureActiveViewerUser(ctx);
-  if (viewer.role !== "admin") {
+  const membership = viewer.orgId
+    ? await getOrgMembership(ctx, viewer.orgId, viewer._id)
+    : null;
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
   return viewer;
@@ -79,7 +98,13 @@ export const viewerIsAdmin = query({
   args: {},
   handler: async (ctx) => {
     const viewer = await getViewerFromAuth(ctx);
-    return viewer?.status !== "pending" && viewer?.role === "admin";
+    if (!viewer?.orgId) return false;
+    const membership = await getOrgMembership(ctx, viewer.orgId, viewer._id);
+    return (
+      membership?.status === "active" &&
+      !membership.deactivatedAt &&
+      membership.role === "admin"
+    );
   },
 });
 
