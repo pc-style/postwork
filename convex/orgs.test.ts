@@ -42,7 +42,7 @@ describe("organization slugs", () => {
     const created = await owner.mutation(api.orgs.create, { name: "Acme Inc", slug: "acme" });
     expect(created.slug).toBe("acme");
     const me = await owner.query(api.users.me, {});
-    expect(me?.org).toEqual({ name: "Acme Inc", slug: "acme" });
+    expect(me?.org).toMatchObject({ name: "Acme Inc", slug: "acme" });
   });
 
   test("rejects a slug already owned by another workspace", async () => {

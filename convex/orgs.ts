@@ -236,6 +236,7 @@ export const update = mutation({
     const { viewer } = await ensureActiveOrgViewer(ctx, args.orgId, {
       admin: true,
     });
+    await rateLimiter.limit(ctx, "governance", { key: viewer._id, throws: true });
     const org = await ctx.db.get(args.orgId);
     if (!org) forbidden("Organization not found.");
 

@@ -54,25 +54,35 @@ export function SettingsPage() {
 function WorkspaceSection() {
   const { currentUser } = useSession();
   const me = useQuery(api.users.me, demoPolicy.productAuth ? {} : "skip");
-  const setSlug = useMutation(api.orgs.setSlug);
+  const updateOrg = useMutation(api.orgs.update);
+  const [name, setNameDraft] = useState("");
   const [slug, setSlugDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (me?.org?.slug) setSlugDraft(me.org.slug);
+    if (me?.org?.name) setNameDraft(me.org.name);
   }, [me]);
 
-  const pristine = slug.trim() === (me?.org?.slug ?? "");
+  const pristine =
+    slug.trim() === (me?.org?.slug ?? "") &&
+    name.trim() === (me?.org?.name ?? "");
 
   const save = async () => {
+    if (!me?.org?._id) return;
     setSaving(true);
     setError(null);
     try {
-      const result = await setSlug({ slug });
-      setSlugDraft(result.slug);
+      const result = await updateOrg({
+        orgId: me.org._id,
+        name: name.trim() !== me.org.name ? name.trim() : undefined,
+        slug: slug.trim() !== me.org.slug ? slug.trim() : undefined,
+      });
+      setSlugDraft(result.slug ?? slug);
+      setNameDraft(result.name ?? name);
     } catch (caught) {
-      setError(getErrorMessage(caught, "couldn't update the workspace address. review the slug and try again."));
+      setError(getErrorMessage(caught, "couldn't update the workspace. review the fields and try again."));
     } finally {
       setSaving(false);
     }
@@ -87,10 +97,13 @@ function WorkspaceSection() {
           <p className="mt-2 text-body text-muted">{slug ? workspaceUrl(slug) : "this workspace still needs a slug."}</p>
           {currentUser?.role === "admin" ? (
             <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-              <FormField label="workspace slug" error={error}>
+              <FormField label="workspace name">
+                <input id="workspace-name" value={name} maxLength={64} onChange={(event) => { setNameDraft(event.target.value); setError(null); }} className="ui-field" placeholder="acme inc" />
+              </FormField>
+              <FormField label="workspace slug" help="old addresses keep working after a change." error={error}>
                 <input id="workspace-slug" value={slug} onChange={(event) => { setSlugDraft(event.target.value.toLowerCase()); setError(null); }} className="ui-field font-mono" placeholder="your-team" />
               </FormField>
-              <Button type="submit" size="sm" disabled={pristine || !slug.trim()} loading={saving} loadingLabel="saving…">save workspace address</Button>
+              <Button type="submit" size="sm" disabled={pristine || !slug.trim() || !name.trim()} loading={saving} loadingLabel="saving…">save workspace</Button>
             </form>
           ) : null}
         </div>
