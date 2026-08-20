@@ -128,7 +128,7 @@ export function AnchoredConfirmation({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
-          className={`absolute bottom-full z-40 mb-2 w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 text-left shadow-[0_12px_36px_rgba(0,0,0,0.5)] ${
+          className={`absolute bottom-full z-40 mb-2 w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 text-left ui-popover ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

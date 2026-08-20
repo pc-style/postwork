@@ -7,6 +7,26 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#0a0a0b" />
+    <script>
+      // Pre-paint theme boot: apply the stored preference before the bundle
+      // loads so light-mode users never flash dark. src/lib/theme.ts owns
+      // every change after this. Values must match its THEME_COLORS map.
+      (function () {
+        try {
+          var stored = localStorage.getItem("postwork:theme");
+          var light =
+            stored === "light" ||
+            (stored === "system" &&
+              window.matchMedia("(prefers-color-scheme: light)").matches);
+          if (light) {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.classList.add("light");
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute("content", "#f4f1f2");
+          }
+        } catch (error) {}
+      })();
+    </script>
 
     <title>Postwork — async team communication</title>
     <meta

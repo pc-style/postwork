@@ -7,6 +7,7 @@ import { FeedCoverModeToggle } from "../../components/FeedCover";
 import { FormField } from "../../components/FormField";
 import { NotificationSettingsSection } from "../../components/NotificationSettingsSection";
 import { ProfileSettingsForm } from "../../components/ProfileSettingsForm";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import { demoPolicy } from "../../lib/demoMode";
 import { useSession } from "../../lib/session";
 import { useDocumentTitle } from "../../lib/useDocumentTitle";
@@ -111,14 +112,25 @@ function SectionHeader({ title, description }: { title: string; description?: st
 function DisplaySection() {
   return (
     <section>
-      <SectionHeader title="display" description="how the feed shows post media on this device." />
-      <div className="max-w-xl rounded-lg border border-border bg-surface p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-title font-medium">feed media</h3>
-            <p className="mt-1 text-body text-muted">compact is text only; regular shows a thumbnail on each post.</p>
+      <SectionHeader title="display" description="how postwork looks on this device." />
+      <div className="max-w-xl space-y-4">
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-title font-medium">theme</h3>
+              <p className="mt-1 text-body text-muted">dark is the default; system follows your device.</p>
+            </div>
+            <ThemeToggle />
           </div>
-          <FeedCoverModeToggle />
+        </div>
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-title font-medium">feed media</h3>
+              <p className="mt-1 text-body text-muted">compact is text only; regular shows a thumbnail on each post.</p>
+            </div>
+            <FeedCoverModeToggle />
+          </div>
         </div>
       </div>
     </section>

@@ -9,12 +9,40 @@ import {
   getRequiredProductViteEnv,
 } from "./demoMode";
 import { SessionProvider } from "./session";
+import { useResolvedTheme, type ResolvedTheme } from "./theme";
 import { StoreProvider } from "./store";
 import { AgentTasksProvider } from "./agentTasks";
 import { ExperimentProvider } from "../flashExperiments/active";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
-export const clerkAppearance = {
+// Clerk renders in an isolated tree, so its `variables` need literal hexes:
+// these duplicate the @theme values in src/index.css per resolved theme.
+const CLERK_VARIABLES: Record<ResolvedTheme, Record<string, string>> = {
+  dark: {
+    colorBackground: "#121014",
+    colorText: "#e8e6e3",
+    colorTextSecondary: "#a19d98",
+    colorPrimary: "#8c1862",
+    colorTextOnPrimaryBackground: "#f5eef2",
+    colorInputBackground: "#0a0a0b",
+    colorInputText: "#e8e6e3",
+    colorNeutral: "#a19d98",
+    colorDanger: "#ff7b7b",
+  },
+  light: {
+    colorBackground: "#fbf9fa",
+    colorText: "#262023",
+    colorTextSecondary: "#6b6468",
+    colorPrimary: "#8c1862",
+    colorTextOnPrimaryBackground: "#f5eef2",
+    colorInputBackground: "#f4f1f2",
+    colorInputText: "#262023",
+    colorNeutral: "#6b6468",
+    colorDanger: "#bb2d3d",
+  },
+};
+
+const clerkAppearanceBase = {
   layout: {
     // Branding and the "Development mode" banner clash with the product
     // frame; the sign-in/create-account fork lives in our own toggle
@@ -22,20 +50,6 @@ export const clerkAppearance = {
     logoPlacement: "none",
     shimmer: false,
     unsafe_disableDevelopmentModeWarnings: true,
-  },
-  variables: {
-    colorBackground: "#121014",
-    colorText: "#e8e6e3",
-    colorTextSecondary: "#a19d98",
-    colorPrimary: "#8c1862",
-    colorTextOnPrimaryBackground: "#e8e6e3",
-    colorInputBackground: "#0a0a0b",
-    colorInputText: "#e8e6e3",
-    colorNeutral: "#a19d98",
-    colorDanger: "#ff7b7b",
-    borderRadius: "6px",
-    fontFamily:
-      '"Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
   },
   elements: {
     rootBox: "w-full",
@@ -54,7 +68,7 @@ export const clerkAppearance = {
     formFieldInput:
       "min-h-11 border-border bg-bg text-fg shadow-none placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent",
     formButtonPrimary:
-      "min-h-11 bg-accent text-fg shadow-none transition-colors hover:bg-accent-hover focus:ring-2 focus:ring-accent-soft",
+      "min-h-11 bg-accent text-accent-fg shadow-none transition-colors hover:bg-accent-hover focus:ring-2 focus:ring-accent-soft",
     footer: "hidden",
     footerAction: "hidden",
     identityPreviewText: "text-fg",
@@ -64,12 +78,27 @@ export const clerkAppearance = {
   },
 } as const;
 
+/** Theme-aware Clerk appearance; re-renders Clerk UI when the theme flips. */
+export function useClerkAppearance() {
+  const resolved = useResolvedTheme();
+  return {
+    ...clerkAppearanceBase,
+    variables: {
+      ...CLERK_VARIABLES[resolved],
+      borderRadius: "6px",
+      fontFamily:
+        '"Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+    },
+  } as const;
+}
+
 // Ordering dependency: SessionProvider must be the outermost of these, since
 // StoreProvider and AgentTasksProvider call useSession() internally.
 // AgentTasksProvider also calls useStore(), and the always-mounted
 // ExperimentProvider keeps experiment hooks safe even when demo mode disables
 // the lab routes.
 export function AppProviders({ children }: { children: ReactNode }) {
+  const clerkAppearance = useClerkAppearance();
   if (!demoPolicy.productAuth) {
     return (
       <ErrorBoundary>

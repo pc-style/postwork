@@ -57,7 +57,7 @@ function LandingContent({ signedIn }: { signedIn: boolean }) {
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link
             to="/app"
-            className="ui-button rounded-md bg-accent px-5 py-2.5 text-body font-medium text-fg hover:bg-accent-hover"
+            className="ui-button rounded-md bg-accent px-5 py-2.5 text-body font-medium text-accent-fg hover:bg-accent-hover"
           >
             {signedIn ? "open app" : "sign in"}
           </Link>

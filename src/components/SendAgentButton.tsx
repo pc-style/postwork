@@ -74,7 +74,7 @@ export function SendAgentButton({
         <span
           role="menu"
           aria-label="Choose an agent"
-          className="absolute right-0 top-full z-30 mt-1 w-44 rounded-md border border-border bg-surface p-1 shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
+          className="absolute right-0 top-full z-30 mt-1 w-44 rounded-md border border-border bg-surface p-1 ui-popover"
         >
           {Object.keys(AGENT_HANDLES).map((handle, index) => (
             <button

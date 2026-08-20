@@ -64,7 +64,7 @@ export function UserSwitcher() {
               close();
             }
           }}
-          className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_42px_rgba(0,0,0,0.55)]"
+          className="absolute bottom-full left-0 z-50 mb-2 max-h-[min(28rem,65vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-border bg-surface p-1 ui-popover"
         >
           <p id={headingId} className="px-3 py-2 text-body font-medium text-muted">view as teammate</p>
           {users.map((user) => {
