@@ -110,3 +110,10 @@ export function useResolvedTheme(): ResolvedTheme {
     (): ResolvedTheme => "dark",
   );
 }
+
+// Re-apply at module init so the stored preference sticks even where the
+// index.html boot script cannot run (e.g. a CSP that bans inline scripts).
+// When the script did run this is a no-op re-applying the same class.
+if (typeof window !== "undefined") {
+  applyResolvedTheme();
+}
