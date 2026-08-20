@@ -20,6 +20,7 @@ const langs = {
 
 const themes = {
   vesper: () => import("@shikijs/themes/vesper"),
+  "min-light": () => import("@shikijs/themes/min-light"),
 };
 
 type SupportedLang = keyof typeof langs;
@@ -76,7 +77,13 @@ export async function highlight(
   if (!normalized) return null;
 
   try {
-    return await codeToHtml(code, { lang: normalized, theme: "vesper" });
+    // Dual output: dark colors inline, light colors in --shiki-light CSS
+    // vars that index.css activates under html.light.
+    return await codeToHtml(code, {
+      lang: normalized,
+      themes: { dark: "vesper", light: "min-light" },
+      defaultColor: "dark",
+    });
   } catch {
     return null;
   }

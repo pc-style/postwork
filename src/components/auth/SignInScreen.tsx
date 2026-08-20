@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { SignIn, SignUp } from "@clerk/clerk-react";
-import { clerkAppearance } from "../../lib/providers";
+import { useClerkAppearance } from "../../lib/providers";
 import { AuthShell } from "./AuthShell";
 
 /**
@@ -14,6 +14,7 @@ export function SignInScreen() {
   // /app/settings must land back on that URL, not Clerk's default "/".
   const redirectTarget = `${window.location.pathname}${window.location.search}`;
   const [mode, setMode] = useState<"sign-in" | "create-account">("sign-in");
+  const clerkAppearance = useClerkAppearance();
 
   return (
     <AuthShell

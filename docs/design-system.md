@@ -12,7 +12,14 @@ the polish sweep and has stale chip/selection rules).
 - One accent family: `accent` (solid fills), `accent-soft` (focus outlines, accent text, wordmark "work"), `accent-hover`.
 - Accent means ACTION (buttons, focus, caret, selection highlight). Never use accent to indicate location or selection state; active nav/tabs are `bg-surface-2 text-fg`, no accent.
 - Priority colors: `urgent` (also the error color), `high`, `normal`. Tint fills at low opacity (`bg-urgent/10 text-urgent`), never solid red buttons.
+- `accent-fg` text/icons on SOLID accent fills (primary buttons). It stays light in both themes; `fg` on `bg-accent` breaks in light mode.
 - No new hex values in components. Need a new color? Add a token in `@theme` first.
+
+## theming
+
+- Two themes, same roles: dark (default) and light. Dark values live in `@theme`; light overrides them under `html.light` in `src/index.css`. Components never branch on theme - if something needs a different value per theme, fix the token, not the component.
+- Preference is per-device (`dark`/`light`/`system`), stored at `postwork:theme`, owned by `src/lib/theme.ts` (toggle in settings > display). A pre-paint script in `index.html` applies the class and meta theme-color before the bundle loads; keep its hexes in sync with the tokens.
+- Isolated trees that can't read CSS vars (Clerk) duplicate the palette per theme in `src/lib/providers.tsx` (`useClerkAppearance`); code blocks render dual shiki themes (`vesper` dark / `min-light` light, flipped in index.css). Update all of these when token values change.
 
 ## type scale
 
@@ -63,7 +70,7 @@ states) is lowercase; user-generated content is never transformed. Use `…` not
 - `.ui-field` all text inputs/textareas/selects. Lives in `@layer components` so Tailwind utilities win: override height with `min-h-24` etc. at the call site, never by editing the class.
 - `.ui-button` on every Button (via the component); gives the 150ms transition + press scale. Use the `Button` component, not raw `<button>`.
 - `.ui-error` inline error note (urgent tint). `.ui-skeleton` shimmer block. `.ui-spinner` Button-internal only.
-- `.ui-dialog` dialog/sheet shadow stack. `.ui-reveal` 150ms entrance for progressively disclosed chrome (e.g. composer footer).
+- `.ui-dialog` dialog/sheet shadow stack. `.ui-popover` floating menus/pickers/anchored confirms (theme-aware, lighter than dialogs). `.ui-reveal` 150ms entrance for progressively disclosed chrome (e.g. composer footer).
 - `.ui-media-outline` / `.ui-interactive-media` hairline + hover/press treatment for images and embeds.
 - `.prose-post`, `.type-heading`, `.type-description`, `.type-numeric` text-wrapping helpers; they never set font sizes.
 

@@ -108,7 +108,7 @@ function TenantFollowGate({
         </p>
         <a
           href={canonicalUrl}
-          className="ui-button mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+          className="ui-button mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-accent-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
         >
           open {activeOrg.name}
         </a>

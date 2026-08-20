@@ -81,7 +81,7 @@ export function GifPicker({
           id={pickerId}
           role="dialog"
           aria-labelledby={titleId}
-          className="absolute bottom-full left-0 z-30 mb-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
+          className="absolute bottom-full left-0 z-30 mb-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-3 ui-popover"
         >
           <div className="mb-2 flex items-center justify-between gap-3">
             <p id={titleId} className="text-body font-medium text-fg">find a GIF</p>

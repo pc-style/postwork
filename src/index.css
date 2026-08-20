@@ -12,6 +12,7 @@
   --color-accent: #8c1862;
   --color-accent-soft: #ca559d;
   --color-accent-hover: #af367e;
+  --color-accent-fg: #f5eef2;
   --color-avatar-fallback: #3a2526;
 
   /* priority state colors (urgent doubles as the error color); tint fills only */
@@ -50,6 +51,29 @@
   color-scheme: dark;
 }
 
+/* light theme: same roles, flat warm-ink palette (buzz-inspired). The boot
+   script in index.html and src/lib/theme.ts own the html.light class; dark
+   values above stay the default. accent-fg stays light in both themes so
+   text on solid accent fills never loses contrast. */
+html.light {
+  color-scheme: light;
+  --color-bg: #f4f1f2;
+  --color-surface: #fbf9fa;
+  --color-surface-2: #eae5e7;
+  --color-border: #d8d1d4;
+  --color-fg: #262023;
+  --color-muted: #6b6468;
+  --color-faint: #a39ca0;
+  --color-accent: #8c1862;
+  --color-accent-soft: #a11e72;
+  --color-accent-hover: #76124f;
+  --color-accent-fg: #f5eef2;
+  --color-avatar-fallback: #e9d5dc;
+  --color-urgent: #bb2d3d;
+  --color-high: #8a6512;
+  --color-normal: #6b6468;
+}
+
 html,
 body,
 #root {
@@ -83,7 +107,7 @@ body {
 
 ::selection {
   background: var(--color-accent);
-  color: var(--color-fg);
+  color: var(--color-accent-fg);
 }
 
 :focus-visible {
@@ -217,7 +241,7 @@ samp {
 }
 
 .ui-media-outline {
-  outline: 1px solid rgb(255 255 255 / 0.1);
+  outline: 1px solid color-mix(in srgb, var(--color-fg) 12%, transparent);
   outline-offset: -1px;
 }
 
@@ -273,6 +297,30 @@ samp {
     0 0 0 1px color-mix(in srgb, var(--color-fg) 8%, transparent),
     0 8px 24px -8px rgb(0 0 0 / 0.52),
     0 24px 56px -24px rgb(0 0 0 / 0.68);
+}
+
+/* floating popovers (menus, anchored confirms, pickers); lighter than the
+   dialog stack, theme-aware so light mode doesn't get dark-tuned shadows */
+.ui-popover {
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.5);
+}
+
+html.light .ui-popover {
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.16);
+}
+
+html.light .ui-dialog {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-fg) 10%, transparent),
+    0 8px 24px -8px rgb(0 0 0 / 0.16),
+    0 24px 56px -24px rgb(0 0 0 / 0.22);
+}
+
+/* code blocks: shiki renders dual-theme output (dark inline, light in CSS
+   vars — see src/lib/shiki.ts); these rules flip it with the theme class. */
+html.light .shiki,
+html.light .shiki span {
+  color: var(--shiki-light) !important;
 }
 
 dialog[open] {

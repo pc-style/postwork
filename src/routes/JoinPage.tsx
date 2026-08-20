@@ -25,7 +25,7 @@ export function JoinPage() {
       >
         <Link
           to={isDemo ? "/" : "/app"}
-          className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+          className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-accent-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
         >
           sign in and request access
         </Link>
@@ -113,7 +113,7 @@ function RedeemInvite({
           <div className="mt-5 grid gap-3">
             <Link
               to="/app"
-              className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
+              className="ui-button inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent px-4 text-body font-medium text-accent-fg transition-colors hover:border-accent-hover hover:bg-accent-hover"
             >
               sign in to accept
             </Link>
