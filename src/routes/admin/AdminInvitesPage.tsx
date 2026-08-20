@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import type { FunctionReturnType } from "convex/server";
 import { timeAgo } from "../../lib/format";
 import { Button } from "../../components/Button";
@@ -37,6 +38,9 @@ export function AdminInvitesPage() {
   const [creating, setCreating] = useState(false);
   const [target, setTarget] = useState("");
   const [targetError, setTargetError] = useState<string | null>(null);
+  const [spaceId, setSpaceId] = useState("");
+  const spaces = useQuery(api.spaces.list, {});
+  const openSpaces = (spaces ?? []).filter((space) => !space.archivedAt);
   const selected = invites?.find((i) => i._id === selectedId) ?? null;
 
   const mint = async () => {
@@ -46,8 +50,10 @@ export function AdminInvitesPage() {
       const id = await createInvite({
         maxUses: 1,
         target: target.trim() || undefined,
+        spaceId: spaceId ? (spaceId as Id<"spaces">) : undefined,
       });
       setTarget("");
+      setSpaceId("");
       setSelectedId(id);
     } catch (err) {
       setTargetError(
@@ -63,7 +69,7 @@ export function AdminInvitesPage() {
   return (
     <AdminPage
       title="invites"
-      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person. they activate automatically on sign-in."
+      description="codes that admit new members. single-use by default; revoke anytime. add a github handle or email to reserve the invite for that person — they activate automatically on sign-in. pick a landing space and redeeming drops them straight into it, private spaces included."
       actions={
         <div className="flex flex-col items-end gap-1">
           <div className="flex w-full flex-wrap items-center justify-end gap-2">
@@ -79,6 +85,21 @@ export function AdminInvitesPage() {
               placeholder="@github-handle or email (optional)"
               className="ui-field min-w-0 max-w-56 flex-1 font-mono text-body placeholder:font-sans"
             />
+            {openSpaces.length > 0 ? (
+              <select
+                value={spaceId}
+                onChange={(e) => setSpaceId(e.target.value)}
+                aria-label="Landing space"
+                className="min-h-11 rounded-lg border border-border bg-bg px-2 py-2 text-xs text-fg focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+              >
+                <option value="">no landing space</option>
+                {openSpaces.map((space) => (
+                  <option key={space._id} value={space._id}>
+                    → {space.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <Button
               onClick={() => void mint()}
               loading={creating}
@@ -117,6 +138,11 @@ export function AdminInvitesPage() {
               render: (invite) => formatTarget(invite) ?? <span className="text-muted">none</span>,
             },
             {
+              label: "space",
+              className: "max-w-[10rem] truncate text-xs text-muted",
+              render: (invite) => invite.spaceName ?? <span className="text-muted">—</span>,
+            },
+            {
               label: "note",
               className: "max-w-[16rem] truncate text-muted",
               render: (invite) => invite.note ?? "none",
@@ -142,10 +168,96 @@ export function AdminInvitesPage() {
         />
       )}
 
+      <AutoJoinDomains />
+
       {selected && (
         <InviteSheet invite={selected} onClose={() => setSelectedId(null)} />
       )}
     </AdminPage>
+  );
+}
+
+/**
+ * JIT provisioning: sign-ups whose email lives on a claimed domain become
+ * members automatically, no invite needed. Claiming requires the admin's own
+ * email to be on the domain; public providers are refused server-side.
+ */
+function AutoJoinDomains() {
+  const domains = useQuery(api.orgDomains.list);
+  const addDomain = useMutation(api.orgDomains.add);
+  const removeDomain = useMutation(api.orgDomains.remove);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!draft.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await addDomain({ domain: draft });
+      setDraft("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error && caught.message.length < 200
+          ? caught.message.replace(/^.*Uncaught ConvexError:?\s*/i, "").split("\n")[0]
+          : "couldn't add that domain.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-body font-medium lowercase text-muted">auto-join domains</h2>
+      <p className="mt-1 max-w-2xl text-body text-muted">
+        anyone signing up with an email on these domains joins this workspace
+        automatically — no invite needed. you can only claim the domain your
+        own email uses; public providers are refused.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {(domains ?? []).map((entry) => (
+          <span
+            key={entry._id}
+            className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 font-mono text-body text-fg"
+          >
+            {entry.domain}
+            <button
+              type="button"
+              aria-label={`stop auto-join for ${entry.domain}`}
+              disabled={busy}
+              onClick={() => void removeDomain({ domainId: entry._id })}
+              className="rounded px-1 text-body text-muted transition-colors hover:bg-surface-2 hover:text-urgent focus-visible:outline-2 focus-visible:outline-accent-soft"
+            >
+              remove
+            </button>
+          </span>
+        ))}
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <input
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setError(null);
+            }}
+            placeholder="acme.com"
+            aria-label="Claim an auto-join domain"
+            className="min-h-11 w-40 rounded-lg border border-dashed border-border bg-bg px-3 py-2 font-mono text-body placeholder:font-sans focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+          />
+          <Button type="submit" variant="secondary" size="sm" loading={busy} loadingLabel="adding…" disabled={!draft.trim()}>
+            add domain
+          </Button>
+        </form>
+      </div>
+      {error ? <p role="alert" className="mt-2 text-body text-urgent">{error}</p> : null}
+    </section>
   );
 }
 

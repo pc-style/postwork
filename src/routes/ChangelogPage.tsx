@@ -9,6 +9,56 @@ type Change = {
 
 const changes: readonly Change[] = [
   {
+    date: "16 August 2026",
+    title: "sign up with your work email, land in your workspace",
+    note: "admins can claim their company's email domain (only the one their own account uses — public providers are refused), and from then on anyone signing up with a matching address becomes a member automatically. no invite, no access request, no waiting. moderated accounts never sneak back in this way, and every domain claim and join lands in the audit log.",
+  },
+  {
+    date: "16 August 2026",
+    title: "the url is the workspace",
+    note: "opening a workspace address like acme.postwork.pcstyle.dev now takes you into that workspace if your account belongs to it — the session follows the link instead of bouncing you to a 'wrong address' screen. old addresses redirect to the renamed one, non-members still get the polite refusal, and switching workspaces while on a tenant address moves the browser to the right subdomain.",
+  },
+  {
+    date: "16 August 2026",
+    title: "your workspace data is yours: one-click json export",
+    note: "admins get a workspace export card on the admin overview: members, spaces, posts, and replies stream down in pages and land as a single json file. token identifiers, emails, and secrets never leave the server.",
+  },
+  {
+    date: "16 August 2026",
+    title: "approving an access request now emails the invite",
+    note: "the approve button used to mint a code an admin had to copy out of the invites list and deliver by hand. now the requester gets their join link by email automatically, and creating an invite targeted at an email address delivers itself the same way. one send per invite, idempotent, silent on demo deployments — the code stays visible in the admin ui as a manual fallback.",
+  },
+  {
+    date: "16 August 2026",
+    title: "x pulse learned analytics: followers, views, and a daily digest",
+    note: "the x cross-post connector now snapshots follower counts and per-post engagement (views, likes, reposts, replies) every hour, and once a day the connector agent posts a digest: follower delta, top posts of the last 24 hours with stats and links. one digest per local day, race-safe. the thing you check twitter for now actually lives in postwork.",
+  },
+  {
+    date: "16 August 2026",
+    title: "space managers can actually manage members now",
+    note: "the member roster on a space page grew controls for managers and org admins: add anyone from the org directory (agents included), remove members, and promote or demote managers — all inline on the chips. private spaces stop depending on invites as the only way in.",
+  },
+  {
+    date: "16 August 2026",
+    title: "postwork now emails you before you forget it exists",
+    note: "the outbound notification pipeline finally has a driver: a scheduler ticks every 30 minutes, sends one email the moment something urgent lands (deduped per urgent-post set), and one daily digest of unread activity released when your quiet hours end. reading a post in the app removes it from future emails, and every send is idempotent — no double delivery, ever. requires a configured resend provider; demo stays email-free.",
+  },
+  {
+    date: "16 August 2026",
+    title: "switch workspaces without signing out",
+    note: "accounts that belong to more than one organization get a workspace picker in the profile rail. picking one flips the whole session — feed, spaces, queue — to that org. space creation now offers public or private visibility up front, space pages show private and archived states, public spaces have join/leave, and managers can archive or unarchive from the space header.",
+  },
+  {
+    date: "16 August 2026",
+    title: "one account, many workspaces",
+    note: "membership moved into its own table, so a single account can belong to several organizations: redeeming an invite for a second workspace now adds it instead of erroring. moderation (deactivate, reactivate, role changes) writes through the membership records, admin checks read them as the source of truth, and an org can never demote its last admin.",
+  },
+  {
+    date: "16 August 2026",
+    title: "spaces learned visibility, managers, and archives",
+    note: "spaces can now be public (anyone in the org can read and post) or private (members only, admins excepted). creators become managers, managers can rename, archive, and manage members, archived spaces turn read-only, and invites can target a specific space so redeeming one drops you straight into it.",
+  },
+  {
     date: "5 August 2026",
     title: "one font size, hierarchy from color",
     note: "beta feedback said the 11px meta text was too small, and the fix went deeper than a bump: the small label size is gone from the type scale entirely. chips, tags, meta rows, and small buttons now share the same 14px body size as everything else, with hierarchy carried by color and spacing instead of shrinking the font. tags stay compact through tighter padding, not tinier text.",

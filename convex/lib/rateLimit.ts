@@ -28,6 +28,9 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   updateProfile: { kind: "fixed window", rate: 10, period: MINUTE },
   // Media uploads — 20/min per user.
   uploadAttachment: { kind: "token bucket", rate: 20, period: MINUTE, capacity: 5 },
+  // Org/space governance writes (create org, switch workspace, join/leave,
+  // membership management) — cheap but abusable; 20/min is generous for a UI.
+  governance: { kind: "token bucket", rate: 20, period: MINUTE, capacity: 5 },
 });
 
 export { SECOND, MINUTE, HOUR };

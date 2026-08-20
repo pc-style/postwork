@@ -8,7 +8,8 @@ import {
   ensureActiveViewerUser,
   forbidden,
   notFound,
-  requireSpaceMember,
+  requireOrgMembership,
+  requireSpaceWriteAccess,
   resolveReadScope,
 } from "./authUsers";
 import { publicUser, type PublicUser } from "./users";
@@ -212,9 +213,12 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const post = await ctx.db.get(args.postId);
-    if (!post || post.orgId !== viewer.orgId) notFound("Post not found.");
+    if (!post?.orgId) notFound("Post not found.");
+    await requireOrgMembership(ctx, post.orgId, viewer._id, {
+      message: "Post not found.",
+    });
     if (post.spaceId) {
-      await requireSpaceMember(ctx, post.spaceId, viewer._id);
+      await requireSpaceWriteAccess(ctx, post.spaceId, viewer._id);
     }
 
     // Rate limit (Phase 3.1).
@@ -319,7 +323,10 @@ export const edit = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const reply = await ctx.db.get(args.replyId);
-    if (!reply || reply.orgId !== viewer.orgId) notFound("Reply not found.");
+    if (!reply?.orgId) notFound("Reply not found.");
+    await requireOrgMembership(ctx, reply.orgId, viewer._id, {
+      message: "Reply not found.",
+    });
     if (reply.authorId !== viewer._id) {
       forbidden("You can only edit your own replies.");
     }
@@ -343,13 +350,16 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const viewer = await ensureActiveViewerUser(ctx);
     const reply = await ctx.db.get(args.replyId);
-    if (!reply || reply.orgId !== viewer.orgId) notFound("Reply not found.");
-    if (reply.authorId !== viewer._id && viewer.role !== "admin") {
+    if (!reply?.orgId) notFound("Reply not found.");
+    const membership = await requireOrgMembership(ctx, reply.orgId, viewer._id, {
+      message: "Reply not found.",
+    });
+    if (reply.authorId !== viewer._id && membership.role !== "admin") {
       forbidden("Only the author or an admin can delete a reply.");
     }
 
     const postId = reply.postId;
-    const orgId = viewer.orgId;
+    const orgId = reply.orgId;
 
     // Recursively collect child reply ids (BFS).
     const toDelete: Id<"replies">[] = [args.replyId];

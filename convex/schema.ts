@@ -15,6 +15,27 @@ export const priority = v.union(
   v.literal("normal"),
 );
 
+export const orgMemberRole = v.union(
+  v.literal("admin"),
+  v.literal("tester"),
+  v.literal("member"),
+);
+
+export const orgMemberStatus = v.union(
+  v.literal("pending"),
+  v.literal("active"),
+);
+
+export const spaceVisibility = v.union(
+  v.literal("public"),
+  v.literal("private"),
+);
+
+export const spaceMemberRole = v.union(
+  v.literal("manager"),
+  v.literal("member"),
+);
+
 export const agentTaskStatus = v.union(
   v.literal("queued"),
   v.literal("running"),
@@ -46,6 +67,43 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),
 
+  // Authenticated identities are global; organization roles and activation
+  // live here so one person can belong to multiple workspaces.
+  orgMemberships: defineTable({
+    orgId: v.id("orgs"),
+    userId: v.id("users"),
+    role: orgMemberRole,
+    status: orgMemberStatus,
+    deactivatedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_org_id_and_user_id", ["orgId", "userId"])
+    .index("by_user_id_and_status", ["userId", "status"])
+    .index("by_org_id_and_role", ["orgId", "role"])
+    .index("by_org_id_and_status", ["orgId", "status"]),
+
+  // Verified email domains: sign-ups whose address matches auto-join the org
+  // as members. v1 verification: the claiming admin's own email must be on
+  // the domain, and public providers are refused outright.
+  orgDomains: defineTable({
+    orgId: v.id("orgs"),
+    domain: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_domain", ["domain"])
+    .index("by_org_id", ["orgId"]),
+
+  // Old slugs remain resolvable after an organization rename.
+  orgSlugAliases: defineTable({
+    orgId: v.id("orgs"),
+    slug: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_org_id", ["orgId"]),
+
   users: defineTable({
     orgId: v.optional(v.id("orgs")),
     name: v.string(),
@@ -67,6 +125,9 @@ export default defineSchema({
     // identifier to a `users` doc so they can author posts/replies). Seed
     // personas leave this undefined. `subject` is retained only as legacy data.
     tokenIdentifier: v.optional(v.string()),
+    // Outbound delivery address synced from the auth identity. Only used by
+    // the notification scheduler; never rendered to other members.
+    email: v.optional(v.string()),
     subject: v.optional(v.string()),
     // Moderation: set when an admin deactivates a user. Deactivated users
     // cannot write; their existing content stays.
@@ -82,8 +143,12 @@ export default defineSchema({
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
+    visibility: v.optional(spaceVisibility),
     createdBy: v.optional(v.id("users")),
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+    archivedAt: v.optional(v.number()),
+    archivedBy: v.optional(v.id("users")),
   })
     .index("by_org_id_and_slug", ["orgId", "slug"])
     .index("by_org_id_and_created_by", ["orgId", "createdBy"]),
@@ -92,6 +157,7 @@ export default defineSchema({
     orgId: v.optional(v.id("orgs")),
     spaceId: v.id("spaces"),
     userId: v.id("users"),
+    role: v.optional(spaceMemberRole),
     createdAt: v.number(),
   })
     .index("by_org_id_and_space_id", ["orgId", "spaceId"])
@@ -253,6 +319,15 @@ export default defineSchema({
     secretHash: v.optional(v.string()),
     encryptedSecret: v.optional(v.string()),
     xSyncHandle: v.optional(v.string()),
+    xDestinationSpaceId: v.optional(v.id("spaces")),
+    xDigestLocalTime: v.optional(v.string()),
+    xDigestTimeZone: v.optional(v.string()),
+    xLastPollAt: v.optional(v.number()),
+    xLastSuccessAt: v.optional(v.number()),
+    xLastDigestAt: v.optional(v.number()),
+    xLastDigestLocalDate: v.optional(v.string()),
+    xLastError: v.optional(v.string()),
+    xLastErrorAt: v.optional(v.number()),
     createdById: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -261,6 +336,41 @@ export default defineSchema({
     .index("by_credential_id", ["credentialId"])
     .index("by_org_id_and_slug", ["orgId", "slug"])
     .index("by_org_id_and_agent_id_and_capability", ["orgId", "agentId", "capability"]),
+
+  // Normalized public X activity. This deliberately excludes private
+  // analytics and raw provider payloads.
+  xPulseItems: defineTable({
+    orgId: v.id("orgs"),
+    connectorId: v.id("connectors"),
+    externalId: v.string(),
+    kind: v.union(v.literal("original"), v.literal("mention")),
+    authorHandle: v.string(),
+    text: v.string(),
+    url: v.string(),
+    sourceCreatedAt: v.number(),
+    views: v.optional(v.number()),
+    likes: v.optional(v.number()),
+    reposts: v.optional(v.number()),
+    replies: v.optional(v.number()),
+    quotes: v.optional(v.number()),
+    bookmarks: v.optional(v.number()),
+    observedAt: v.number(),
+    digestedAt: v.optional(v.number()),
+  })
+    .index("by_connector_id_and_external_id", ["connectorId", "externalId"])
+    .index("by_connector_id_and_source_created_at", ["connectorId", "sourceCreatedAt"])
+    .index("by_connector_id_and_digested_at", ["connectorId", "digestedAt"]),
+
+  xPulseAccountSnapshots: defineTable({
+    orgId: v.id("orgs"),
+    connectorId: v.id("connectors"),
+    followers: v.optional(v.number()),
+    following: v.optional(v.number()),
+    observedAt: v.number(),
+    digestedAt: v.optional(v.number()),
+  })
+    .index("by_connector_id_and_observed_at", ["connectorId", "observedAt"])
+    .index("by_connector_id_and_digested_at", ["connectorId", "digestedAt"]),
 
   // Provider adapters reserve a delivery before routing it. This is the
   // idempotency boundary for GitHub/deploy work without storing raw payloads.
@@ -332,6 +442,7 @@ export default defineSchema({
   // bumping `usedCount` and audit-logging the redeemer.
   invites: defineTable({
     orgId: v.optional(v.id("orgs")),
+    spaceId: v.optional(v.id("spaces")),
     code: v.string(),
     note: v.optional(v.string()),
     createdBy: v.id("users"),

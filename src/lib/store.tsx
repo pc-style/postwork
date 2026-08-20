@@ -109,6 +109,7 @@ type StoreValue = {
   createSpace: (args: {
     name: string;
     description?: string;
+    visibility?: "public" | "private";
     existingSlugs?: string[];
   }) => Promise<{ spaceId: Id<"spaces">; slug: string }>;
   summarize: (postId: Id<"posts">) => Promise<void>;
@@ -386,6 +387,7 @@ function OverlayStoreProvider({ children }: { children: ReactNode }) {
     async (args: {
       name: string;
       description?: string;
+      visibility?: "public" | "private";
       existingSlugs?: string[];
     }) => {
       if (!currentUserId) throw new Error("No current user.");
@@ -731,10 +733,15 @@ function ConvexStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const createSpace = useCallback(
-    async (args: { name: string; description?: string }) =>
+    async (args: {
+      name: string;
+      description?: string;
+      visibility?: "public" | "private";
+    }) =>
       await createSpaceMutation({
         name: args.name,
         description: args.description,
+        visibility: args.visibility,
       }),
     [createSpaceMutation],
   );

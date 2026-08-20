@@ -1,10 +1,14 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import type { Doc, Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   ensureActiveViewerUser,
+  getOrgMembership,
   getViewerFromAuth,
+  listOrgUsersWithMembership,
+  requireOrgId,
 } from "./authUsers";
 import { publicUser } from "./users";
 import { parseInviteTarget, type InviteTarget } from "./lib/inviteTargets";
@@ -36,7 +40,17 @@ async function requireAdminForRead(ctx: QueryCtx): Promise<Doc<"users">> {
     throw new ConvexError({ code: "UNAUTHENTICATED", message: "Sign in first." });
   }
   // Admin implies an activated account — a pending user is never an admin.
-  if (viewer.status === "pending" || viewer.role !== "admin") {
+  // Membership rows are the source of truth; legacy user fields only back
+  // them up while the backfill rolls out.
+  const membership = viewer.orgId
+    ? await getOrgMembership(ctx, viewer.orgId, viewer._id)
+    : null;
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
   return viewer;
@@ -46,40 +60,35 @@ async function requireAdminForWrite(ctx: MutationCtx): Promise<Doc<"users">> {
   // ensureActiveViewerUser rejects pending (invite-not-redeemed) accounts, so
   // a pending first-user cannot mint themselves an invite via the admin API.
   const viewer = await ensureActiveViewerUser(ctx);
-  if (viewer.role !== "admin") {
+  const membership = viewer.orgId
+    ? await getOrgMembership(ctx, viewer.orgId, viewer._id)
+    : null;
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.deactivatedAt ||
+    membership.role !== "admin"
+  ) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Admins only." });
   }
   return viewer;
 }
 
-export async function logAudit(
-  ctx: MutationCtx,
-  entry: {
-    orgId: Id<"orgs"> | undefined;
-    actorId?: Id<"users">;
-    action: string;
-    targetType?: string;
-    targetId?: string;
-    metadata?: Record<string, unknown>;
-  },
-) {
-  await ctx.db.insert("auditLog", {
-    orgId: entry.orgId,
-    actorId: entry.actorId,
-    action: entry.action,
-    targetType: entry.targetType,
-    targetId: entry.targetId,
-    metadata: entry.metadata ? JSON.stringify(entry.metadata) : undefined,
-    createdAt: Date.now(),
-  });
-}
+import { logAudit } from "./lib/audit";
+export { logAudit };
 
 /** Is the current viewer an org admin? Cheap gate for the /admin routes. */
 export const viewerIsAdmin = query({
   args: {},
   handler: async (ctx) => {
     const viewer = await getViewerFromAuth(ctx);
-    return viewer?.status !== "pending" && viewer?.role === "admin";
+    if (!viewer?.orgId) return false;
+    const membership = await getOrgMembership(ctx, viewer.orgId, viewer._id);
+    return (
+      membership?.status === "active" &&
+      !membership.deactivatedAt &&
+      membership.role === "admin"
+    );
   },
 });
 
@@ -87,11 +96,8 @@ export const overview = query({
   args: {},
   handler: async (ctx) => {
     const admin = await requireAdminForRead(ctx);
-    const orgId = admin.orgId;
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_org_id_and_role", (q) => q.eq("orgId", orgId))
-      .collect();
+    const orgId = requireOrgId(admin);
+    const roster = await listOrgUsersWithMembership(ctx, orgId);
     const invites = await ctx.db
       .query("invites")
       .withIndex("by_org_id_and_created_at", (q) => q.eq("orgId", orgId))
@@ -115,9 +121,9 @@ export const overview = query({
         (i.maxUses === 0 || i.usedCount < i.maxUses),
     );
     return {
-      members: users.filter((u) => !u.isAgent).length,
-      agents: users.filter((u) => u.isAgent).length,
-      deactivated: users.filter((u) => u.deactivatedAt).length,
+      members: roster.filter(({ user }) => !user.isAgent).length,
+      agents: roster.filter(({ user }) => user.isAgent).length,
+      deactivated: roster.filter(({ membership }) => membership.deactivatedAt).length,
       activeInvites: activeInvites.length,
       pendingRequests: pending.length,
       recentAudit,
@@ -129,11 +135,16 @@ export const listUsers = query({
   args: {},
   handler: async (ctx) => {
     const admin = await requireAdminForRead(ctx);
-    const users = await ctx.db
-      .query("users")
-      .withIndex("by_org_id_and_role", (q) => q.eq("orgId", admin.orgId))
-      .collect();
-    return users.map((u) => publicUser(u));
+    const orgId = requireOrgId(admin);
+    const members = await listOrgUsersWithMembership(ctx, orgId);
+    // Role/status/deactivation are this org's membership view, so moderating
+    // a cross-org member acts on the right record.
+    return members.map(({ user, membership }) => ({
+      ...publicUser(user),
+      role: membership.role,
+      status: membership.status,
+      deactivatedAt: membership.deactivatedAt,
+    }));
   },
 });
 
@@ -277,9 +288,17 @@ export const listInvites = query({
         creators.set(invite.createdBy, creator?.name ?? "unknown");
       }
     }
+    const spaceNames = new Map<string, string>();
+    for (const invite of invites) {
+      if (invite.spaceId && !spaceNames.has(invite.spaceId)) {
+        const space = await ctx.db.get(invite.spaceId);
+        spaceNames.set(invite.spaceId, space?.name ?? "deleted space");
+      }
+    }
     return invites.map((invite) => ({
       ...invite,
       createdByName: creators.get(invite.createdBy) ?? "unknown",
+      spaceName: invite.spaceId ? spaceNames.get(invite.spaceId) ?? null : null,
     }));
   },
 });
@@ -359,9 +378,21 @@ export const createInvite = mutation({
     // "Hot" invite target: a github handle (with or without @) or an email.
     // The targeted person is auto-activated on sign-in, no code entry needed.
     target: v.optional(v.string()),
+    // Optional landing space: redeeming this invite also adds the person to
+    // this space (private spaces become joinable through it).
+    spaceId: v.optional(v.id("spaces")),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdminForWrite(ctx);
+    if (args.spaceId) {
+      const space = await ctx.db.get(args.spaceId);
+      if (!space || space.orgId !== admin.orgId || space.archivedAt) {
+        throw new ConvexError({
+          code: "INVALID_INPUT",
+          message: "Choose an active space in this organization.",
+        });
+      }
+    }
     let target: InviteTarget | null;
     try {
       target = parseInviteTarget(args.target);
@@ -382,6 +413,7 @@ export const createInvite = mutation({
         : undefined;
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
+      spaceId: args.spaceId,
       code: await uniqueInviteCode(ctx),
       note,
       createdBy: admin._id,
@@ -402,8 +434,17 @@ export const createInvite = mutation({
         maxUses,
         note,
         ...(target ? { target: `${target.kind}:${target.value}` } : {}),
+        ...(args.spaceId ? { spaceId: args.spaceId } : {}),
       },
     });
+    // Email-targeted invites deliver themselves; github-targeted invites
+    // auto-claim on sign-in and have no address to send to.
+    if (target?.kind === "email") {
+      await ctx.scheduler.runAfter(0, internal.inviteDelivery.deliver, {
+        inviteId,
+        recipientEmail: target.value,
+      });
+    }
     logInfo("admin.inviteCreated", { inviteId, adminId: admin._id });
     return inviteId;
   },
@@ -444,8 +485,8 @@ export const approveAccessRequest = mutation({
         message: "Request is already resolved.",
       });
     }
-    // Mint a single-use invite for the requester; delivering the code (email)
-    // is a follow-up integration — the admin can copy it from the invites list.
+    // Mint a single-use invite for the requester; delivery is scheduled below
+    // and the code stays visible in the invites list as a manual fallback.
     const inviteId = await ctx.db.insert("invites", {
       orgId: admin.orgId,
       code: await uniqueInviteCode(ctx),
@@ -460,6 +501,12 @@ export const approveAccessRequest = mutation({
       resolvedBy: admin._id,
       resolvedAt: Date.now(),
       inviteId,
+    });
+    // Close the loop: the requester gets the join link by email (no-op on
+    // demo or when Resend is not configured).
+    await ctx.scheduler.runAfter(0, internal.inviteDelivery.deliver, {
+      inviteId,
+      recipientEmail: request.email,
     });
     await logAudit(ctx, {
       orgId: admin.orgId,

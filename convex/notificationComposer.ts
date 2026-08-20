@@ -19,6 +19,8 @@ export type NotificationItem = {
   unread: boolean;
   space?: string;
   url?: string;
+  /** Short plain-text preview (AI summary teaser), bounded upstream. */
+  teaser?: string;
 };
 
 export type OutboundDeliveryCandidate = {

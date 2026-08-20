@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { getRouteApi, Link } from "@tanstack/react-router";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "../components/Avatar";
+import { Button } from "../components/Button";
+import { Chip } from "../components/Chip";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingState } from "../components/LoadingState";
 import { PostCard } from "../components/PostCard";
 import { PostForm } from "../components/PostForm";
+import { isDemo } from "../lib/demoMode";
 import { useSession } from "../lib/session";
 import { useSpaceBySlug, useSpaceMemberships } from "../lib/spaces";
 import { useSpaceFeed, useStore } from "../lib/store";
@@ -45,16 +51,19 @@ export function SpacePage() {
     );
   }
 
-  const memberUsers = memberships
-    .map((membership) => membership.user)
-    .filter((user) => user !== null);
+  const isPrivate = "visibility" in space && space.visibility === "private";
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <header className="mb-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="type-heading text-display font-semibold text-fg">{space.name}</h1>
+            <h1 className="type-heading flex items-center gap-2 text-display font-semibold text-fg">
+              <span className="truncate">{space.name}</span>
+              {isPrivate ? <Chip tone="neutral">private</Chip> : null}
+              {isArchived ? <Chip tone="muted">archived</Chip> : null}
+            </h1>
             {space.description ? (
               <p className="type-description mt-1.5 text-body text-muted">{space.description}</p>
             ) : null}
@@ -65,16 +74,16 @@ export function SpacePage() {
           </div>
         </div>
 
-        {memberUsers.length > 0 ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2" aria-label="Space members">
-            {memberUsers.map((user) => (
-              <div key={user._id} className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body text-muted">
-                <Avatar user={user} size={20} />
-                <span className="text-fg">{user.name}</span>
-              </div>
-            ))}
-          </div>
+        {isArchived ? (
+          <p className="mt-4 rounded-md border border-border bg-bg px-3 py-2 text-xs text-muted">
+            This space is archived — posts stay readable, but nothing new can
+            be added.
+          </p>
         ) : null}
+
+        <SpaceActions space={space} />
+
+        <SpaceMembers space={space} memberships={memberships} />
       </header>
 
       {feed.length === 0 ? (
@@ -85,6 +94,7 @@ export function SpacePage() {
         </div>
       )}
 
+      {isArchived ? null : (
       <section className="mt-6 rounded-lg border border-border bg-surface p-4" aria-labelledby="space-post-heading">
         <h2 id="space-post-heading" className="type-heading mb-4 text-title font-semibold text-fg">new post in {space.name}</h2>
         <PostForm
@@ -105,6 +115,250 @@ export function SpacePage() {
           }}
         />
       </section>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Membership + lifecycle controls. Join/leave applies to the signed-in
+ * product session; managers and org admins additionally get archive control.
+ * The demo overlay stays read-only here.
+ */
+function SpaceActions({
+  space,
+}: {
+  space: NonNullable<ReturnType<typeof useSpaceBySlug>>;
+}) {
+  const join = useMutation(api.spaces.join);
+  const leave = useMutation(api.spaces.leave);
+  const archive = useMutation(api.spaces.archive);
+  const unarchive = useMutation(api.spaces.unarchive);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isDemo) return null;
+  const isMember = "viewerIsMember" in space && space.viewerIsMember === true;
+  const canManage = "viewerCanManage" in space && space.viewerCanManage === true;
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
+  const isPrivate = "visibility" in space && space.visibility === "private";
+  const spaceId = space._id as Id<"spaces">;
+
+  const act = async (label: string, run: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(label);
+    setError(null);
+    try {
+      await run();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "That didn't work. Try again.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const buttons: ReactButton[] = [];
+  if (!isArchived && !isMember && !isPrivate) {
+    buttons.push({
+      label: "join space",
+      loading: "joining…",
+      onClick: () => act("join", () => join({ spaceId })),
+    });
+  }
+  if (!isArchived && isMember) {
+    buttons.push({
+      label: "leave space",
+      loading: "leaving…",
+      onClick: () => act("leave", () => leave({ spaceId })),
+    });
+  }
+  if (canManage) {
+    buttons.push(
+      isArchived
+        ? {
+            label: "unarchive space",
+            loading: "unarchiving…",
+            onClick: () => act("unarchive", () => unarchive({ spaceId })),
+          }
+        : {
+            label: "archive space",
+            loading: "archiving…",
+            onClick: () => act("archive", () => archive({ spaceId })),
+          },
+    );
+  }
+
+  if (buttons.length === 0 && !error) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      {buttons.map((button) => (
+        <Button
+          key={button.label}
+          variant="secondary"
+          size="sm"
+          loading={busy !== null && busy === button.label.split(" ")[0]}
+          loadingLabel={button.loading}
+          disabled={busy !== null}
+          onClick={button.onClick}
+        >
+          {button.label}
+        </Button>
+      ))}
+      {error ? (
+        <p role="alert" className="text-xs text-urgent">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+type ReactButton = {
+  label: string;
+  loading: string;
+  onClick: () => void;
+};
+
+
+/**
+ * Member roster. Everyone sees the chips; space managers (and org admins)
+ * additionally manage membership inline: add from the org directory, remove,
+ * and toggle the manager role. Demo overlay stays read-only.
+ */
+function SpaceMembers({
+  space,
+  memberships,
+}: {
+  space: NonNullable<ReturnType<typeof useSpaceBySlug>>;
+  memberships: ReturnType<typeof useSpaceMemberships>;
+}) {
+  const { users } = useSession();
+  const addMember = useMutation(api.spaces.addMember);
+  const removeMember = useMutation(api.spaces.removeMember);
+  const setMemberRole = useMutation(api.spaces.setMemberRole);
+  const [pendingAdd, setPendingAdd] = useState("");
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const canManage =
+    !isDemo && "viewerCanManage" in space && space.viewerCanManage === true;
+  const isArchived = "archivedAt" in space && Boolean(space.archivedAt);
+  const spaceId = space._id as Id<"spaces">;
+
+  const memberIds = new Set(memberships.map((membership) => membership.userId));
+  const candidates = users.filter(
+    (user) =>
+      !memberIds.has(user._id) &&
+      user.status === "active" &&
+      !user.deactivatedAt,
+  );
+
+  const act = async (userId: string, run: () => Promise<unknown>) => {
+    if (busyUserId) return;
+    setBusyUserId(userId);
+    setError(null);
+    try {
+      await run();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "that didn't work. try again.",
+      );
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  if (memberships.length === 0 && !canManage) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Space members">
+        {memberships.map((membership) => {
+          const user = membership.user;
+          if (!user) return null;
+          const isManager =
+            "role" in membership && membership.role === "manager";
+          return (
+            <div
+              key={membership._id}
+              className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-body text-muted"
+            >
+              <Avatar user={user} size={20} />
+              <span className="text-fg">{user.name}</span>
+              {isManager ? <Chip tone="accent">manager</Chip> : null}
+              {canManage && !isArchived ? (
+                <span className="ms-1 flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={busyUserId !== null}
+                    onClick={() =>
+                      void act(user._id, () =>
+                        setMemberRole({
+                          spaceId,
+                          userId: user._id as Id<"users">,
+                          role: isManager ? "member" : "manager",
+                        }),
+                      )
+                    }
+                    className="rounded px-1 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent-soft"
+                  >
+                    {isManager ? "demote" : "promote"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`remove ${user.name} from this space`}
+                    disabled={busyUserId !== null}
+                    onClick={() =>
+                      void act(user._id, () =>
+                        removeMember({
+                          spaceId,
+                          userId: user._id as Id<"users">,
+                        }),
+                      )
+                    }
+                    className="rounded px-1 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-urgent focus-visible:outline-2 focus-visible:outline-accent-soft"
+                  >
+                    remove
+                  </button>
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+
+        {canManage && !isArchived && candidates.length > 0 ? (
+          <select
+            value={pendingAdd}
+            disabled={busyUserId !== null}
+            aria-label="Add a member to this space"
+            onChange={(event) => {
+              const userId = event.target.value;
+              setPendingAdd("");
+              if (!userId) return;
+              void act(userId, () =>
+                addMember({ spaceId, userId: userId as Id<"users"> }),
+              );
+            }}
+            className="min-h-11 rounded-md border border-dashed border-border bg-bg px-2 py-2 text-body text-muted transition-colors hover:border-accent/40 hover:text-fg focus:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent-soft"
+          >
+            <option value="">+ add member</option>
+            {candidates.map((user) => (
+              <option key={user._id} value={user._id}>
+                {user.name}
+                {user.isAgent ? " (agent)" : ""}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+      {error ? (
+        <p role="alert" className="mt-2 text-xs text-urgent">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -16,6 +16,12 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
 1. **Digest email as teaser** — daily "3 posts moved, 1 needs you" via existing
    Resend delivery. Subject line is the hook ("shivam replied to wrec 3.0
    update"); body shows the AI summary teaser, not full content. Click = visit.
+   - [x] shipped (16 Aug): notificationScheduler cron drives the existing
+         delivery boundary — immediate urgent email + daily digest at
+         quiet-hours end, idempotent per local day. Emails come from
+         users.email synced from the auth identity.
+   - [ ] follow-up: richer email body (AI summary teaser instead of title
+         list).
 2. **"Needs you" notification trigger** — only notify on mentions, replies to
    your posts, or finished agent tasks. Scarcity keeps the signal trusted.
 3. **Inbound cross-posting (favorite)** — connector agent pulls Twitter/X
@@ -30,7 +36,12 @@ Working ideas backlog. Feedback sources: shivam + Pronsh (Discord, 27 July 2026)
          Postwork via the X Pulse connector (no X API keys, no extension).
          Enable with `bunx convex env set X_SYNC_HANDLE <handle>`.
          Also: `/api/connectors/x` bearer endpoint for push-style clients.
-   - [ ] follow-up: mentions + analytics digest layer on the same pipe.
+   - [x] analytics digest layer shipped (16 Aug): convex/xPulse.ts snapshots
+         followers + per-post engagement hourly and publishes a daily digest
+         post (follower delta, top posts by engagement). One digest per local
+         day per connector, race-safe via xLastDigestLocalDate.
+   - [ ] follow-up: mentions layer — blocked on the proxy's search endpoint
+         (currently returns not_found for all queries).
 4. **Tab-title badge count** — `(3) postwork` in the document title so a pinned
    tab shows unread count.
    - [x] shipped (27 July): `useUnreadTabBadge` in both shells prefixes the

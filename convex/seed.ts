@@ -50,6 +50,7 @@ export const run = internalMutation({
       "posts",
       "spaceMemberships",
       "spaces",
+      "orgMemberships",
       "users",
     ] as const) {
       const rows = await ctx.db.query(table).collect();
@@ -88,6 +89,14 @@ export const run = internalMutation({
     const u: Record<string, Id<"users">> = {};
     for (const d of userDefs) {
       const id = await ctx.db.insert("users", { orgId, ...d });
+      await ctx.db.insert("orgMemberships", {
+        orgId,
+        userId: id,
+        role: d.role,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
       u[d.initials] = id;
     }
 

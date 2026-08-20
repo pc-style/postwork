@@ -51,6 +51,11 @@ so a green build covers both layers.
 
 ## Convex specifics (read before touching the backend)
 
+- **ALWAYS verify the target deployment before any `convex dev`/`convex run`:**
+  `bunx convex dev --once -v 2>&1 | grep -A2 "Developing against"`. A
+  `CONVEX_DEPLOY_KEY` (prod) in `.env.local` silently routes those commands at
+  the LIVE backend. Keep the key commented out except during an intentional
+  deploy; day-to-day dev uses `CONVEX_DEPLOYMENT=anonymous:...`.
 - **Codegen / typecheck needs a deployment.** `convex codegen` fails with
   "No CONVEX_DEPLOYMENT set" unless a deployment is configured. The repo is wired
   to a **local anonymous** deployment (`.env.local` → `CONVEX_DEPLOYMENT=anonymous:...`)
@@ -112,7 +117,9 @@ Read `docs/product.md` when shaping product flows, users, or interaction
 principles. Read `docs/business-plan.md` when working on positioning, pricing,
 market strategy, or go-to-market decisions. Read `docs/brand.md` when writing
 public copy or making brand identity decisions. Read `docs/design.md` before
-changing product UI or the visual system. The concrete visual rules below remain
+changing product UI or the visual system. Read `docs/security.md` before
+touching auth, tenancy, or any external surface — it states the invariants the
+test suites enforce. The concrete visual rules below remain
 the quick reference.
 
 **Any UI change must first read `docs/design-system.md`** - the codified token

@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { AdminUsersFilter } from "../../router";
 import { timeAgo } from "../../lib/format";
+import { Button } from "../../components/Button";
 import { Skeleton } from "../../components/Skeleton";
 import { AdminPage } from "./AdminShell";
 
@@ -84,9 +86,85 @@ export function AdminOverviewPage() {
               </ul>
             )}
           </div>
+
+          <ExportCard />
         </>
       )}
     </AdminPage>
+  );
+}
+
+const EXPORT_TABLES = ["users", "spaces", "posts", "replies"] as const;
+const EXPORT_PAGE_SIZE = 200;
+
+/**
+ * Data portability: pull every table in bounded pages and hand the admin one
+ * JSON file. Assembly happens client-side so the export size is not limited
+ * by a single function result.
+ */
+function ExportCard() {
+  const convex = useConvex();
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const runExport = async () => {
+    setExporting(true);
+    setError(null);
+    try {
+      const data: Record<string, unknown[]> = {};
+      for (const table of EXPORT_TABLES) {
+        const rows: unknown[] = [];
+        let cursor: string | null = null;
+        do {
+          const result: {
+            page: unknown[];
+            isDone: boolean;
+            continueCursor: string;
+          } = await convex.query(api.exports.exportChunk, {
+            table,
+            paginationOpts: { numItems: EXPORT_PAGE_SIZE, cursor },
+          });
+          rows.push(...result.page);
+          cursor = result.isDone ? null : result.continueCursor;
+        } while (cursor !== null);
+        data[table] = rows;
+      }
+      const blob = new Blob(
+        [JSON.stringify({ exportedAt: new Date().toISOString(), ...data }, null, 2)],
+        { type: "application/json" },
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `postwork-export-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("export failed. check your connection and try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="mt-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+      <div>
+        <h2 className="text-body font-medium lowercase text-fg">workspace export</h2>
+        <p className="mt-0.5 text-body text-muted">
+          download members, spaces, posts, and replies as one json file.
+        </p>
+        {error ? <p role="alert" className="mt-1 text-body text-urgent">{error}</p> : null}
+      </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        loading={exporting}
+        loadingLabel="exporting…"
+        onClick={() => void runExport()}
+      >
+        export data
+      </Button>
+    </div>
   );
 }
 

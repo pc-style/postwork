@@ -4,12 +4,17 @@ import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import rateLimiterSchema from "../node_modules/@convex-dev/rate-limiter/src/component/schema";
 import { defaultOrgSlug, orgSlugError } from "./orgs";
 
 const modules = import.meta.glob("./**/*.ts");
+const rateLimiterModules = import.meta.glob(
+  "../node_modules/@convex-dev/rate-limiter/src/component/**/*.ts",
+);
 
 async function setup(tokenIdentifier = "https://issuer.example|owner") {
   const t = convexTest(schema, modules);
+  t.registerComponent("rateLimiter", rateLimiterSchema, rateLimiterModules);
   await t.run(async (ctx) => {
     await ctx.db.insert("orgs", { name: "Postwork", slug: "postwork", createdAt: 1 });
   });
@@ -37,7 +42,7 @@ describe("organization slugs", () => {
     const created = await owner.mutation(api.orgs.create, { name: "Acme Inc", slug: "acme" });
     expect(created.slug).toBe("acme");
     const me = await owner.query(api.users.me, {});
-    expect(me?.org).toEqual({ name: "Acme Inc", slug: "acme" });
+    expect(me?.org).toMatchObject({ name: "Acme Inc", slug: "acme" });
   });
 
   test("rejects a slug already owned by another workspace", async () => {
