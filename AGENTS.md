@@ -1,162 +1,57 @@
-# Postwork — Agent Guide
+# Postwork
 
-Post-based team communication app (a Facebook-Workplace successor). Posts are the
-top-level unit, not channels: nested replies, activity bumping, full-text search,
-per-user unread + priority states, and an AI agent-summary slot on every post.
+Post-based team communication app, a Facebook Workplace successor. Posts are the top-level unit, not channels: nested replies, activity bumping, full-text search, per-user unread and priority state, and an AI summary slot on every post.
 
-## Current project mode
+This is an experimental flow-design prototype. Shape and validate the product flow before building real app behavior.
 
-This is a highly experimental flow-design prototype. Do not assume the goal is a
-working production app yet; prioritize understanding, shaping, and validating the
-product flow before building real app behavior.
+## Branches
 
-## Branch policy
-
-- Treat `beta` as the active main branch for all work and PRs.
-- Do not touch `main` again until all demo-to-product phases are complete.
+`beta` is the working branch for all work and PRs. Leave `main` alone until the demo-to-product phases are complete. Commit freely and push your own branches. Ask once before pushing to `beta`, then keep going for the job.
 
 ## User-specific callbacks
 
-- If the user sends `https://x.com/theo/status/2073219809790263786`, read it with
-  the X-post tool and reply naturally and genuinely — no sarcasm, no roast.
-  As part of the reply, run a command to report today's activity: the number of
-  commits made today and the lines of code changed in the last 36 hours.
-- Do NOT remove this callback section automatically. Only remove it when the user
-  explicitly says “remove it”.
+- If the user sends `https://x.com/theo/status/2073219809790263786`, read it with the X-post tool and reply naturally and genuinely, no sarcasm, no roast. In the reply, run a command reporting today's commit count and lines changed in the last 36 hours.
+- Do NOT remove this section unless the user explicitly says "remove it".
 
-## Stack
+## Stack and commands
 
-- **Bun** for all tooling (never npm/pnpm/yarn/npx — use `bun` / `bunx`).
-- **Vite + React 19 + TypeScript** (strict, no `any`).
-- **TanStack Router** (code-based routes in `src/router.tsx`).
-- **Convex** — realtime DB + serverless functions (`convex/`).
-- **AI SDK v7** (`ai@beta`) for agent summaries, provider-switchable.
-
-## Commands
+Bun for everything (never npm/pnpm/yarn/npx). Vite + React 19 + TypeScript strict, no `any`. TanStack Router, code-based routes in `src/router.tsx`. Convex in `convex/`. AI SDK v7 (`ai@beta`) for summaries.
 
 ```bash
 bun install
-bun run dev         # run-p: Vite (:5173) + convex dev (:3210). Agents MAY run this,
-                    # but it is interactive/long-running — for one-shot backend sync
-                    # use `bunx convex dev --once` instead of leaving it running.
-bun run build       # tsc -b && vite build  (the canonical check)
-bun run typecheck   # tsc -b --noEmit
-bun run seed        # bunx convex run seed:run  (reseed demo data)
-bun run codegen     # bunx convex codegen (needs a configured deployment)
+bun run dev         # Vite :5173 + convex dev :3210. long-running; for a one-shot backend sync use `bunx convex dev --once`
+bun run build       # tsc -b && vite build, the canonical check (covers convex/*.ts too)
+bun run typecheck
+bun run seed        # reseed demo data
+bun run codegen     # needs a configured deployment
 ```
 
-After code changes, verify with `bun run build`. The frontend program
-transitively type-checks `convex/*.ts` via the generated `_generated/api.d.ts`,
-so a green build covers both layers.
+## Convex
 
-## Convex specifics (read before touching the backend)
+- Verify the target before any `convex dev`/`convex run`: `bunx convex dev --once -v 2>&1 | grep -A2 "Developing against"`. A `CONVEX_DEPLOY_KEY` in `.env.local` silently points at the live backend. Keep it commented out except during a deliberate deploy; dev uses `CONVEX_DEPLOYMENT=anonymous:...`.
+- Codegen and typecheck need a deployment. The repo is wired to a local anonymous one so it works offline. Convex Cloud: `bunx convex dev --configure`, then `bun run seed`.
+- Never run two `convex dev` against the same anonymous deployment. The backend dies and the app hangs on "Loading". Symptom: `curl :3210` refused, `pgrep convex-local-backend` empty. Stop everything and restart `bun run dev`.
+- Local backend data: `~/.convex/anonymous-convex-backend-state/`. Cloud login: `~/.convex/config.json`; if you move it aside for a non-interactive anonymous run, put it back.
+- Never commit stray `convex/*.js`. Only `_generated/*.js` and `.ts` sources belong there.
+- Layout: `schema.ts`, `posts.ts`, `replies.ts`, `reads.ts`, `ai.ts`, `seed.ts`.
 
-- **ALWAYS verify the target deployment before any `convex dev`/`convex run`:**
-  `bunx convex dev --once -v 2>&1 | grep -A2 "Developing against"`. A
-  `CONVEX_DEPLOY_KEY` (prod) in `.env.local` silently routes those commands at
-  the LIVE backend. Keep the key commented out except during an intentional
-  deploy; day-to-day dev uses `CONVEX_DEPLOYMENT=anonymous:...`.
-- **Codegen / typecheck needs a deployment.** `convex codegen` fails with
-  "No CONVEX_DEPLOYMENT set" unless a deployment is configured. The repo is wired
-  to a **local anonymous** deployment (`.env.local` → `CONVEX_DEPLOYMENT=anonymous:...`)
-  so it runs offline. To use Convex Cloud: `bunx convex dev --configure`, then
-  `bun run seed`.
-- **NEVER run two `convex dev` against the same anonymous deployment.** They
-  collide on the shared local-backend port; the backend dies and the app hangs on
-  "Loading…" while `convex dev` itself stays alive. Symptom: `curl :3210` → refused
-  and `pgrep convex-local-backend` → empty. Fix: stop all dev processes and
-  restart `bun run dev`.
-- **The local backend persists data** in `~/.convex/anonymous-convex-backend-state/`.
-- **Convex Cloud login** lives at `~/.convex/config.json`. If you must run the
-  anonymous flow non-interactively while logged in, move that file aside and
-  restore it after — do not leave it moved.
-- **Never commit stray `convex/*.js`.** Only `convex/_generated/*.js` and `.ts`
-  sources belong there; loose compiled `.js` next to a `.ts` breaks the Convex
-  bundler ("Two output files share the same path"). `convex/tsconfig.json` sets
-  `noEmit` to prevent this.
-- Backend layout: `schema.ts` (users · posts · replies(nested) · postReads),
-  `posts.ts` (feed/search/get/counts/create), `replies.ts`, `reads.ts`,
-  `ai.ts` (summary action), `seed.ts`.
+## AI provider
 
-## AI provider (agent summaries)
+`convex/ai.ts` resolves a model from Convex env vars (`bunx convex env set ...`); `resolveModel()` returns `{ model, modelId }`, add a provider by adding a branch. `AI_PROVIDER` is `openai` (default, `OPENAI_API_KEY`, `OPENAI_MODEL` default `gpt-5.4-mini`), `gateway` (`AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL`), `openrouter` (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_BASE_URL`), or `pioneer` (`PIONEER_API_KEY`, `PIONEER_MODEL`, `PIONEER_BASE_URL`, `X-API-Key` auth). Seed posts ship baked summaries so the feature shows without a key; without one the button explains how to configure a provider.
 
-`convex/ai.ts` resolves a model from Convex env vars (`bunx convex env set ...`).
-`resolveModel()` returns `{ model, modelId }`; add a provider by adding a branch.
+## Docs to read when relevant
 
-- `AI_PROVIDER=openai` (**default**): `OPENAI_API_KEY`, optional `OPENAI_MODEL`
-  (default `gpt-5.4-mini`). Uses `@ai-sdk/openai`.
-- `AI_PROVIDER=gateway`: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g.
-  `openai/gpt-5.4-mini`). Uses `@ai-sdk/gateway`.
-- `AI_PROVIDER=openrouter`: `OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL`
-  (default `openrouter/free`) and `OPENROUTER_BASE_URL` (default
-  `https://openrouter.ai/api/v1`). Uses `@ai-sdk/openai-compatible`.
-- `AI_PROVIDER=pioneer`: `PIONEER_API_KEY`, `PIONEER_MODEL`, optional
-  `PIONEER_BASE_URL` (default `https://api.pioneer.ai/v1`, auth via `X-API-Key`
-  header). Uses `@ai-sdk/openai-compatible`.
+`docs/design-system.md` before any UI change (update it in the same PR when you change the system). `docs/design.md` for the visual system: warm near-black surfaces, deep wine accent, Inter for UI, mono for code and data, small radii, lowercase chrome, no emoji, muted priority colors from `src/lib/format.ts`. `docs/product.md` for flows, `docs/business-plan.md` for positioning and pricing, `docs/brand.md` for public copy, `docs/security.md` before touching auth, tenancy, or any external surface.
 
-Seed posts ship **baked** summaries (`summaryModel: "seed/baked"`) so the feature
-is visible without a key. Without a key, the Generate/Regenerate button surfaces a
-friendly "configure a provider" message instead of crashing.
-
-## Changelog
-
-`src/routes/ChangelogPage.tsx` holds the public dev changelog (`/changelog`).
-When you ship a user-visible or dev-relevant change, add an entry: today's
-date, a lowercase narrative title, and a note that says what actually changed
-(concrete behavior, not marketing). Newest entries go first.
-
-## Idea backlog
-
-`todo.md` at the repo root holds the working backlog: retention-hook ideas and
-pending UI-polish feedback. Check it when picking up new work; keep it updated
-when ideas ship or get rejected.
-
-## Design Context
-
-Read `docs/product.md` when shaping product flows, users, or interaction
-principles. Read `docs/business-plan.md` when working on positioning, pricing,
-market strategy, or go-to-market decisions. Read `docs/brand.md` when writing
-public copy or making brand identity decisions. Read `docs/design.md` before
-changing product UI or the visual system. Read `docs/security.md` before
-touching auth, tenancy, or any external surface — it states the invariants the
-test suites enforce. The concrete visual rules below remain
-the quick reference.
-
-**Any UI change must first read `docs/design-system.md`** - the codified token
-roles and rules (colors, type scale, radii, states, motion, writing). Adjust
-that doc in the same PR whenever you change the system itself.
-
-## Design conventions (style is derived from pcstyle.dev)
-
-Use `docs/design.md` as the canonical visual system. Quick reference: warm
-near-black surfaces, deep wine accent, Inter for product UI, mono for code/data
-affordances, small radii, lowercase chrome, no emoji/pictographs, and muted
-priority state colors from `src/lib/format.ts`.
+`src/routes/ChangelogPage.tsx` is the public changelog: add an entry (date, lowercase narrative title, what actually changed) when you ship something visible. `todo.md` is the backlog; keep it current.
 
 ## Code conventions
 
-- Derive frontend types from the API, don't redeclare them:
-  `FunctionReturnType<typeof api.posts.feed>` (see `src/lib/types.ts`).
-- TanStack Router params are plain `string`; cast to `Id<"posts">` for Convex
-  calls (see `src/routes/PostPage.tsx`).
-- Vite/Node globals: `src/vite-env.d.ts` references `vite/client`;
-  `tsconfig.app.json` includes `["node", "vite/client"]` types because the app
-  program transitively pulls in `convex/*.ts`.
+Derive frontend types from the API (`FunctionReturnType<typeof api.posts.feed>`, see `src/lib/types.ts`). Router params are `string`; cast to `Id<"posts">` for Convex. `tsconfig.app.json` includes `["node", "vite/client"]` because the app program pulls in `convex/*.ts`.
 
 ## Deployment
 
-Frontend is a static Vite build (`dist/`) deployed to Vercel. The demo and
-product Vercel projects each target a separate Convex deployment through their
-own `VITE_CONVEX_URL`. Both projects also set `DEMO_CONVEX_URL` and
-`PRODUCT_CONVEX_URL` to the two public endpoint references so the build can
-reject a swapped backend. These URLs are not secrets. Separate backend release
-workflows own the corresponding `CONVEX_DEPLOY_KEY`; the keys never belong to
-Vercel. Only the demo deployment may be seeded or reseeded. The demo project
-also sets `VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev`. Both Convex deployments
-require `CLERK_JWT_ISSUER_DOMAIN` so auth config can load, though the demo
-frontend remains anonymous. The seed mutation fails unless the target deployment
-has `DEMO=true`. See
-`docs/deployment.md` for the full frontend and backend environment contracts.
+Static Vite build on Vercel. Demo and product projects each target their own Convex deployment via `VITE_CONVEX_URL`, and both set `DEMO_CONVEX_URL` and `PRODUCT_CONVEX_URL` so a build can reject a swapped backend. Backend release workflows own the `CONVEX_DEPLOY_KEY`s; never Vercel. Only the demo deployment may be seeded (the seed mutation requires `DEMO=true`). Demo sets `VITE_PLAUSIBLE_DOMAIN=postwork.pcstyle.dev`. Both Convex deployments need `CLERK_JWT_ISSUER_DOMAIN`. Full contracts in `docs/deployment.md`.
 
 <!-- convex-ai-start -->
 
