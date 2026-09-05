@@ -6,7 +6,7 @@ This is an experimental flow-design prototype. Shape and validate the product fl
 
 ## Branches
 
-`beta` is the working branch for all work and PRs. Leave `main` alone until the demo-to-product phases are complete. Commit freely and push your own branches. Ask once before pushing to `beta`, then keep going for the job.
+`beta` is the working branch for all work and PRs. Leave `main` alone until the demo-to-product phases are complete. Commit freely and push your own branches without asking. Pushing to `beta` needs one explicit ok per job: wait for it, and that one approval covers every later push in the same job.
 
 ## User-specific callbacks
 
@@ -19,7 +19,7 @@ Bun for everything (never npm/pnpm/yarn/npx). Vite + React 19 + TypeScript stric
 
 ```bash
 bun install
-bun run dev         # Vite :5173 + convex dev :3210. long-running; for a one-shot backend sync use `bunx convex dev --once`
+bun run dev         # Vite :5173 + convex dev :3210. Long-running; for a one-shot backend sync use `bunx convex dev --once`
 bun run build       # tsc -b && vite build, the canonical check (covers convex/*.ts too)
 bun run typecheck
 bun run seed        # reseed demo data
@@ -33,17 +33,16 @@ bun run codegen     # needs a configured deployment
 - Never run two `convex dev` against the same anonymous deployment. The backend dies and the app hangs on "Loading". Symptom: `curl :3210` refused, `pgrep convex-local-backend` empty. Stop everything and restart `bun run dev`.
 - Local backend data: `~/.convex/anonymous-convex-backend-state/`. Cloud login: `~/.convex/config.json`; if you move it aside for a non-interactive anonymous run, put it back.
 - Never commit stray `convex/*.js`. Only `_generated/*.js` and `.ts` sources belong there.
-- Layout: `schema.ts`, `posts.ts`, `replies.ts`, `reads.ts`, `ai.ts`, `seed.ts`.
 
 ## AI provider
 
-`convex/ai.ts` resolves a model from Convex env vars (`bunx convex env set ...`); `resolveModel()` returns `{ model, modelId }`, add a provider by adding a branch. `AI_PROVIDER` is `openai` (default, `OPENAI_API_KEY`, `OPENAI_MODEL` default `gpt-5.4-mini`), `gateway` (`AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL`), `openrouter` (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_BASE_URL`), or `pioneer` (`PIONEER_API_KEY`, `PIONEER_MODEL`, `PIONEER_BASE_URL`, `X-API-Key` auth). Seed posts ship baked summaries so the feature shows without a key; without one the button explains how to configure a provider.
+`convex/ai.ts` resolves a model from Convex env vars (`bunx convex env set ...`); `resolveModel()` returns `{ model, modelId }`, add a provider by adding a branch. `AI_PROVIDER` is `openrouter` (default, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` default `openrouter/free`, `OPENROUTER_BASE_URL`), `openai` (`OPENAI_API_KEY`, `OPENAI_MODEL` default `gpt-5.4-mini`), `gateway` (`AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL`), or `pioneer` (`PIONEER_API_KEY`, `PIONEER_MODEL`, `PIONEER_BASE_URL`, `X-API-Key` auth). Seed posts ship baked summaries so the feature shows without a key; without one the button explains how to configure a provider.
 
 ## Docs to read when relevant
 
 `docs/design-system.md` before any UI change (update it in the same PR when you change the system). `docs/design.md` for the visual system: warm near-black surfaces, deep wine accent, Inter for UI, mono for code and data, small radii, lowercase chrome, no emoji, muted priority colors from `src/lib/format.ts`. `docs/product.md` for flows, `docs/business-plan.md` for positioning and pricing, `docs/brand.md` for public copy, `docs/security.md` before touching auth, tenancy, or any external surface.
 
-`src/routes/ChangelogPage.tsx` is the public changelog: add an entry (date, lowercase narrative title, what actually changed) when you ship something visible. `todo.md` is the backlog; keep it current.
+`src/routes/ChangelogPage.tsx` is the public changelog: add an entry for every user-visible or dev-relevant change: today's date, a lowercase narrative title, what actually changed. Newest first. `todo.md` is the backlog; keep it current.
 
 ## Code conventions
 
