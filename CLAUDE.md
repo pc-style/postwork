@@ -1,4 +1,4 @@
-Before any UI change, read `docs/design-system.md` (tokens, roles, and rules; update it in the same PR when you change the system).
+@AGENTS.md
 
 <!-- convex-ai-start -->
 
